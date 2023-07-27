@@ -17,7 +17,7 @@ export default function People({ homePageTitle, settings, profiles }) {
             />
 
             <Layout settings={settings}>
-                <h1 className="text-5xl pb-6 px-4 md:px-0 font-black">People</h1>
+                <h1 className="text-3xl md:text-5xl pb-6 px-4 md:px-0 font-black">People</h1>
                 <div className="grid gap-6 px-4 md:px-0 grid-cols-1 md:grid-cols-3">
                     {profiles.map((profile: ProfilePayload) =>
                         <div key={profile._id}>

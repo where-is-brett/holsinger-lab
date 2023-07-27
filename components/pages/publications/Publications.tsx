@@ -7,7 +7,7 @@ const Publications = ({ publications }) => {
 
   return (
     <div className='w-full'>
-      <h1 className="mb-6 text-5xl font-black">Publications</h1>
+      <h1 className="mb-6 text-3xl md:text-5xl font-black">Publications</h1>
       
       <ul className="ml-0 mt-0 list-none space-y-5">
         {publications.map((publication: PublicationPayload, index: number) => {
