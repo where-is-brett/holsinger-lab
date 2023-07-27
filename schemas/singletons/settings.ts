@@ -33,6 +33,27 @@ export default defineType({
       ],
     }),
     defineField({
+      name: 'showPublications',
+      title: 'Enable Publications page',
+      type: 'boolean',
+      description: 'Toggle to enable the Publications page in your site.',
+      initialValue: true
+    }),
+    defineField({
+      name: 'showPeople',
+      title: 'Enable Team page',
+      type: 'boolean',
+      description: 'Toggle to enable the Team page in your site.',
+      initialValue: true
+    }),
+    defineField({
+      name: 'showContactForm',
+      title: 'Enable Contact Us page',
+      type: 'boolean',
+      description: 'Toggle to enable the Contact Us page in your site.',
+      initialValue: true
+    }),
+    defineField({
       name: 'footer',
       description:
         'This is a block of text that will be displayed at the bottom of the page.',

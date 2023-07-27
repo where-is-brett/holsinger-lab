@@ -20,7 +20,15 @@ export default defineType({
       options: {
         source: 'title',
       },
-      validation: (rule) => rule.required(),
+      validation: (Rule) => Rule.required().custom((slug) => {
+        if (typeof slug === "undefined") return true
+        
+        if (slug.current!=='publications' && slug.current!=='people') {
+          return true
+        } else {
+          return `Slug '${slug.current}' is not available` // Error message goes here
+        }
+      }),
     }),
     defineField({
       name: 'overview',
@@ -77,7 +85,16 @@ export default defineType({
               },
             ],
           },
-          styles: [],
+          styles: [
+            {title: 'Normal', value: 'normal'},
+            {title: 'H1', value: 'h1'},
+            {title: 'H2', value: 'h2'},
+            {title: 'H3', value: 'h3'},
+            {title: 'H4', value: 'h4'},
+            {title: 'H5', value: 'h5'},
+            {title: 'H6', value: 'h6'},
+            {title: 'Quote', value: 'blockquote'}
+          ],
         }),
         // Custom blocks
         defineArrayMember({
@@ -128,3 +145,7 @@ export default defineType({
     },
   },
 })
+function slugify(arg0: any) {
+  throw new Error('Function not implemented.');
+}
+

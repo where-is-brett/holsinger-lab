@@ -29,7 +29,8 @@ export function Page({
       <PageHead page={page} settings={settings} title={homePageTitle} />
 
       <Layout settings={settings} preview={preview} loading={loading}>
-        <div>
+        <>
+
           <div className="mb-14">
             {/* Header */}
             <Header title={title} description={overview} />
@@ -37,7 +38,7 @@ export function Page({
             {/* Body */}
             {body && (
               <CustomPortableText
-                paragraphClasses="font-serif max-w-3xl text-gray-600 text-xl"
+                paragraphClasses="font-serif max-w-4xl text-gray-900 text-lg md:text-xl"
                 value={body}
               />
             )}
@@ -46,8 +47,10 @@ export function Page({
             <ScrollUp />
           </div>
           <div className="absolute left-0 w-screen border-t" />
-        </div>
+        </>
       </Layout>
     </>
   )
 }
+
+

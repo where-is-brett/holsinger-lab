@@ -1,34 +1,52 @@
-import { resolveHref } from 'lib/sanity.links'
-import Link from 'next/link'
+'use client'
+import { useRef, useState, useEffect } from 'react'
 import { MenuItem } from 'types'
+import DesktopNavBar from './DesktopNavBar'
+import MobileNavBar from './MobileNavBar'
 
 interface NavbarProps {
   menuItems?: MenuItem[]
+  showPublications?: boolean
+  showPeople?: boolean
+  showContactForm?: boolean
 }
 
-export function Navbar({ menuItems }: NavbarProps) {
+export function Navbar({ menuItems, showPublications, showPeople, showContactForm }: NavbarProps) {
+
+    const [isSmallScreen, setIsSmallScreen] = useState(
+      // window.innerWidth < 768
+      false
+      );
+    useEffect(() => {
+
+        // Monitor window size
+        const handleResize = () => {
+            setIsSmallScreen(window.innerWidth < 768);
+            // Close menu when entering medium viewport
+            window.innerWidth >= 768 && setIsMenuOpen(false);
+        };
+        handleResize(); // Check initial screen size
+        window.addEventListener('resize', handleResize); // Listen for resize events
+
+        return () => {
+            // Clean up event listeners
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const handleMenuClick = () => {
+        setIsMenuOpen(!isMenuOpen);
+    };
+
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-x-5 bg-white/80 px-4 py-4 backdrop-blur md:px-16 md:py-5 lg:px-32">
-      {menuItems &&
-        menuItems.map((menuItem, key) => {
-          const href = resolveHref(menuItem?._type, menuItem?.slug)
-          if (!href) {
-            return null
-          }
-          return (
-            <Link
-              key={key}
-              className={`text-lg hover:text-black md:text-xl ${
-                menuItem?._type === 'home'
-                  ? 'font-extrabold text-black'
-                  : 'text-gray-600'
-              }`}
-              href={href}
-            >
-              {menuItem.title}
-            </Link>
-          )
-        })}
-    </div>
+    isSmallScreen 
+      ? <MobileNavBar 
+          handleMenuClick={handleMenuClick} isMenuOpen={isMenuOpen} 
+          menuItems={menuItems} showPublications={showPublications} showPeople={showPeople} showContactForm={showContactForm} 
+        />
+      : <DesktopNavBar menuItems={menuItems} showPublications={showPublications} showPeople={showPeople} showContactForm={showContactForm}  />
+    
+    
   )
 }

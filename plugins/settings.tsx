@@ -9,6 +9,10 @@ import { type StructureResolver } from 'sanity/desk'
 import { PREVIEWABLE_DOCUMENT_TYPES } from '../sanity.config'
 import { PreviewPane } from './previewPane/PreviewPane'
 
+
+import { orderableDocumentListDeskItem } from '@sanity/orderable-document-list'
+import {UserIcon} from '@sanity/icons'
+
 export const singletonPlugin = (types: string[]) => {
   return {
     name: 'singletonPlugin',
@@ -41,7 +45,7 @@ export const singletonPlugin = (types: string[]) => {
 export const pageStructure = (
   typeDefArray: DocumentDefinition[]
 ): StructureResolver => {
-  return (S) => {
+  return (S, context) => {
     // Goes through all of the singletons that were provided and translates them into something the
     // Desktool can understand
     const singletonItems = typeDefArray.map((typeDef) => {
@@ -79,10 +83,36 @@ export const pageStructure = (
     const defaultListItems = S.documentTypeListItems().filter(
       (listItem) =>
         !typeDefArray.find((singleton) => singleton.name === listItem.getId())
+        && listItem.getId() !== 'profile' // we include an orderable list for people
     )
+
 
     return S.list()
       .title('Content')
-      .items([...singletonItems, S.divider(), ...defaultListItems])
+      .items([
+        
+        
+
+        // ... all other desk items
+        ...singletonItems, 
+        S.divider(), 
+        ...defaultListItems,
+
+        orderableDocumentListDeskItem({
+          type: 'profile',
+          title: 'People',
+          icon: UserIcon,
+          // Required if using multiple lists of the same 'type'
+          // id: 'orderable-en-user',
+          // See notes on adding a `filter` below
+          // filter: `__i18n_lang == $lang`,
+          // params: {
+          //   lang: 'en_US',
+          // },
+          // pass from the structure callback params above
+          S,
+          context,
+        }),
+      ])
   }
 }

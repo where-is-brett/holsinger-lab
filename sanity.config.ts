@@ -17,6 +17,9 @@ import milestone from 'schemas/objects/milestone'
 import timeline from 'schemas/objects/timeline'
 import home from 'schemas/singletons/home'
 import settings from 'schemas/singletons/settings'
+import publication from 'schemas/documents/publication'
+import profile from 'schemas/documents/profile'
+import { orderRankField, orderRankOrdering } from '@sanity/orderable-document-list'
 
 const title =
   process.env.NEXT_PUBLIC_SANITY_PROJECT_TITLE ||
@@ -33,8 +36,9 @@ export default defineConfig({
   projectId: projectId || '',
   dataset: dataset || '',
   title,
+
   schema: {
-    // If you want more content types, you can add them to this array
+    // add content to this array
     types: [
       // Singletons
       home,
@@ -46,14 +50,18 @@ export default defineConfig({
       // Objects
       milestone,
       timeline,
+      publication,
+      profile,
     ],
   },
   plugins: [
     deskTool({
       structure: pageStructure([home, settings]),
+      
       // `defaultDocumentNode` is responsible for adding a “Preview” tab to the document pane
       defaultDocumentNode: previewDocumentNode({ apiVersion, previewSecretId }),
     }),
+
     // Configures the global "new document" button, and document actions, to suit the Settings document singleton
     singletonPlugin([home.name, settings.name]),
     // Add the "Open preview" action

@@ -34,7 +34,7 @@ export const pagesBySlugQuery = groq`
 export const projectBySlugQuery = groq`
   *[_type == "project" && slug.current == $slug][0] {
     _id,
-    client,
+    category,
     coverImage,
     description,
     duration,
@@ -57,6 +57,9 @@ export const pagePaths = groq`
 export const settingsQuery = groq`
   *[_type == "settings"][0]{
     footer,
+    showPublications,
+    showPeople,
+    showContactForm,
     menuItems[]->{
       _type,
       "slug": slug.current,
@@ -65,3 +68,22 @@ export const settingsQuery = groq`
     ogImage,
   }
 `
+
+export const publicationsQuery = groq`
+  *[_type == "publication"] | order(date desc) {
+  ...
+}`
+
+export const profileQuery = groq`
+  *[_type == "profile"] | order(orderRank) {
+    _id,
+    image,
+    orderRank,
+    "imageUrl": image.asset->url,
+    name,
+    role,
+    email,
+    phone,
+    bio
+  }
+`;

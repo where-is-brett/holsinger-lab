@@ -45,7 +45,7 @@ export interface PagePayload {
 }
 
 export interface ProjectPayload {
-  client?: string
+  category?: string
   coverImage?: Image
   description?: PortableTextBlock[]
   duration?: {
@@ -62,5 +62,32 @@ export interface ProjectPayload {
 export interface SettingsPayload {
   footer?: PortableTextBlock[]
   menuItems?: MenuItem[]
+  showPublications?: boolean
+  showPeople?: boolean
+  showContactForm?:boolean
   ogImage?: Image
+}
+
+export interface PublicationPayload {
+  _id: string
+  title: string
+  author: string
+  journal: string
+  volume: string
+  issue: string
+  pages: string
+  abstract?: string
+  url?: string
+  date: string
+}
+
+export interface ProfilePayload {
+    _id: string
+    orderRank: string
+    image: Image
+    name: string
+    role: string
+    email?: string
+    phone?: string
+    bio?: string
 }

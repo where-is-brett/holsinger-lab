@@ -16,6 +16,17 @@ export function CustomPortableText({
       normal: ({ children }) => {
         return <p className={paragraphClasses}>{children}</p>
       },
+      // Adding block quote
+      blockquote: ({ children }) => {
+        return (
+          <blockquote className={`${paragraphClasses} italic font-bold font-sans text-left text-gray-600 text-2xl p-6 my-4 quotes`}>
+            <span className="text-4xl pr-2">“</span>
+            {children}
+            <span className="text-4xl pl-2">”</span>
+          </blockquote>
+        );
+      },
+      
     },
     marks: {
       link: ({ children, value }) => {

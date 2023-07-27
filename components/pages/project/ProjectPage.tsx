@@ -25,7 +25,7 @@ export function ProjectPage({
 }: ProjectPageProps) {
   // Default to an empty object to allow previews on non-existent documents
   const {
-    client,
+    category,
     coverImage,
     description,
     duration,
@@ -65,11 +65,11 @@ export function ProjectPage({
                   </div>
                 )}
 
-                {/* Client */}
-                {client && (
+                {/* Category */}
+                {category && (
                   <div className="p-3 lg:p-4">
-                    <div className="text-xs md:text-sm">Client</div>
-                    <div className="text-md md:text-lg">{client}</div>
+                    <div className="text-xs md:text-sm">Category</div>
+                    <div className="text-md md:text-lg">{category}</div>
                   </div>
                 )}
 
