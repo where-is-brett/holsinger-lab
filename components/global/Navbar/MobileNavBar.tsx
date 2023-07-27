@@ -13,10 +13,10 @@ const MobileNavBar = ({
             {/* Dimming overlay */}
             <Transition
                 show={isMenuOpen}
-                enter="transition-opacity duration-400 ease-in-out"
+                enter="transition-opacity duration-500 ease-in-out"
                 enterFrom="opacity-0"
                 enterTo="opacity-100"
-                leave="transition-opacity duration-200 ease-in-out"
+                leave="transition-opacity duration-500 ease-in-out"
                 leaveFrom="opacity-100"
                 leaveTo="opacity-0"
                 className="z-30"
@@ -35,10 +35,10 @@ const MobileNavBar = ({
                 </div>
                 <Transition
                     show={isMenuOpen}
-                    enter="transition duration-400"
+                    enter="transition duration-500"
                     enterFrom="transform translate-x-[250%]"
                     enterTo="transform translate-x-[150%]"
-                    leave="transition duration-200"
+                    leave="transition duration-500"
                     leaveFrom="transform translate-x-[150%]"
                     leaveTo="transform translate-x-[250%]"
                     className={'fixed w-[40vw] h-[100lvh] bg-white text-right pt-7 pr-4 top-0 bottom-0 flex flex-col z-50'}
@@ -62,16 +62,13 @@ const MobileNavBar = ({
                         })
                     }
                     {showPublications &&
-                    <div onClick={handleMenuClick}>
                         <Link
-                            
+                            onClick={handleMenuClick}
                             className="text-primary h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
                             href={'/publications'}
                         >
                             Publications
                         </Link>
-                    </div>
-                        
                     }
                     {showPeople &&
                         <Link
