@@ -2,7 +2,7 @@ import { settingsQuery } from 'lib/sanity.queries'
 import { useLiveQuery } from 'next-sanity/preview'
 import type { SettingsPayload } from 'types'
 
-import { Navbar } from './Navbar'
+import { Navbar } from './Navbar/Navbar'
 
 export default function PreviewNavbar({
   settings: initialSettings,

@@ -1,5 +1,5 @@
 import { Transition } from "@headlessui/react"
-import { MenuIcon } from '@sanity/icons'
+import MenuIcon from '@mui/icons-material/Menu';
 import { resolveHref } from "lib/sanity.links"
 import Link from "next/link"
 
@@ -29,10 +29,7 @@ const MobileNavBar = ({
 
             <div className="mb-6" >
                 <div className="z-20 fixed top-0 bottom-auto left-0 right-0 h-16 bg-white border-b">
-                    <button type="button" onClick={handleMenuClick} className="bg-transparent border-0 p-0 absolute left-4 top-1 bottom-1">
-                        {/* <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                        </svg> */}
+                    <button type="button" aria-label="button" onClick={handleMenuClick} className="bg-transparent border-0 p-0 absolute left-4 top-1 bottom-1">
                         <MenuIcon />
                     </button>
                 </div>
