@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { MenuItem } from 'types'
 import DesktopNavBar from './DesktopNavBar'
 import MobileNavBar from './MobileNavBar'
@@ -13,10 +13,7 @@ interface NavbarProps {
 
 export function Navbar({ menuItems, showPublications, showPeople, showContactForm }: NavbarProps) {
 
-    const [isSmallScreen, setIsSmallScreen] = useState(
-      // window.innerWidth < 768
-      false
-      );
+    const [isSmallScreen, setIsSmallScreen] = useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
     useEffect(() => {
 
         // Monitor window size
