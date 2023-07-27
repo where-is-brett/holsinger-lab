@@ -39,5 +39,6 @@ export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
       homePageTitle: homePageTitle ?? undefined,
       settings: settings ?? {},
     },
+    revalidate: 300,
   };
 };

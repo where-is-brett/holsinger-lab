@@ -71,6 +71,7 @@ export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
       token: draftMode ? readToken : null,
       publications: publications,
     },
+    revalidate: 300,
   }
 }
 
