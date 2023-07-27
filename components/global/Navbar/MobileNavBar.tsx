@@ -19,10 +19,10 @@ const MobileNavBar = ({
                 leave="transition-opacity duration-500 ease-in-out"
                 leaveFrom="opacity-100"
                 leaveTo="opacity-0"
-                className=" z-30"
+                className="z-30"
             >
                 <div
-                    className="fixed inset-0 bg-black/50"
+                    className="fixed inset-0 bg-black/50 h-[100lvh]"
                     onClick={handleMenuClick}
                 ></div>
             </Transition>
@@ -52,7 +52,7 @@ const MobileNavBar = ({
                             return (
                                 <Link
                                     key={key}
-                                    className={`text-primary h-[3rem] leading-[3rem] text-2xl hover:text-gray-600`}
+                                    className={`text-primary h-[3rem] leading-[3rem] text-xl hover:text-gray-600`}
                                     href={href}
                                 >
                                     {href === '/' ? 'Home' : menuItem.title }
@@ -62,7 +62,7 @@ const MobileNavBar = ({
                     }
                     {showPublications &&
                         <Link
-                            className="text-primary h-[3rem] leading-[3rem] text-2xl hover:text-gray-600"
+                            className="text-primary h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
                             href={'/publications'}
                         >
                             Publications
@@ -70,7 +70,7 @@ const MobileNavBar = ({
                     }
                     {showPeople &&
                         <Link
-                            className="text-primary h-[3rem] leading-[3rem] text-2xl hover:text-gray-600"
+                            className="text-primary h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
                             href={'/people'}
                         >
                             People
@@ -78,7 +78,7 @@ const MobileNavBar = ({
                     }
                     {showContactForm &&
                         <Link
-                            className="text-primary h-[3rem] leading-[3rem] text-2xl hover:text-gray-600"
+                            className="text-primary h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
                             href={'/contact'}
                         >
                             Contact
