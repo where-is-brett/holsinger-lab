@@ -2,11 +2,20 @@ import { Transition } from "@headlessui/react"
 import MenuIcon from '@mui/icons-material/Menu';
 import { resolveHref } from "lib/sanity.links"
 import Link from "next/link"
+import router from "next/router";
 
 const MobileNavBar = ({
     handleMenuClick, isMenuOpen,
     menuItems, showPublications, showPeople, showContactForm
 }) => {
+
+    const handleClick = (e, href) => {
+        e.preventDefault();
+        handleMenuClick();
+        setTimeout(() => {
+            router.push(href);
+        }, 500);
+    }
 
     return (
         <>
@@ -52,7 +61,7 @@ const MobileNavBar = ({
                             return (
                                 <Link
                                     key={key}
-                                    onClick={handleMenuClick}
+                                    onClick={(e) => { handleClick(e, href) }}
                                     className={`text-primary h-[3rem] leading-[3rem] text-xl hover:text-gray-600`}
                                     href={href}
                                 >
@@ -63,7 +72,7 @@ const MobileNavBar = ({
                     }
                     {showPublications &&
                         <Link
-                            onClick={handleMenuClick}
+                            onClick={(e) => { handleClick(e, '/publications') }}
                             className="text-primary h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
                             href={'/publications'}
                         >
@@ -72,7 +81,7 @@ const MobileNavBar = ({
                     }
                     {showPeople &&
                         <Link
-                            onClick={handleMenuClick}
+                            onClick={(e) => { handleClick(e, '/people') }}
                             className="text-primary h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
                             href={'/people'}
                         >
@@ -81,7 +90,7 @@ const MobileNavBar = ({
                     }
                     {showContactForm &&
                         <Link
-                            onClick={handleMenuClick}
+                            onClick={(e) => { handleClick(e, '/contact') }}
                             className="text-primary h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
                             href={'/contact'}
                         >
