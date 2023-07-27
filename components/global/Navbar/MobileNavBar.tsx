@@ -46,7 +46,7 @@ const MobileNavBar = ({
                     {menuItems &&
                         menuItems.map((menuItem, key) => {
                             const href = resolveHref(menuItem?._type, menuItem?.slug)
-                            if (!href || href === '/') {
+                            if (!href) {
                                 return null
                             }
                             return (
@@ -55,7 +55,7 @@ const MobileNavBar = ({
                                     className={`text-primary h-[3rem] leading-[3rem] text-2xl hover:text-gray-600`}
                                     href={href}
                                 >
-                                    {menuItem.title}
+                                    {href === '/' ? 'Home' : menuItem.title }
                                 </Link>
                             )
                         })
