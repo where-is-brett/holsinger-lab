@@ -107,7 +107,7 @@ const ContactForm: React.FC = () => {
                     <div className="flex flex-col items-center space-y-6">
                         <h1 className="text-3xl font-semibold">Contact Us</h1>
 
-                        <form onSubmit={handleOnSubmit} className="flex flex-col space-y-4 w-3/4 max-w-xl">
+                        <form onSubmit={handleOnSubmit} className="flex flex-col space-y-4 w-full md:w-3/4 max-w-xl">
                             <p className="text-base md:text-lg font-serif text-gray-600">
                                 We would love to hear from you! Whether you have a question, suggestion, or just want to say hello, feel free to send us a message using the form below.
                             </p>
