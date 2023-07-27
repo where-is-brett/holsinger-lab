@@ -13,7 +13,7 @@ interface NavbarProps {
 
 export function Navbar({ menuItems, showPublications, showPeople, showContactForm }: NavbarProps) {
 
-    const [isSmallScreen, setIsSmallScreen] = useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
+    const [isSmallScreen, setIsSmallScreen] = useState(false);
     useEffect(() => {
 
         // Monitor window size
