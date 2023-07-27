@@ -31,7 +31,7 @@ export const PREVIEWABLE_DOCUMENT_TYPES: string[] = [
 ]
 
 export default defineConfig({
-  basePath: '/admin',
+  basePath: '/studio',
   projectId: projectId || '',
   dataset: dataset || '',
   title,
