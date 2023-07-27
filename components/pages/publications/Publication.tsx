@@ -27,15 +27,15 @@ export default function Publication({ publication }) {
         <div className="max-w-2xl text-sm inline-block">
 
             <div className="space-y-2">
-                <h2 className="text-xl lg:text-2xl">
+                <h2 className="text-lg md:text-xl lg:text-2xl">
                     {url
                         ? <a href={url} target="_blank" className="hover:underline flex items-start justify-start">{title}<LaunchIcon className="shrink-0" /></a>
                         : title
                     }
 
                 </h2>
-                <h3 className="text-base lg:text-lg">{author}</h3>
-                <h4 className="text-base lg:text-lg flex gap-4">
+                <h3 className="md:text-base lg:text-lg">{author}</h3>
+                <h4 className="md:text-base lg:text-lg flex gap-4">
                     <div>{journal}. {`${month} ${year}`}</div>
                     <div>
                         {/* Abstract */}
@@ -43,16 +43,16 @@ export default function Publication({ publication }) {
                             <Toggle
                                 show={showAbstract}
                                 callback={handleShowAbstract}
-                                showMessage='Show Abstract'
-                                hideMessage='Hide Abstract'
+                                showMessage='Abstract'
+                                hideMessage='Abstract'
                             />
                         }
                         {/* Citation */}
                         <Toggle
                             show={showCitation}
                             callback={handleShowCitation}
-                            showMessage='Show Citation'
-                            hideMessage='Hide Citation'
+                            showMessage='Citation'
+                            hideMessage='Citation'
                         />
                     </div>
                 </h4>
@@ -70,7 +70,7 @@ export default function Publication({ publication }) {
             </ToggleContent>
             {/* Citation */}
             <ToggleContent show={showAbstract}>
-                <p className="m-4 lg:text-lg">{abstract}</p>
+                <p className="m-4 md:text-base lg:text-lg">{abstract}</p>
             </ToggleContent>
 
         </div>
