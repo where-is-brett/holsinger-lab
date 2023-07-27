@@ -19,7 +19,6 @@ import home from 'schemas/singletons/home'
 import settings from 'schemas/singletons/settings'
 import publication from 'schemas/documents/publication'
 import profile from 'schemas/documents/profile'
-import { orderRankField, orderRankOrdering } from '@sanity/orderable-document-list'
 
 const title =
   process.env.NEXT_PUBLIC_SANITY_PROJECT_TITLE ||
@@ -32,7 +31,7 @@ export const PREVIEWABLE_DOCUMENT_TYPES: string[] = [
 ]
 
 export default defineConfig({
-  basePath: '/studio',
+  basePath: '/admin',
   projectId: projectId || '',
   dataset: dataset || '',
   title,
