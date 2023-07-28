@@ -1,7 +1,7 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 import axios from 'axios';
 import Image from 'next/image';
-import successSVG from 'public/success.svg'
+import SuccessScreen from './SuccessScreen';
 import ErrorDialog from './ErrorDialog';
 
 interface Status {
@@ -64,20 +64,33 @@ const ContactForm: React.FC = () => {
         });
     };
 
-    const handleOnSubmit = (e: FormEvent<HTMLFormElement>) => {
+    // const handleOnSubmit = (e: FormEvent<HTMLFormElement>) => {
+    //     e.preventDefault();
+    //     setStatus((prevStatus) => ({ ...prevStatus, submitting: true }));
+    //     axios({
+    //         method: 'POST',
+    //         url: `https://formspree.io/f/${endpoint}`,
+    //         data: inputs,
+    //     })
+    //         .then((response) => {
+    //             handleServerResponse(true, 'Thank you for reaching out to us! Your message has been successfully submitted.');
+    //         })
+    //         .catch((error) => {
+    //             handleServerResponse(false, 'Sorry, there was an issue with submitting your message. Please try again later.'); //error.response.data.error
+    //         });
+    // };
+
+    const handleOnSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setStatus((prevStatus) => ({ ...prevStatus, submitting: true }));
-        axios({
-            method: 'POST',
-            url: `https://formspree.io/f/${process.env.FORMSPREE_ENDPOINT}`,
-            data: inputs,
-        })
-            .then((response) => {
-                handleServerResponse(true, 'Thank you for reaching out to us! Your message has been successfully submitted.');
-            })
-            .catch((error) => {
-                handleServerResponse(false, 'Sorry, there was an issue with submitting your message. Please try again later.'); //error.response.data.error
-            });
+
+        try {
+            // Make the POST request to the API route
+            const response = await axios.post('/api/formspree', inputs);
+            handleServerResponse(true, 'Thank you for reaching out to us! Your message has been successfully submitted.');
+        } catch (error) {
+            handleServerResponse(false, 'Sorry, there was an issue with submitting your message. Please try again later.');
+        }
     };
 
     // Reset status on error dialog close
@@ -95,20 +108,13 @@ const ContactForm: React.FC = () => {
             {
                 status.submitted ? (
                     !status.info.error && status.info.msg &&
-                    <div className='flex flex-col items-center text-center space-y-4'>
-                        <Image
-                            src={successSVG}
-                            alt='Submission success - Web illustrations by Storyset'
-                            className='w-1/3 max-w-md'
-                        />
-                        <p>{status.info.msg}</p>
-                    </div>
+                    <SuccessScreen message={status.info.msg} />
                 ) : (
-                    <div className="flex flex-col items-center space-y-6">
-                        <h1 className="text-3xl font-semibold">Contact Us</h1>
+                    <div className="flex flex-col items-center space-y-6 mb-16">
 
+                        <h1 className="text-3xl md:text-5xl font-bold">CONTACT US</h1>
                         <form onSubmit={handleOnSubmit} className="flex flex-col space-y-4 w-full md:w-3/4 max-w-xl">
-                            <p className="text-base md:text-lg font-serif text-gray-600">
+                            <p className="text-base md:text-lg font-ariana text-gray-600">
                                 We would love to hear from you! Whether you have a question, suggestion, or just want to say hello, feel free to send us a message using the form below.
                             </p>
                             <div className="flex flex-col space-y-1">
@@ -125,7 +131,6 @@ const ContactForm: React.FC = () => {
                                     className="border border-gray-300 px-4 py-2 w-full"
                                 />
                             </div>
-
                             <div className="flex flex-col space-y-1">
                                 <label htmlFor="email" className="text-lg font-medium">
                                     Email
@@ -140,7 +145,6 @@ const ContactForm: React.FC = () => {
                                     className="border border-gray-300 px-4 py-2 w-full"
                                 />
                             </div>
-
                             <div className="flex flex-col space-y-1">
                                 <label htmlFor="message" className="text-lg font-medium">
                                     Message
@@ -155,7 +159,6 @@ const ContactForm: React.FC = () => {
                                     rows={4}
                                 />
                             </div>
-
                             <button
                                 type="submit"
                                 disabled={status.submitting}
@@ -166,10 +169,10 @@ const ContactForm: React.FC = () => {
                         </form>
 
                         {/* Show the dialog if showDialog is true */}
-                        <ErrorDialog 
-                            handleDialogClose={handleDialogClose} 
-                            showDialog={status.info.error} 
-                            message={status.info.msg || ''} 
+                        <ErrorDialog
+                            handleDialogClose={handleDialogClose}
+                            showDialog={status.info.error}
+                            message={status.info.msg || ''}
                         />
 
                     </div>
