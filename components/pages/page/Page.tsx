@@ -38,7 +38,7 @@ export function Page({
             {/* Body */}
             {body && (
               <CustomPortableText
-                paragraphClasses="font-serif max-w-4xl text-gray-900 text-lg md:text-xl"
+                paragraphClasses="font-ariana max-w-4xl text-gray-900 text-base md:text-lg"
                 value={body}
               />
             )}

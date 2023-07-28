@@ -14,19 +14,65 @@ export function CustomPortableText({
   const components: PortableTextComponents = {
     block: {
       normal: ({ children }) => {
-        return <p className={paragraphClasses}>{children}</p>
+        return (
+          <>
+            <p className={paragraphClasses}>{children}</p>
+            <br />
+          </>
+        )
       },
       // Adding block quote
       blockquote: ({ children }) => {
         return (
-          <blockquote className={`${paragraphClasses} italic font-bold font-sans text-left text-gray-600 text-2xl p-6 my-4 quotes`}>
+          <blockquote className={`text-2xl font-serif text-left text-gray-600 p-6 quotes`}>
             <span className="text-4xl pr-2">“</span>
             {children}
             <span className="text-4xl pl-2">”</span>
           </blockquote>
         );
       },
-      
+      h1: ({ children }) => {
+        return (
+          <div className={`${paragraphClasses}`}>
+            <h1 className="text-4xl md:text-5xl">{children}</h1>
+          </div>
+        )
+      },
+      h2: ({ children }) => {
+        return (
+          <div className={`${paragraphClasses}`}>
+            <h2 className="text-3xl md:text-4xl">{children}</h2>
+          </div>
+        )
+      },
+      h3: ({ children }) => {
+        return (
+          <div className={`${paragraphClasses}`}>
+            <h3 className="text-2xl md:text-3xl">{children}</h3>
+          </div>
+        )
+      },
+      h4: ({ children }) => {
+        return (
+          <div className={`${paragraphClasses}`}>
+            <h4 className="text-xl md:text-2xl">{children}</h4>
+          </div>
+        )
+      },
+      h5: ({ children }) => {
+        return (
+          <div className={`${paragraphClasses}`}>
+            <h5 className="text-lg md:text-xl">{children}</h5>
+          </div>
+        )
+      },
+      h6: ({ children }) => {
+        return (
+          <div className={`${paragraphClasses}`}>
+            <h6 className="text-base md:text-lg">{children}</h6>
+          </div>
+        )
+      },
     },
     marks: {
       link: ({ children, value }) => {
@@ -40,6 +86,14 @@ export function CustomPortableText({
           </a>
         )
       },
+    },
+    list: {
+      bullet: ({children}) => {
+        return <span className={`${paragraphClasses} list-disc`}>{children}</span>
+      },
+      number: ({children}) => {
+        return <span className={`${paragraphClasses} list-decimal`}>{children}</span>
+      }
     },
     types: {
       image: ({
@@ -55,7 +109,7 @@ export function CustomPortableText({
               classesWrapper="relative aspect-[16/9]"
             />
             {value?.caption && (
-              <div className="font-sans text-sm text-gray-600">
+              <div className="font-antarctican text-sm text-gray-600">
                 {value.caption}
               </div>
             )}

@@ -27,16 +27,16 @@ export default function Publication({ publication }) {
         <div className="max-w-2xl text-sm inline-block">
 
             <div className="space-y-2">
-                <h2 className="text-lg md:text-xl lg:text-2xl">
+                <h2 className="font-ariana text-lg md:text-xl lg:text-2xl">
                     {url
                         ? <a href={url} target="_blank" className="hover:underline flex items-start justify-start">{title}<LaunchIcon className="shrink-0" /></a>
                         : title
                     }
 
                 </h2>
-                <h3 className="md:text-base lg:text-lg">{author}</h3>
-                <h4 className="md:text-base lg:text-lg flex gap-4">
-                    <div>{journal}. {`${month} ${year}`}</div>
+                <h3 className="font-ariana font-light md:text-base lg:text-lg">{author}</h3>
+                <h4 className="font-ariana  md:text-base lg:text-lg flex gap-4">
+                    <div className="">{journal}. {`${month} ${year}`}</div>
                     <div>
                         {/* Abstract */}
                         {abstract &&

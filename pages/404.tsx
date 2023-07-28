@@ -5,7 +5,9 @@ import { homePageTitleQuery, settingsQuery } from 'lib/sanity.queries';
 import { GetStaticProps } from 'next';
 import { SettingsPayload } from 'types';
 import { SiteMeta } from 'components/global/SiteMeta';
-import NotFound from 'components/pages/404/404';
+import Image from 'next/image';
+import notFoundSVG from 'public/404.svg'
+import Link from 'next/link';
 
 
 export default function NotFoundPage({ settings, homePageTitle }) {
@@ -18,9 +20,15 @@ export default function NotFoundPage({ settings, homePageTitle }) {
                 title={'Page Not Found'}
             />
             <Layout settings={settings}>
-                
-                    <NotFound />
-
+                <div className="w-80 md:w-[40vw] max-w-md mx-auto space-y-6 mb-16">
+                    <Image
+                        src={notFoundSVG}
+                        alt={'Page Not Found - Web illustrations by Storyset'}
+                        className=''
+                    />
+                    <p>We couldn't find the page you were looking for. Perhaps the <Link href={'/'} className='text-black hover:text-gray-600 underline'>home page</Link>?</p>
+                </div>
+                <div className="absolute left-0 w-screen border-t" />
             </Layout>
         </>
     );

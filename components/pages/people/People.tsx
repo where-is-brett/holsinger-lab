@@ -17,15 +17,15 @@ export default function People({ homePageTitle, settings, profiles }) {
             />
 
             <Layout settings={settings}>
-                <h1 className="text-3xl md:text-5xl pb-6 px-4 md:px-0 font-black">People</h1>
-                <div className="grid gap-6 px-4 md:px-0 grid-cols-1 md:grid-cols-3">
+                <h1 className="text-3xl md:text-5xl mb-6 px-4 md:px-0 font-black">People</h1>
+                <div className="grid gap-6 px-4 md:px-0 grid-cols-1 md:grid-cols-3 mb-16">
                     {profiles.map((profile: ProfilePayload) =>
                         <div key={profile._id}>
                             <Profile profile={profile} />
                         </div>
                     )}
                 </div>
-
+                <div className="absolute left-0 w-screen border-t" />
             </Layout>
         </>
     )

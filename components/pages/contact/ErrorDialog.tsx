@@ -32,7 +32,7 @@ const ErrorDialog = ({ handleDialogClose, showDialog, message }) => {
                         leaveFrom="opacity-100 scale-100"
                         leaveTo="opacity-0 scale-95"
                     >
-                        <div className="bg-white max-w-md mx-auto text-center p-4 space-y-5">
+                        <div className="bg-background max-w-md mx-auto text-center p-4 space-y-5">
                             <Dialog.Title
                                 as="h3"
                                 className="text-lg font-semibold mb-2"

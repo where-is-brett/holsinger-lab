@@ -14,7 +14,19 @@ module.exports = {
       mono: 'var(--font-mono)',
       sans: 'var(--font-sans)',
       serif: 'var(--font-serif)',
+      antarctican: 'var(--font-antarctican-mono)',
+      ariana: 'var(--font-ariana-pro)'
+    },
+    extend: {
+      colors: {
+        'primary': '#2D6A4F',
+        'secondary': '#FFC857',
+        'background': '#F8F8F8',
+        'dark': '#333333',
+        'light': '#FFC857',
+      }
     }
+
   },
   plugins: [require('@tailwindcss/typography')],
 }

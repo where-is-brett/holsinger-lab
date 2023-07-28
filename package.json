@@ -23,6 +23,7 @@
     "@mui/material": "^5.14.2",
     "@portabletext/react": "3.0.4",
     "@sanity/client": "6.1.7",
+    "@sanity/color-input": "^3.1.0",
     "@sanity/demo": "1.0.2",
     "@sanity/image-url": "^1.0.2",
     "@sanity/orderable-document-list": "^1.1.0",

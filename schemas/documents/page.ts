@@ -22,8 +22,8 @@ export default defineType({
       },
       validation: (Rule) => Rule.required().custom((slug) => {
         if (typeof slug === "undefined") return true
-        
-        if (slug.current!=='publications' && slug.current!=='people') {
+
+        if (slug.current !== 'publications' && slug.current !== 'people') {
           return true
         } else {
           return `Slug '${slug.current}' is not available` // Error message goes here
@@ -71,6 +71,7 @@ export default defineType({
           type: 'block',
           marks: {
             annotations: [
+              
               {
                 name: 'link',
                 type: 'object',
@@ -83,17 +84,36 @@ export default defineType({
                   },
                 ],
               },
+              {
+                name: 'internalLink',
+                type: 'object',
+                title: 'Internal link',
+                icon: DocumentIcon,
+                fields: [
+                  {
+                    name: 'reference',
+                    type: 'reference',
+                    to: [
+                      { type: 'page' }
+                    ]
+                  }
+                ]
+              }
             ],
           },
           styles: [
-            {title: 'Normal', value: 'normal'},
-            {title: 'H1', value: 'h1'},
-            {title: 'H2', value: 'h2'},
-            {title: 'H3', value: 'h3'},
-            {title: 'H4', value: 'h4'},
-            {title: 'H5', value: 'h5'},
-            {title: 'H6', value: 'h6'},
-            {title: 'Quote', value: 'blockquote'}
+            { title: 'Normal', value: 'normal' },
+            { title: 'H1', value: 'h1' },
+            { title: 'H2', value: 'h2' },
+            { title: 'H3', value: 'h3' },
+            { title: 'H4', value: 'h4' },
+            { title: 'H5', value: 'h5' },
+            { title: 'H6', value: 'h6' },
+            { title: 'Quote', value: 'blockquote' }
+          ],
+          lists: [
+            { title: 'Bullet', value: 'bullet' },
+            { title: 'Numbered', value: 'number' }
           ],
         }),
         // Custom blocks

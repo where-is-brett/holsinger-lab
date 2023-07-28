@@ -11,6 +11,7 @@ interface NavbarProps {
   showContactForm?: boolean
 }
 
+
 export function Navbar({ menuItems, showPublications, showPeople, showContactForm }: NavbarProps) {
 
     const [isSmallScreen, setIsSmallScreen] = useState(false);
@@ -42,7 +43,9 @@ export function Navbar({ menuItems, showPublications, showPeople, showContactFor
           handleMenuClick={handleMenuClick} isMenuOpen={isMenuOpen} 
           menuItems={menuItems} showPublications={showPublications} showPeople={showPeople} showContactForm={showContactForm} 
         />
-      : <DesktopNavBar menuItems={menuItems} showPublications={showPublications} showPeople={showPeople} showContactForm={showContactForm}  />
+      : <DesktopNavBar 
+          menuItems={menuItems} showPublications={showPublications} showPeople={showPeople} showContactForm={showContactForm}
+        />
     
     
   )

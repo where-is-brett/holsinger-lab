@@ -24,7 +24,7 @@ export function HomePage({ page, settings, preview, loading }: HomePageProps) {
       <HomePageHead page={page} settings={settings} />
 
       <Layout settings={settings} preview={preview} loading={loading}>
-        <div className="space-y-20">
+        <div className="space-y-20 mb-16">
           {/* Header */}
           {title && <Header centered title={title} description={overview} />}
           {/* Showcase projects */}
@@ -47,6 +47,7 @@ export function HomePage({ page, settings, preview, loading }: HomePageProps) {
           {/* Workaround: scroll to top on route change */}
           <ScrollUp />
         </div>
+        <div className="absolute left-0 w-screen border-t" />
       </Layout>
     </>
   )

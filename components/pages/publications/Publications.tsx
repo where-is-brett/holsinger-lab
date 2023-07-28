@@ -9,10 +9,10 @@ const Publications = ({ publications }) => {
     <div className='w-full'>
       <h1 className="mb-6 text-3xl md:text-5xl font-black">Publications</h1>
       
-      <ul className="ml-0 mt-0 list-none space-y-5">
+      <ul className="ml-0 mt-0 list-none space-y-5 mb-14">
         {publications.map((publication: PublicationPayload, index: number) => {
 
-          return (
+          return (     
             <div key={publication._id}>
               {index === 0 || publications[index - 1].date.slice(0,4) !== publication.date.slice(0,4) ? (
                 <li className="text-3xl lg:text-4xl font-bold my-5">{publication.date.slice(0,4)}</li>
@@ -20,10 +20,13 @@ const Publications = ({ publications }) => {
               <li>
                 <Publication publication={publication} />
               </li>
+              
             </div>
+            
           );
         })}
       </ul>
+      <div className="absolute left-0 w-screen border-t" />
     </div>
   );
 };

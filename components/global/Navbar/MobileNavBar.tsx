@@ -9,7 +9,7 @@ const MobileNavBar = ({
     menuItems, showPublications, showPeople, showContactForm
 }) => {
 
-    const handleClick = (e, href) => {
+    const handleLinkClick = (e, href) => {
         e.preventDefault();
         handleMenuClick();
         setTimeout(() => {
@@ -36,8 +36,8 @@ const MobileNavBar = ({
                 ></div>
             </Transition>
 
-            <div className="mb-6" >
-                <div className="z-20 fixed top-0 bottom-auto left-0 right-0 h-16 bg-white border-b">
+            <div className={`mb-6 uppercase`}>
+                <div className="z-20 fixed top-0 bottom-auto left-0 right-0 h-16 bg-background border-y border-black">
                     <button type="button" aria-label="button" onClick={handleMenuClick} className="bg-transparent border-0 p-0 absolute left-4 top-1 bottom-1">
                         <MenuIcon />
                     </button>
@@ -50,7 +50,7 @@ const MobileNavBar = ({
                     leave="transition duration-500"
                     leaveFrom="transform translate-x-[150%]"
                     leaveTo="transform translate-x-[250%]"
-                    className={'fixed w-[40vw] h-[100lvh] bg-white text-right pt-7 pr-4 top-0 bottom-0 flex flex-col z-50'}
+                    className={'fixed w-[40vw] h-[100lvh] bg-background text-right pt-16 pr-4 top-0 bottom-0 flex flex-col z-50'}
                 >
                     {menuItems &&
                         menuItems.map((menuItem, key) => {
@@ -61,8 +61,8 @@ const MobileNavBar = ({
                             return (
                                 <Link
                                     key={key}
-                                    onClick={(e) => { handleClick(e, href) }}
-                                    className={`text-primary h-[3rem] leading-[3rem] text-xl hover:text-gray-600`}
+                                    onClick={(e) => { handleLinkClick(e, href) }}
+                                    className={`text-gray-900 h-[3rem] leading-[3rem] text-xl hover:text-gray-600`}
                                     href={href}
                                 >
                                     {href === '/' ? 'Home' : menuItem.title}
@@ -72,8 +72,8 @@ const MobileNavBar = ({
                     }
                     {showPublications &&
                         <Link
-                            onClick={(e) => { handleClick(e, '/publications') }}
-                            className="text-primary h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
+                            onClick={(e) => { handleLinkClick(e, '/publications') }}
+                            className="text-gray-900 h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
                             href={'/publications'}
                         >
                             Publications
@@ -81,8 +81,8 @@ const MobileNavBar = ({
                     }
                     {showPeople &&
                         <Link
-                            onClick={(e) => { handleClick(e, '/people') }}
-                            className="text-primary h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
+                            onClick={(e) => { handleLinkClick(e, '/people') }}
+                            className="text-gray-900 h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
                             href={'/people'}
                         >
                             People
@@ -90,8 +90,8 @@ const MobileNavBar = ({
                     }
                     {showContactForm &&
                         <Link
-                            onClick={(e) => { handleClick(e, '/contact') }}
-                            className="text-primary h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
+                            onClick={(e) => { handleLinkClick(e, '/contact') }}
+                            className="text-gray-900 h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
                             href={'/contact'}
                         >
                             Contact

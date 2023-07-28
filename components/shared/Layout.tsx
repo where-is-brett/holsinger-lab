@@ -26,7 +26,7 @@ export default function Layout({
   loading,
 }: LayoutProps) {
   return (
-    <div className={`flex min-h-screen flex-col bg-white text-black`}>
+    <div className={`flex min-h-screen flex-col bg-background text-black`}>
       {preview && <PreviewBanner loading={loading} />}
       {preview ? (
         <PreviewNavbar settings={settings} />
