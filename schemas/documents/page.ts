@@ -71,7 +71,7 @@ export default defineType({
           type: 'block',
           marks: {
             annotations: [
-              
+
               {
                 name: 'link',
                 type: 'object',
@@ -147,6 +147,7 @@ export default defineType({
               title: 'Alt text',
               description:
                 'Alternative text for screenreaders. Falls back on caption if not set',
+              validation: Rule => Rule.required()
             }),
           ],
         }),
