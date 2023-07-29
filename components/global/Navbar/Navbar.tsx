@@ -12,7 +12,12 @@ interface NavbarProps {
 }
 
 
-export function Navbar({ menuItems, showPublications, showPeople, showContactForm }: NavbarProps) {
+export function Navbar({ 
+  menuItems, 
+  showPublications=true, 
+  showPeople=true, 
+  showContactForm=true 
+}: NavbarProps) {
 
     const [isSmallScreen, setIsSmallScreen] = useState(false);
     useEffect(() => {
