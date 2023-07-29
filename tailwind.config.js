@@ -24,7 +24,14 @@ module.exports = {
         'background': '#F8F8F8',
         'dark': '#333333',
         'light': '#FFC857',
-      }
+      },
+      screens: {
+        'tall': { 'raw': '(min-height: 800px)' },
+      },
+      borderColor: {
+        // Set your desired default border color here
+        DEFAULT: '#2D6A4F',
+      },
     }
 
   },
