@@ -95,7 +95,7 @@ const ContactForm: React.FC = () => {
                     <SuccessScreen message={status.info.msg} />
                 ) : (
                     <div className="flex flex-col items-center space-y-6 mb-16">
-                        <h1 className="text-3xl md:text-5xl font-bold">CONTACT US</h1>
+                        <h1 className="text-3xl md:text-5xl font-[500]">CONTACT US</h1>
                         <form onSubmit={handleOnSubmit} className="flex flex-col space-y-4 w-full md:w-3/4 max-w-xl">
                             <p className="text-base md:text-lg font-ariana text-gray-600">
                                 We would love to hear from you! Whether you have a question, suggestion, or just want to say hello, feel free to send us a message using the form below.
