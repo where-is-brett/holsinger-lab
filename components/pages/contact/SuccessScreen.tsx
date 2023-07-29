@@ -3,11 +3,11 @@ import successSVG from 'public/success.svg'
 
 const SuccessScreen = ({ message }) => {
     return (
-        <div className='flex flex-col items-center text-center space-y-4 mb-16 top-0 bottom-0'>
+        <div className={`flex flex-col items-center justify-center text-center space-y-8 mb-16`}>
             <Image
                 src={successSVG}
                 alt='Submission success - Web illustrations by Storyset'
-                className='w-1/3 max-w-md'
+                className='h-fit max-h-96'
             />
             <br />
             <p>{message}</p>
