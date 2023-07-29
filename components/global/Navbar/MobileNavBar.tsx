@@ -1,10 +1,12 @@
 import { Transition } from "@headlessui/react"
 import { resolveHref } from "lib/sanity.links"
-import { Url } from "next/dist/shared/lib/router/router";
+import { Url } from "next/dist/shared/lib/router/router"
 import Link from "next/link"
-import router from "next/router";
+import router from "next/router"
+import logo from "public/logo.svg"
+import Image from "next/image"
 
-const hamburgerLine = `h-[2px] w-6 my-[6px] bg-primary transition ease transform duration-500`;
+const hamburgerLine = `h-[2px] w-6 my-[6px] bg-black transition ease transform duration-500`;
 
 const MobileNavBar = ({
     handleMenuClick, isMenuOpen,
@@ -21,11 +23,17 @@ const MobileNavBar = ({
 
     return (
         <>
-            <div className={`mb-6 uppercase`}>
+            <div className={`uppercase`}>
                 <div className="z-50 fixed top-0 bottom-auto left-0 right-0 h-16 bg-background border-y border-primary">
+
+                    <Link href="/">
+                        <Image src={logo} width={90} alt="logo" className="absolute left-6 h-16" />
+                    </Link>
+                    
+
                     <button
                         type="button" aria-label="button"
-                        className="bg-transparent border-0 absolute right-6 top-4 bottom-4"
+                        className="bg-transparent border-0 absolute right-6 py-4"
                         onClick={handleMenuClick}
                     >
                         <div
