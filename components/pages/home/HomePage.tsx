@@ -8,6 +8,7 @@ import type { HomePagePayload } from 'types'
 import { SettingsPayload } from 'types'
 
 import HomePageHead from './HomePageHead'
+import { CustomPortableText } from 'components/shared/CustomPortableText'
 
 export interface HomePageProps {
   settings: SettingsPayload
@@ -24,11 +25,16 @@ export function HomePage({ page, settings, preview, loading }: HomePageProps) {
       <HomePageHead page={page} settings={settings} />
 
       <Layout settings={settings} preview={preview} loading={loading} childrenStyles={`px-0`}>
-        <div className="space-y-20 mb-16">
+        <div className="space-y-8 mb-16">
+
           {/* Header */}
-          {title && <Header centered title={title} description={overview} />}
-          
+          {title &&
+            <Header centered title={title} description={overview} />
+          }
+
           {/* Showcase projects */}
+          <h1 className='font-[600] text-center md:text-left text-xl md:text-2xl'>Our Research Projects</h1>
+
           {showcaseProjects && showcaseProjects.length > 0 && (
             <div className="mx-auto max-w-[100rem] border-y md:border">
               {showcaseProjects.map((project, key) => {
