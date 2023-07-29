@@ -16,15 +16,14 @@ export function CustomPortableText({
       normal: ({ children }) => {
         return (
           <>
-            <p className={paragraphClasses}>{children}</p>
-            <br />
+            <p className={`${paragraphClasses} my-[1em]`}>{children}</p>
           </>
         )
       },
       // Adding block quote
       blockquote: ({ children }) => {
         return (
-          <blockquote className={`text-2xl font-serif text-left text-gray-600 p-6 quotes`}>
+          <blockquote className={`text-2xl font-serif text-left text-gray-600 my-[1em] quotes`}>
             <span className="text-4xl pr-2">“</span>
             {children}
             <span className="text-4xl pl-2">”</span>
@@ -34,42 +33,42 @@ export function CustomPortableText({
       h1: ({ children }) => {
         return (
           <div className={`${paragraphClasses}`}>
-            <h1 className="text-4xl md:text-5xl">{children}</h1>
+            <h1 className="text-4xl md:text-5xl my-[0.67em]">{children}</h1>
           </div>
         )
       },
       h2: ({ children }) => {
         return (
           <div className={`${paragraphClasses}`}>
-            <h2 className="text-3xl md:text-4xl">{children}</h2>
+            <h2 className="text-3xl md:text-4xl my-[0.83em]">{children}</h2>
           </div>
         )
       },
       h3: ({ children }) => {
         return (
           <div className={`${paragraphClasses}`}>
-            <h3 className="text-2xl md:text-3xl">{children}</h3>
+            <h3 className="text-2xl md:text-3xl my-[1em]">{children}</h3>
           </div>
         )
       },
       h4: ({ children }) => {
         return (
           <div className={`${paragraphClasses}`}>
-            <h4 className="text-xl md:text-2xl">{children}</h4>
+            <h4 className="text-xl md:text-2xl my-[1.33em]">{children}</h4>
           </div>
         )
       },
       h5: ({ children }) => {
         return (
           <div className={`${paragraphClasses}`}>
-            <h5 className="text-lg md:text-xl">{children}</h5>
+            <h5 className="text-lg md:text-xl my-[1.67em]">{children}</h5>
           </div>
         )
       },
       h6: ({ children }) => {
         return (
           <div className={`${paragraphClasses}`}>
-            <h6 className="text-base md:text-lg">{children}</h6>
+            <h6 className="text-base md:text-lg my-[2em]">{children}</h6>
           </div>
         )
       },
@@ -105,7 +104,7 @@ export function CustomPortableText({
           <div className="my-6 space-y-2">
             <ImageBox
               image={value}
-              alt={value.alt}
+              alt={value.alt || value.caption}
               classesWrapper="relative aspect-[16/9]"
             />
             {value?.caption && (
