@@ -43,7 +43,7 @@ export default function Layout({
         />
       )}
 
-      <div className={`mt-16 flex-grow md:px-16 lg:px-32 ${childrenStyles}`}>{children}</div>
+      <div className={`mt-32 md:mt-16 flex-grow md:px-16 lg:px-32 ${childrenStyles}`}>{children}</div>
 
       <Footer footer={settings?.footer} />
 

@@ -19,7 +19,7 @@ export function TimelineItem({
       <div className="flex flex-col">
         {/* Thumbnail */}
         <div
-          className="relative overflow-hidden rounded-md bg-black"
+          className="relative overflow-hidden"
           style={{ width: '65px', height: '65px' }}
         >
           <ImageBox
