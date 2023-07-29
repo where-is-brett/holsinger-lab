@@ -13,11 +13,8 @@ const Contact = ({ homePageTitle, settings }) => {
                 title="People"
             />
 
-            <Layout settings={settings}
-            >
-                {/* <div className="mb-16"> */}
+            <Layout settings={settings}>
                 <ContactForm />
-                {/* </div> */}
             </Layout>
         </>
     )

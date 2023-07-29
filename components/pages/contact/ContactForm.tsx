@@ -1,6 +1,5 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 import axios from 'axios';
-import Image from 'next/image';
 import SuccessScreen from './SuccessScreen';
 import ErrorDialog from './ErrorDialog';
 
@@ -57,28 +56,13 @@ const ContactForm: React.FC = () => {
             ...prev,
             [e.target.id]: e.target.value,
         }));
-        setStatus({
-            submitted: false,
+        setStatus((prevStatus) => ({
+            // submitted: false,
+            ...prevStatus,
             submitting: false,
             info: { error: false, msg: null },
-        });
+        }));
     };
-
-    // const handleOnSubmit = (e: FormEvent<HTMLFormElement>) => {
-    //     e.preventDefault();
-    //     setStatus((prevStatus) => ({ ...prevStatus, submitting: true }));
-    //     axios({
-    //         method: 'POST',
-    //         url: `https://formspree.io/f/${endpoint}`,
-    //         data: inputs,
-    //     })
-    //         .then((response) => {
-    //             handleServerResponse(true, 'Thank you for reaching out to us! Your message has been successfully submitted.');
-    //         })
-    //         .catch((error) => {
-    //             handleServerResponse(false, 'Sorry, there was an issue with submitting your message. Please try again later.'); //error.response.data.error
-    //         });
-    // };
 
     const handleOnSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -111,7 +95,6 @@ const ContactForm: React.FC = () => {
                     <SuccessScreen message={status.info.msg} />
                 ) : (
                     <div className="flex flex-col items-center space-y-6 mb-16">
-
                         <h1 className="text-3xl md:text-5xl font-bold">CONTACT US</h1>
                         <form onSubmit={handleOnSubmit} className="flex flex-col space-y-4 w-full md:w-3/4 max-w-xl">
                             <p className="text-base md:text-lg font-ariana text-gray-600">
