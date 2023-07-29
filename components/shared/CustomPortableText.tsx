@@ -98,13 +98,15 @@ export function CustomPortableText({
       image: ({
         value,
       }: {
-        value: Image & { alt?: string; caption?: string }
+        value: Image & { alt?: string; caption?: string; dimensions?: { width: number; height: number } }
       }) => {
         return (
           <div className="my-6 space-y-2">
             <ImageBox
               image={value}
               alt={value.alt || value.caption}
+              height={value.dimensions?.height}
+              width={value.dimensions?.width}
               classesWrapper="relative aspect-[16/9]"
             />
             {value?.caption && (
