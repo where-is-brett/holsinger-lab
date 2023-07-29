@@ -48,7 +48,7 @@ export function ProjectPage({
             {/* Header */}
             <Header title={title} description={overview} />
 
-            <div className="rounded-md border">
+            <div className="border">
               {/* Image  */}
               <ImageBox
                 image={coverImage}
@@ -94,7 +94,7 @@ export function ProjectPage({
                   <div className="text-xs md:text-sm">Tags</div>
                   <div className="text-md flex flex-row flex-wrap md:text-lg">
                     {tags?.map((tag, key) => (
-                      <div key={key} className="mr-1 break-words ">
+                      <div key={key} className="mr-1 break-words">
                         #{tag}
                       </div>
                     ))}
@@ -106,7 +106,7 @@ export function ProjectPage({
             {/* Description */}
             {description && (
               <CustomPortableText
-                paragraphClasses="font-ariana max-w-3xl text-xl text-gray-600"
+                paragraphClasses="font-ariana max-w-3xl text-xl"
                 value={description}
               />
             )}
