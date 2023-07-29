@@ -17,6 +17,7 @@ export interface LayoutProps {
   settings: SettingsPayload | undefined
   preview?: boolean
   loading?: boolean
+  childrenStyles?: string
 }
 
 export default function Layout({
@@ -24,10 +25,13 @@ export default function Layout({
   settings = fallbackSettings,
   preview,
   loading,
+  childrenStyles = "px-6",
 }: LayoutProps) {
   return (
-    <div className={`flex min-h-screen flex-col bg-background text-black`}>
+    <div className={`flex flex-col bg-background text-black min-h-screen`}>
+      
       {preview && <PreviewBanner loading={loading} />}
+
       {preview ? (
         <PreviewNavbar settings={settings} />
       ) : (
@@ -38,10 +42,10 @@ export default function Layout({
           showContactForm={settings?.showContactForm}
         />
       )}
-      <div className=''>
-        <div className="mt-16 flex-grow px-6 md:px-16 lg:px-32">{children}</div>
-        <Footer footer={settings?.footer} />
-      </div>
+
+      <div className={`mt-16 flex-grow md:px-16 lg:px-32 ${childrenStyles}`}>{children}</div>
+
+      <Footer footer={settings?.footer} />
 
     </div>
   )
