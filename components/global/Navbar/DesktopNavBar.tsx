@@ -5,7 +5,7 @@ const DesktopNavBar = ({ menuItems, showPublications, showPeople, showContactFor
     return (
         <div 
             className={`sticky top-0 z-10 flex flex-wrap items-center gap-x-5
-            uppercase border-y border-black
+            uppercase border-y border-primary
             bg-background/80 px-4 py-4 backdrop-blur md:px-16 md:py-5 lg:px-32`}
         >
             {menuItems &&

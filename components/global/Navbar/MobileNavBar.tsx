@@ -1,15 +1,17 @@
 import { Transition } from "@headlessui/react"
-import MenuIcon from '@mui/icons-material/Menu';
 import { resolveHref } from "lib/sanity.links"
+import { Url } from "next/dist/shared/lib/router/router";
 import Link from "next/link"
 import router from "next/router";
+
+const hamburgerLine = `h-[2px] w-6 my-[6px] bg-primary transition ease transform duration-500`;
 
 const MobileNavBar = ({
     handleMenuClick, isMenuOpen,
     menuItems, showPublications, showPeople, showContactForm
 }) => {
 
-    const handleLinkClick = (e, href) => {
+    const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, href: Url) => {
         e.preventDefault();
         handleMenuClick();
         setTimeout(() => {
@@ -19,38 +21,35 @@ const MobileNavBar = ({
 
     return (
         <>
-            {/* Dimming overlay */}
-            <Transition
-                show={isMenuOpen}
-                enter="transition-opacity duration-500 ease-in-out"
-                enterFrom="opacity-0"
-                enterTo="opacity-100"
-                leave="transition-opacity duration-500 ease-in-out"
-                leaveFrom="opacity-100"
-                leaveTo="opacity-0"
-                className="z-30"
-            >
-                <div
-                    className="fixed inset-0 bg-black/50 h-[100lvh]"
-                    onClick={handleMenuClick}
-                ></div>
-            </Transition>
-
             <div className={`mb-6 uppercase`}>
-                <div className="z-20 fixed top-0 bottom-auto left-0 right-0 h-16 bg-background border-y border-black">
-                    <button type="button" aria-label="button" onClick={handleMenuClick} className="bg-transparent border-0 p-0 absolute left-4 top-1 bottom-1">
-                        <MenuIcon />
+                <div className="z-50 fixed top-0 bottom-auto left-0 right-0 h-16 bg-background border-y border-primary">
+                    <button
+                        type="button" aria-label="button"
+                        className="bg-transparent border-0 absolute right-6 top-4 bottom-4"
+                        onClick={handleMenuClick}
+                    >
+                        <div
+                            className={`${hamburgerLine} ${isMenuOpen && "rotate-45 translate-y-2"}`}
+                        />
+                        <div
+                            className={`${hamburgerLine} ${isMenuOpen ? "opacity-0" : "group-hover:opacity-100"}`}
+                        />
+                        <div
+                            className={`${hamburgerLine} ${isMenuOpen && "-rotate-45 -translate-y-2"}`}
+                        />
                     </button>
                 </div>
                 <Transition
                     show={isMenuOpen}
-                    enter="transition duration-500"
-                    enterFrom="transform translate-x-[250%]"
-                    enterTo="transform translate-x-[150%]"
+                    enter="transition ease-out duration-500"
+                    enterFrom="transform translate-x-full"
+                    enterTo="transform translate-x-0"
                     leave="transition duration-500"
-                    leaveFrom="transform translate-x-[150%]"
-                    leaveTo="transform translate-x-[250%]"
-                    className={'fixed w-[40vw] h-[100lvh] bg-background text-right pt-16 pr-4 top-0 bottom-0 flex flex-col z-50'}
+                    leaveFrom="transform ease-in translate-x-0"
+                    leaveTo="transform translate-x-full"
+                    className='fixed z-20 w-full h-[100lvh]
+                    bg-background text-center text-gray-900 text-xl
+                    flex flex-col items-center justify-center gap-8'
                 >
                     {menuItems &&
                         menuItems.map((menuItem, key) => {
@@ -62,7 +61,7 @@ const MobileNavBar = ({
                                 <Link
                                     key={key}
                                     onClick={(e) => { handleLinkClick(e, href) }}
-                                    className={`text-gray-900 h-[3rem] leading-[3rem] text-xl hover:text-gray-600`}
+                                    className={`hover:text-gray-600`}
                                     href={href}
                                 >
                                     {href === '/' ? 'Home' : menuItem.title}
@@ -73,7 +72,7 @@ const MobileNavBar = ({
                     {showPublications &&
                         <Link
                             onClick={(e) => { handleLinkClick(e, '/publications') }}
-                            className="text-gray-900 h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
+                            className="hover:text-gray-600"
                             href={'/publications'}
                         >
                             Publications
@@ -82,7 +81,7 @@ const MobileNavBar = ({
                     {showPeople &&
                         <Link
                             onClick={(e) => { handleLinkClick(e, '/people') }}
-                            className="text-gray-900 h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
+                            className="hover:text-gray-600"
                             href={'/people'}
                         >
                             People
@@ -91,7 +90,7 @@ const MobileNavBar = ({
                     {showContactForm &&
                         <Link
                             onClick={(e) => { handleLinkClick(e, '/contact') }}
-                            className="text-gray-900 h-[3rem] leading-[3rem] text-xl hover:text-gray-600"
+                            className="hover:text-gray-600"
                             href={'/contact'}
                         >
                             Contact
