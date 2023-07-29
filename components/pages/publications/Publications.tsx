@@ -14,9 +14,9 @@ const Publications = ({ publications }) => {
 
           return (     
             <div key={publication._id}>
-              {index === 0 || publications[index - 1].date.slice(0,4) !== publication.date.slice(0,4) && (
+              {index === 0 || publications[index - 1].date.slice(0,4) !== publication.date.slice(0,4) ? (
                 <li className="text-3xl lg:text-4xl font-bold my-5">{publication.date.slice(0,4)}</li>
-              )}
+              ) : null}
               <li>
                 <Publication publication={publication} />
               </li>
