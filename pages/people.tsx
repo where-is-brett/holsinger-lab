@@ -48,6 +48,6 @@ export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
       settings: settings ?? {},
       profiles: profiles ?? [],
     },
-    revalidate: 300,
+    revalidate: 30,
   };
 };
