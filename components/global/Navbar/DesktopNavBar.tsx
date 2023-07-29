@@ -23,7 +23,10 @@ const DesktopNavBar = ({ menuItems, showPublications, showPeople, showContactFor
                                 }`}
                             href={href}
                         >
-                            {menuItem.title}
+                            {href === '/' 
+                                ? 'Home' 
+                                : menuItem.title
+                            }
                         </Link>
                     )
                 })
