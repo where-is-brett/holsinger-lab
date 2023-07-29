@@ -25,8 +25,8 @@ const Profile = ({ profile }) => {
                 /> */}
                 <ImageBox
                     image={profile.image}
-                    width={1000}
-                    height={1000}
+                    width={800}
+                    height={800}
                     alt={`Profile image of ${profile.name}`}
                     classesWrapper="relative aspect-[1/1]"
                 />
