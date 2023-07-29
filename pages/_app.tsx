@@ -24,34 +24,6 @@ const serif = PT_Serif({
   weight: ['400', '700'],
 })
 
-const PreviewProvider = lazy(() => import('components/preview/PreviewProvider'))
-
-export default function App({ Component, pageProps }: AppProps) {
-  const { preview, token } = pageProps
-  return (
-    <>
-      <style jsx global>
-        {`
-          :root {
-            --font-mono: ${mono.style.fontFamily};
-            --font-sans: ${antarcticanMono.style.fontFamily};
-            --font-serif: ${serif.style.fontFamily};
-            --font-antarctican-mono: ${antarcticanMono.style.fontFamily};
-            --font-ariana-pro: ${arianaPro.style.fontFamily};
-          }
-        `}
-      </style>
-
-      {preview ? (
-        <PreviewProvider token={token}>
-          <Component {...pageProps} />
-        </PreviewProvider>
-      ) : (
-        <Component {...pageProps} />
-      )}
-    </>
-  )
-}
 
 const antarcticanMono = localFont({
   src: [
@@ -108,3 +80,32 @@ const arianaPro = localFont({
   ],
   variable: '--font-ariana-pro'
 })
+
+const PreviewProvider = lazy(() => import('components/preview/PreviewProvider'))
+
+export default function App({ Component, pageProps }: AppProps) {
+  const { preview, token } = pageProps
+  return (
+    <>
+      <style jsx global>
+        {`
+          :root {
+            --font-mono: ${mono.style.fontFamily};
+            --font-sans: ${antarcticanMono.style.fontFamily};
+            --font-serif: ${serif.style.fontFamily};
+            --font-antarctican-mono: ${antarcticanMono.style.fontFamily};
+            --font-ariana-pro: ${arianaPro.style.fontFamily};
+          }
+        `}
+      </style>
+
+      {preview ? (
+        <PreviewProvider token={token}>
+          <Component {...pageProps} />
+        </PreviewProvider>
+      ) : (
+        <Component {...pageProps} />
+      )}
+    </>
+  )
+}
