@@ -27,7 +27,7 @@ const MobileNavBar = ({
                 <div className="z-50 fixed top-0 bottom-auto left-0 right-0 h-16 bg-background border-y border-primary">
 
                     <Link href="/">
-                        <Image src={logo} width={90} alt="logo" className="absolute left-6 h-16" />
+                        <Image src={logo} width={70} alt="logo"  className="absolute left-4 top-4 bottom-4 h-[50%]"  />
                     </Link>
                     
 
@@ -56,7 +56,7 @@ const MobileNavBar = ({
                     leaveFrom="transform ease-in translate-x-0"
                     leaveTo="transform translate-x-full"
                     className='fixed z-20 w-full h-[100lvh]
-                    bg-background text-center text-gray-900 text-xl
+                    bg-background text-center text-black text-2xl font-[400]
                     flex flex-col items-center justify-center gap-8'
                 >
                     {menuItems &&

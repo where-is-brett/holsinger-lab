@@ -1,12 +1,11 @@
-import { urlForImage } from "lib/sanity.image";
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import CallIcon from '@mui/icons-material/Call';
 import { AddIcon } from '@sanity/icons'
 import { useState } from "react";
 import { Transition } from "@headlessui/react";
+import ImageBox from "components/shared/ImageBox";
 
 const Profile = ({ profile }) => {
-    const imageURL = urlForImage(profile.image)?.size(400, 400).url();
 
     const [showBio, setShowBio] = useState(false);
     const handleAddIconClick = () => {
@@ -19,10 +18,17 @@ const Profile = ({ profile }) => {
 
             {/* Profile Image */}
             <div className="relative w-full">
-                <img
+                {/* <img
                     className="w-full"
                     src={imageURL}
                     alt={profile.name}
+                /> */}
+                <ImageBox
+                    image={profile.image}
+                    width={1000}
+                    height={1000}
+                    alt={`Profile image of ${profile.name}`}
+                    classesWrapper="relative aspect-[1/1]"
                 />
                 {/* Bio Overlay */}
                 <Transition
