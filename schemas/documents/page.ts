@@ -23,7 +23,7 @@ export default defineType({
       validation: (Rule) => Rule.required().custom((slug) => {
         if (typeof slug === "undefined") return true
 
-        if (slug.current !== 'publications' && slug.current !== 'people') {
+        if (slug.current !== 'publications' && slug.current !== 'people' && slug.current !== 'contact') {
           return true
         } else {
           return `Slug '${slug.current}' is not available` // Error message goes here
