@@ -31,7 +31,7 @@ module.exports = {
       borderColor: {
         // Set your desired default border color here
         DEFAULT: '#2D6A4F',
-      },
+      }
     }
 
   },
