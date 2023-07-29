@@ -28,7 +28,6 @@ export default function NotFoundPage({ settings, homePageTitle }) {
                     />
                     <p>We couldn't find the page you were looking for. Perhaps the <Link href={'/'} className='text-black hover:text-gray-600 underline'>home page</Link>?</p>
                 </div>
-                <div className="absolute left-0 w-screen border-t" />
             </Layout>
         </>
     );
