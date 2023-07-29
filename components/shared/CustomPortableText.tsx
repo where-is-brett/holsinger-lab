@@ -1,8 +1,8 @@
 import { PortableText, PortableTextComponents } from '@portabletext/react'
 import type { PortableTextBlock } from '@portabletext/types'
-import ImageBox from 'components/shared/ImageBox'
 import { TimelineSection } from 'components/shared/TimelineSection'
 import type { Image } from 'sanity'
+import ImageContainer from 'components/shared/ImageContainer'
 
 export function CustomPortableText({
   paragraphClasses,
@@ -87,10 +87,10 @@ export function CustomPortableText({
       },
     },
     list: {
-      bullet: ({children}) => {
+      bullet: ({ children }) => {
         return <span className={`${paragraphClasses} list-disc`}>{children}</span>
       },
-      number: ({children}) => {
+      number: ({ children }) => {
         return <span className={`${paragraphClasses} list-decimal`}>{children}</span>
       }
     },
@@ -98,16 +98,13 @@ export function CustomPortableText({
       image: ({
         value,
       }: {
-        value: Image & { alt?: string; caption?: string; dimensions?: { width: number; height: number } }
+        value: Image & { alt?: string; caption?: string; }
       }) => {
         return (
           <div className="my-6 space-y-2">
-            <ImageBox
+            <ImageContainer
               image={value}
               alt={value.alt || value.caption}
-              height={value.dimensions?.height}
-              width={value.dimensions?.width}
-              classesWrapper="relative aspect-[16/9]"
             />
             {value?.caption && (
               <div className="font-antarctican text-sm text-gray-600">
