@@ -111,7 +111,7 @@ const ContactForm: React.FC = () => {
                                     onChange={handleOnChange}
                                     required
                                     value={inputs.name}
-                                    className="border border-gray-300 px-4 py-2 w-full"
+                                    className="border border-gray-300 px-4 py-2 w-full outline-none focus:border-gray-600"
                                 />
                             </div>
                             <div className="flex flex-col space-y-1">
@@ -125,7 +125,7 @@ const ContactForm: React.FC = () => {
                                     onChange={handleOnChange}
                                     required
                                     value={inputs.email}
-                                    className="border border-gray-300 px-4 py-2 w-full"
+                                    className="border border-gray-300 px-4 py-2 w-full outline-none focus:border-gray-600"
                                 />
                             </div>
                             <div className="flex flex-col space-y-1">
@@ -138,7 +138,7 @@ const ContactForm: React.FC = () => {
                                     onChange={handleOnChange}
                                     required
                                     value={inputs.message}
-                                    className="border border-gray-300 px-4 py-2 w-full"
+                                    className="border border-gray-300 px-4 py-2 w-full outline-none focus:border-gray-600"
                                     rows={4}
                                 />
                             </div>
