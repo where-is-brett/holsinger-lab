@@ -3,13 +3,15 @@ import { CustomPortableText } from 'components/shared/CustomPortableText'
 
 export function Footer({ footer }: { footer?: PortableTextBlock[] }) {
   return (
-    <footer className="bottom-0 w-full border-t border-primary bg-background py-5 text-center font-antarctican lg:py-6">
+    <footer
+      className="bottom-0 w-full border-t border-primary bg-background py-5 text-center font-antarctican lg:py-6">
       {footer && (
-        <CustomPortableText
-          paragraphClasses="text-md md:text-xl"
-          value={footer}
-        />
+          <CustomPortableText
+            paragraphClasses="text-base md:text-lg"
+            value={footer}
+          />
       )}
+
     </footer>
   )
 }
