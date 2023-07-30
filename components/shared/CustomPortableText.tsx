@@ -15,9 +15,7 @@ export function CustomPortableText({
     block: {
       normal: ({ children }) => {
         return (
-          <>
             <p className={`${paragraphClasses} my-[1em]`}>{children}</p>
-          </>
         )
       },
       // Adding block quote
