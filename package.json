@@ -28,6 +28,7 @@
     "@sanity/image-url": "^1.0.2",
     "@sanity/orderable-document-list": "^1.1.0",
     "@sanity/vision": "3.14.1",
+    "@sanity/webhook": "^2.0.0",
     "@tailwindcss/typography": "0.5.9",
     "@vercel/og": "0.5.8",
     "axios": "^1.4.0",
