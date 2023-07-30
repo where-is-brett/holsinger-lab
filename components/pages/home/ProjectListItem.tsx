@@ -13,7 +13,7 @@ export function ProjectListItem(props: ProjectProps) {
   return (
     <div
       className={`flex flex-col transition hover:bg-gray-100/0 md:flex-row ${
-        odd && 'border-b border-t md:flex-row-reverse'
+        odd && 'border-y md:flex-row-reverse'
       }`}
     >
       <div
@@ -23,8 +23,8 @@ export function ProjectListItem(props: ProjectProps) {
       >
         <ImageBox
           image={project.coverImage}
-          width={1600}
-          height={900}
+          width={project.coverImage?.hotspot?.width}
+          height={project.coverImage?.hotspot?.height}
           alt={`Cover image from ${project.title}`}
           classesWrapper="relative aspect-[16/9] h-full h-full "
         />
