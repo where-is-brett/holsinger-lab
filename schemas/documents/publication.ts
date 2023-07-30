@@ -10,10 +10,8 @@ export default defineType({
     {
       title: 'Date Published',
       name: 'publicationDateDesc',
-      by: [
-        { field: 'date', direction: 'desc' },
-      ],
-    }
+      by: [{ field: 'date', direction: 'desc' }],
+    },
   ],
   fields: [
     defineField({
@@ -34,25 +32,26 @@ export default defineType({
       title: 'Volume',
       type: 'number',
       description: 'Enter the Volume',
-      validation: (Rule) => Rule.custom((num: number) => {
-        if (num <= 0) {
-          return 'Volume number must be a positive integer'
-        }
-        return true
-      })
+      validation: (Rule) =>
+        Rule.custom((num: number) => {
+          if (num <= 0) {
+            return 'Volume number must be a positive integer'
+          }
+          return true
+        }),
     }),
     defineField({
       name: 'issue',
       title: 'Issue',
       type: 'number',
       description: 'Enter Issue Number',
-      validation: (Rule) => Rule.custom((num: number) => {
-        if (num <= 0) {
-          return 'Issue number must be a positive integer'
-        }
-        return true
-      }),
-
+      validation: (Rule) =>
+        Rule.custom((num: number) => {
+          if (num <= 0) {
+            return 'Issue number must be a positive integer'
+          }
+          return true
+        }),
     }),
     defineField({
       name: 'pages',
@@ -94,4 +93,4 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
   ],
-});
+})

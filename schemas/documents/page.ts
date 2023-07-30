@@ -20,15 +20,20 @@ export default defineType({
       options: {
         source: 'title',
       },
-      validation: (Rule) => Rule.required().custom((slug) => {
-        if (typeof slug === "undefined") return true
+      validation: (Rule) =>
+        Rule.required().custom((slug) => {
+          if (typeof slug === 'undefined') return true
 
-        if (slug.current !== 'publications' && slug.current !== 'people' && slug.current !== 'contact') {
-          return true
-        } else {
-          return `Slug '${slug.current}' is not available` // Error message goes here
-        }
-      }),
+          if (
+            slug.current !== 'publications' &&
+            slug.current !== 'people' &&
+            slug.current !== 'contact'
+          ) {
+            return true
+          } else {
+            return `Slug '${slug.current}' is not available` // Error message goes here
+          }
+        }),
     }),
     defineField({
       name: 'overview',
@@ -71,7 +76,6 @@ export default defineType({
           type: 'block',
           marks: {
             annotations: [
-
               {
                 name: 'link',
                 type: 'object',
@@ -93,12 +97,10 @@ export default defineType({
                   {
                     name: 'reference',
                     type: 'reference',
-                    to: [
-                      { type: 'page' }
-                    ]
-                  }
-                ]
-              }
+                    to: [{ type: 'page' }],
+                  },
+                ],
+              },
             ],
           },
           styles: [
@@ -109,11 +111,11 @@ export default defineType({
             { title: 'H4', value: 'h4' },
             { title: 'H5', value: 'h5' },
             { title: 'H6', value: 'h6' },
-            { title: 'Quote', value: 'blockquote' }
+            { title: 'Quote', value: 'blockquote' },
           ],
           lists: [
             { title: 'Bullet', value: 'bullet' },
-            { title: 'Numbered', value: 'number' }
+            { title: 'Numbered', value: 'number' },
           ],
         }),
         // Custom blocks
@@ -149,14 +151,14 @@ export default defineType({
                 'Alternative text for screenreaders. Falls back on caption if not set',
             }),
           ],
-          validation: Rule =>
+          validation: (Rule) =>
             Rule.custom((fields) => {
-              const caption = fields?.caption || '';
-              const alt = fields?.alt || '';
+              const caption = fields?.caption || ''
+              const alt = fields?.alt || ''
               if (!caption.trim() && !alt.trim()) {
-                return 'Either caption or alt text must be provided.';
+                return 'Either caption or alt text must be provided.'
               }
-              return true;
+              return true
             }),
         }),
       ],
@@ -175,6 +177,5 @@ export default defineType({
   },
 })
 function slugify(arg0: any) {
-  throw new Error('Function not implemented.');
+  throw new Error('Function not implemented.')
 }
-

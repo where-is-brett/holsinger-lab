@@ -16,7 +16,11 @@ export function ProjectListItem(props: ProjectProps) {
         odd && 'border-b border-t md:flex-row-reverse'
       }`}
     >
-      <div className={`w-full md:w-7/12 lg:w-8/12 ${odd ? 'md:border-l' : 'md:border-r'}`}>
+      <div
+        className={`w-full md:w-7/12 lg:w-8/12 ${
+          odd ? 'md:border-l' : 'md:border-r'
+        }`}
+      >
         <ImageBox
           image={project.coverImage}
           width={1600}
@@ -25,7 +29,9 @@ export function ProjectListItem(props: ProjectProps) {
           classesWrapper="relative aspect-[16/9] h-full h-full "
         />
       </div>
-      <div className={`flex md:px-3 md:w-5/12 lg:w-4/12 border-t md:border-t-0`}>
+      <div
+        className={`flex border-t md:w-5/12 md:border-t-0 md:px-3 lg:w-4/12`}
+      >
         <TextBox project={project} />
       </div>
     </div>
@@ -46,7 +52,7 @@ function TextBox({ project }: { project: ShowcaseProject }) {
         </div>
       </div>
       {/* Tags */}
-      <div className="md:mt-4 flex flex-row gap-x-2">
+      <div className="flex flex-row gap-x-2 md:mt-4">
         {project.tags?.map((tag, key) => (
           <div className="text-sm font-medium lowercase md:text-lg" key={key}>
             #{tag}

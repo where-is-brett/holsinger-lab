@@ -58,7 +58,6 @@
 //   },
 // }
 
-
 import { isValidSignature, SIGNATURE_HEADER_NAME } from '@sanity/webhook'
 
 const secret = process.env.SANITY_WEBHOOK_SECRET
@@ -72,31 +71,46 @@ export default async function handler(req, res) {
   }
 
   const jsonBody = JSON.parse(body)
+  console.log(jsonBody)
   try {
     const { type, slug } = jsonBody
 
     switch (type) {
-      case "page":
+      case 'page':
         await res.revalidate(`/${slug}`)
         console.log(`Revalidated "${type}" with slug "${slug}"`)
-        return res.json({ success: true, message: `Revalidated "${type}" with slug "${slug}"` })
-      case "project":
+        return res.json({
+          success: true,
+          message: `Revalidated "${type}" with slug "${slug}"`,
+        })
+      case 'project':
         await res.revalidate(`/projects/${slug}`)
         console.log(`Revalidated "${type}" with slug "${slug}"`)
-        return res.json({ success: true, message: `Revalidated "${type}" with slug "${slug}"` })
-      case "publications":
+        return res.json({
+          success: true,
+          message: `Revalidated "${type}" with slug "${slug}"`,
+        })
+      case 'publications':
         await res.revalidate(`/publications`)
         console.log(`Revalidated "${type}"`)
-        return res.json({ success: true, message: `Revalidated "${type}" with slug "publications"` })
-      case "profile":
+        return res.json({
+          success: true,
+          message: `Revalidated "${type}" with slug "publications"`,
+        })
+      case 'profile':
         await res.revalidate(`/people`)
         console.log(`Revalidated "${type}"`)
-        return res.json({ success: true, message: `Revalidated "${type}" with slug "people"` })
+        return res.json({
+          success: true,
+          message: `Revalidated "${type}" with slug "people"`,
+        })
     }
 
-    return res.json({ success: false, message: "No managed type" })
+    return res.json({ success: false, message: 'No managed type' })
   } catch (err) {
-    return res.status(500).send({ success: false, message: "Error revalidating" })
+    return res
+      .status(500)
+      .send({ success: false, message: 'Error revalidating' })
   }
 }
 

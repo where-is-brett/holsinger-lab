@@ -10,7 +10,7 @@ import { pageStructure, singletonPlugin } from 'plugins/settings'
 import { defineConfig } from 'sanity'
 import { deskTool } from 'sanity/desk'
 import { unsplashImageAsset } from 'sanity-plugin-asset-source-unsplash'
-import {media} from 'sanity-plugin-media'
+import { media } from 'sanity-plugin-media'
 import page from 'schemas/documents/page'
 import project from 'schemas/documents/project'
 import duration from 'schemas/objects/duration'
@@ -21,9 +21,7 @@ import settings from 'schemas/singletons/settings'
 import publication from 'schemas/documents/publication'
 import profile from 'schemas/documents/profile'
 
-const title =
-  process.env.NEXT_PUBLIC_SANITY_PROJECT_TITLE ||
-  'LMND'
+const title = process.env.NEXT_PUBLIC_SANITY_PROJECT_TITLE || 'LMND'
 
 export const PREVIEWABLE_DOCUMENT_TYPES: string[] = [
   home.name,
@@ -57,7 +55,7 @@ export default defineConfig({
   plugins: [
     deskTool({
       structure: pageStructure([home, settings]),
-      
+
       // `defaultDocumentNode` is responsible for adding a “Preview” tab to the document pane
       defaultDocumentNode: previewDocumentNode({ apiVersion, previewSecretId }),
     }),
@@ -77,6 +75,5 @@ export default defineConfig({
     // Vision lets you query your content with GROQ in the studio
     // https://www.sanity.io/docs/the-vision-plugin
     visionTool({ defaultApiVersion: apiVersion }),
-    
   ],
 })

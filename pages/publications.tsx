@@ -1,15 +1,15 @@
 import { SiteMeta } from 'components/global/SiteMeta'
-import Layout from 'components/shared/Layout'
 import Publications from 'components/pages/publications/Publications'
+import Layout from 'components/shared/Layout'
 import { readToken } from 'lib/sanity.api'
 import { getClient } from 'lib/sanity.client'
 import {
   homePageTitleQuery,
+  publicationsQuery,
   settingsQuery,
-  publicationsQuery
 } from 'lib/sanity.queries'
 import { GetStaticProps } from 'next'
-import { SettingsPayload, PublicationPayload } from 'types'
+import { PublicationPayload, SettingsPayload } from 'types'
 
 interface PageProps {
   settings: SettingsPayload
@@ -30,7 +30,9 @@ export default function PublicationsPage(props: PageProps) {
     <>
       <SiteMeta
         baseTitle={homePageTitle}
-        description={'Explore the publications by the Laboratory of Molecular Neuroscience and Dementia. Discover the latest advancements and insights in neuroscience, molecular biology, and dementia research, authored by our esteemed team of scientists and researchers.'}
+        description={
+          'Explore the publications by the Laboratory of Molecular Neuroscience and Dementia. Discover the latest advancements and insights in neuroscience, molecular biology, and dementia research, authored by our esteemed team of scientists and researchers.'
+        }
         image={settings?.ogImage}
         title={'Publications'}
       />
@@ -60,7 +62,7 @@ export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
   if (!settings?.showPublications) {
     return {
       notFound: true,
-    };
+    }
   }
 
   return {
@@ -74,5 +76,3 @@ export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
     // revalidate: 60,
   }
 }
-
-

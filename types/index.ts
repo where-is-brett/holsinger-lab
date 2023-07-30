@@ -64,7 +64,7 @@ export interface SettingsPayload {
   menuItems?: MenuItem[]
   showPublications?: boolean
   showPeople?: boolean
-  showContactForm?:boolean
+  showContactForm?: boolean
   ogImage?: Image
 }
 
@@ -82,12 +82,12 @@ export interface PublicationPayload {
 }
 
 export interface ProfilePayload {
-    _id: string
-    orderRank: string
-    image: Image
-    name: string
-    role: string
-    email?: string
-    phone?: string
-    bio?: string
+  _id: string
+  orderRank: string
+  image: Image
+  name: string
+  role: string
+  email?: string
+  phone?: string
+  bio?: string
 }

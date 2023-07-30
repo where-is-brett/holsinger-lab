@@ -86,4 +86,4 @@ export const profileQuery = groq`
     phone,
     bio
   }
-`;
+`

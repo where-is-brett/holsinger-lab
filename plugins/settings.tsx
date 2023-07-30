@@ -9,9 +9,8 @@ import { type StructureResolver } from 'sanity/desk'
 import { PREVIEWABLE_DOCUMENT_TYPES } from '../sanity.config'
 import { PreviewPane } from './previewPane/PreviewPane'
 
-
 import { orderableDocumentListDeskItem } from '@sanity/orderable-document-list'
-import {UserIcon} from '@sanity/icons'
+import { UserIcon } from '@sanity/icons'
 
 export const singletonPlugin = (types: string[]) => {
   return {
@@ -82,19 +81,19 @@ export const pageStructure = (
     // The default root list items (except custom ones)
     const defaultListItems = S.documentTypeListItems().filter(
       (listItem) =>
-        !typeDefArray.find((singleton) => singleton.name === listItem.getId())
-        && listItem.getId() !== 'profile' // we include an orderable list for people
-        && listItem.getTitle() !=='Media Tag' // edit media tags in the media browser
+        !typeDefArray.find(
+          (singleton) => singleton.name === listItem.getId()
+        ) &&
+        listItem.getId() !== 'profile' && // we include an orderable list for people
+        listItem.getTitle() !== 'Media Tag' // edit media tags in the media browser
     )
-
 
     return S.list()
       .title('Content')
       .items([
-
         // ... all other desk items
-        ...singletonItems, 
-        S.divider(), 
+        ...singletonItems,
+        S.divider(),
         ...defaultListItems,
 
         orderableDocumentListDeskItem({

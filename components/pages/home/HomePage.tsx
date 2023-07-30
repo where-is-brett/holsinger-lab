@@ -1,4 +1,5 @@
 import { ProjectListItem } from 'components/pages/home/ProjectListItem'
+import { CustomPortableText } from 'components/shared/CustomPortableText'
 import { Header } from 'components/shared/Header'
 import Layout from 'components/shared/Layout'
 import ScrollUp from 'components/shared/ScrollUp'
@@ -8,7 +9,6 @@ import type { HomePagePayload } from 'types'
 import { SettingsPayload } from 'types'
 
 import HomePageHead from './HomePageHead'
-import { CustomPortableText } from 'components/shared/CustomPortableText'
 
 export interface HomePageProps {
   settings: SettingsPayload
@@ -24,16 +24,20 @@ export function HomePage({ page, settings, preview, loading }: HomePageProps) {
     <>
       <HomePageHead page={page} settings={settings} />
 
-      <Layout settings={settings} preview={preview} loading={loading} childrenStyles={`px-0`}>
-        <div className="space-y-8 mb-16">
-
+      <Layout
+        settings={settings}
+        preview={preview}
+        loading={loading}
+        childrenStyles={`px-0`}
+      >
+        <div className="mb-16 space-y-8">
           {/* Header */}
-          {title &&
-            <Header centered title={title} description={overview} />
-          }
+          {title && <Header centered title={title} description={overview} />}
 
           {/* Showcase projects */}
-          <h1 className='font-[600] text-center md:text-left text-xl md:text-2xl'>Our Research Projects</h1>
+          <h1 className="text-center text-xl font-[600] md:text-left md:text-2xl">
+            Our Research Projects
+          </h1>
 
           {showcaseProjects && showcaseProjects.length > 0 && (
             <div className="mx-auto max-w-[100rem] border-y md:border">

@@ -25,11 +25,10 @@ export default function Layout({
   settings = fallbackSettings,
   preview,
   loading,
-  childrenStyles = "px-6",
+  childrenStyles = 'px-6',
 }: LayoutProps) {
   return (
-    <div className={`flex flex-col bg-background text-black min-h-screen`}>
-      
+    <div className={`flex min-h-screen flex-col bg-background text-black`}>
       {preview && <PreviewBanner loading={loading} />}
 
       {preview ? (
@@ -43,10 +42,13 @@ export default function Layout({
         />
       )}
 
-      <div className={`mt-32 md:mt-16 flex-grow md:px-16 lg:px-32 ${childrenStyles}`}>{children}</div>
+      <div
+        className={`mt-32 flex-grow md:mt-16 md:px-16 lg:px-32 ${childrenStyles}`}
+      >
+        {children}
+      </div>
 
       <Footer footer={settings?.footer} />
-
     </div>
   )
 }

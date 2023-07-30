@@ -2,8 +2,8 @@ import 'styles/index.css'
 
 import { AppProps } from 'next/app'
 import { IBM_Plex_Mono, Inter, PT_Serif } from 'next/font/google'
-import { lazy } from 'react'
 import localFont from 'next/font/local'
+import { lazy } from 'react'
 
 const mono = IBM_Plex_Mono({
   variable: '--font-mono',
@@ -24,7 +24,6 @@ const serif = PT_Serif({
   weight: ['400', '700'],
 })
 
-
 const antarcticanMono = localFont({
   src: [
     {
@@ -44,7 +43,7 @@ const antarcticanMono = localFont({
       weight: 'bold',
     },
   ],
-  variable: '--font-antarctican-mono'
+  variable: '--font-antarctican-mono',
 })
 
 const arianaPro = localFont({
@@ -78,7 +77,7 @@ const arianaPro = localFont({
       weight: '100',
     },
   ],
-  variable: '--font-ariana-pro'
+  variable: '--font-ariana-pro',
 })
 
 const PreviewProvider = lazy(() => import('components/preview/PreviewProvider'))

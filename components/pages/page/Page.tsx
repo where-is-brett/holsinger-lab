@@ -30,7 +30,6 @@ export function Page({
 
       <Layout settings={settings} preview={preview} loading={loading}>
         <>
-
           <div className="mb-14">
             {/* Header */}
             <Header title={title} description={overview} />
@@ -51,5 +50,3 @@ export function Page({
     </>
   )
 }
-
-
