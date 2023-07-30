@@ -2,6 +2,7 @@ import { isValidSignature, SIGNATURE_HEADER_NAME } from '@sanity/webhook'
 import type { NextApiRequest, NextApiResponse } from "next"
 
 type Data = {
+  success: boolean
   message: string
 }
 
@@ -10,14 +11,14 @@ const secret = process.env.SANITY_WEBHOOK_SECRET
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   if (req.method !== "POST") {
     console.error("Must be a POST request")
-    return res.status(401).json({ message: "Must be a POST request" })
+    return res.status(401).json({ success: false, message: "Must be a POST request" })
   }
 
   const signature = req.headers[SIGNATURE_HEADER_NAME];
   const isValid = isValidSignature(JSON.stringify(req.body), signature, secret);
 
   if (!isValid) {
-    res.status(401).json({ message: "Invalid signature" })
+    res.status(401).json({ success: false, message: "Invalid signature" })
     return
   }
 
@@ -29,20 +30,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     switch (type) {
       case "page":
         await res.revalidate(`/${slug}`)
-        return res.json({ message: `Revalidated "${type}" with slug "${slug}"` })
+        console.log(`Revalidated "${type}" with slug "${slug}"`)
+        return res.json({ success: true, message: `Revalidated "${type}" with slug "${slug}"` })
       case "project":
         await res.revalidate(`/projects/${slug}`)
-        return res.json({ message: `Revalidated "${type}" with slug "${slug}"` })
+        console.log(`Revalidated "${type}" with slug "${slug}"`)
+        return res.json({ success: true, message: `Revalidated "${type}" with slug "${slug}"` })
       case "publications":
         await res.revalidate(`/publications`)
-        return res.json({ message: `Revalidated "${type}" with slug "publications"` })
+        console.log(`Revalidated "${type}"`)
+        return res.json({ success: true, message: `Revalidated "${type}" with slug "publications"` })
       case "profile":
         await res.revalidate(`/people`)
-        return res.json({ message: `Revalidated "${type}" with slug "people"` })
+        console.log(`Revalidated "${type}"`)
+        return res.json({ success: true, message: `Revalidated "${type}" with slug "people"` })
     }
 
-    return res.json({ message: "No managed type" })
+    return res.json({ success: false, message: "No managed type" })
   } catch (err) {
-    return res.status(500).send({ message: "Error revalidating" })
+    return res.status(500).send({ success: false, message: "Error revalidating" })
   }
+}
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
 }
