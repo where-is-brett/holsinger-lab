@@ -18,41 +18,37 @@ export default async function handler(req, res) {
     switch (type) {
       case 'home':
         await res.revalidate(`/`)
-        console.log(`Revalidated "${type}"`)
         return res.status(200).json({
           success: true,
           message: `Revalidated "${type}"`,
         })
       case 'page':
         await res.revalidate(`/${slug}`)
-        console.log(`Revalidated "${type}" with slug "${slug}"`)
         return res.status(200).json({
           success: true,
-          message: `Revalidated "${type}" with slug "${slug}"`,
+          message: `Revalidated homepage`,
         })
       case 'project':
         await res.revalidate(`/projects/${slug}`)
-        console.log(`Revalidated "${type}" with slug "${slug}"`)
+        await res.revalidate(`/`)
         return res.status(200).json({
           success: true,
-          message: `Revalidated "${type}" with slug "${slug}"`,
+          message: `Revalidated "${type}" with slug "projects/${slug}. Revalidated homepage."`,
         })
-      case 'publications':
-        await res.revalidate(`/publications/`)
-        console.log(`Revalidated "${type}"`)
+      case 'publication':
+        await res.revalidate(`/publications`)
         return res.status(200).json({
           success: true,
           message: `Revalidated "${type}" with slug "publications"`,
         })
       case 'profile':
-        await res.revalidate(`/people/`)
-        console.log(`Revalidated "${type}"`)
+        await res.revalidate(`/people`)
         return res.status(200).json({
           success: true,
           message: `Revalidated "${type}" with slug "people"`,
         })
     }
-
+    
     return res.json({ success: false, message: 'No managed type' })
 
   } catch (err) {
