@@ -147,9 +147,17 @@ export default defineType({
               title: 'Alt text',
               description:
                 'Alternative text for screenreaders. Falls back on caption if not set',
-              validation: Rule => Rule.required()
             }),
           ],
+          validation: Rule =>
+            Rule.custom((fields) => {
+              const caption = fields?.caption || '';
+              const alt = fields?.alt || '';
+              if (!caption.trim() && !alt.trim()) {
+                return 'Either caption or alt text must be provided.';
+              }
+              return true;
+            }),
         }),
       ],
     }),
