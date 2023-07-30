@@ -57,14 +57,8 @@ export default defineType({
     defineField({
       name: 'pages',
       title: 'Pages',
-      type: 'number',
+      type: 'string',
       description: 'Enter pages of the chapter you wish to refer to.',
-      validation: (Rule) => Rule.custom((num: number) => {
-        if (num <= 0) {
-          return 'Number of pages must be a positive integer'
-        }
-        return true
-      })
     }),
     defineField({
       name: 'journal',
