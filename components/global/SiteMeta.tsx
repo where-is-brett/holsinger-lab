@@ -50,7 +50,7 @@ export function SiteMeta({
       <link rel="shortcut icon" href="/favicon/favicon.ico" />
       <meta name="msapplication-TileColor" content="#000000" />
       <meta name="msapplication-config" content="/favicon/browserconfig.xml" />
-      <meta name="theme-color" content="#2D6A4F" />
+      <meta name="theme-color" content="#F8F8F8" />
       {description && (
         <meta key="description" name="description" content={description} />
       )}
