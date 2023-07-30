@@ -79,7 +79,6 @@ export const profileQuery = groq`
     _id,
     image,
     orderRank,
-    "imageUrl": image.asset->url,
     name,
     role,
     email,

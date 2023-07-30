@@ -18,11 +18,6 @@ const Profile = ({ profile }) => {
     >
       {/* Profile Image */}
       <div className="relative w-full">
-        {/* <img
-                    className="w-full"
-                    src={imageURL}
-                    alt={profile.name}
-                /> */}
         <ImageBox
           image={profile.image}
           width={800}
