@@ -150,7 +150,7 @@ const ContactForm: React.FC = () => {
                 required
                 value={inputs.message}
                 className="w-full border border-gray-300 px-4 py-2 outline-none focus:border-gray-600"
-                rows={4}
+                rows={6}
               />
             </div>
             <button
