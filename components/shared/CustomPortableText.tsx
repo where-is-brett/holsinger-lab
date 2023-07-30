@@ -88,10 +88,10 @@ export function CustomPortableText({
     },
     list: {
       bullet: ({ children }) => {
-        return <span className={`${paragraphClasses} list-disc`}>{children}</span>
+        return <ul className={`${paragraphClasses} list-disc my-[1rem] pl-[40px]`}>{children}</ul>
       },
       number: ({ children }) => {
-        return <span className={`${paragraphClasses} list-decimal`}>{children}</span>
+        return <ol className={`${paragraphClasses} list-decimal my-[1rem] pl-[40px]`}>{children}</ol>
       }
     },
     types: {
