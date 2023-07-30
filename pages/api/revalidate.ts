@@ -11,7 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Validate signature
   if (!isValid) {
-    res.status(401).json({ success: false, message: 'Invalid signature' });
+    res.status(401).json({ success: false, message: 'Invalid Token' });
     return;
   }
 
@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log(`===== Revalidating: ${pathToRevalidate}`);
 
-    await res.revalidate(pathToRevalidate);
+    await res.revalidate(`/pathToRevalidate`);
 
     return res.json({ revalidated: true });
   } catch (err) {
