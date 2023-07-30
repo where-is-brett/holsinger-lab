@@ -84,14 +84,13 @@ export const pageStructure = (
       (listItem) =>
         !typeDefArray.find((singleton) => singleton.name === listItem.getId())
         && listItem.getId() !== 'profile' // we include an orderable list for people
+        && listItem.getTitle() !=='Media Tag' // edit media tags in the media browser
     )
 
 
     return S.list()
       .title('Content')
       .items([
-        
-        
 
         // ... all other desk items
         ...singletonItems, 
