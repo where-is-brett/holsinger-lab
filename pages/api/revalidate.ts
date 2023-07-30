@@ -1,32 +1,45 @@
-import { isValidSignature, SIGNATURE_HEADER_NAME } from '@sanity/webhook';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { isValidRequest } from "@sanity/webhook"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-const SANITY_WEBHOOK_SECRET = process.env.SANITY_WEBHOOK_SECRET;
+type Data = {
+  message: string
+}
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const signature = req.headers[SIGNATURE_HEADER_NAME];
-  const isValid = isValidSignature(JSON.stringify(req.body), signature, SANITY_WEBHOOK_SECRET);
+const secret = process.env.SANITY_WEBHOOK_SECRET
 
-  console.log(`===== Is the webhook request valid? ${isValid}`);
+export default async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
+  if (req.method !== "POST") {
+    console.error("Must be a POST request")
+    return res.status(401).json({ message: "Must be a POST request" })
+  }
 
-  // Validate signature
-  if (!isValid) {
-    res.status(401).json({ success: false, message: 'Invalid Token' });
-    return;
+  if (!isValidRequest(req, secret)) {
+    res.status(401).json({ message: "Invalid signature" })
+    return
   }
 
   try {
-    const pathToRevalidate = req.body.slug.current;
+    const {
+      body: { type, slug },
+    } = req
 
-    console.log(`===== Revalidating: ${pathToRevalidate}`);
+    switch (type) {
+      case "page":
+        await res.revalidate(`/${slug}`)
+        return res.json({ message: `Revalidated "${type}" with slug "${slug}"` })
+      case "project":
+        await res.revalidate(`/projects/${slug}`)
+        return res.json({ message: `Revalidated "${type}" with slug "${slug}"` })
+      case "publications":
+        await res.revalidate(`/publications`)
+        return res.json({ message: `Revalidated "${type}" with slug "publications"`})
+      case "profile":
+        await res.revalidate(`/people`)
+        return res.json({ message: `Revalidated "${type}" with slug "people"`})
+    }
 
-    await res.revalidate(`/pathToRevalidate`);
-
-    return res.json({ revalidated: true });
+    return res.json({ message: "No managed type" })
   } catch (err) {
-    // Could not revalidate. The stale page will continue to be shown until
-    // this issue is fixed.
-    return res.status(500).send('Error while revalidating ${pathToRevalidate}');
+    return res.status(500).send({ message: "Error revalidating" })
   }
-
 }
