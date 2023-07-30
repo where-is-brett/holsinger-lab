@@ -31,3 +31,16 @@ ul {
 ol {
   list-style-type: disc;
 }
+
+/* Reset input field appearances */
+textarea,
+input[type="text"],
+input[type="button"],
+input[type="submit"],
+input[type=”email”],
+input[type=”tel”],
+input[type=”number”] {  
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 0;
+}
