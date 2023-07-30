@@ -10,7 +10,7 @@ const Contact = ({ homePageTitle, settings }) => {
         baseTitle={homePageTitle}
         description="Get in touch with us using the contact form below. We would love to hear from you!"
         image={settings?.ogImage}
-        title="People"
+        title="Contact"
       />
 
       <Layout settings={settings}>
