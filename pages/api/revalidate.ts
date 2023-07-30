@@ -1,4 +1,4 @@
-import { isValidRequest } from "@sanity/webhook"
+import { isValidSignature, SIGNATURE_HEADER_NAME } from '@sanity/webhook'
 import type { NextApiRequest, NextApiResponse } from "next"
 
 type Data = {
@@ -13,7 +13,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(401).json({ message: "Must be a POST request" })
   }
 
-  if (!isValidRequest(req, secret)) {
+  const signature = req.headers[SIGNATURE_HEADER_NAME];
+  const isValid = isValidSignature(JSON.stringify(req.body), signature, secret);
+
+  if (!isValid) {
     res.status(401).json({ message: "Invalid signature" })
     return
   }
@@ -32,10 +35,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         return res.json({ message: `Revalidated "${type}" with slug "${slug}"` })
       case "publications":
         await res.revalidate(`/publications`)
-        return res.json({ message: `Revalidated "${type}" with slug "publications"`})
+        return res.json({ message: `Revalidated "${type}" with slug "publications"` })
       case "profile":
         await res.revalidate(`/people`)
-        return res.json({ message: `Revalidated "${type}" with slug "people"`})
+        return res.json({ message: `Revalidated "${type}" with slug "people"` })
     }
 
     return res.json({ message: "No managed type" })
