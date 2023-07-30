@@ -16,16 +16,16 @@ export function ProjectListItem(props: ProjectProps) {
         odd && 'border-b border-t md:flex-row-reverse'
       }`}
     >
-      <div className={`w-full md:w-9/12 ${odd ? 'md:border-l' : 'md:border-r'}`}>
+      <div className={`w-full md:w-7/12 lg:w-8/12 ${odd ? 'md:border-l' : 'md:border-r'}`}>
         <ImageBox
           image={project.coverImage}
-          width={1750}
-          height={1000}
+          width={1600}
+          height={900}
           alt={`Cover image from ${project.title}`}
-          classesWrapper="relative aspect-[16/9] "
+          classesWrapper="relative aspect-[16/9] h-full h-full "
         />
       </div>
-      <div className={`flex md:w-1/4 md:px-3 border-t md:border-t-0`}>
+      <div className={`flex md:px-3 md:w-5/12 lg:w-4/12 border-t md:border-t-0`}>
         <TextBox project={project} />
       </div>
     </div>
