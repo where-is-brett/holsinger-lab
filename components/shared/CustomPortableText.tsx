@@ -114,7 +114,12 @@ export function CustomPortableText({
       }) => {
         return (
           <div className="my-6 space-y-2">
-            <ImageContainer image={value} alt={value.alt || value.caption} />
+            <ImageContainer 
+              image={value} 
+              alt={value.alt || value.caption} 
+              width={value.hotspot?.width}
+              height={value.hotspot?.height}
+            />
             {value?.caption && (
               <div className="font-antarctican text-sm text-gray-600">
                 {value.caption}
