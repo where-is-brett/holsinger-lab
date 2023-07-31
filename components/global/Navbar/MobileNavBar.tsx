@@ -36,7 +36,7 @@ const MobileNavBar = ({
               src={logo}
               width={70}
               alt="logo"
-              className="absolute  left-4 my-4 h-[50%]"
+              className="absolute left-4 my-4 h-[50%]"
             />
           </Link>
 
