@@ -1,4 +1,5 @@
 import { PublicationPayload } from 'types'
+
 import Publication from './Publication'
 
 const Publications = ({ publications }) => {

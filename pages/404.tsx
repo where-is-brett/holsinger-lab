@@ -28,7 +28,7 @@ export default function NotFoundPage({ settings, homePageTitle }) {
             className=""
           />
           <p>
-            We couldn't find the page you were looking for. Perhaps the{' '}
+            {`We couldn't find the page you were looking for. Perhaps the`}
             <Link
               href={'/'}
               className="text-black underline hover:text-gray-600"

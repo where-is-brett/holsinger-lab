@@ -1,10 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { parseBody } from 'next-sanity/webhook'
 export { config } from 'next-sanity/webhook'
-
-import { pagePaths, projectPaths } from 'lib/sanity.queries'
 import { getClient } from 'lib/sanity.client'
 import { resolveHref } from 'lib/sanity.links'
+import { pagePaths, projectPaths } from 'lib/sanity.queries'
 
 export const getAllPaths = async (
   staticPaths: string[] = ['/', '/publications', '/contact', '/people']
