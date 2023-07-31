@@ -27,17 +27,17 @@ export default function Publication({ publication }) {
   )
 
   return (
-    <div className="inline-block max-w-2xl text-sm">
+    <div className="inline-block w-full max-w-3xl text-sm">
       <div className="space-y-2">
-        <h2 className="font-ariana text-lg md:text-xl lg:text-2xl">
+        <h2 className="font-ariana text-lg md:text-xl">
           {url ? (
             <a
               href={url}
               target="_blank"
-              className="flex items-start justify-start hover:underline"
+              className="flex items-start justify-between hover:underline"
             >
               {title}
-              <LaunchIcon className="shrink-0" />
+              <LaunchIcon className="shrink-0 relative" />
             </a>
           ) : (
             title
@@ -46,8 +46,8 @@ export default function Publication({ publication }) {
         <h3 className="font-ariana font-light md:text-base lg:text-lg">
           {author}
         </h3>
-        <h4 className="flex  gap-4 font-ariana md:text-base lg:text-lg">
-          <div className="">
+        <h4 className="flex gap-4 font-ariana md:text-base lg:text-lg">
+          <div>
             {journal}. {`${month} ${year}`}
           </div>
           <div>
@@ -78,7 +78,7 @@ export default function Publication({ publication }) {
           {`${author} (${year}). ${title}. `}
           <em>{journal}</em>
           <em>{volume ? `, ${volume}` : ""}</em>
-          {`${issue ? `(${issue})` : ""}${pages ? `, ${pages}`: ""}. `}
+          {`${issue ? `(${issue})` : ""}${pages ? `, ${pages}` : ""}. `}
           {url && (
             <a href={url} className="text-blue-600 hover:underline">
               {url}
