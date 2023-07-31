@@ -63,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           success: true,
           message: `Revalidated "${type}" with slug "people"`,
         })
-      default:
+      case 'settings':
         const paths = await getAllPaths();
         await Promise.all(paths.map(async (path) => {
           path && await res.revalidate(path);
