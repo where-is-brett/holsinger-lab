@@ -1,9 +1,10 @@
 import { urlForImage } from 'lib/sanity.image'
 import Image from 'next/image'
+import type { Image as Image_2 } from 'sanity'
 
 interface ImageBoxProps {
-  image?: { asset?: any }
-  alt?: string
+  image: Image_2 // { asset?: any }
+  alt: string
   width?: number
   height?: number
   size?: string

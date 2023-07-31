@@ -152,7 +152,7 @@ export default defineType({
             }),
           ],
           validation: (Rule) =>
-            Rule.custom((fields) => {
+            Rule.custom((fields: {caption: string | undefined, alt: string | undefined}) => {
               const caption = fields?.caption || ''
               const alt = fields?.alt || ''
               if (!caption.trim() && !alt.trim()) {

@@ -121,7 +121,7 @@ export default defineType({
           name: 'timeline',
           type: 'timeline',
         }),
-        defineField({
+        defineArrayMember({
           type: 'image',
           icon: ImageIcon,
           name: 'image',
@@ -149,6 +149,15 @@ export default defineType({
                 'Alternative text for screenreaders. Falls back on caption if not set',
             }),
           ],
+          validation: (Rule) =>
+            Rule.custom((fields: {caption: string | undefined, alt: string | undefined}) => {
+              const caption = fields?.caption || ''
+              const alt = fields?.alt || ''
+              if (!caption.trim() && !alt.trim()) {
+                return 'Either caption or alt text must be provided.'
+              }
+              return true
+            }),
         }),
       ],
     }),

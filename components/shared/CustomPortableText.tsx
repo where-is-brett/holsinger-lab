@@ -114,7 +114,7 @@ export function CustomPortableText({
           <div className="my-6 space-y-2">
             <ImageContainer 
               image={value} 
-              alt={value.alt || value.caption} 
+              alt={value.alt || value.caption || ''} 
               width={value.hotspot?.width}
               height={value.hotspot?.height}
             />
