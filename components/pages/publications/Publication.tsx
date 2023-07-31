@@ -75,7 +75,10 @@ export default function Publication({ publication }) {
       {/* Abstract */}
       <ToggleContent show={showCitation}>
         <p className="m-4 lg:text-lg">
-          {`${author}. (${year}). ${title}. ${journal}, ${volume}(${issue})${pages?`, ${pages}`:""}. `}
+          {`${author} (${year}). ${title}. `}
+          <em>{journal}</em>
+          <em>{volume ? `, ${volume}` : ""}</em>
+          {`${issue ? `(${issue})` : ""}${pages ? `, ${pages}`: ""}. `}
           {url && (
             <a href={url} className="text-blue-600 hover:underline">
               {url}
