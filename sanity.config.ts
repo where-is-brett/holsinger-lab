@@ -21,7 +21,7 @@ import settings from 'schemas/singletons/settings'
 import publication from 'schemas/documents/publication'
 import profile from 'schemas/documents/profile'
 
-const title = process.env.NEXT_PUBLIC_SANITY_PROJECT_TITLE || 'LMND'
+const title = process.env.NEXT_PUBLIC_SANITY_PROJECT_TITLE || 'HOLSINGER LAB'
 
 export const PREVIEWABLE_DOCUMENT_TYPES: string[] = [
   home.name,
@@ -74,6 +74,6 @@ export default defineConfig({
     unsplashImageAsset(),
     // Vision lets you query your content with GROQ in the studio
     // https://www.sanity.io/docs/the-vision-plugin
-    visionTool({ defaultApiVersion: apiVersion }),
+    // visionTool({ defaultApiVersion: apiVersion }),
   ],
 })

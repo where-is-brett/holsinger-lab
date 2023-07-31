@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import router from 'next/router'
 import logo from 'public/logo.svg'
+import { MenuItem } from 'types'
 
 const hamburgerLine = `h-[2px] w-6 my-[6px] bg-black transition ease transform duration-500`
 
@@ -34,7 +35,7 @@ const MobileNavBar = ({
           <Link href="/">
             <Image
               src={logo}
-              width={70}
+              width={120}
               alt="logo"
               className="absolute left-4 my-4 h-[50%]"
             />
@@ -76,7 +77,7 @@ const MobileNavBar = ({
                     bg-background text-center text-2xl font-[400] text-black"
         >
           {menuItems &&
-            menuItems.map((menuItem, key) => {
+            menuItems.map((menuItem: MenuItem, key: number) => {
               const href = resolveHref(menuItem?._type, menuItem?.slug)
               if (!href) {
                 return null
