@@ -63,21 +63,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           success: true,
           message: `Revalidated "${type}" with slug "people"`,
         })
-      case 'settings':
+      default:
         const paths = await getAllPaths()
         console.log(paths)
         await Promise.all(paths.map(async (path) => {
           path && await res.revalidate(path);
-          console.log(`Revalidating ${path}...`)
+          console.log(`Revalidating '${path}'...`)
         }));
+        console.log(`Revalidated all pages.`)
         return res.status(200).json({
           success: true,
           message: `Revalidated all pages.`,
         })
 
     }
-
-    return res.json({ success: false, message: 'No managed type' })
 
   } catch (err) {
     console.error(err)
