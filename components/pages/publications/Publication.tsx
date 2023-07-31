@@ -37,7 +37,7 @@ export default function Publication({ publication }) {
               className="flex items-start justify-between hover:underline"
             >
               {title}
-              <LaunchIcon className="shrink-0 relative" />
+              <LaunchIcon className="relative shrink-0" />
             </a>
           ) : (
             title
@@ -77,8 +77,8 @@ export default function Publication({ publication }) {
         <p className="m-4 lg:text-lg">
           {`${author} (${year}). ${title}. `}
           <em>{journal}</em>
-          <em>{volume ? `, ${volume}` : ""}</em>
-          {`${issue ? `(${issue})` : ""}${pages ? `, ${pages}` : ""}. `}
+          <em>{volume ? `, ${volume}` : ''}</em>
+          {`${issue ? `(${issue})` : ''}${pages ? `, ${pages}` : ''}. `}
           {url && (
             <a href={url} className="text-blue-600 hover:underline">
               {url}

@@ -14,9 +14,7 @@ export function CustomPortableText({
   const components: PortableTextComponents = {
     block: {
       normal: ({ children }) => {
-        return (
-            <p className={`${paragraphClasses} my-[1em]`}>{children}</p>
-        )
+        return <p className={`${paragraphClasses} my-[1em]`}>{children}</p>
       },
       // Adding block quote
       blockquote: ({ children }) => {
@@ -112,9 +110,9 @@ export function CustomPortableText({
       }) => {
         return (
           <div className="my-6 space-y-2">
-            <ImageContainer 
-              image={value} 
-              alt={value.alt || value.caption || ''} 
+            <ImageContainer
+              image={value}
+              alt={value.alt || value.caption || ''}
               width={value.hotspot?.width}
               height={value.hotspot?.height}
             />

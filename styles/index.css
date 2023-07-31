@@ -34,7 +34,7 @@ ol {
 
 /* Reset input field appearances */
 textarea,
-input {  
+input {
   appearance: none;
   -webkit-appearance: none;
   border-radius: 0;

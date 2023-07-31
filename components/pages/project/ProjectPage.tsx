@@ -56,7 +56,7 @@ export function ProjectPage({
                 classesWrapper="relative aspect-[16/9]"
               />
 
-              <div className="border-t divide-inherit grid grid-cols-1 divide-y lg:grid-cols-4 lg:divide-x lg:divide-y-0">
+              <div className="divide-inherit grid grid-cols-1 divide-y border-t lg:grid-cols-4 lg:divide-x lg:divide-y-0">
                 {/* Duration */}
                 {!!(startYear && endYear) && (
                   <div className="p-3 lg:p-4">
@@ -80,7 +80,7 @@ export function ProjectPage({
                     {site && (
                       <Link
                         target="_blank"
-                        className="text-md break-words md:text-lg hover:underline"
+                        className="text-md break-words hover:underline md:text-lg"
                         href={site}
                       >
                         {site}

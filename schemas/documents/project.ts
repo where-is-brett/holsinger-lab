@@ -150,14 +150,19 @@ export default defineType({
             }),
           ],
           validation: (Rule) =>
-            Rule.custom((fields: {caption: string | undefined, alt: string | undefined}) => {
-              const caption = fields?.caption || ''
-              const alt = fields?.alt || ''
-              if (!caption.trim() && !alt.trim()) {
-                return 'Either caption or alt text must be provided.'
+            Rule.custom(
+              (fields: {
+                caption: string | undefined
+                alt: string | undefined
+              }) => {
+                const caption = fields?.caption || ''
+                const alt = fields?.alt || ''
+                if (!caption.trim() && !alt.trim()) {
+                  return 'Either caption or alt text must be provided.'
+                }
+                return true
               }
-              return true
-            }),
+            ),
         }),
       ],
     }),
