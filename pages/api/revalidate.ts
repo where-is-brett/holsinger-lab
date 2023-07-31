@@ -32,12 +32,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     switch (type) {
-      case 'home':
-        await res.revalidate(`/`)
-        return res.status(200).json({
-          success: true,
-          message: `Revalidated "${type}"`,
-        })
       case 'page':
         await res.revalidate(`/${slug}`)
         return res.status(200).json({
@@ -63,9 +57,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           success: true,
           message: `Revalidated "${type}" with slug "people"`,
         })
+      // Fallback - revalidate all pages
       default:
         const paths = await getAllPaths()
-        console.log(paths)
         await Promise.all(paths.map(async (path) => {
           console.log(`Revalidating '${path}'...`)
           return path && await res.revalidate(path)
