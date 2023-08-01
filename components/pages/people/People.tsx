@@ -26,7 +26,6 @@ export default function People({ homePageTitle, settings, profiles }) {
             </div>
           ))}
         </div>
-        <div className="absolute left-0 w-screen border-t" />
       </Layout>
     </>
   )
