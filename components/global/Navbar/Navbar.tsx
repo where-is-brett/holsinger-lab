@@ -18,8 +18,13 @@ export function Navbar({
   showPeople = true,
   showContactForm = true,
 }: NavbarProps) {
+
+  const [isBrowser, setIsBrowser] = useState(false)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
+
   useEffect(() => {
+    // Check if client side
+    setIsBrowser(true)
     // Monitor window size
     const handleResize = () => {
       setIsSmallScreen(window.innerWidth < 768)
@@ -40,21 +45,29 @@ export function Navbar({
     setIsMenuOpen(!isMenuOpen)
   }
 
-  return isSmallScreen ? (
-    <MobileNavBar
-      handleMenuClick={handleMenuClick}
-      isMenuOpen={isMenuOpen}
-      menuItems={menuItems}
-      showPublications={showPublications}
-      showPeople={showPeople}
-      showContactForm={showContactForm}
-    />
-  ) : (
-    <DesktopNavBar
-      menuItems={menuItems}
-      showPublications={showPublications}
-      showPeople={showPeople}
-      showContactForm={showContactForm}
-    />
+  return (
+    <>
+      {isBrowser && (
+        <>
+          {isSmallScreen ?
+            <MobileNavBar
+              handleMenuClick={handleMenuClick}
+              isMenuOpen={isMenuOpen}
+              menuItems={menuItems}
+              showPublications={showPublications}
+              showPeople={showPeople}
+              showContactForm={showContactForm}
+            />
+            :
+            <DesktopNavBar
+              menuItems={menuItems}
+              showPublications={showPublications}
+              showPeople={showPeople}
+              showContactForm={showContactForm}
+            />
+          }
+        </>
+      )}
+    </>
   )
 }
