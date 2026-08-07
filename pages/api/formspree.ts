@@ -46,6 +46,13 @@ export default async function handler(
     return res.status(405).json({ success: false, message: 'Method not allowed.' })
   }
 
+  // Honeypot: bots fill every field, real visitors never see this one.
+  // Checked first so bot traffic never consumes the rate-limit budget
+  // meant for real submissions sharing an IP (e.g. an office NAT).
+  if (req.body?._gotcha) {
+    return res.status(200).json({ success: true, message: 'Thank you.' })
+  }
+
   if (!isTrustedOrigin(req)) {
     return res.status(403).json({ success: false, message: 'Forbidden.' })
   }
@@ -56,11 +63,6 @@ export default async function handler(
       success: false,
       message: 'Too many submissions. Please try again later.',
     })
-  }
-
-  // Honeypot: bots fill every field, real visitors never see this one.
-  if (req.body?._gotcha) {
-    return res.status(200).json({ success: true, message: 'Thank you.' })
   }
 
   try {
