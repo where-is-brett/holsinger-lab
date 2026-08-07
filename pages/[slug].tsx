@@ -48,7 +48,10 @@ export const getStaticProps: GetStaticProps<PageProps, Query> = async (ctx) => {
   const { draftMode = false, params = {} } = ctx
   const requestedSlug = params.slug as string | undefined
 
-  if (requestedSlug && legacyPageSlugs[requestedSlug]) {
+  if (
+    requestedSlug &&
+    Object.prototype.hasOwnProperty.call(legacyPageSlugs, requestedSlug)
+  ) {
     return {
       redirect: {
         destination: `/${legacyPageSlugs[requestedSlug]}`,
@@ -70,6 +73,7 @@ export const getStaticProps: GetStaticProps<PageProps, Query> = async (ctx) => {
   if (!page) {
     return {
       notFound: true,
+      revalidate: 60,
     }
   }
 
