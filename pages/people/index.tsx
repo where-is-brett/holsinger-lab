@@ -44,7 +44,7 @@ export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
       notFound: true,
     }
   }
-  if (!settings?.showPeople) {
+  if (settings?.showPeople === false) {
     return {
       notFound: true,
     }

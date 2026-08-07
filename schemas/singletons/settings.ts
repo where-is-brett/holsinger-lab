@@ -36,21 +36,24 @@ export default defineType({
       name: 'showPublications',
       title: 'Enable Publications page',
       type: 'boolean',
-      description: 'Toggle to enable the Publications page in your site.',
+      description:
+        'Toggle to enable the Publications page in your site. Turning this OFF makes /publications return a 404 — the page disappears from the site entirely, it does not just hide from navigation.',
       initialValue: true,
     }),
     defineField({
       name: 'showPeople',
       title: 'Enable Team page',
       type: 'boolean',
-      description: 'Toggle to enable the Team page in your site.',
+      description:
+        'Toggle to enable the Team page in your site. Turning this OFF makes /people return a 404 — the page disappears from the site entirely, it does not just hide from navigation.',
       initialValue: true,
     }),
     defineField({
       name: 'showContactForm',
       title: 'Enable Contact Us page',
       type: 'boolean',
-      description: 'Toggle to enable the Contact Us page in your site.',
+      description:
+        'Toggle to enable the Contact Us page in your site. Turning this OFF makes /contact return a 404 — the page disappears from the site entirely, it does not just hide from navigation.',
       initialValue: true,
     }),
     defineField({

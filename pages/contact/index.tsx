@@ -23,7 +23,7 @@ export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
     client.fetch<SettingsPayload | null>(settingsQuery),
   ])
 
-  if (!settings?.showContactForm) {
+  if (settings?.showContactForm === false) {
     return {
       notFound: true,
     }

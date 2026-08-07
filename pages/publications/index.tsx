@@ -22,10 +22,6 @@ interface PageProps {
 export default function PublicationsPage(props: PageProps) {
   const { homePageTitle, settings, preview, publications } = props
 
-  if (preview) {
-    return
-  }
-
   return (
     <>
       <SiteMeta
@@ -36,7 +32,7 @@ export default function PublicationsPage(props: PageProps) {
         image={settings?.ogImage}
         title={'Publications'}
       />
-      <Layout settings={settings}>
+      <Layout settings={settings} preview={preview}>
         <Publications publications={publications} />
       </Layout>
     </>
@@ -59,7 +55,7 @@ export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
     }
   }
 
-  if (!settings?.showPublications) {
+  if (settings?.showPublications === false) {
     return {
       notFound: true,
     }
