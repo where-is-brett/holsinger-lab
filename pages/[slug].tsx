@@ -66,7 +66,7 @@ export const getStaticProps: GetStaticProps<PageProps, Query> = async (ctx) => {
       preview: draftMode,
       token: draftMode ? readToken : null,
     },
-    // revalidate: 60,
+    revalidate: 60,
   }
 }
 
@@ -76,6 +76,6 @@ export const getStaticPaths = async () => {
 
   return {
     paths: paths?.map((slug) => resolveHref('page', slug)) || [],
-    fallback: false,
+    fallback: 'blocking',
   }
 }

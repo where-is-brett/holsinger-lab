@@ -69,6 +69,6 @@ export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
       token: draftMode ? readToken : null,
       publications: publications,
     },
-    // revalidate: 60,
+    revalidate: 60,
   }
 }
