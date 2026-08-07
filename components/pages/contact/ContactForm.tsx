@@ -14,6 +14,7 @@ interface Inputs {
   name: string
   email: string
   message: string
+  _gotcha: string
 }
 
 const ContactForm: React.FC = () => {
@@ -27,6 +28,7 @@ const ContactForm: React.FC = () => {
     name: '',
     email: '',
     message: '',
+    _gotcha: '',
   })
 
   const handleServerResponse = (ok: boolean, msg: string) => {
@@ -41,6 +43,7 @@ const ContactForm: React.FC = () => {
         name: '',
         email: '',
         message: '',
+        _gotcha: '',
       })
     } else {
       setStatus((prevStatus) => ({
@@ -106,6 +109,23 @@ const ContactForm: React.FC = () => {
             onSubmit={handleOnSubmit}
             className="flex w-full max-w-xl flex-col space-y-4 md:w-3/4"
           >
+            <input
+              type="text"
+              name="_gotcha"
+              id="_gotcha"
+              tabIndex={-1}
+              autoComplete="off"
+              value={inputs._gotcha}
+              onChange={handleOnChange}
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                left: '-9999px',
+                width: '1px',
+                height: '1px',
+                opacity: 0,
+              }}
+            />
             <p className="font-ariana text-base text-gray-600 md:text-lg">
               We would love to hear from you! Whether you have a question,
               suggestion, or just want to say hello, feel free to send us a
