@@ -40,8 +40,23 @@ export default function ProjectSlugRoute(props: PageProps) {
   return <Page homePageTitle={homePageTitle} page={page} settings={settings} />
 }
 
+const legacyPageSlugs: Record<string, string> = {
+  Miscellaneous: 'miscellaneous',
+}
+
 export const getStaticProps: GetStaticProps<PageProps, Query> = async (ctx) => {
   const { draftMode = false, params = {} } = ctx
+  const requestedSlug = params.slug as string | undefined
+
+  if (requestedSlug && legacyPageSlugs[requestedSlug]) {
+    return {
+      redirect: {
+        destination: `/${legacyPageSlugs[requestedSlug]}`,
+        permanent: true,
+      },
+    }
+  }
+
   const client = getClient(draftMode ? { token: readToken } : undefined)
 
   const [settings, page, homePageTitle] = await Promise.all([
