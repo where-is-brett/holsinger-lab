@@ -183,19 +183,34 @@ having strictness retrofitted at the end of a large migration.
    `og:site_name`.
 4. **Narrow `publicationsQuery`** from `{...}` to the explicit `PublicationPayload` fields.
 5. **Delete** `netlify.toml` and `.github/CODEOWNERS`; add `/dist` to `.gitignore` (§1.4).
-6. **Type the implicit-`any` components, then set `strict: true`** and fix the fallout. The
-   parent spec says eight; the compiler determines the real set. Known beyond the spec's list:
-   `SuccessScreen`, `ErrorDialog`, and roughly a dozen inline handlers in
-   `CustomPortableText.tsx`.
+6. **Type the implicit-`any` components, then set `strict: true`** and fix the fallout. Verified
+   by actually flipping the flag and reading `tsc`'s output rather than guessing: the parent
+   spec's list of eight is close but not exact. The real set of component prop signatures needing
+   types is `DesktopNavBar`, `MobileNavBar`, `Contact`, `ErrorDialog`, `SuccessScreen`, `People`,
+   `Profile`, `Publication`, `Publications`, and both exports of `Toggle.tsx` — plus `pages/404.tsx`,
+   which the spec's list omits. `CustomPortableText.tsx`'s block/mark/list handlers turned out to
+   need **no** changes: the `components: PortableTextComponents` annotation on the object they
+   belong to contextually types every nested handler, so `strict` raises nothing there. The
+   remaining fallout is outside `components/` entirely — five Studio/schema-layer errors in
+   `plugins/settings.tsx`, `sanity.config.ts` (via `schemas/objects/timeline.ts`'s preview
+   `prepare` typing), and the `Rule.custom` validators in `schemas/documents/{page,project,
+   publication}.ts`, which currently type their callback parameter as non-optional when Sanity's
+   `CustomValidator` always calls back with `T | undefined`.
 7. **ESLint → `next/core-web-vitals`**; reconfigure `.github/renovate.json` for this repo
    (it currently inherits `sanity-io/renovate-config` presets intended for Sanity's own repos).
 
-**Judgment call, stated explicitly.** `next/core-web-vitals` enables `jsx-a11y`, which will fire
-on exactly the defects Phase 2 owns — `<a onClick>` with no `href` (`Profile.tsx:53`,
-`Toggle.tsx:7`) and `<div>` inside `<ul>` (`Publications.tsx:15`). Combined with Phase 0's
-`ignoreDuringBuilds: false`, that fails the build. Those specific rules are set to `warn` with
-an inline comment naming Phase 2 as owner. The config is correct, the build stays green, and the
-debt stays visible instead of being silently disabled.
+**Verified, not a judgment call.** The parent spec's Phase 1 planning draft assumed
+`next/core-web-vitals` would newly enable `jsx-a11y` and surface Phase 2's `<a onClick>`-without-
+`href` and `<div>`-in-`<ul>` defects, requiring some rules to be downgraded to `warn` so the build
+would still pass. Tested directly by flipping the config and running `next lint`: this is false.
+`next/core-web-vitals` only adds `@next/next`'s web-vitals-specific rules (`no-html-link-for-pages`,
+`no-sync-scripts`, etc.) on top of the base `next` config — it does not add or elevate any
+`jsx-a11y` rules. The base `next` config both repos share already ships a small fixed set of
+`jsx-a11y` rules, all pinned to `warn`, none of which is `anchor-is-valid` (the rule that would
+catch a href-less `<a onClick>`). The `<div>`-in-`<ul>` defect isn't an ESLint concern at all — no
+rule in either config catches invalid DOM nesting. Net effect: switching to
+`next/core-web-vitals` is a clean, silent no-op for this codebase's lint output today — `next
+lint` reports zero warnings before and after. No rule downgrades are needed.
 
 **Exit criteria.** `tsc --noEmit`, `next lint`, `next build` green on Next 13; `strict: true`
 active; 17 packages removed; no behavioural change to any route.
