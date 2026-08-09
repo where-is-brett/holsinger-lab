@@ -1,6 +1,6 @@
 import * as demo from 'lib/demo.data'
 import { urlForImage } from 'lib/sanity.image'
-import { siteUrl } from 'lib/site'
+import { isNoindexPath, siteUrl } from 'lib/site'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import type { Image } from 'sanity'
@@ -31,7 +31,12 @@ export function SiteMeta({
   const imageUrl =
     image && urlForImage(image)?.width(1200).height(627).fit('crop').url()
 
-  const canonicalUrl = `${siteUrl}${router.asPath.split('?')[0]}`
+  const path = router.asPath.split('?')[0]
+  const canonicalUrl = `${siteUrl}${path}`
+
+  // Callers can force noindex (the 404 page does); routes listed in lib/site
+  // get it automatically, so a new internal page can't be missed by omission.
+  const shouldNoindex = noindex || isNoindexPath(path)
 
   return (
     <Head>
@@ -60,7 +65,7 @@ export function SiteMeta({
       <meta name="msapplication-config" content="/favicon/browserconfig.xml" />
       <meta name="theme-color" content="#F8F8F8" />
       <link rel="canonical" href={canonicalUrl} />
-      {noindex && <meta name="robots" content="noindex" />}
+      {shouldNoindex && <meta name="robots" content="noindex" />}
       {description && (
         <meta key="description" name="description" content={description} />
       )}
