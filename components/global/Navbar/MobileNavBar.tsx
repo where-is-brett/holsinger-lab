@@ -16,6 +16,13 @@ const MobileNavBar = ({
   showPublications,
   showPeople,
   showContactForm,
+}: {
+  handleMenuClick: () => void
+  isMenuOpen: boolean
+  menuItems?: MenuItem[]
+  showPublications?: boolean
+  showPeople?: boolean
+  showContactForm?: boolean
 }) => {
   const handleLinkClick = (
     e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
