@@ -71,7 +71,9 @@ export default defineType({
       const hasItems = items && items.length > 0
       const timelineNames =
         hasItems &&
-        items.map((timeline: { title: string }) => timeline.title).join(', ')
+        items
+          .map((timeline: { title?: string }) => timeline.title)
+          .join(', ')
 
       return {
         title: 'Timelines',

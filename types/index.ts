@@ -73,9 +73,9 @@ export interface PublicationPayload {
   title: string
   author: string
   journal: string
-  volume: string
-  issue: string
-  pages: string
+  volume?: number
+  issue?: number
+  pages?: string
   abstract?: string
   url?: string
   date: string
@@ -84,7 +84,7 @@ export interface PublicationPayload {
 export interface ProfilePayload {
   _id: string
   orderRank: string
-  image: Image
+  image?: Image
   name: string
   role: string
   email?: string
