@@ -1,7 +1,18 @@
 import { Transition } from '@headlessui/react'
 import { ChevronDownIcon, ChevronUpIcon } from '@sanity/icons'
+import type { ReactNode } from 'react'
 
-export function Toggle({ show, callback, showMessage, hideMessage }) {
+export function Toggle({
+  show,
+  callback,
+  showMessage,
+  hideMessage,
+}: {
+  show: boolean
+  callback: () => void
+  showMessage: string
+  hideMessage: string
+}) {
   return (
     <>
       <a onClick={callback} className="underline hover:cursor-pointer">
@@ -21,7 +32,13 @@ export function Toggle({ show, callback, showMessage, hideMessage }) {
   )
 }
 
-export function ToggleContent({ show, children }) {
+export function ToggleContent({
+  show,
+  children,
+}: {
+  show: boolean
+  children: ReactNode
+}) {
   return (
     <Transition
       show={show}

@@ -71,8 +71,18 @@ export const settingsQuery = groq`
 
 export const publicationsQuery = groq`
   *[_type == "publication"] | order(date desc) {
-  ...
-}`
+    _id,
+    title,
+    author,
+    journal,
+    volume,
+    issue,
+    pages,
+    abstract,
+    url,
+    date,
+  }
+`
 
 export const profileQuery = groq`
   *[_type == "profile"] | order(orderRank) {

@@ -1,9 +1,14 @@
 import { LaunchIcon } from '@sanity/icons'
 import { useState } from 'react'
+import type { PublicationPayload } from 'types'
 
 import { Toggle, ToggleContent } from './Toggle'
 
-export default function Publication({ publication }) {
+export default function Publication({
+  publication,
+}: {
+  publication: PublicationPayload
+}) {
   const [showAbstract, setShowAbstract] = useState(false)
   const [showCitation, setShowCitation] = useState(false)
   const handleShowCitation = () => {
