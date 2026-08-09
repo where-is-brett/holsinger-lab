@@ -33,8 +33,8 @@ export default defineType({
       type: 'number',
       description: 'Enter the Volume',
       validation: (Rule) =>
-        Rule.custom((num: number) => {
-          if (num <= 0) {
+        Rule.custom((num: number | undefined) => {
+          if (num !== undefined && num <= 0) {
             return 'Volume number must be a positive integer'
           }
           return true
@@ -46,8 +46,8 @@ export default defineType({
       type: 'number',
       description: 'Enter Issue Number',
       validation: (Rule) =>
-        Rule.custom((num: number) => {
-          if (num <= 0) {
+        Rule.custom((num: number | undefined) => {
+          if (num !== undefined && num <= 0) {
             return 'Issue number must be a positive integer'
           }
           return true

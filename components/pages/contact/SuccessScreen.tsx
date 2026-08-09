@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import successSVG from 'public/success.svg'
 
-const SuccessScreen = ({ message }) => {
+const SuccessScreen = ({ message }: { message: string }) => {
   return (
     <div
       className={`mb-16 flex flex-col items-center justify-center space-y-8 text-center`}

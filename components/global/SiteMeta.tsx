@@ -1,6 +1,5 @@
-import * as demo from 'lib/demo.data'
 import { urlForImage } from 'lib/sanity.image'
-import { isNoindexPath, siteUrl } from 'lib/site'
+import { isNoindexPath, siteName, siteUrl } from 'lib/site'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import type { Image } from 'sanity'
@@ -26,7 +25,7 @@ export function SiteMeta({
     ...(title ? [title] : []),
     ...(baseTitle ? [baseTitle] : []),
   ].join(' | ')
-  const resolvedTitle = metaTitle || demo.title
+  const resolvedTitle = metaTitle || siteName
 
   const imageUrl =
     image && urlForImage(image)?.width(1200).height(627).fit('crop').url()
@@ -72,7 +71,7 @@ export function SiteMeta({
 
       {/* Open Graph */}
       <meta property="og:type" content="website" />
-      <meta property="og:site_name" content={demo.title} />
+      <meta property="og:site_name" content={siteName} />
       <meta property="og:title" content={resolvedTitle} />
       <meta property="og:url" content={canonicalUrl} />
       {description && (

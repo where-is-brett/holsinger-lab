@@ -1,7 +1,15 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "github>sanity-io/renovate-config",
-    "github>sanity-io/renovate-config:studio-v3"
+  "extends": ["config:recommended", ":semanticCommitsDisabled"],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "matchPackageNames": ["sanity", "@sanity/**", "next-sanity"],
+      "groupName": "Sanity"
+    },
+    {
+      "matchPackageNames": ["next", "react", "react-dom", "eslint-config-next"],
+      "groupName": "Next.js"
+    }
   ]
 }

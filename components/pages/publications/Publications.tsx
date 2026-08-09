@@ -2,7 +2,11 @@ import { PublicationPayload } from 'types'
 
 import Publication from './Publication'
 
-const Publications = ({ publications }) => {
+const Publications = ({
+  publications,
+}: {
+  publications: PublicationPayload[]
+}) => {
   return (
     <>
       <h1 className="mb-8 text-3xl font-black md:text-5xl">Publications</h1>

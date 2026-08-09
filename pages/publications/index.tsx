@@ -16,7 +16,7 @@ interface PageProps {
   homePageTitle?: string
   preview: boolean
   token: string | null
-  publications: Object[]
+  publications: PublicationPayload[]
 }
 
 export default function PublicationsPage(props: PageProps) {

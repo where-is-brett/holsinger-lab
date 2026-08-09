@@ -1,4 +1,3 @@
-import axios from 'axios'
 import React, { ChangeEvent, FormEvent, useState } from 'react'
 
 import ErrorDialog from './ErrorDialog'
@@ -75,7 +74,14 @@ const ContactForm: React.FC = () => {
 
     try {
       // Make the POST request to the API route
-      const response = await axios.post('/api/formspree', inputs)
+      const response = await fetch('/api/formspree', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inputs),
+      })
+      if (!response.ok) {
+        throw new Error('Formspree request failed')
+      }
       handleServerResponse(
         true,
         'Thank you for reaching out to us! Your message has been successfully submitted.'
