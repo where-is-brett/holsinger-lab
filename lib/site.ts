@@ -2,6 +2,8 @@ export const siteUrl = (
   process.env.NEXT_PUBLIC_SITE_URL || 'https://holsingerlab.vercel.app'
 ).replace(/\/$/, '')
 
+export const siteName = 'Holsinger Lab'
+
 /**
  * Routes that are published for lab members but should not surface in search
  * results — internal CMS documentation, not reader-facing content.
