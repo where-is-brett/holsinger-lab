@@ -678,7 +678,7 @@ curl -s http://localhost:3000/publications | grep -c "publication" || true
 kill %1
 ```
 
-Expected: the page returns 200 and contains publication content — confirming the narrowed query still returns everything the page needs (nothing beyond the nine fields it renders was ever used).
+Expected: the page returns 200 and contains publication content — confirming the narrowed query still returns everything the page needs (nothing beyond the ten fields it renders was ever used).
 
 - [ ] **Step 9: Commit**
 
