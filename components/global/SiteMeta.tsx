@@ -1,6 +1,8 @@
 import * as demo from 'lib/demo.data'
 import { urlForImage } from 'lib/sanity.image'
+import { isNoindexPath, siteUrl } from 'lib/site'
 import Head from 'next/head'
+import { useRouter } from 'next/router'
 import type { Image } from 'sanity'
 
 /**
@@ -11,23 +13,34 @@ export function SiteMeta({
   description,
   image,
   title,
+  noindex = false,
 }: {
   baseTitle?: string
   description?: string
   image?: Image
   title?: string
+  noindex?: boolean
 }) {
+  const router = useRouter()
   const metaTitle = [
     ...(title ? [title] : []),
     ...(baseTitle ? [baseTitle] : []),
   ].join(' | ')
+  const resolvedTitle = metaTitle || demo.title
 
   const imageUrl =
     image && urlForImage(image)?.width(1200).height(627).fit('crop').url()
 
+  const path = router.asPath.split('?')[0]
+  const canonicalUrl = `${siteUrl}${path}`
+
+  // Callers can force noindex (the 404 page does); routes listed in lib/site
+  // get it automatically, so a new internal page can't be missed by omission.
+  const shouldNoindex = noindex || isNoindexPath(path)
+
   return (
     <Head>
-      <title>{metaTitle || demo.title}</title>
+      <title>{resolvedTitle}</title>
       <meta name="viewport" content="width=device-width,initial-scale=1.0" />
       <link
         rel="apple-touch-icon"
@@ -51,10 +64,32 @@ export function SiteMeta({
       <meta name="msapplication-TileColor" content="#000000" />
       <meta name="msapplication-config" content="/favicon/browserconfig.xml" />
       <meta name="theme-color" content="#F8F8F8" />
+      <link rel="canonical" href={canonicalUrl} />
+      {shouldNoindex && <meta name="robots" content="noindex" />}
       {description && (
         <meta key="description" name="description" content={description} />
       )}
+
+      {/* Open Graph */}
+      <meta property="og:type" content="website" />
+      <meta property="og:site_name" content={demo.title} />
+      <meta property="og:title" content={resolvedTitle} />
+      <meta property="og:url" content={canonicalUrl} />
+      {description && (
+        <meta property="og:description" content={description} />
+      )}
       {imageUrl && <meta property="og:image" content={imageUrl} />}
+
+      {/* Twitter */}
+      <meta
+        name="twitter:card"
+        content={imageUrl ? 'summary_large_image' : 'summary'}
+      />
+      <meta name="twitter:title" content={resolvedTitle} />
+      {description && (
+        <meta name="twitter:description" content={description} />
+      )}
+      {imageUrl && <meta name="twitter:image" content={imageUrl} />}
     </Head>
   )
 }

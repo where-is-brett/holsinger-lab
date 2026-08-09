@@ -19,6 +19,7 @@ export default function NotFoundPage({ settings, homePageTitle }) {
         }
         image={settings?.ogImage}
         title={'Page Not Found'}
+        noindex
       />
       <Layout settings={settings}>
         <div className="mx-auto mb-16 w-80 max-w-md space-y-6 md:w-[40vw]">

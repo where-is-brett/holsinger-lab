@@ -31,7 +31,7 @@ export function CustomPortableText({
       h1: ({ children }) => {
         return (
           <div className={`${paragraphClasses}`}>
-            <h1 className="my-[0.67em] text-4xl md:text-5xl">{children}</h1>
+            <h2 className="my-[0.67em] text-4xl md:text-5xl">{children}</h2>
           </div>
         )
       },

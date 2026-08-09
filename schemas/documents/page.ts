@@ -1,6 +1,8 @@
 import { DocumentIcon, ImageIcon } from '@sanity/icons'
 import { defineArrayMember, defineField, defineType } from 'sanity'
 
+import { slugify, validateSlugFormat } from 'schemas/lib/slug'
+
 export default defineType({
   type: 'document',
   name: 'page',
@@ -19,21 +21,24 @@ export default defineType({
       title: 'Slug',
       options: {
         source: 'title',
+        slugify,
       },
       validation: (Rule) =>
-        Rule.required().custom((slug) => {
-          if (typeof slug === 'undefined') return true
+        Rule.required()
+          .custom((slug) => {
+            if (typeof slug === 'undefined') return true
 
-          if (
-            slug.current !== 'publications' &&
-            slug.current !== 'people' &&
-            slug.current !== 'contact'
-          ) {
-            return true
-          } else {
-            return `Slug '${slug.current}' is not available` // Error message goes here
-          }
-        }),
+            if (
+              slug.current !== 'publications' &&
+              slug.current !== 'people' &&
+              slug.current !== 'contact'
+            ) {
+              return true
+            } else {
+              return `Slug '${slug.current}' is not available` // Error message goes here
+            }
+          })
+          .custom(validateSlugFormat),
     }),
     defineField({
       name: 'overview',
@@ -181,6 +186,3 @@ export default defineType({
     },
   },
 })
-function slugify(arg0: any) {
-  throw new Error('Function not implemented.')
-}

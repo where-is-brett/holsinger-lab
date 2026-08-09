@@ -1,6 +1,8 @@
 import { DocumentIcon, ImageIcon } from '@sanity/icons'
 import { defineArrayMember, defineField, defineType } from 'sanity'
 
+import { slugify, validateSlugFormat } from 'schemas/lib/slug'
+
 export default defineType({
   name: 'project',
   title: 'Project',
@@ -23,9 +25,10 @@ export default defineType({
       options: {
         source: 'title',
         maxLength: 96,
+        slugify,
         isUnique: (value, context) => context.defaultIsUnique(value, context),
       },
-      validation: (rule) => rule.required(),
+      validation: (rule) => rule.required().custom(validateSlugFormat),
     }),
     defineField({
       name: 'overview',

@@ -40,8 +40,26 @@ export default function ProjectSlugRoute(props: PageProps) {
   return <Page homePageTitle={homePageTitle} page={page} settings={settings} />
 }
 
+const legacyPageSlugs: Record<string, string> = {
+  Miscellaneous: 'miscellaneous',
+}
+
 export const getStaticProps: GetStaticProps<PageProps, Query> = async (ctx) => {
   const { draftMode = false, params = {} } = ctx
+  const requestedSlug = params.slug as string | undefined
+
+  if (
+    requestedSlug &&
+    Object.prototype.hasOwnProperty.call(legacyPageSlugs, requestedSlug)
+  ) {
+    return {
+      redirect: {
+        destination: `/${legacyPageSlugs[requestedSlug]}`,
+        permanent: true,
+      },
+    }
+  }
+
   const client = getClient(draftMode ? { token: readToken } : undefined)
 
   const [settings, page, homePageTitle] = await Promise.all([
@@ -55,6 +73,7 @@ export const getStaticProps: GetStaticProps<PageProps, Query> = async (ctx) => {
   if (!page) {
     return {
       notFound: true,
+      revalidate: 60,
     }
   }
 
@@ -66,7 +85,7 @@ export const getStaticProps: GetStaticProps<PageProps, Query> = async (ctx) => {
       preview: draftMode,
       token: draftMode ? readToken : null,
     },
-    // revalidate: 60,
+    revalidate: 60,
   }
 }
 
@@ -76,6 +95,6 @@ export const getStaticPaths = async () => {
 
   return {
     paths: paths?.map((slug) => resolveHref('page', slug)) || [],
-    fallback: false,
+    fallback: 'blocking',
   }
 }

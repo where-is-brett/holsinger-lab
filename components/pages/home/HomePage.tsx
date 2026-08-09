@@ -35,9 +35,9 @@ export function HomePage({ page, settings, preview, loading }: HomePageProps) {
           {title && <Header centered title={title} description={overview} />}
 
           {/* Showcase projects */}
-          <h1 className="text-center text-xl font-[600] md:text-left md:text-2xl">
+          <h2 className="text-center text-xl font-[600] md:text-left md:text-2xl">
             Our Research Projects
-          </h1>
+          </h2>
 
           {showcaseProjects && showcaseProjects.length > 0 && (
             <div className="mx-auto max-w-[100rem] border-y md:border">

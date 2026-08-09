@@ -18,9 +18,9 @@ export function Header(props: HeaderProps) {
     >
       {/* Title */}
       {title && (
-        <div className="mb-6 text-3xl font-extrabold tracking-tight md:text-5xl">
+        <h1 className="mb-6 text-3xl font-extrabold tracking-tight md:text-5xl">
           {title}
-        </div>
+        </h1>
       )}
       {/* Description */}
       {description && (

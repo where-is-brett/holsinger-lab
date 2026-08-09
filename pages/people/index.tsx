@@ -44,7 +44,7 @@ export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
       notFound: true,
     }
   }
-  if (!settings?.showPeople) {
+  if (settings?.showPeople === false) {
     return {
       notFound: true,
     }
@@ -56,6 +56,6 @@ export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
       settings: settings ?? {},
       profiles: profiles ?? [],
     },
-    // revalidate: 60,
+    revalidate: 60,
   }
 }
