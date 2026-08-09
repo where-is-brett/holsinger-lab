@@ -1,10 +1,18 @@
 import { SiteMeta } from 'components/global/SiteMeta'
 import Layout from 'components/shared/Layout'
-import { ProfilePayload } from 'types'
+import { ProfilePayload, SettingsPayload } from 'types'
 
 import Profile from './Profile'
 
-export default function People({ homePageTitle, settings, profiles }) {
+export default function People({
+  homePageTitle,
+  settings,
+  profiles,
+}: {
+  homePageTitle?: string
+  settings?: SettingsPayload
+  profiles: ProfilePayload[]
+}) {
   return (
     <>
       {/* Metadata */}
