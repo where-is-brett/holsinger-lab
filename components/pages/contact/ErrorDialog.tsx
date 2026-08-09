@@ -1,7 +1,15 @@
 import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 
-const ErrorDialog = ({ handleDialogClose, showDialog, message }) => {
+const ErrorDialog = ({
+  handleDialogClose,
+  showDialog,
+  message,
+}: {
+  handleDialogClose: () => void
+  showDialog: boolean
+  message: string
+}) => {
   return (
     <Transition.Root show={showDialog} as={Fragment}>
       <Dialog
