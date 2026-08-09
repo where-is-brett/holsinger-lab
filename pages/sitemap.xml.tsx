@@ -1,8 +1,7 @@
 // pages/sitemap.xml.tsx
+import { getAllPaths } from 'lib/paths'
 import { isNoindexPath, siteUrl } from 'lib/site'
 import type { GetServerSideProps } from 'next'
-
-import { getAllPaths } from './api/revalidate'
 
 function generateSitemapXml(paths: (string | undefined)[]): string {
   const urls = paths
