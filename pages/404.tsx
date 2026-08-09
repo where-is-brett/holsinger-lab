@@ -9,7 +9,7 @@ import Link from 'next/link'
 import notFoundSVG from 'public/404.svg'
 import { SettingsPayload } from 'types'
 
-export default function NotFoundPage({ settings, homePageTitle }) {
+export default function NotFoundPage({ settings, homePageTitle }: PageProps) {
   return (
     <>
       <SiteMeta
@@ -46,7 +46,7 @@ export default function NotFoundPage({ settings, homePageTitle }) {
 
 interface PageProps {
   settings: SettingsPayload | undefined
-  homePageTitle: string | null
+  homePageTitle: string | undefined
 }
 
 export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
@@ -61,7 +61,7 @@ export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
   return {
     props: {
       settings: settings ?? {},
-      homePageTitle: homePageTitle,
+      homePageTitle: homePageTitle ?? undefined,
     },
   }
 }
