@@ -15,21 +15,24 @@ export function Toggle({
   hideMessage: string
 }) {
   return (
-    <>
-      <a onClick={callback} className="underline hover:cursor-pointer">
-        {show ? (
-          <>
-            {hideMessage}
-            <ChevronUpIcon className="inline-block h-4 w-4" />
-          </>
-        ) : (
-          <>
-            {showMessage}
-            <ChevronDownIcon className="inline-block h-4 w-4" />
-          </>
-        )}
-      </a>
-    </>
+    <button
+      type="button"
+      onClick={callback}
+      aria-expanded={show}
+      className="underline hover:cursor-pointer"
+    >
+      {show ? (
+        <>
+          {hideMessage}
+          <ChevronUpIcon className="inline-block h-4 w-4" />
+        </>
+      ) : (
+        <>
+          {showMessage}
+          <ChevronDownIcon className="inline-block h-4 w-4" />
+        </>
+      )}
+    </button>
   )
 }
 

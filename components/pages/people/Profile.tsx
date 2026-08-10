@@ -85,11 +85,18 @@ const Profile = ({ profile }: { profile: ProfilePayload }) => {
           <p className="text-sm text-gray-600">{profile.role}</p>
         </div>
         {profile.bio && (
-          <a className="cursor-pointer" onClick={handleAddIconClick}>
+          <button
+            type="button"
+            className="cursor-pointer"
+            onClick={handleAddIconClick}
+            aria-expanded={showBio}
+            aria-label={showBio ? 'Hide bio' : 'Show bio'}
+          >
             <AddIcon
+              aria-hidden="true"
               className={`${showBio ? 'rotate-45' : 'rotate-0'} transition-all`}
             />
-          </a>
+          </button>
         )}
       </div>
 
