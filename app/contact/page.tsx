@@ -1,7 +1,7 @@
 import Contact from 'components/pages/contact/Contact'
 import { buildMetadata } from 'lib/metadata'
-import { getClient } from 'lib/sanity.client'
 import { homePageTitleQuery, settingsQuery } from 'lib/sanity.queries'
+import { sanityFetch } from 'lib/sanity.live'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
@@ -12,13 +12,20 @@ export const revalidate = 60
 const description =
   'Get in touch with us using the contact form below. We would love to hear from you!'
 
+// `lib/sanity.queries.ts` defines queries with the `groq` template tag, which
+// (per its own .d.ts) cannot preserve literal string types — so `sanityFetch`'s
+// `SanityQueries` lookup can't match and `data` resolves to `unknown`. Falling
+// back to explicit casts here, per this task's documented fallback.
 const getData = cache(async () => {
-  const client = getClient()
-  const [homePageTitle, settings] = await Promise.all([
-    client.fetch<string | null>(homePageTitleQuery),
-    client.fetch<SettingsPayload | null>(settingsQuery),
+  const [{ data: homePageTitle }, { data: settingsData }] = await Promise.all([
+    sanityFetch({ query: homePageTitleQuery, stega: false }),
+    sanityFetch({ query: settingsQuery, stega: false }),
   ])
-  return { homePageTitle: homePageTitle ?? undefined, settings: settings ?? {} }
+  const settings = (settingsData as SettingsPayload | null) ?? {}
+  return {
+    homePageTitle: (homePageTitle as string | null) ?? undefined,
+    settings,
+  }
 })
 
 export async function generateMetadata(): Promise<Metadata> {

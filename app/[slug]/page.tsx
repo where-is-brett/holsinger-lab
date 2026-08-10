@@ -1,4 +1,3 @@
-import { toPlainText } from '@portabletext/react'
 import { Page as PageComponent } from 'components/pages/page/Page'
 import { buildMetadata } from 'lib/metadata'
 import { getClient } from 'lib/sanity.client'
@@ -8,6 +7,8 @@ import {
   pagesBySlugQuery,
   settingsQuery,
 } from 'lib/sanity.queries'
+import { sanityFetch } from 'lib/sanity.live'
+import { toPlainText } from '@portabletext/react'
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
@@ -19,17 +20,23 @@ const legacyPageSlugs: Record<string, string> = {
   Miscellaneous: 'miscellaneous',
 }
 
+// `lib/sanity.queries.ts` defines queries with the `groq` template tag, which
+// (per its own .d.ts) cannot preserve literal string types — so `sanityFetch`'s
+// `SanityQueries` lookup can't match and `data` resolves to `unknown`. Falling
+// back to explicit casts here, per this task's documented fallback.
 const getData = cache(async (slug: string) => {
-  const client = getClient()
-  const [settings, page, homePageTitle] = await Promise.all([
-    client.fetch<SettingsPayload | null>(settingsQuery),
-    client.fetch<PagePayload | null>(pagesBySlugQuery, { slug }),
-    client.fetch<string | null>(homePageTitleQuery),
-  ])
+  const [{ data: settingsData }, { data: pageData }, { data: homePageTitle }] =
+    await Promise.all([
+      sanityFetch({ query: settingsQuery, stega: false }),
+      sanityFetch({ query: pagesBySlugQuery, params: { slug }, stega: false }),
+      sanityFetch({ query: homePageTitleQuery, stega: false }),
+    ])
+  const settings = (settingsData as SettingsPayload | null) ?? {}
+  const page = pageData as PagePayload | null
   return {
-    settings: settings ?? {},
+    settings,
     page,
-    homePageTitle: homePageTitle ?? undefined,
+    homePageTitle: (homePageTitle as string | null) ?? undefined,
   }
 })
 

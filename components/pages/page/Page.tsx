@@ -6,21 +6,16 @@ import type { PagePayload, SettingsPayload } from 'types'
 export interface PageProps {
   page: PagePayload
   settings: SettingsPayload | undefined
-  preview?: boolean
-  loading?: boolean
 }
 
-export function Page({ page, settings, preview, loading }: PageProps) {
-  // Default to an empty object to allow previews on non-existent documents
+export function Page({ page, settings }: PageProps) {
   const { body, overview, title } = page || {}
 
   return (
-    <Layout settings={settings} preview={preview} loading={loading}>
+    <Layout settings={settings}>
       <div className="mb-14">
-        {/* Header */}
         <Header title={title} description={overview} />
 
-        {/* Body */}
         {body && (
           <CustomPortableText
             paragraphClasses="font-ariana max-w-4xl text-gray-900 text-base md:text-lg"

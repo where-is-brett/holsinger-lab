@@ -9,17 +9,9 @@ import Layout from '../../shared/Layout'
 export interface ProjectPageProps {
   project: ProjectPayload
   settings: SettingsPayload | undefined
-  preview?: boolean
-  loading?: boolean
 }
 
-export function ProjectPage({
-  project,
-  settings,
-  preview,
-  loading,
-}: ProjectPageProps) {
-  // Default to an empty object to allow previews on non-existent documents
+export function ProjectPage({ project, settings }: ProjectPageProps) {
   const {
     category,
     coverImage,
@@ -35,14 +27,12 @@ export function ProjectPage({
   const endYear = duration?.end ? new Date(duration?.end).getFullYear() : 'Now'
 
   return (
-    <Layout settings={settings} preview={preview} loading={loading}>
+    <Layout settings={settings}>
       <div>
         <div className="mb-20 space-y-6">
-          {/* Header */}
           <Header title={title} description={overview} />
 
           <div className="border">
-            {/* Image  */}
             <ImageBox
               image={coverImage}
               alt={`Cover image for ${title}`}
@@ -50,7 +40,6 @@ export function ProjectPage({
             />
 
             <div className="divide-inherit grid grid-cols-1 divide-y border-t lg:grid-cols-4 lg:divide-x lg:divide-y-0">
-              {/* Duration */}
               {!!(startYear && endYear) && (
                 <div className="p-3 lg:p-4">
                   <div className="text-xs md:text-sm">Duration</div>
@@ -58,7 +47,6 @@ export function ProjectPage({
                 </div>
               )}
 
-              {/* Category */}
               {category && (
                 <div className="p-3 lg:p-4">
                   <div className="text-xs md:text-sm">Category</div>
@@ -66,7 +54,6 @@ export function ProjectPage({
                 </div>
               )}
 
-              {/* Site */}
               {site && (
                 <div className="p-3 lg:p-4">
                   <div className="text-xs md:text-sm">Site</div>
@@ -82,7 +69,6 @@ export function ProjectPage({
                 </div>
               )}
 
-              {/* Tags */}
               <div className="p-3 lg:p-4">
                 <div className="text-xs md:text-sm">Tags</div>
                 <div className="text-md flex flex-row flex-wrap md:text-lg">
@@ -96,7 +82,6 @@ export function ProjectPage({
             </div>
           </div>
 
-          {/* Description */}
           {description && (
             <CustomPortableText
               paragraphClasses="font-ariana max-w-3xl text-xl"

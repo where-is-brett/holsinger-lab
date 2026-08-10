@@ -1,9 +1,13 @@
 import 'styles/index.css'
 
-import { siteName, siteUrl } from 'lib/site'
-import type { Metadata } from 'next'
 import { IBM_Plex_Mono, PT_Serif } from 'next/font/google'
 import localFont from 'next/font/local'
+import { PreviewBanner } from 'components/preview/PreviewBanner'
+import { siteName, siteUrl } from 'lib/site'
+import { SanityLive } from 'lib/sanity.live'
+import { VisualEditing } from 'next-sanity/visual-editing'
+import { draftMode } from 'next/headers'
+import type { Metadata } from 'next'
 
 const mono = IBM_Plex_Mono({
   variable: '--font-mono',
@@ -88,18 +92,23 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const { isEnabled: isDraftMode } = await draftMode()
+
   return (
     <html
       lang="en"
       className={`${mono.variable} ${antarcticanMono.variable} ${serif.variable} ${arianaPro.variable}`}
     >
       <body className="bg-background text-black dark:bg-black dark:text-white">
+        {isDraftMode && <PreviewBanner />}
         {children}
+        <SanityLive />
+        {isDraftMode && <VisualEditing />}
       </body>
     </html>
   )
