@@ -1,5 +1,7 @@
 import Publications from 'components/pages/publications/Publications'
+import { JsonLd } from 'components/shared/JsonLd'
 import Layout from 'components/shared/Layout'
+import { buildScholarlyArticleListJsonLd } from 'lib/json-ld'
 import { buildMetadata } from 'lib/metadata'
 import { sanityFetch } from 'lib/sanity.live'
 import {
@@ -64,6 +66,7 @@ export default async function PublicationsPage() {
 
   return (
     <Layout settings={settings}>
+      <JsonLd data={buildScholarlyArticleListJsonLd(publications)} />
       <Publications publications={publications} />
     </Layout>
   )
