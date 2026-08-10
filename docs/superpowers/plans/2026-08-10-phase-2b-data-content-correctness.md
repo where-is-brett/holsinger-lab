@@ -1093,11 +1093,31 @@ no `slug` to build an `href` from.
 
 - [ ] **Step 7: Add the `internalLink` mark renderer**
 
-  In `components/shared/CustomPortableText.tsx`, add `Link` to the imports:
+  Note: Task 1 widened this file's `value` prop type (to accept `ArbitraryTypedObject` alongside
+  `PortableTextBlock`, matching what `@portabletext/react` itself defaults to), which changed the
+  `@portabletext/types` import to a multi-line form. Read the file before editing — its import block
+  should currently look like this:
 
   ```tsx
   import { PortableText, PortableTextComponents } from '@portabletext/react'
-  import type { PortableTextBlock } from '@portabletext/types'
+  import type {
+    ArbitraryTypedObject,
+    PortableTextBlock,
+  } from '@portabletext/types'
+  import ImageContainer from 'components/shared/ImageContainer'
+  import { TimelineSection } from 'components/shared/TimelineSection'
+  import type { Image } from 'sanity'
+  ```
+
+  If it doesn't match exactly, adapt this step to the actual current imports rather than forcing
+  this exact text. Add `Link` and `resolveInternalLinkHref` so the import block becomes:
+
+  ```tsx
+  import { PortableText, PortableTextComponents } from '@portabletext/react'
+  import type {
+    ArbitraryTypedObject,
+    PortableTextBlock,
+  } from '@portabletext/types'
   import ImageContainer from 'components/shared/ImageContainer'
   import { TimelineSection } from 'components/shared/TimelineSection'
   import { resolveInternalLinkHref } from 'lib/sanity.links'
