@@ -1,14 +1,7 @@
 import { Footer } from 'components/global/Footer'
 import { Navbar } from 'components/global/Navbar/Navbar'
+import { fallbackSettings } from 'types'
 import { SettingsPayload } from 'types'
-
-const fallbackSettings: SettingsPayload = {
-  menuItems: [],
-  showPublications: false,
-  showPeople: false,
-  showContactForm: false,
-  footer: [],
-}
 
 export interface LayoutProps {
   children: React.ReactNode

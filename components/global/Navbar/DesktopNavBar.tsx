@@ -8,10 +8,10 @@ const DesktopNavBar = ({
   showPeople,
   showContactForm,
 }: {
-  menuItems?: MenuItem[]
-  showPublications?: boolean
-  showPeople?: boolean
-  showContactForm?: boolean
+  menuItems?: MenuItem[] | null
+  showPublications?: boolean | null
+  showPeople?: boolean | null
+  showContactForm?: boolean | null
 }) => {
   return (
     <div

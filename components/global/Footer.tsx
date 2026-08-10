@@ -1,7 +1,14 @@
-import type { PortableTextBlock } from '@portabletext/types'
+import type {
+  ArbitraryTypedObject,
+  PortableTextBlock,
+} from '@portabletext/types'
 import { CustomPortableText } from 'components/shared/CustomPortableText'
 
-export function Footer({ footer }: { footer?: PortableTextBlock[] }) {
+export function Footer({
+  footer,
+}: {
+  footer?: (PortableTextBlock | ArbitraryTypedObject)[] | null
+}) {
   return (
     <footer className="bottom-0 w-full border-t border-primary bg-background py-5 text-center font-antarctican lg:py-6">
       {footer && (

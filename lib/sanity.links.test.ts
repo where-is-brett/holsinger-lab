@@ -17,6 +17,11 @@ describe('resolveHref', () => {
     expect(resolveHref('page', '')).toBeUndefined()
   })
 
+  it('treats a null slug the same as a missing slug', () => {
+    expect(resolveHref('page', null)).toBeUndefined()
+    expect(resolveHref('project', null)).toBeUndefined()
+  })
+
   it('resolves a project document to /projects/<slug>', () => {
     expect(resolveHref('project', 'my-project')).toBe('/projects/my-project')
   })

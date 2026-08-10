@@ -24,13 +24,13 @@ export default function Publication({
   const { title, author, journal, volume, issue, pages, abstract, url, date } =
     publication
 
-  const parsedDate = new Date(Date.parse(date))
-  const month = new Intl.DateTimeFormat('en-AU', { month: 'long' }).format(
-    parsedDate
-  )
-  const year = new Intl.DateTimeFormat('en-AU', { year: 'numeric' }).format(
-    parsedDate
-  )
+  const parsedDate = date ? new Date(Date.parse(date)) : null
+  const month = parsedDate
+    ? new Intl.DateTimeFormat('en-AU', { month: 'long' }).format(parsedDate)
+    : ''
+  const year = parsedDate
+    ? new Intl.DateTimeFormat('en-AU', { year: 'numeric' }).format(parsedDate)
+    : ''
 
   return (
     <div className="inline-block w-full max-w-3xl text-sm">

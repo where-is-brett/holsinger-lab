@@ -1,15 +1,23 @@
 import { PortableText, PortableTextComponents } from '@portabletext/react'
-import type { PortableTextBlock } from '@portabletext/types'
+import type {
+  ArbitraryTypedObject,
+  PortableTextBlock,
+} from '@portabletext/types'
 import ImageContainer from 'components/shared/ImageContainer'
 import { TimelineSection } from 'components/shared/TimelineSection'
 import type { Image } from 'sanity'
 
+// `value` accepts `ArbitraryTypedObject` alongside `PortableTextBlock` because these portable
+// text arrays embed custom object types (e.g. `timeline`, handled below) that don't have a
+// `children` field — the same union `@portabletext/react`'s own `PortableTextProps` defaults to.
+// Pinning this to `PortableTextBlock[]` alone doesn't match what the Sanity schema actually
+// allows in these fields and fails against the real (generated) payload shapes.
 export function CustomPortableText({
   paragraphClasses,
   value,
 }: {
   paragraphClasses?: string
-  value: PortableTextBlock[]
+  value: (PortableTextBlock | ArbitraryTypedObject)[]
 }) {
   const components: PortableTextComponents = {
     block: {

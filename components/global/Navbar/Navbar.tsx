@@ -6,10 +6,10 @@ import DesktopNavBar from './DesktopNavBar'
 import MobileNavBar from './MobileNavBar'
 
 interface NavbarProps {
-  menuItems?: MenuItem[]
-  showPublications?: boolean
-  showPeople?: boolean
-  showContactForm?: boolean
+  menuItems?: MenuItem[] | null
+  showPublications?: boolean | null
+  showPeople?: boolean | null
+  showContactForm?: boolean | null
 }
 
 export function Navbar({

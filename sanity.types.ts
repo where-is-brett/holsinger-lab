@@ -500,10 +500,9 @@ export type AllSanitySchemaTypes =
 
 // Source: lib/sanity.queries.ts
 // Variable: homePageQuery
-// Query: *[_type == "home"][0]{    _id,    footer,    overview,    showcaseProjects[]->{      _type,      coverImage,      overview,      "slug": slug.current,      tags,      title,    },    title,  }
+// Query: *[_type == "home"][0]{    _id,    overview,    showcaseProjects[]->{      _type,      coverImage,      overview,      "slug": slug.current,      tags,      title,    },    title,  }
 export type HomePageQueryResult = {
   _id: string
-  footer: null
   overview: Array<{
     children?: Array<{
       marks?: Array<string>
@@ -789,7 +788,7 @@ export type ProfileQueryResult = Array<{
 import '@sanity/client'
 declare module '@sanity/client' {
   interface SanityQueries {
-    '\n  *[_type == "home"][0]{\n    _id,\n    footer,\n    overview,\n    showcaseProjects[]->{\n      _type,\n      coverImage,\n      overview,\n      "slug": slug.current,\n      tags,\n      title,\n    },\n    title,\n  }\n': HomePageQueryResult
+    '\n  *[_type == "home"][0]{\n    _id,\n    overview,\n    showcaseProjects[]->{\n      _type,\n      coverImage,\n      overview,\n      "slug": slug.current,\n      tags,\n      title,\n    },\n    title,\n  }\n': HomePageQueryResult
     '\n  *[_type == "home"][0].title\n': HomePageTitleQueryResult
     '\n  *[_type == "page" && slug.current == $slug][0] {\n    _id,\n    body,\n    overview,\n    title,\n    "slug": slug.current,\n  }\n': PagesBySlugQueryResult
     '\n  *[_type == "project" && slug.current == $slug][0] {\n    _id,\n    category,\n    coverImage,\n    description,\n    duration,\n    overview,\n    site,\n    "slug": slug.current,\n    tags,\n    title,\n  }\n': ProjectBySlugQueryResult
