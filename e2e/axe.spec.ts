@@ -40,7 +40,15 @@ for (const [path, knownIds] of Object.entries(KNOWN_VIOLATIONS)) {
   test(`${path} has no unexpected accessibility violations`, async ({ page }) => {
     await page.goto(path)
     const results = await new AxeBuilder({ page }).analyze()
+    const observedIds = results.violations.map((v) => v.id)
+
     const unexpected = results.violations.filter((v) => !knownIds.includes(v.id))
     expect(unexpected, JSON.stringify(unexpected, null, 2)).toEqual([])
+
+    const stale = knownIds.filter((id) => !observedIds.includes(id))
+    expect(
+      stale,
+      `These KNOWN_VIOLATIONS entries no longer fire — delete them from the list: ${stale.join(', ')}`
+    ).toEqual([])
   })
 }

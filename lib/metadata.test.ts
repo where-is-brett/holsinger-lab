@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 
+// buildMetadata (transitively) imports lib/sanity.image, which imports
+// lib/sanity.api — whose module-scope assertValue() throws if Sanity env
+// vars are unset. None of these tests exercise the `image` argument, so
+// stub the import out entirely rather than requiring real env vars.
 vi.mock('lib/sanity.image', () => ({ urlForImage: vi.fn() }))
 
 import { buildMetadata } from './metadata'
