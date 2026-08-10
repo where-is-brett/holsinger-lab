@@ -242,3 +242,20 @@ git commit -m "feat: migrate to Tailwind 4, delete legacy config and @sanity/dem
 ```
 
 **Exit criteria for this task (and for Phase 1C as a whole):** `tsc --noEmit`, `eslint .`, and `npm run build` green; every colour and font utility in the reference table resolves identically before and after; `tailwind.config.js` and `@sanity/demo` gone from the repo and `package.json`; no other behavioural change anywhere on the site.
+
+---
+
+## Retrospective: the reference table's verification method had blind spots
+
+The whole-branch review (dispatched after Task 1 was implemented and task-reviewed) found four real regressions that this plan's Step 1/6 reference table could not have caught, because that table was built by grepping markup for **token names** (`gray-*`, `blue-*`, `background`, `primary`, font names) — a method that is structurally blind to anything that doesn't appear as a literal class name in JSX:
+
+1. **`extend.borderColor.DEFAULT: '#2D6A4F'`** in the deleted `tailwind.config.js` — a config key with no corresponding className anywhere, silently applied by Tailwind v3's preflight to every bare border utility (`border`, `border-y`, `divide-y`, etc.). Reverted to black post-migration.
+2. **`bg-opacity-70`** (Profile.tsx) — a utility class removed outright between v3 and v4 (opacity is now a `/70` modifier on the color utility itself). Silently became a dead, no-op class, leaving the element it targeted fully opaque instead of translucent.
+3. **The `black` palette key** (`#0d0e12` from `@sanity/color`, via `@sanity/demo`'s top-level `theme: { ...theme }` spread) — outside the `gray`/`blue` families this plan enumerated, because the plan only checked the two families it saw in explicit className usages, not the full set of keys the deleted config's spread was overriding.
+4. **Preflight default changes between v3 and v4** unrelated to color at all — v3's `button, [role="button"] { cursor: pointer }` has no v4 equivalent.
+
+All four were fixed in a follow-up commit (`1fb46ab`) and re-verified against the same real-build/real-browser method, plus independently re-derived by the whole-branch reviewer (hand-recomputed hex↔rgb conversions from `@sanity/color`'s actual source and cascade-layer analysis of the compiled CSS, not just re-running the fix's own checks).
+
+**Lesson for the next phase that ports a Tailwind (or any framework) config wholesale:** a token-name grep over markup is necessary but not sufficient. Two additional checks catch what it misses:
+- **Diff the deleted config's full key set against the new theme, key by key** — including `extend.*` keys that don't map to an obvious utility-class family (like `borderColor.DEFAULT`), and the *entire* replaced palette, not just the families already known to be used in markup.
+- **Walk the framework's own major-version breaking-change list against the repo's actual utility inventory** — some regressions (removed utilities, changed preflight defaults) have no config-key trail at all and can only be found by checking the changelog against what's actually used.
