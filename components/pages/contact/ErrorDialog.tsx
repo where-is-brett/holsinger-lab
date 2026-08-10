@@ -1,4 +1,11 @@
-import { Dialog, Transition } from '@headlessui/react'
+'use client'
+import {
+  Dialog,
+  DialogBackdrop,
+  DialogTitle,
+  Transition,
+  TransitionChild,
+} from '@headlessui/react'
 import { Fragment } from 'react'
 
 const ErrorDialog = ({
@@ -11,14 +18,14 @@ const ErrorDialog = ({
   message: string
 }) => {
   return (
-    <Transition.Root show={showDialog} as={Fragment}>
+    <Transition show={showDialog} as={Fragment}>
       <Dialog
         as="div"
         className="fixed inset-0 z-50 overflow-y-auto"
         onClose={handleDialogClose}
       >
         <div className="flex min-h-screen items-center justify-center">
-          <Transition.Child
+          <TransitionChild
             as={Fragment}
             enter="ease-out duration-300"
             enterFrom="opacity-0"
@@ -27,10 +34,10 @@ const ErrorDialog = ({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <Dialog.Overlay className="fixed inset-0 bg-black opacity-60" />
-          </Transition.Child>
+            <DialogBackdrop className="fixed inset-0 bg-black opacity-60" />
+          </TransitionChild>
 
-          <Transition.Child
+          <TransitionChild
             as={Fragment}
             enter="ease-out duration-300"
             enterFrom="opacity-0 scale-95"
@@ -40,9 +47,9 @@ const ErrorDialog = ({
             leaveTo="opacity-0 scale-95"
           >
             <div className="mx-auto max-w-md space-y-5 bg-background p-4 text-center">
-              <Dialog.Title as="h3" className="mb-2 text-lg font-semibold">
+              <DialogTitle as="h3" className="mb-2 text-lg font-semibold">
                 Submission Failed
-              </Dialog.Title>
+              </DialogTitle>
               <p className="px-4 text-justify text-gray-800">{message}</p>
               <div className="mt-4">
                 <button
@@ -54,10 +61,10 @@ const ErrorDialog = ({
                 </button>
               </div>
             </div>
-          </Transition.Child>
+          </TransitionChild>
         </div>
       </Dialog>
-    </Transition.Root>
+    </Transition>
   )
 }
 

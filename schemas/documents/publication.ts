@@ -1,5 +1,5 @@
+import { BookIcon } from '@sanity/icons/Book'
 import { defineField, defineType } from 'sanity'
-import { BookIcon } from '@sanity/icons'
 
 export default defineType({
   type: 'document',

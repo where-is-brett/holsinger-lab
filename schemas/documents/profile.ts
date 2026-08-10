@@ -1,9 +1,9 @@
-import { defineField, defineType } from 'sanity'
-import { UserIcon } from '@sanity/icons'
+import { UserIcon } from '@sanity/icons/User'
 import {
   orderRankField,
   orderRankOrdering,
 } from '@sanity/orderable-document-list'
+import { defineField, defineType } from 'sanity'
 
 export default defineType({
   type: 'document',

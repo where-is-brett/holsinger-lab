@@ -1,5 +1,6 @@
+'use client'
 import { Transition } from '@headlessui/react'
-import { AddIcon } from '@sanity/icons'
+import { AddIcon } from '@sanity/icons/Add'
 import ImageBox from 'components/shared/ImageBox'
 import { useState } from 'react'
 import type { ProfilePayload } from 'types'

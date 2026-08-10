@@ -8,9 +8,10 @@ export const siteName = 'Holsinger Lab'
  * Routes that are published for lab members but should not surface in search
  * results — internal CMS documentation, not reader-facing content.
  *
- * Both consumers must stay in sync: `SiteMeta` emits `noindex` for these paths
- * and `sitemap.xml` omits them. Advertising a noindex URL in a sitemap sends
- * crawlers contradictory signals, so neither half works alone.
+ * Both consumers must stay in sync: `buildMetadata` (lib/metadata.ts) emits
+ * `noindex` for these paths and `sitemap.xml` omits them. Advertising a
+ * noindex URL in a sitemap sends crawlers contradictory signals, so neither
+ * half works alone.
  */
 const noindexPaths = new Set(['/tutorial'])
 

@@ -21,9 +21,11 @@ export function Navbar({
 
   const [isBrowser, setIsBrowser] = useState(false)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   useEffect(() => {
     // Check if client side
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- defers nav rendering until after mount to avoid SSR/hydration mismatch on window.innerWidth; pre-existing pattern, out of scope to redesign here
     setIsBrowser(true)
     // Monitor window size
     const handleResize = () => {
@@ -40,7 +42,6 @@ export function Navbar({
     }
   }, [])
 
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const handleMenuClick = () => {
     setIsMenuOpen(!isMenuOpen)
   }

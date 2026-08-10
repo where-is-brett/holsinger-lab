@@ -2,9 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --font-sans: var(--font-antarctican-mono);
+}
+
 html,
-body,
-#__next {
+body {
   height: 100%;
 }
 

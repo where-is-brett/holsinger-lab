@@ -1,7 +1,5 @@
 import { Footer } from 'components/global/Footer'
 import { Navbar } from 'components/global/Navbar/Navbar'
-import PreviewNavbar from 'components/global/PreviewNavbar'
-import { PreviewBanner } from 'components/preview/PreviewBanner'
 import { SettingsPayload } from 'types'
 
 const fallbackSettings: SettingsPayload = {
@@ -15,32 +13,22 @@ const fallbackSettings: SettingsPayload = {
 export interface LayoutProps {
   children: React.ReactNode
   settings: SettingsPayload | undefined
-  preview?: boolean
-  loading?: boolean
   childrenStyles?: string
 }
 
 export default function Layout({
   children,
   settings = fallbackSettings,
-  preview,
-  loading,
   childrenStyles = 'px-6',
 }: LayoutProps) {
   return (
     <div className={`flex min-h-screen flex-col bg-background text-black`}>
-      {preview && <PreviewBanner loading={loading} />}
-
-      {preview ? (
-        <PreviewNavbar settings={settings} />
-      ) : (
-        <Navbar
-          menuItems={settings?.menuItems}
-          showPublications={settings?.showPublications}
-          showPeople={settings?.showPeople}
-          showContactForm={settings?.showContactForm}
-        />
-      )}
+      <Navbar
+        menuItems={settings?.menuItems}
+        showPublications={settings?.showPublications}
+        showPeople={settings?.showPeople}
+        showContactForm={settings?.showContactForm}
+      />
 
       <div
         className={`mt-32 flex-grow md:mt-16 md:px-16 lg:px-32 ${childrenStyles}`}

@@ -1,4 +1,5 @@
-import { LaunchIcon } from '@sanity/icons'
+'use client'
+import { LaunchIcon } from '@sanity/icons/Launch'
 import { useState } from 'react'
 import type { PublicationPayload } from 'types'
 

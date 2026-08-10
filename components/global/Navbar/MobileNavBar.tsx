@@ -1,9 +1,9 @@
+'use client'
 import { Transition } from '@headlessui/react'
 import { resolveHref } from 'lib/sanity.links'
-import { Url } from 'next/dist/shared/lib/router/router'
 import Image from 'next/image'
 import Link from 'next/link'
-import router from 'next/router'
+import { useRouter } from 'next/navigation'
 import logo from 'public/logo.svg'
 import { MenuItem } from 'types'
 
@@ -24,9 +24,11 @@ const MobileNavBar = ({
   showPeople?: boolean
   showContactForm?: boolean
 }) => {
+  const router = useRouter()
+
   const handleLinkClick = (
     e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
-    href: Url
+    href: string
   ) => {
     e.preventDefault()
     handleMenuClick()
@@ -72,6 +74,7 @@ const MobileNavBar = ({
           </button>
         </div>
         <Transition
+          as="div"
           show={isMenuOpen}
           enter="transition ease-out duration-500"
           enterFrom="transform translate-x-full"

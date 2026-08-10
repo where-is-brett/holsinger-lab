@@ -48,3 +48,7 @@ studio/.env.development
 
 # Subagent-driven-development scratch (progress ledger, briefs, reports)
 .superpowers/
+
+# Sanity TypeGen intermediate artifact (schema.json regenerates every run;
+# sanity.types.ts is the committed, reviewable output)
+/schema.json
