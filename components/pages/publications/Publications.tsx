@@ -13,13 +13,13 @@ const Publications = ({
 
       <ul className="mb-16 ml-0 space-y-6">
         {publications.map((publication: PublicationPayload, index: number) => {
-          const prevYear = index && publications[index - 1].date.slice(0, 4)
-          const currentYear = publication.date.slice(0, 4)
+          const prevYear = index && publications[index - 1].date?.slice(0, 4)
+          const currentYear = publication.date?.slice(0, 4)
           return (
             <div key={publication._id}>
               {(index === 0 || prevYear !== currentYear) && (
                 <li className="my-5 text-3xl font-bold lg:text-4xl">
-                  {publication.date.slice(0, 4)}
+                  {currentYear}
                 </li>
               )}
               <li>

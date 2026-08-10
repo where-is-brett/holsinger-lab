@@ -12,7 +12,10 @@ import {
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
+import type { Image } from 'sanity'
+import type { ProjectPathsResult } from 'sanity.types'
 import type { ProjectPayload, SettingsPayload } from 'types'
+import { fallbackSettings } from 'types'
 
 export const revalidate = 60
 
@@ -35,7 +38,7 @@ const getData = cache(async (slug: string) => {
       }),
       sanityFetch({ query: homePageTitleQuery, stega: false }),
     ])
-  const settings = (settingsData as SettingsPayload | null) ?? {}
+  const settings = (settingsData as SettingsPayload | null) ?? fallbackSettings
   const project = projectData as ProjectPayload | null
   return {
     settings,
@@ -46,8 +49,10 @@ const getData = cache(async (slug: string) => {
 
 export async function generateStaticParams() {
   const client = getClient()
-  const slugs = await client.fetch<string[]>(projectPaths)
-  return slugs.map((slug) => ({ slug }))
+  const slugs = await client.fetch<ProjectPathsResult>(projectPaths)
+  return slugs
+    .filter((slug): slug is string => Boolean(slug))
+    .map((slug) => ({ slug }))
 }
 
 type Props = { params: Promise<{ slug: string }> }
@@ -64,9 +69,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildMetadata({
     path: `/projects/${slug}`,
     baseTitle: homePageTitle,
-    title: project.title,
+    title: project.title ?? undefined,
     description: project.overview ? toPlainText(project.overview) : '',
-    image: project.coverImage,
+    // See app/page.tsx for why this cast exists: the generated image shape leaves crop/hotspot
+    // bounds optional, while `Image` from 'sanity' assumes them fully populated.
+    image: (project.coverImage ?? undefined) as Image | undefined,
   })
 }
 

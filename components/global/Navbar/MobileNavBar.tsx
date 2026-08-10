@@ -19,10 +19,10 @@ const MobileNavBar = ({
 }: {
   handleMenuClick: () => void
   isMenuOpen: boolean
-  menuItems?: MenuItem[]
-  showPublications?: boolean
-  showPeople?: boolean
-  showContactForm?: boolean
+  menuItems?: MenuItem[] | null
+  showPublications?: boolean | null
+  showPeople?: boolean | null
+  showContactForm?: boolean | null
 }) => {
   const router = useRouter()
 

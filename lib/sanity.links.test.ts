@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { resolveHref } from './sanity.links'
+import { resolveHref, resolveInternalLinkHref } from './sanity.links'
 
 describe('resolveHref', () => {
   it('resolves a home document to the root path, ignoring any slug', () => {
@@ -17,12 +17,22 @@ describe('resolveHref', () => {
     expect(resolveHref('page', '')).toBeUndefined()
   })
 
+  it('treats a null slug the same as a missing slug', () => {
+    expect(resolveHref('page', null)).toBeUndefined()
+    expect(resolveHref('project', null)).toBeUndefined()
+  })
+
   it('resolves a project document to /projects/<slug>', () => {
     expect(resolveHref('project', 'my-project')).toBe('/projects/my-project')
   })
 
   it('returns undefined for a project document with no slug', () => {
     expect(resolveHref('project')).toBeUndefined()
+  })
+
+  it('resolves a settings document to the root path, ignoring any slug', () => {
+    expect(resolveHref('settings')).toBe('/')
+    expect(resolveHref('settings', 'ignored')).toBe('/')
   })
 
   it('returns undefined and warns for an unrecognized document type', () => {
@@ -49,8 +59,24 @@ describe('resolveHref', () => {
     resolveHref('home')
     resolveHref('page', 'about')
     resolveHref('project', 'my-project')
+    resolveHref('settings')
     expect(warn).not.toHaveBeenCalled()
 
     warn.mockRestore()
+  })
+})
+
+describe('resolveInternalLinkHref', () => {
+  it('resolves to /<slug> when the reference has a slug', () => {
+    expect(resolveInternalLinkHref({ slug: 'about' })).toBe('/about')
+  })
+
+  it('returns undefined when the reference has no slug', () => {
+    expect(resolveInternalLinkHref({})).toBeUndefined()
+    expect(resolveInternalLinkHref({ slug: null })).toBeUndefined()
+  })
+
+  it('returns undefined when no value is given', () => {
+    expect(resolveInternalLinkHref()).toBeUndefined()
   })
 })

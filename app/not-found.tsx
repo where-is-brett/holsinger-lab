@@ -8,6 +8,7 @@ import Link from 'next/link'
 import notFoundSVG from 'public/404.svg'
 import { cache } from 'react'
 import type { SettingsPayload } from 'types'
+import { fallbackSettings } from 'types'
 
 const getData = cache(async () => {
   const client = getClient()
@@ -15,7 +16,10 @@ const getData = cache(async () => {
     client.fetch<SettingsPayload | null>(settingsQuery),
     client.fetch<string | null>(homePageTitleQuery),
   ])
-  return { settings: settings ?? {}, homePageTitle: homePageTitle ?? undefined }
+  return {
+    settings: settings ?? fallbackSettings,
+    homePageTitle: homePageTitle ?? undefined,
+  }
 })
 
 export async function generateMetadata(): Promise<Metadata> {

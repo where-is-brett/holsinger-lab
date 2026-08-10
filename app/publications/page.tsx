@@ -10,7 +10,9 @@ import {
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
+import type { Image } from 'sanity'
 import type { PublicationPayload, SettingsPayload } from 'types'
+import { fallbackSettings } from 'types'
 
 export const revalidate = 60
 
@@ -31,7 +33,7 @@ const getData = cache(async () => {
     sanityFetch({ query: homePageTitleQuery, stega: false }),
     sanityFetch({ query: publicationsQuery }),
   ])
-  const settings = (settingsData as SettingsPayload | null) ?? {}
+  const settings = (settingsData as SettingsPayload | null) ?? fallbackSettings
   const publications = publicationsData as PublicationPayload[] | null
   return {
     settings,
@@ -47,7 +49,9 @@ export async function generateMetadata(): Promise<Metadata> {
     baseTitle: homePageTitle,
     title: 'Publications',
     description,
-    image: settings.ogImage,
+    // See app/page.tsx for why this cast exists: the generated image shape leaves crop/hotspot
+    // bounds optional, while `Image` from 'sanity' assumes them fully populated.
+    image: (settings.ogImage ?? undefined) as Image | undefined,
   })
 }
 

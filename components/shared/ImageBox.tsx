@@ -2,7 +2,7 @@ import { urlForImage } from 'lib/sanity.image'
 import Image from 'next/image'
 
 interface ImageBoxProps {
-  image?: { asset?: any }
+  image?: { asset?: any } | null
   alt?: string
   width?: number
   height?: number

@@ -1,14 +1,7 @@
 import { Footer } from 'components/global/Footer'
 import { Navbar } from 'components/global/Navbar/Navbar'
+import { fallbackSettings } from 'types'
 import { SettingsPayload } from 'types'
-
-const fallbackSettings: SettingsPayload = {
-  menuItems: [],
-  showPublications: false,
-  showPeople: false,
-  showContactForm: false,
-  footer: [],
-}
 
 export interface LayoutProps {
   children: React.ReactNode
@@ -25,9 +18,9 @@ export default function Layout({
     <div className={`flex min-h-screen flex-col bg-background text-black`}>
       <Navbar
         menuItems={settings?.menuItems}
-        showPublications={settings?.showPublications}
-        showPeople={settings?.showPeople}
-        showContactForm={settings?.showContactForm}
+        showPublications={settings?.showPublications ?? true}
+        showPeople={settings?.showPeople ?? true}
+        showContactForm={settings?.showContactForm ?? true}
       />
 
       <div

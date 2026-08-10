@@ -1,9 +1,11 @@
 export function resolveHref(
-  documentType?: string,
-  slug?: string
+  documentType?: string | null,
+  slug?: string | null
 ): string | undefined {
   switch (documentType) {
     case 'home':
+      return '/'
+    case 'settings':
       return '/'
     case 'page':
       return slug ? `/${slug}` : undefined
@@ -13,4 +15,10 @@ export function resolveHref(
       console.warn('Invalid document type:', documentType)
       return undefined
   }
+}
+
+export function resolveInternalLinkHref(value?: {
+  slug?: string | null
+}): string | undefined {
+  return value?.slug ? `/${value.slug}` : undefined
 }
