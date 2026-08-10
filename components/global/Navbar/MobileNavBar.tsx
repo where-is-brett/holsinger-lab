@@ -1,9 +1,9 @@
 'use client'
 import { Transition } from '@headlessui/react'
 import { resolveHref } from 'lib/sanity.links'
-import { useRouter } from 'next/compat/router'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import logo from 'public/logo.svg'
 import { MenuItem } from 'types'
 
@@ -33,11 +33,7 @@ const MobileNavBar = ({
     e.preventDefault()
     handleMenuClick()
     setTimeout(() => {
-      if (router) {
-        router.push(href)
-      } else {
-        window.location.assign(href)
-      }
+      router.push(href)
     }, 500)
   }
 
