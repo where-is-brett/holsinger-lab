@@ -3,7 +3,6 @@ import 'styles/index.css'
 import { AppProps } from 'next/app'
 import { IBM_Plex_Mono, Inter, PT_Serif } from 'next/font/google'
 import localFont from 'next/font/local'
-import { lazy } from 'react'
 
 const mono = IBM_Plex_Mono({
   variable: '--font-mono',
@@ -80,10 +79,7 @@ const arianaPro = localFont({
   variable: '--font-ariana-pro',
 })
 
-const PreviewProvider = lazy(() => import('components/preview/PreviewProvider'))
-
 export default function App({ Component, pageProps }: AppProps) {
-  const { preview, token } = pageProps
   return (
     <>
       <style jsx global>
@@ -98,13 +94,7 @@ export default function App({ Component, pageProps }: AppProps) {
         `}
       </style>
 
-      {preview ? (
-        <PreviewProvider token={token}>
-          <Component {...pageProps} />
-        </PreviewProvider>
-      ) : (
-        <Component {...pageProps} />
-      )}
+      <Component {...pageProps} />
     </>
   )
 }

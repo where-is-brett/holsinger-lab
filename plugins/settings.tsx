@@ -8,13 +8,13 @@ import {
   type DocumentDefinition,
   type NewDocumentOptionsResolver,
 } from 'sanity'
-import { type StructureResolver } from 'sanity/desk'
+import { type StructureResolver } from 'sanity/structure'
 
 import { PREVIEWABLE_DOCUMENT_TYPES } from '../sanity.config'
 import { PreviewPane } from './previewPane/PreviewPane'
 
 import { orderableDocumentListDeskItem } from '@sanity/orderable-document-list'
-import { UserIcon } from '@sanity/icons'
+import { UserIcon } from '@sanity/icons/User'
 
 export const singletonPlugin = (types: string[]) => {
   return {

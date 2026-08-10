@@ -1,5 +1,4 @@
 import { Page } from 'components/pages/page/Page'
-import PagePreview from 'components/pages/page/PagePreview'
 import { readToken } from 'lib/sanity.api'
 import { getClient } from 'lib/sanity.client'
 import { resolveHref } from 'lib/sanity.links'
@@ -17,7 +16,6 @@ interface PageProps {
   settings: SettingsPayload
   homePageTitle?: string
   preview: boolean
-  token: string | null
 }
 
 interface Query {
@@ -27,17 +25,7 @@ interface Query {
 export default function ProjectSlugRoute(props: PageProps) {
   const { homePageTitle, settings, page, preview } = props
 
-  if (preview) {
-    return (
-      <PagePreview
-        page={page}
-        settings={settings}
-        homePageTitle={homePageTitle}
-      />
-    )
-  }
-
-  return <Page homePageTitle={homePageTitle} page={page} settings={settings} />
+  return <Page homePageTitle={homePageTitle} page={page} settings={settings} preview={preview} />
 }
 
 const legacyPageSlugs: Record<string, string> = {
@@ -83,7 +71,6 @@ export const getStaticProps: GetStaticProps<PageProps, Query> = async (ctx) => {
       settings: settings ?? {},
       homePageTitle: homePageTitle ?? undefined,
       preview: draftMode,
-      token: draftMode ? readToken : null,
     },
     revalidate: 60,
   }

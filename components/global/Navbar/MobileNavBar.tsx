@@ -72,6 +72,7 @@ const MobileNavBar = ({
           </button>
         </div>
         <Transition
+          as="div"
           show={isMenuOpen}
           enter="transition ease-out duration-500"
           enterFrom="transform translate-x-full"

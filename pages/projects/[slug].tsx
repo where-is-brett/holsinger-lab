@@ -1,5 +1,4 @@
 import { ProjectPage } from 'components/pages/project/ProjectPage'
-import ProjectPreview from 'components/pages/project/ProjectPreview'
 import { readToken } from 'lib/sanity.api'
 import { getClient } from 'lib/sanity.client'
 import { resolveHref } from 'lib/sanity.links'
@@ -17,7 +16,6 @@ interface PageProps {
   settings: SettingsPayload
   homePageTitle?: string
   preview: boolean
-  token: string | null
 }
 
 interface Query {
@@ -27,21 +25,12 @@ interface Query {
 export default function ProjectSlugRoute(props: PageProps) {
   const { homePageTitle, settings, project, preview } = props
 
-  if (preview) {
-    return (
-      <ProjectPreview
-        project={project}
-        settings={settings}
-        homePageTitle={homePageTitle}
-      />
-    )
-  }
-
   return (
     <ProjectPage
       homePageTitle={homePageTitle}
       project={project}
       settings={settings}
+      preview={preview}
     />
   )
 }
@@ -90,7 +79,6 @@ export const getStaticProps: GetStaticProps<PageProps, Query> = async (ctx) => {
       settings: settings ?? {},
       homePageTitle: homePageTitle ?? undefined,
       preview: draftMode,
-      token: draftMode ? readToken : null,
     },
     revalidate: 60,
   }

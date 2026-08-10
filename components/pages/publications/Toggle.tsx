@@ -1,5 +1,6 @@
 import { Transition } from '@headlessui/react'
-import { ChevronDownIcon, ChevronUpIcon } from '@sanity/icons'
+import { ChevronDownIcon } from '@sanity/icons/ChevronDown'
+import { ChevronUpIcon } from '@sanity/icons/ChevronUp'
 import type { ReactNode } from 'react'
 
 export function Toggle({

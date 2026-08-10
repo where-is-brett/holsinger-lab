@@ -15,7 +15,6 @@ interface PageProps {
   settings: SettingsPayload
   homePageTitle?: string
   preview: boolean
-  token: string | null
   publications: PublicationPayload[]
 }
 
@@ -66,7 +65,6 @@ export const getStaticProps: GetStaticProps<PageProps> = async (ctx) => {
       settings: settings ?? {},
       homePageTitle: homePageTitle ?? undefined,
       preview: draftMode,
-      token: draftMode ? readToken : null,
       publications: publications,
     },
     revalidate: 60,
