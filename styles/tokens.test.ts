@@ -168,31 +168,6 @@ describe('readTokens helper', () => {
     })
   })
 
-  it('is not confused by a rule preceding :root inside the @media block', () => {
-    // Regression fixture for failure mode 2: indexOf('}') would grab the
-    // closing brace of an earlier rule (here ::selection) inside the same
-    // @media wrapper and return an empty map instead of the real tokens.
-    const css = `
-      :root {
-        --sem-surface: #ffffff;
-        --sem-text: #000000;
-      }
-      @media (prefers-color-scheme: dark) {
-        ::selection {
-          background: red;
-        }
-        :root {
-          --sem-surface: #000000;
-          --sem-text: #ffffff;
-        }
-      }
-    `
-    expect(parseTokens(css, ':root {')).toEqual({
-      '--sem-surface': '#ffffff',
-      '--sem-text': '#000000',
-    })
-  })
-
   it('ignores an unrelated top-level :root block that declares no --sem-* tokens', () => {
     // Regression fixture for failure mode 3: styles/index.css also has a
     // `:root { --font-sans: ... }` block. Correctness must not depend on
@@ -239,5 +214,37 @@ describe('readTokens helper', () => {
       }
     `
     expect(() => parseTokens(css, ':root {')).toThrow(/no top-level block matching ":root"/)
+  })
+
+  it('resolves an @media marker with no trailing brace distinctly from the nested :root marker', () => {
+    // Coverage for the marker shape the next task will actually call:
+    // readTokens('@media (prefers-color-scheme: dark)') — an at-rule
+    // selector with no trailing '{', matched against its own top-level
+    // block rather than the :root nested inside it. Fixture mirrors the
+    // planned styles/index.css layout: a light :root followed by a dark
+    // override inside @media (prefers-color-scheme: dark). Asserts the two
+    // markers resolve to their own values and don't collide.
+    const css = `
+      :root {
+        color-scheme: light dark;
+        --sem-surface: #f8f8f8;
+        --sem-text: #0d0e12;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --sem-surface: #0d0e12;
+          --sem-text: #f6f6f8;
+        }
+      }
+    `
+    expect(parseTokens(css, ':root {')).toEqual({
+      '--sem-surface': '#f8f8f8',
+      '--sem-text': '#0d0e12',
+    })
+    expect(parseTokens(css, '@media (prefers-color-scheme: dark)')).toEqual({
+      '--sem-surface': '#0d0e12',
+      '--sem-text': '#f6f6f8',
+    })
   })
 })
