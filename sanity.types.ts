@@ -558,13 +558,10 @@ export type HomePageTitleQueryResult = string | null
 
 // Source: lib/sanity.queries.ts
 // Variable: pagesBySlugQuery
-// Query: *[_type == "page" && slug.current == $slug][0] {    _id,    body,    overview,    title,    "slug": slug.current,  }
+// Query: *[_type == "page" && slug.current == $slug][0] {    _id,    body[]{      ...,      _type == "block" => {        markDefs[]{          ...,          _type == "internalLink" => {            "slug": reference->slug.current,            "title": reference->title,          }        }      }    },    overview,    title,    "slug": slug.current,  }
 export type PagesBySlugQueryResult = {
   _id: string
   body: Array<
-    | ({
-        _key: string
-      } & Timeline)
     | {
         children?: Array<{
           marks?: Array<string>
@@ -575,18 +572,20 @@ export type PagesBySlugQueryResult = {
         style?:
           'blockquote' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'normal'
         listItem?: 'bullet' | 'number'
-        markDefs?: Array<
+        markDefs: Array<
           | {
               reference?: PageReference
               _type: 'internalLink'
               _key: string
+              slug: string | null
+              title: string | null
             }
           | {
               href?: string
               _type: 'link'
               _key: string
             }
-        >
+        > | null
         level?: number
         _type: 'block'
         _key: string
@@ -600,6 +599,20 @@ export type PagesBySlugQueryResult = {
         alt?: string
         _type: 'image'
         _key: string
+      }
+    | {
+        _key: string
+        _type: 'timeline'
+        items?: Array<{
+          title?: string
+          milestones?: Array<
+            {
+              _key: string
+            } & Milestone
+          >
+          _type: 'item'
+          _key: string
+        }>
       }
   > | null
   overview: Array<{
@@ -790,7 +803,7 @@ declare module '@sanity/client' {
   interface SanityQueries {
     '\n  *[_type == "home"][0]{\n    _id,\n    overview,\n    showcaseProjects[]->{\n      _type,\n      coverImage,\n      overview,\n      "slug": slug.current,\n      tags,\n      title,\n    },\n    title,\n  }\n': HomePageQueryResult
     '\n  *[_type == "home"][0].title\n': HomePageTitleQueryResult
-    '\n  *[_type == "page" && slug.current == $slug][0] {\n    _id,\n    body,\n    overview,\n    title,\n    "slug": slug.current,\n  }\n': PagesBySlugQueryResult
+    '\n  *[_type == "page" && slug.current == $slug][0] {\n    _id,\n    body[]{\n      ...,\n      _type == "block" => {\n        markDefs[]{\n          ...,\n          _type == "internalLink" => {\n            "slug": reference->slug.current,\n            "title": reference->title,\n          }\n        }\n      }\n    },\n    overview,\n    title,\n    "slug": slug.current,\n  }\n': PagesBySlugQueryResult
     '\n  *[_type == "project" && slug.current == $slug][0] {\n    _id,\n    category,\n    coverImage,\n    description,\n    duration,\n    overview,\n    site,\n    "slug": slug.current,\n    tags,\n    title,\n  }\n': ProjectBySlugQueryResult
     '\n  *[_type == "project" && slug.current != null].slug.current\n': ProjectPathsResult
     '\n  *[_type == "page" && slug.current != null].slug.current\n': PagePathsResult

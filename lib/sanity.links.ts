@@ -14,3 +14,9 @@ export function resolveHref(
       return undefined
   }
 }
+
+export function resolveInternalLinkHref(value?: {
+  slug?: string | null
+}): string | undefined {
+  return value?.slug ? `/${value.slug}` : undefined
+}

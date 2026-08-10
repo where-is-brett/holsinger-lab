@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { resolveHref } from './sanity.links'
+import { resolveHref, resolveInternalLinkHref } from './sanity.links'
 
 describe('resolveHref', () => {
   it('resolves a home document to the root path, ignoring any slug', () => {
@@ -57,5 +57,20 @@ describe('resolveHref', () => {
     expect(warn).not.toHaveBeenCalled()
 
     warn.mockRestore()
+  })
+})
+
+describe('resolveInternalLinkHref', () => {
+  it('resolves to /<slug> when the reference has a slug', () => {
+    expect(resolveInternalLinkHref({ slug: 'about' })).toBe('/about')
+  })
+
+  it('returns undefined when the reference has no slug', () => {
+    expect(resolveInternalLinkHref({})).toBeUndefined()
+    expect(resolveInternalLinkHref({ slug: null })).toBeUndefined()
+  })
+
+  it('returns undefined when no value is given', () => {
+    expect(resolveInternalLinkHref()).toBeUndefined()
   })
 })

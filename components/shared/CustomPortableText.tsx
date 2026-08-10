@@ -5,6 +5,8 @@ import type {
 } from '@portabletext/types'
 import ImageContainer from 'components/shared/ImageContainer'
 import { TimelineSection } from 'components/shared/TimelineSection'
+import { resolveInternalLinkHref } from 'lib/sanity.links'
+import Link from 'next/link'
 import type { Image } from 'sanity'
 
 // `value` accepts `ArbitraryTypedObject` alongside `PortableTextBlock` because these portable
@@ -89,6 +91,17 @@ export function CustomPortableText({
           >
             {children}
           </a>
+        )
+      },
+      internalLink: ({ children, value }) => {
+        const href = resolveInternalLinkHref(value)
+        if (!href) {
+          return <>{children}</>
+        }
+        return (
+          <Link href={href} className="underline transition hover:opacity-50">
+            {children}
+          </Link>
         )
       },
     },

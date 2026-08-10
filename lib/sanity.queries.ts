@@ -23,7 +23,18 @@ export const homePageTitleQuery = groq`
 export const pagesBySlugQuery = groq`
   *[_type == "page" && slug.current == $slug][0] {
     _id,
-    body,
+    body[]{
+      ...,
+      _type == "block" => {
+        markDefs[]{
+          ...,
+          _type == "internalLink" => {
+            "slug": reference->slug.current,
+            "title": reference->title,
+          }
+        }
+      }
+    },
     overview,
     title,
     "slug": slug.current,
