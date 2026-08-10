@@ -1,29 +1,13 @@
-import { SiteMeta } from 'components/global/SiteMeta'
 import Layout from 'components/shared/Layout'
 import type { SettingsPayload } from 'types'
 
 import ContactForm from './ContactForm'
 
-const Contact = ({
-  homePageTitle,
-  settings,
-}: {
-  homePageTitle?: string
-  settings?: SettingsPayload
-}) => {
+const Contact = ({ settings }: { settings?: SettingsPayload }) => {
   return (
-    <>
-      <SiteMeta
-        baseTitle={homePageTitle}
-        description="Get in touch with us using the contact form below. We would love to hear from you!"
-        image={settings?.ogImage}
-        title="Contact"
-      />
-
-      <Layout settings={settings}>
-        <ContactForm />
-      </Layout>
-    </>
+    <Layout settings={settings}>
+      <ContactForm />
+    </Layout>
   )
 }
 
