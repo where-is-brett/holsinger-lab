@@ -19,7 +19,13 @@ export default function ImageContainer({
   size = '100vw',
   classesWrapper,
 }: ImageBoxProps) {
-  const imageUrl = urlForImage(image)?.width(width).height(height).fit('crop').url()
+  // `fit('max')`, not `fit('crop')`: unlike `ImageBox` (used for fixed-aspect cover slots whose
+  // wrapper CSS already constrains the box), this component renders arbitrary body-content images
+  // with no fixed-aspect wrapper — cropping to a fixed 1200x800 box would silently discard content
+  // for any non-3:2 source image. `fit('max')` scales down to fit within the bounds while
+  // preserving the source's own aspect ratio, matching `lib/sanity.image.ts`'s own base builder
+  // default.
+  const imageUrl = urlForImage(image)?.width(width).height(height).fit('max').url()
 
   return (
     <div className={`w-full overflow-hidden bg-gray-50 ${classesWrapper}`}>

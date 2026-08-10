@@ -1,4 +1,3 @@
-import type { PortableTextBlock } from '@portabletext/types'
 import type { Image } from 'sanity'
 import type {
   HomePageQueryResult,
@@ -43,11 +42,19 @@ export type ProfilePayload = ProfileQueryResult[number]
 // `SettingsPayload` now requires every key (nullable values are fine, but the keys themselves
 // must be present) — the seven call sites that used to fall back to a bare `?? {}` need a real
 // object satisfying that shape. Shared here so it's defined once, not duplicated seven times.
+//
+// The three `show*` booleans are `null`, not `false`: the pre-existing `?? {}` fallback left them
+// `undefined`, which every consuming route's `=== false` notFound() guard and Navbar's
+// `showX = true` default parameter both treat as "unset, use the default" (render/show) rather
+// than "explicitly disabled." Using `null` here preserves that fail-open behavior for the rare case
+// where the `settings` singleton itself is missing, instead of silently flipping to fail-closed
+// (which would 404 three public routes and hide their nav links) as a side effect of this object
+// existing.
 export const fallbackSettings: SettingsPayload = {
   menuItems: [],
-  showPublications: false,
-  showPeople: false,
-  showContactForm: false,
+  showPublications: null,
+  showPeople: null,
+  showContactForm: null,
   footer: [],
   ogImage: null,
 }
