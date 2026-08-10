@@ -9,7 +9,7 @@
     "lint:fix": "npm run format && npm run lint -- --fix",
     "start": "next start",
     "type-check": "tsc --noEmit",
-    "typegen": "sanity schema extract && sanity typegen generate"
+    "typegen": "sanity schema extract --force && sanity typegen generate"
   },
   "prettier": {
     "semi": false,
