@@ -20,12 +20,24 @@ export async function POST(request: NextRequest) {
 
     switch (type) {
       case 'page':
+        if (!slug) {
+          return NextResponse.json(
+            { success: false, message: 'Missing "slug" in webhook payload' },
+            { status: 400 }
+          )
+        }
         revalidatePath(`/${slug}`)
         return NextResponse.json({
           success: true,
           message: `Revalidated "/${slug}"`,
         })
       case 'project':
+        if (!slug) {
+          return NextResponse.json(
+            { success: false, message: 'Missing "slug" in webhook payload' },
+            { status: 400 }
+          )
+        }
         revalidatePath(`/projects/${slug}`)
         revalidatePath(`/`)
         return NextResponse.json({
