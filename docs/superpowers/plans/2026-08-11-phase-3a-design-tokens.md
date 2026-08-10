@@ -1051,9 +1051,13 @@ authored ordered list with bullets."
 - Consumes: Tasks 1–6.
 - Produces: the phase's exit evidence.
 
-- [ ] **Step 1: Remove the resolved violation**
+- [ ] **Step 1: Reconcile the allowlist comment**
 
-`e2e/axe.spec.ts` — `KNOWN_VIOLATIONS` becomes:
+> **Plan correction, recorded 2026-08-11.** This step originally read "Remove the resolved violation," on the assumption that the allowlist could stay stale between Task 2 and here. It cannot: `e2e/axe.spec.ts` asserts that every id listed in `KNOWN_VIOLATIONS` **still fires**, so the moment Task 2's contrast fix landed, leaving `'/': ['color-contrast']` in place broke the e2e suite. Task 2's implementer found this by running Playwright beyond its brief and removed the entry there, correctly — deferring would have left CI red across four tasks. The entry is therefore **already gone** by the time you reach this step.
+>
+> Your job here is reconciliation, not removal: confirm the map matches the target below, and bring the explanatory comment up to the fuller form specified here (Task 2's version is terser). If the map already matches and the comment already carries this content, say so and change nothing.
+
+`e2e/axe.spec.ts` — `KNOWN_VIOLATIONS` should read:
 
 ```ts
 // `/` previously carried a `color-contrast` violation (ProjectListItem's
@@ -1084,6 +1088,8 @@ npx playwright test e2e/axe.spec.ts
 ```
 
 Expected: 12 passed (6 routes × 2 viewports). If `/` still reports `color-contrast`, Task 2's fix did not land on the element axe is measuring — find the actual failing node from the axe output rather than re-adding the allowlist entry.
+
+Note that this suite fails in **both** directions by design: a violation that fires but is not listed, and a listed violation that no longer fires. The second is the one that bit this plan (Step 1's correction note).
 
 - [ ] **Step 3: Run everything**
 
