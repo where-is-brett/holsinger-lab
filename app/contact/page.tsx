@@ -1,7 +1,7 @@
 import Contact from 'components/pages/contact/Contact'
 import { buildMetadata } from 'lib/metadata'
-import { homePageTitleQuery, settingsQuery } from 'lib/sanity.queries'
 import { sanityFetch } from 'lib/sanity.live'
+import { homePageTitleQuery, settingsQuery } from 'lib/sanity.queries'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'

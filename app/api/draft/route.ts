@@ -7,10 +7,10 @@ import {
   useCdn,
 } from 'lib/sanity.api'
 import { resolveHref } from 'lib/sanity.links'
-import { createClient } from 'next-sanity'
 import { draftMode } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { NextRequest } from 'next/server'
+import { createClient } from 'next-sanity'
 import { getSecret } from 'plugins/productionUrl/utils'
 
 const _client = createClient({ projectId, dataset, apiVersion, useCdn })

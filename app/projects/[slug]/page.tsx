@@ -1,14 +1,14 @@
+import { toPlainText } from '@portabletext/react'
 import { ProjectPage as ProjectPageComponent } from 'components/pages/project/ProjectPage'
 import { buildMetadata } from 'lib/metadata'
 import { getClient } from 'lib/sanity.client'
+import { sanityFetch } from 'lib/sanity.live'
 import {
   homePageTitleQuery,
   projectBySlugQuery,
   projectPaths,
   settingsQuery,
 } from 'lib/sanity.queries'
-import { sanityFetch } from 'lib/sanity.live'
-import { toPlainText } from '@portabletext/react'
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'

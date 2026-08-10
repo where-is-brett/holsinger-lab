@@ -1,11 +1,11 @@
 import People from 'components/pages/people/People'
 import { buildMetadata } from 'lib/metadata'
+import { sanityFetch } from 'lib/sanity.live'
 import {
   homePageTitleQuery,
   profileQuery,
   settingsQuery,
 } from 'lib/sanity.queries'
-import { sanityFetch } from 'lib/sanity.live'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'

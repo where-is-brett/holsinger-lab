@@ -1,7 +1,6 @@
 import { DocumentIcon } from '@sanity/icons/Document'
 import { ImageIcon } from '@sanity/icons/Image'
 import { defineArrayMember, defineField, defineType } from 'sanity'
-
 import { slugify, validateSlugFormat } from 'schemas/lib/slug'
 
 export default defineType({

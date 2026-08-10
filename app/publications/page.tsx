@@ -1,12 +1,12 @@
 import Publications from 'components/pages/publications/Publications'
 import Layout from 'components/shared/Layout'
 import { buildMetadata } from 'lib/metadata'
+import { sanityFetch } from 'lib/sanity.live'
 import {
   homePageTitleQuery,
   publicationsQuery,
   settingsQuery,
 } from 'lib/sanity.queries'
-import { sanityFetch } from 'lib/sanity.live'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'

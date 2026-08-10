@@ -1,13 +1,13 @@
 import 'styles/index.css'
 
+import { PreviewBanner } from 'components/preview/PreviewBanner'
+import { SanityLive } from 'lib/sanity.live'
+import { siteName, siteUrl } from 'lib/site'
+import type { Metadata, Viewport } from 'next'
 import { IBM_Plex_Mono, PT_Serif } from 'next/font/google'
 import localFont from 'next/font/local'
-import { PreviewBanner } from 'components/preview/PreviewBanner'
-import { siteName, siteUrl } from 'lib/site'
-import { SanityLive } from 'lib/sanity.live'
-import { VisualEditing } from 'next-sanity/visual-editing'
 import { draftMode } from 'next/headers'
-import type { Metadata, Viewport } from 'next'
+import { VisualEditing } from 'next-sanity/visual-editing'
 
 const mono = IBM_Plex_Mono({
   variable: '--font-mono',
