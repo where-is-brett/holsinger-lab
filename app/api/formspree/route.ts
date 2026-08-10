@@ -1,5 +1,5 @@
 import { siteUrl } from 'lib/site'
-import { NextApiRequest, NextApiResponse } from 'next'
+import { NextRequest, NextResponse } from 'next/server'
 
 const endpoint = process.env.FORMSPREE_ENDPOINT
 
@@ -12,25 +12,16 @@ const requestLog = new Map<string, { count: number; resetAt: number }>()
  * Only these fields reach Formspree. Everything else in the request body is
  * dropped — this endpoint accepts contact-form submissions, not arbitrary JSON
  * forwarded on the lab's Formspree account.
- *
- * NOTE: if the contact form gains a field, add it here too or it will be
- * silently discarded. `email` is deliberately kept: Formspree reads the field
- * named `email` to set the notification's Reply-To address.
  */
 const FIELD_MAX_LENGTH = {
   name: 200,
-  email: 320, // RFC 5321 maximum address length
+  email: 320,
   message: 5000,
 } as const
 
 type AllowedField = keyof typeof FIELD_MAX_LENGTH
-
 const ALLOWED_FIELDS = Object.keys(FIELD_MAX_LENGTH) as AllowedField[]
 
-/**
- * Returns the trimmed, allowlisted payload, or a reason string if the body
- * isn't a usable contact-form submission.
- */
 function buildPayload(
   body: unknown
 ): { payload: Record<AllowedField, string> } | { error: string } {
@@ -55,12 +46,12 @@ function buildPayload(
   return { payload }
 }
 
-function getClientIp(req: NextApiRequest): string {
-  const forwarded = req.headers['x-forwarded-for']
-  if (typeof forwarded === 'string') {
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  if (forwarded) {
     return forwarded.split(',')[0].trim()
   }
-  return req.socket.remoteAddress || 'unknown'
+  return 'unknown'
 }
 
 function isRateLimited(ip: string): boolean {
@@ -74,46 +65,58 @@ function isRateLimited(ip: string): boolean {
   return entry.count > RATE_LIMIT_MAX_REQUESTS
 }
 
-function isTrustedOrigin(req: NextApiRequest): boolean {
-  const origin = req.headers.origin
-  if (!origin) return true // same-origin form posts and non-browser tools may omit Origin
-  if (process.env.VERCEL_ENV !== 'production') return true // don't block preview/dev deployments
-  const trusted = [siteUrl, process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`].filter(
-    Boolean
-  )
+function isTrustedOrigin(request: NextRequest): boolean {
+  const origin = request.headers.get('origin')
+  if (!origin) return true
+  if (process.env.VERCEL_ENV !== 'production') return true
+  const trusted = [
+    siteUrl,
+    process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`,
+  ].filter(Boolean)
   return trusted.includes(origin)
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, message: 'Method not allowed.' })
+export async function POST(request: NextRequest) {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json(
+      { success: false, message: 'Expected a JSON object.' },
+      { status: 400 }
+    )
   }
 
   // Honeypot: bots fill every field, real visitors never see this one.
-  // Checked first so bot traffic never consumes the rate-limit budget
-  // meant for real submissions sharing an IP (e.g. an office NAT).
-  if (req.body?._gotcha) {
-    return res.status(200).json({ success: true, message: 'Thank you.' })
+  if (
+    body &&
+    typeof body === 'object' &&
+    (body as Record<string, unknown>)._gotcha
+  ) {
+    return NextResponse.json({ success: true, message: 'Thank you.' })
   }
 
-  if (!isTrustedOrigin(req)) {
-    return res.status(403).json({ success: false, message: 'Forbidden.' })
+  if (!isTrustedOrigin(request)) {
+    return NextResponse.json(
+      { success: false, message: 'Forbidden.' },
+      { status: 403 }
+    )
   }
 
-  const ip = getClientIp(req)
+  const ip = getClientIp(request)
   if (isRateLimited(ip)) {
-    return res.status(429).json({
-      success: false,
-      message: 'Too many submissions. Please try again later.',
-    })
+    return NextResponse.json(
+      { success: false, message: 'Too many submissions. Please try again later.' },
+      { status: 429 }
+    )
   }
 
-  const result = buildPayload(req.body)
+  const result = buildPayload(body)
   if ('error' in result) {
-    return res.status(400).json({ success: false, message: result.error })
+    return NextResponse.json(
+      { success: false, message: result.error },
+      { status: 400 }
+    )
   }
 
   try {
@@ -126,12 +129,15 @@ export default async function handler(
     if (!response.ok) {
       throw new Error('Formspree request failed')
     }
-    res.status(200).json({ success: true, message: data })
+    return NextResponse.json({ success: true, message: data })
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message:
-        'Sorry, there was an issue with submitting your message. Please try again later.',
-    })
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          'Sorry, there was an issue with submitting your message. Please try again later.',
+      },
+      { status: 500 }
+    )
   }
 }
