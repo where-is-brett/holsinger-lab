@@ -14,7 +14,7 @@
 - **Never verify a colour change by reading CSS.** Build, serve, and read `getComputedStyle` in a real browser. This is Phase 1C's retrospective lesson and this phase's design doc §5 restates it: a token-name grep over markup is necessary but not sufficient. Phase 1C shipped four regressions that a source-read could not have caught.
 - **Never hand-convert a hex value.** Every colour in this plan was computed and contrast-checked in code (design doc §1.5, and the dark-mode table in Task 3). If a computed style disagrees with a number here, re-derive it in code — do not adjust by eye. Phase 1C caught exactly one arithmetic slip this way (`#728192` for `rgb(114 120 146)` instead of `#727892`).
 - **Task 1 is a zero-change refactor and must be proven so.** If Task 1's Step 6 finds any computed-style difference, that is a bug in Task 1, not an acceptable side effect. All deliberate changes belong to Tasks 2–5, where they are enumerated.
-- **`heading-order` on `/tutorial` stays in `KNOWN_VIOLATIONS`.** It is authored Sanity content, not a component bug; fixing it needs live CMS write access this environment does not have. Do not remove it, do not "fix" it by changing `CustomPortableText`. The `/` `color-contrast` entry **must** come out in Task 6.
+- **`heading-order` on `/tutorial` stays in `KNOWN_VIOLATIONS`.** It is authored Sanity content, not a component bug; fixing it needs live CMS write access this environment does not have. Do not remove it, do not "fix" it by changing `CustomPortableText`. The `/` `color-contrast` entry **must** come out in **Task 2**, in the same commit as the contrast fix — `e2e/axe.spec.ts` asserts that every listed violation *still fires*, so the entry goes stale and the suite goes red the instant the fix lands. Task 7 then reconciles the surrounding comment. (This constraint originally named "Task 6", which was wrong twice over: Task 6 is the spacing task, and deferring the removal at all breaks CI.)
 - **Do not touch `sanity.types.ts` by hand.** It is generated; CI checks freshness via `npm run typegen`. No task in this plan changes the schema, so it should not change — if it does, something is wrong.
 - **Two manual, live-deploy-dependent items are carried forward, not resolved here** (design doc §3): confirming the Sanity webhook hits `/api/revalidate` with `SANITY_WEBHOOK_SECRET`, and confirming `VisualEditing` overlays render against a real draft-mode session. Repeat both in the PR description.
 
@@ -266,6 +266,8 @@ reintroduces dark mode at the token layer, where it works."
 **Files:**
 - Modify: `styles/index.css`
 - Modify: `components/shared/Header.tsx:27`, `components/pages/page/Page.tsx:21`, `components/pages/contact/ErrorDialog.tsx:53`, `components/pages/home/ProjectListItem.tsx:48`
+- Modify: `e2e/axe.spec.ts` — remove the now-stale `'/': ['color-contrast']` entry (see Step 4a)
+- Create: `styles/tokens.test.ts`
 
 **Interfaces:**
 - Consumes: Task 1's semantic tokens.
@@ -395,6 +397,29 @@ The `--font-*` declarations move into the surviving `@theme inline` block unchan
   --font-antarctican: var(--font-antarctican-mono);
   --font-ariana: var(--font-ariana-pro);
 ```
+
+- [ ] **Step 4a: Clear the now-stale axe allowlist entry — in this task, not later**
+
+`e2e/axe.spec.ts` fails in **both** directions by design: a violation that fires but is not listed, *and* a listed violation that no longer fires. Step 3 just fixed the `/` contrast failure, so `'/': ['color-contrast']` is now stale and the suite goes red until it is removed. Remove it here, in the same commit as the fix:
+
+```ts
+const KNOWN_VIOLATIONS: Record<string, string[]> = {
+  '/': [],
+  '/contact': [],
+  '/people': [],
+  '/publications': [],
+  '/tutorial': ['heading-order'],
+  '/projects/publication-highlights': [],
+}
+```
+
+Leave `/tutorial`'s entry alone (Global Constraints). Task 7 reconciles the surrounding explanatory comment; this step is only about keeping the suite green.
+
+```bash
+npx playwright test e2e/axe.spec.ts
+```
+
+Expected: 12 passed (6 routes × 2 viewports).
 
 - [ ] **Step 5: Run the test to verify it passes**
 
