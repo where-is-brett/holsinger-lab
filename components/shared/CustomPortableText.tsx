@@ -121,8 +121,6 @@ export function CustomPortableText({
             <ImageContainer
               image={value}
               alt={value.alt || value.caption || ''}
-              width={value.hotspot?.width}
-              height={value.hotspot?.height}
             />
             {value?.caption && (
               <div className="font-antarctican text-sm text-gray-600">

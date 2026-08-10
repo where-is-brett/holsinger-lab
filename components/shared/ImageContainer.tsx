@@ -14,12 +14,12 @@ interface ImageBoxProps {
 export default function ImageContainer({
   image,
   alt = 'Cover image',
-  width = 0,
-  height = 0,
+  width = 1200,
+  height = 800,
   size = '100vw',
   classesWrapper,
 }: ImageBoxProps) {
-  const imageUrl = urlForImage(image)?.url()
+  const imageUrl = urlForImage(image)?.width(width).height(height).fit('crop').url()
 
   return (
     <div className={`w-full overflow-hidden bg-gray-50 ${classesWrapper}`}>

@@ -23,8 +23,6 @@ export function ProjectListItem(props: ProjectProps) {
       >
         <ImageBox
           image={project.coverImage}
-          width={project.coverImage?.hotspot?.width}
-          height={project.coverImage?.hotspot?.height}
           alt={`Cover image from ${project.title}`}
           classesWrapper="relative aspect-[16/9] h-full h-full "
         />
