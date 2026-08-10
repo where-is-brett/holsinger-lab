@@ -464,7 +464,7 @@ npx tsc --noEmit && npx eslint . && npm test && npm run build
 ```bash
 git add styles/index.css components/shared/Header.tsx components/pages/page/Page.tsx \
         components/pages/contact/ErrorDialog.tsx components/pages/home/ProjectListItem.tsx \
-        styles/tokens.test.ts
+        styles/tokens.test.ts e2e/axe.spec.ts
 git commit -m "fix: consolidate text tokens and clear the WCAG AA contrast failure
 
 ProjectListItem's overview text was gray-500 (#727892) on the site
