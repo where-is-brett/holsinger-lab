@@ -6,12 +6,6 @@ import { expect, test } from '@playwright/test'
 // lands — this test then starts enforcing zero violations of that kind on
 // that route again, with no further change needed here.
 //
-// - landmark-one-main / region: components/shared/Layout.tsx wraps every
-//   route's content in a plain <div>, not a <main> element. Fixed by 2C's
-//   Layout.tsx landmark task.
-// - list / listitem (serious on /publications only): the <div> direct
-//   child of <ul> in components/pages/publications/Publications.tsx.
-//   Fixed by 2C's <ul> markup task.
 // - color-contrast (serious on / only): components/pages/home/ProjectListItem.tsx
 //   renders each showcase project's overview text (live Sanity content) in
 //   `text-gray-500` against the page's light background — measured at a
@@ -28,27 +22,48 @@ import { expect, test } from '@playwright/test'
 //   task's Step 4. Fixed by a future 2C task correcting that page's content
 //   heading levels (or CustomPortableText enforcing sequential order).
 const KNOWN_VIOLATIONS: Record<string, string[]> = {
-  '/': ['landmark-one-main', 'region', 'color-contrast'],
-  '/contact': ['landmark-one-main', 'region'],
-  '/people': ['landmark-one-main', 'region'],
-  '/publications': ['landmark-one-main', 'region', 'list', 'listitem'],
-  '/tutorial': ['landmark-one-main', 'region', 'heading-order'],
-  '/projects/publication-highlights': ['landmark-one-main', 'region'],
+  '/': ['color-contrast'],
+  '/contact': [],
+  '/people': [],
+  '/publications': [],
+  '/tutorial': ['heading-order'],
+  '/projects/publication-highlights': [],
 }
 
-for (const [path, knownIds] of Object.entries(KNOWN_VIOLATIONS)) {
-  test(`${path} has no unexpected accessibility violations`, async ({ page }) => {
-    await page.goto(path)
-    const results = await new AxeBuilder({ page }).analyze()
-    const observedIds = results.violations.map((v) => v.id)
+// Run against both the mobile and desktop nav render paths (Phase 2C's
+// CSS-breakpoint split means the two can genuinely diverge), per this
+// phase's design doc §5. color-contrast and heading-order are
+// viewport-independent (CSS/content issues, not layout), so the same
+// KNOWN_VIOLATIONS map is expected to hold at both — this loop verifies
+// that rather than assuming it.
+const VIEWPORTS: Record<string, { width: number; height: number }> = {
+  desktop: { width: 1280, height: 800 },
+  mobile: { width: 375, height: 812 },
+}
 
-    const unexpected = results.violations.filter((v) => !knownIds.includes(v.id))
-    expect(unexpected, JSON.stringify(unexpected, null, 2)).toEqual([])
+for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
+  test.describe(`${viewportName} viewport`, () => {
+    test.use({ viewport })
 
-    const stale = knownIds.filter((id) => !observedIds.includes(id))
-    expect(
-      stale,
-      `These KNOWN_VIOLATIONS entries no longer fire — delete them from the list: ${stale.join(', ')}`
-    ).toEqual([])
+    for (const [path, knownIds] of Object.entries(KNOWN_VIOLATIONS)) {
+      test(`${path} has no unexpected accessibility violations`, async ({
+        page,
+      }) => {
+        await page.goto(path)
+        const results = await new AxeBuilder({ page }).analyze()
+        const observedIds = results.violations.map((v) => v.id)
+
+        const unexpected = results.violations.filter(
+          (v) => !knownIds.includes(v.id)
+        )
+        expect(unexpected, JSON.stringify(unexpected, null, 2)).toEqual([])
+
+        const stale = knownIds.filter((id) => !observedIds.includes(id))
+        expect(
+          stale,
+          `These KNOWN_VIOLATIONS entries no longer fire — delete them from the list: ${stale.join(', ')}`
+        ).toEqual([])
+      })
+    }
   })
 }

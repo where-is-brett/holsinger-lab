@@ -1,46 +1,61 @@
 'use client'
-import { Transition } from '@headlessui/react'
+import { Dialog, DialogPanel } from '@headlessui/react'
 import { resolveHref } from 'lib/sanity.links'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import logo from 'public/logo.svg'
+import { useEffect, useState } from 'react'
 import { MenuItem } from 'types'
 
 const hamburgerLine = `h-[2px] w-6 my-[6px] bg-black transition ease transform duration-500`
 
 const MobileNavBar = ({
-  handleMenuClick,
-  isMenuOpen,
   menuItems,
   showPublications,
   showPeople,
   showContactForm,
 }: {
-  handleMenuClick: () => void
-  isMenuOpen: boolean
   menuItems?: MenuItem[] | null
   showPublications?: boolean | null
   showPeople?: boolean | null
   showContactForm?: boolean | null
 }) => {
-  const router = useRouter()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  const handleLinkClick = (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
-    href: string
-  ) => {
-    e.preventDefault()
-    handleMenuClick()
-    setTimeout(() => {
-      router.push(href)
-    }, 500)
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsMenuOpen(false)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const handleMenuClick = () => {
+    setIsMenuOpen((open) => !open)
   }
+
+  const closeMenu = () => setIsMenuOpen(false)
 
   return (
     <>
-      <div className={`uppercase`}>
-        <div className="fixed bottom-auto left-0 right-0 top-0 z-50 h-16 border-y border-primary bg-background">
+      <nav className="uppercase md:hidden">
+        <div className="border-primary bg-background fixed bottom-auto left-0 right-0 top-0 z-50 h-16 border-y">
+          {/*
+            This logo link is a sibling of <Dialog>, so - like the hamburger
+            button below - it goes `inert`+`aria-hidden` while the menu is
+            open (Headless UI's useInertOthers makes everything outside the
+            Dialog's own portaled tree inert while it's open). It keeps
+            painting normally (`inert` doesn't affect paint) but is silently
+            unclickable while open. A transparent Link at this same screen
+            position is what actually receives the tap and navigates home
+            while the menu is open - but unlike the hamburger/close button
+            pair, that Link has to live *inside <DialogPanel>* itself, not
+            merely inside <Dialog>. See its comment (near the bottom of
+            <DialogPanel>'s children) for why: it's not a stylistic choice,
+            it's required for the tap to actually navigate on touch input.
+          */}
           <Link href="/">
             <Image
               src={logo}
@@ -50,9 +65,31 @@ const MobileNavBar = ({
             />
           </Link>
 
+          {/*
+            This button's visible icon is the only one the user ever sees,
+            but while the menu is open it is `inert` (see the comment on the
+            overlay button inside <Dialog> below) and purely decorative -
+            the overlay button is what actually receives the click. Per the
+            HTML spec, `inert` elements are excluded from pointer-event
+            hit-testing, so a click that physically lands on this
+            visually-on-top-but-inert button passes through it to whatever
+            is painted directly beneath it at those screen coordinates - the
+            transparent overlay button inside <Dialog>. Verified on Chromium
+            and real WebKit (Mobile Safari device profile); untested on
+            Firefox but expected to work, since this is standard,
+            spec-mandated hit-testing behavior rather than a browser quirk.
+            Regression-guarded by the geometry-click test "tapping the
+            visible header icon..." in e2e/mobile-menu.spec.ts. Its
+            `right-6` position and this header bar's `h-16` height must stay
+            in sync with the overlay button's `right-6 top-0 h-16 w-9`, or
+            the click-passthrough geometry breaks and the visible icon goes
+            dead.
+          */}
           <button
             type="button"
-            aria-label="button"
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-menu-panel"
+            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
             className="absolute right-6 border-0 bg-transparent py-4"
             onClick={handleMenuClick}
           >
@@ -73,73 +110,194 @@ const MobileNavBar = ({
             />
           </button>
         </div>
-        <Transition
-          as="div"
-          show={isMenuOpen}
-          enter="transition ease-out duration-500"
-          enterFrom="transform translate-x-full"
-          enterTo="transform translate-x-0"
-          leave="transition duration-500"
-          leaveFrom="transform ease-in translate-x-0"
-          leaveTo="transform translate-x-full"
-          className="fixed z-20 flex h-[100lvh]
-                    w-full flex-col items-center justify-center gap-8
-                    bg-background text-center text-2xl font-[400] text-black"
+        <Dialog
+          open={isMenuOpen}
+          onClose={closeMenu}
+          transition
+          unmount={false}
+          aria-label="Mobile menu"
+          className="data-closed:pointer-events-none fixed inset-0 z-20 md:hidden"
         >
-          {menuItems &&
-            menuItems.map((menuItem: MenuItem, key: number) => {
-              const href = resolveHref(menuItem?._type, menuItem?.slug)
-              if (!href) {
-                return null
-              }
-              return (
-                <Link
-                  key={key}
-                  onClick={(e) => {
-                    handleLinkClick(e, href)
-                  }}
-                  className={`hover:text-gray-600`}
-                  href={href}
-                >
-                  {href === '/' ? 'Home' : menuItem.title}
-                </Link>
-              )
-            })}
-          {showPublications && (
+          {/*
+            Headless UI's Dialog makes everything outside its own portaled
+            tree `inert`+`aria-hidden` while open (see useInertOthers) -
+            including the always-visible header button and logo link above,
+            since both live outside <Dialog>. Those elements therefore
+            become unclickable/unfocusable/invisible-to-a11y-tree the
+            moment the menu opens, even though they still visually render
+            (inert doesn't affect paint, only interaction+a11y). Per the
+            HTML spec, `inert` elements are excluded from pointer-event
+            hit-testing, so a click that physically lands on the
+            visually-on-top-but-inert header button passes through it to
+            this button - the *real* close control while open: it's part
+            of the Dialog's own tree (so it stays interactive and
+            focus-trap/tab-order-participating), and it's positioned to
+            exactly overlay the header button's hit area so the single
+            visible "X" icon underneath remains the only thing the user
+            perceives, while this transparent button is what actually
+            receives the click/tap/keyboard activation. The header logo
+            uses a *related but not identical* pattern - it has to sit
+            inside <DialogPanel> rather than here as a Dialog-level sibling
+            of DialogPanel, because unlike this button's job (closing the
+            menu, which happens automatically via outside-click regardless
+            of whether this onClick fires), the logo's job is navigation,
+            which does NOT happen automatically and is specifically
+            suppressed by touch input when the element lives here instead
+            of inside DialogPanel. See the logo overlay's own comment
+            (inside <DialogPanel>'s children) for the full mechanism.
+            Verified on Chromium and real WebKit (Mobile Safari device
+            profile);
+            untested on Firefox but expected to work, since this is
+            standard, spec-mandated hit-testing behavior rather than a
+            browser quirk. Regression-guarded by the geometry-click test
+            "tapping the visible header icon..." in
+            e2e/mobile-menu.spec.ts.
+
+            Geometry coupling: `right-6 top-0 h-16 w-9` must stay in sync
+            with the header button's own `right-6` position and the header
+            bar's `h-16` height (see the comment on that button above) -
+            if either drifts, the visible icon and the actual clickable
+            area fall out of alignment and the icon becomes dead to clicks.
+            `z-30` (vs. the Dialog wrapper's `z-20`) is needed so this
+            button sits above `DialogPanel` within the Dialog's own
+            stacking context, since DialogPanel covers the full viewport.
+          */}
+          <button
+            type="button"
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-menu-panel"
+            aria-label="Close menu"
+            className="absolute right-6 top-0 z-30 h-16 w-9 border-0 bg-transparent"
+            onClick={closeMenu}
+          />
+          <DialogPanel
+            id="mobile-menu-panel"
+            transition
+            className="bg-background data-closed:translate-x-full data-enter:ease-out data-leave:ease-in fixed inset-0 flex
+                      h-[100lvh] w-full flex-col items-center justify-center
+                      gap-8 text-center text-2xl font-[400]
+                      text-black transition duration-500"
+          >
+            {/*
+              Same visual-overlay purpose as the close button above (make
+              the *visible* header logo tappable while the menu is open,
+              since the real logo <Link> above is a sibling of <Dialog>
+              and goes `inert`) - but this element must be an actual DOM
+              child of <DialogPanel> itself, not merely of <Dialog> like
+              the close button (where it used to live too, as a sibling of
+              this DialogPanel). That's not a style preference, it fixes a
+              real bug found by building a live repro against this repo's
+              installed @headlessui/react@2.2.10 + React 19:
+
+              Headless UI's outside-click handling (`useOutsideClick`,
+              which backs "click/tap outside the panel closes the dialog")
+              calls `event.preventDefault()` on the `touchend` event for
+              anything outside its `resolveContainers()` list, and that
+              list resolves to DialogPanel's own subtree - a sibling of
+              DialogPanel (even though it's inside <Dialog>) counts as
+              "outside" and gets this treatment. `preventDefault()` on
+              `touchend` suppresses the `click` event a touchscreen tap
+              would otherwise synthesize afterward, so on real touch input
+              specifically (not mouse) a sibling-of-DialogPanel overlay's
+              own onClick/navigation never fires - even though the same
+              tap still closes the menu, because that part happens via
+              Headless UI's own outside-click-closes-dialog behavior,
+              independent of this element's onClick.
+
+              That was harmless for the close button above: its only job
+              (`closeMenu`) already happens automatically on outside-click
+              regardless of whether the button's own onClick fires. It is
+              NOT harmless here: this element's job is navigating home,
+              which does not happen automatically - it specifically
+              requires this Link's own onClick/navigation to fire, exactly
+              what touch input was suppressing while this lived outside
+              DialogPanel. Being an actual child of DialogPanel puts it
+              inside resolveContainers(), so it's never "outside" and its
+              click handler fires normally for both mouse and touch.
+              Verified on Chromium and real WebKit (Mobile Safari device
+              profile) via the live repro above.
+
+              Tradeoff accepted: DialogPanel carries a translate-x
+              transform for its ~500ms open/close transition
+              (`data-closed:translate-x-full`). A transform on an ancestor
+              establishes a new containing block for descendants
+              (including this absolutely-positioned Link), so this
+              element's screen position only matches the real logo once
+              the panel finishes sliding to translate-x-0 - i.e. for the
+              entire time the menu is fully open, not during the brief
+              slide itself. The close button above has the same class of
+              imprecision, unaddressed; this doesn't worsen it, just
+              doesn't fix it either.
+
+              Geometry coupling: `left-4 top-0 h-16 w-[120px]` must stay
+              in sync with the header logo's own `left-4` position and the
+              header bar's `h-16` height (see the comment on the visible
+              logo near the top of this file) - if either drifts, the
+              visible logo and the actual tappable area fall out of
+              alignment and the logo goes dead to taps/clicks. `z-10`
+              keeps it above the menu links below in DOM/paint order, in
+              case their boxes ever overlap this fixed header-sized area
+              on a very short viewport. `onClick={closeMenu}` here is
+              load-bearing (not redundant with outside-click) precisely
+              because this element is now *inside* the dialog, so tapping
+              it doesn't count as an outside tap - closing still has to
+              come from its own handler. Regression-guarded by the
+              "tapping the visible logo..." touch-tap test in
+              e2e/mobile-menu.spec.ts.
+            */}
             <Link
-              onClick={(e) => {
-                handleLinkClick(e, '/publications')
-              }}
-              className="hover:text-gray-600"
-              href={'/publications'}
-            >
-              Publications
-            </Link>
-          )}
-          {showPeople && (
-            <Link
-              onClick={(e) => {
-                handleLinkClick(e, '/people')
-              }}
-              className="hover:text-gray-600"
-              href={'/people'}
-            >
-              People
-            </Link>
-          )}
-          {showContactForm && (
-            <Link
-              onClick={(e) => {
-                handleLinkClick(e, '/contact')
-              }}
-              className="hover:text-gray-600"
-              href={'/contact'}
-            >
-              Contact
-            </Link>
-          )}
-        </Transition>
-      </div>
+              href="/"
+              onClick={closeMenu}
+              aria-label="Home"
+              className="absolute left-4 top-0 z-10 h-16 w-[120px]"
+            />
+            {menuItems &&
+              menuItems.map((menuItem: MenuItem, key: number) => {
+                const href = resolveHref(menuItem?._type, menuItem?.slug)
+                if (!href) {
+                  return null
+                }
+                return (
+                  <Link
+                    key={key}
+                    onClick={closeMenu}
+                    className={`hover:text-gray-600`}
+                    href={href}
+                  >
+                    {href === '/' ? 'Home' : menuItem.title}
+                  </Link>
+                )
+              })}
+            {showPublications && (
+              <Link
+                onClick={closeMenu}
+                className="hover:text-gray-600"
+                href={'/publications'}
+              >
+                Publications
+              </Link>
+            )}
+            {showPeople && (
+              <Link
+                onClick={closeMenu}
+                className="hover:text-gray-600"
+                href={'/people'}
+              >
+                People
+              </Link>
+            )}
+            {showContactForm && (
+              <Link
+                onClick={closeMenu}
+                className="hover:text-gray-600"
+                href={'/contact'}
+              >
+                Contact
+              </Link>
+            )}
+          </DialogPanel>
+        </Dialog>
+      </nav>
     </>
   )
 }
