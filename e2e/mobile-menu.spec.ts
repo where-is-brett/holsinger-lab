@@ -139,14 +139,21 @@ test.describe('mobile menu accessibility contract', () => {
 
     // Locate the ORIGINAL header button - the one that still visually paints
     // the hamburger/close icon while the dialog is open, but is `inert` (and
-    // therefore not the element that actually receives clicks). It's the
-    // <button> that is NOT inside [role="dialog"]'s tree; the overlay button
-    // that *does* handle the click lives inside that tree.
+    // therefore not the element that actually receives clicks). Select it by
+    // its identifying attribute (`aria-controls="mobile-menu-panel"`) rather
+    // than by document-order position - a plain "first non-dialog button"
+    // selector would silently retarget to the wrong element if any other
+    // button (a skip link, a cookie-banner control, etc.) were ever added
+    // above the hamburger in document order. There are multiple buttons
+    // carrying `aria-controls="mobile-menu-panel"` in the DOM (the header's
+    // original hamburger, and the close-button overlay inside the dialog),
+    // so we still filter out anything inside `[role="dialog"]`'s tree to
+    // land on the one real header button.
     const headerButtonRect = await page.evaluate(() => {
       const dialog = document.querySelector('[role="dialog"]')
-      const headerButton = Array.from(document.querySelectorAll('button')).find(
-        (button) => !dialog?.contains(button)
-      )
+      const headerButton = Array.from(
+        document.querySelectorAll('button[aria-controls="mobile-menu-panel"]')
+      ).find((button) => !dialog?.contains(button))
       const rect = headerButton?.getBoundingClientRect()
       return rect
         ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
@@ -166,6 +173,48 @@ test.describe('mobile menu accessibility contract', () => {
     const { x, y, width, height } = headerButtonRect!
     await page.mouse.click(x + width / 2, y + height / 2)
 
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  test('tapping the visible header logo (not just the overlay links own hit box) navigates home and closes the menu', async ({
+    page,
+  }) => {
+    await page.goto('/')
+
+    const trigger = page.getByRole('button', { name: 'Open menu' })
+    await trigger.click()
+    await expect(
+      page.getByRole('button', { name: 'Close menu' })
+    ).toHaveAttribute('aria-expanded', 'true')
+
+    // Locate the actual visible logo image in the header - the one that
+    // keeps painting while the dialog is open but is `inert` (its wrapping
+    // <Link> is a sibling of <Dialog>), so it is not the element that
+    // actually receives clicks. Measuring the <img> itself (rather than its
+    // wrapping anchor, whose own box collapses since its only child is
+    // absolutely positioned) gives the real on-screen pixels a user taps.
+    const logoRect = await page.evaluate(() => {
+      const dialog = document.querySelector('[role="dialog"]')
+      const logoImage = document.querySelector('img[alt="logo"]')
+      if (!logoImage || dialog?.contains(logoImage)) {
+        return null
+      }
+      const rect = logoImage.getBoundingClientRect()
+      return { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+    })
+    expect(logoRect).not.toBeNull()
+
+    // Click at the exact screen coordinates of the *visible* logo - not a
+    // role-resolved locator's own bounding box. This is the direct
+    // regression guard for the geometry coupling documented in
+    // MobileNavBar.tsx: if the logo's `left-4`/`my-4` or the header bar's
+    // `h-16` ever drifts out of sync with the overlay link's
+    // `left-4 top-0 h-16 w-[120px]`, this click lands on nothing functional
+    // and this test fails.
+    const { x, y, width, height } = logoRect!
+    await page.mouse.click(x + width / 2, y + height / 2)
+
+    await expect(page).toHaveURL(/\/$/)
     await expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 })

@@ -42,6 +42,18 @@ const MobileNavBar = ({
     <>
       <nav className="uppercase md:hidden">
         <div className="border-primary bg-background fixed bottom-auto left-0 right-0 top-0 z-50 h-16 border-y">
+          {/*
+            This logo link is a sibling of <Dialog>, so - like the hamburger
+            button below - it goes `inert`+`aria-hidden` while the menu is
+            open (Headless UI's useInertOthers makes everything outside the
+            Dialog's own portaled tree inert while it's open). It keeps
+            painting normally (`inert` doesn't affect paint) but is silently
+            unclickable while open. The transparent Link inside <Dialog>'s
+            tree below (see its comment, near the close button) is what
+            actually receives the tap and navigates home while the menu is
+            open, using the same click-passthrough mechanism as the
+            hamburger/close button pair.
+          */}
           <Link href="/">
             <Image
               src={logo}
@@ -55,7 +67,17 @@ const MobileNavBar = ({
             This button's visible icon is the only one the user ever sees,
             but while the menu is open it is `inert` (see the comment on the
             overlay button inside <Dialog> below) and purely decorative -
-            the overlay button is what actually receives the click. Its
+            the overlay button is what actually receives the click. Per the
+            HTML spec, `inert` elements are excluded from pointer-event
+            hit-testing, so a click that physically lands on this
+            visually-on-top-but-inert button passes through it to whatever
+            is painted directly beneath it at those screen coordinates - the
+            transparent overlay button inside <Dialog>. Verified on Chromium
+            and real WebKit (Mobile Safari device profile); untested on
+            Firefox but expected to work, since this is standard,
+            spec-mandated hit-testing behavior rather than a browser quirk.
+            Regression-guarded by the geometry-click test "tapping the
+            visible header icon..." in e2e/mobile-menu.spec.ts. Its
             `right-6` position and this header bar's `h-16` height must stay
             in sync with the overlay button's `right-6 top-0 h-16 w-9`, or
             the click-passthrough geometry breaks and the visible icon goes
@@ -92,23 +114,33 @@ const MobileNavBar = ({
           transition
           unmount={false}
           aria-label="Mobile menu"
-          className="data-closed:pointer-events-none fixed inset-0 z-20"
+          className="data-closed:pointer-events-none fixed inset-0 z-20 md:hidden"
         >
           {/*
             Headless UI's Dialog makes everything outside its own portaled
             tree `inert`+`aria-hidden` while open (see useInertOthers) -
-            including the always-visible header button above, since that
-            button lives outside <Dialog>. That header button therefore
-            becomes unclickable/unfocusable/invisible-to-a11y-tree the
-            moment the menu opens, even though it still visually renders
-            (inert doesn't affect paint, only interaction+a11y). This
-            second button is the *real* close control while open: it's
-            part of the Dialog's own tree (so it stays interactive and
+            including the always-visible header button and logo link above,
+            since both live outside <Dialog>. Those elements therefore
+            become unclickable/unfocusable/invisible-to-a11y-tree the
+            moment the menu opens, even though they still visually render
+            (inert doesn't affect paint, only interaction+a11y). Per the
+            HTML spec, `inert` elements are excluded from pointer-event
+            hit-testing, so a click that physically lands on the
+            visually-on-top-but-inert header button passes through it to
+            this button - the *real* close control while open: it's part
+            of the Dialog's own tree (so it stays interactive and
             focus-trap/tab-order-participating), and it's positioned to
             exactly overlay the header button's hit area so the single
             visible "X" icon underneath remains the only thing the user
             perceives, while this transparent button is what actually
-            receives the click/tap/keyboard activation.
+            receives the click/tap/keyboard activation. The logo link just
+            below uses the identical pattern for the header logo. Verified
+            on Chromium and real WebKit (Mobile Safari device profile);
+            untested on Firefox but expected to work, since this is
+            standard, spec-mandated hit-testing behavior rather than a
+            browser quirk. Regression-guarded by the geometry-click test
+            "tapping the visible header icon..." in
+            e2e/mobile-menu.spec.ts.
 
             Geometry coupling: `right-6 top-0 h-16 w-9` must stay in sync
             with the header button's own `right-6` position and the header
@@ -126,6 +158,38 @@ const MobileNavBar = ({
             aria-label="Close menu"
             className="absolute right-6 top-0 z-30 h-16 w-9 border-0 bg-transparent"
             onClick={closeMenu}
+          />
+          {/*
+            Same click-passthrough pattern as the close button above,
+            applied to the header logo: the header logo <Link> is a
+            sibling of <Dialog>, so it goes `inert` while the menu is
+            open and is excluded from pointer-event hit-testing per the
+            HTML spec. A click that physically lands on the
+            visually-on-top-but-inert logo passes through it to this
+            Link, which lives inside <Dialog>'s own tree and stays
+            interactive, so tapping the visible logo while the menu is
+            open genuinely navigates home (via `onClick={closeMenu}` plus
+            Next's own <Link> navigation, mirroring how the menu links
+            below close the menu on click).
+
+            Geometry coupling: `left-4 top-0 h-16` must stay in sync with
+            the header logo's own `left-4` position and the header bar's
+            `h-16` height (see the comment on the logo above) - if either
+            drifts, the visible logo and the actual clickable area fall
+            out of alignment and the logo becomes dead to clicks. `z-30`
+            is needed for the same reason as the close button above: it
+            must sit above `DialogPanel` within the Dialog's own stacking
+            context. Verified on Chromium and real WebKit (Mobile Safari
+            device profile); untested on Firefox but expected to work,
+            since this is standard, spec-mandated hit-testing behavior.
+            Regression-guarded by the "tapping the visible logo..."
+            geometry-click test in e2e/mobile-menu.spec.ts.
+          */}
+          <Link
+            href="/"
+            onClick={closeMenu}
+            aria-label="Home"
+            className="absolute left-4 top-0 z-30 h-16 w-[120px]"
           />
           <DialogPanel
             id="mobile-menu-panel"
