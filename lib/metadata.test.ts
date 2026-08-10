@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('lib/sanity.image', () => ({ urlForImage: vi.fn() }))
 
 import { buildMetadata } from './metadata'
 
@@ -53,6 +55,6 @@ describe('buildMetadata', () => {
   it('omits images and uses the summary Twitter card when no image is given', () => {
     const metadata = buildMetadata({ path: '/' })
     expect(metadata.openGraph?.images).toBeUndefined()
-    expect((metadata.twitter as any).card).toBe('summary')
+    expect((metadata.twitter as { card?: string })?.card).toBe('summary')
   })
 })
