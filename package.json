@@ -1,6 +1,9 @@
 {
   "name": "holsinger-lab",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev",
