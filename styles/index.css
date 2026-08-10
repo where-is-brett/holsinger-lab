@@ -1,6 +1,24 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --color-gray-50: #f6f6f8;
+  --color-gray-100: #eeeef1;
+  --color-gray-200: #e3e4e8;
+  --color-gray-300: #bbbdc9;
+  --color-gray-500: #727892;
+  --color-gray-600: #515870;
+  --color-gray-800: #252837;
+  --color-gray-900: #1b1d27;
+  --color-blue-600: #4043e7;
+  --color-primary: #2d6a4f;
+  --color-background: #f8f8f8;
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+  --font-antarctican: var(--font-antarctican-mono);
+  --font-ariana: var(--font-ariana-pro);
+}
 
 :root {
   --font-sans: var(--font-antarctican-mono);
