@@ -221,6 +221,19 @@ JSON.stringify({
 })
 ```
 
+**Finally, prove the `dark:` removal was a no-op for readers.** This task's equivalence claim is scoped to the light colour scheme. It deletes `dark:bg-black dark:text-white` from `app/layout.tsx`, which under `prefers-color-scheme: dark` did change `<body>`'s *own* computed style — but nothing visible followed from it, because `Layout`'s wrapper painted over it on every route (design doc §1.4). Confirm that by forcing dark mode in the browser and re-running the probe on `/`:
+
+```js
+// with prefers-color-scheme: dark forced
+JSON.stringify({
+  layoutBg:   getComputedStyle(document.querySelector('body > div.flex.min-h-screen')).backgroundColor,
+  layoutText: getComputedStyle(document.querySelector('body > div.flex.min-h-screen')).color,
+  h1:         getComputedStyle(document.querySelector('h1')).color,
+})
+```
+
+Expected: identical to the light-mode values — `rgb(248, 248, 248)` / `rgb(13, 14, 18)` / `rgb(13, 14, 18)`. The page still renders (wrongly) light under dark mode; that is the pre-existing behaviour Task 3 fixes, and confirming it here is what proves this task changed nothing a reader could see. `<body>`'s own `backgroundColor` **will** differ from the baseline (it no longer goes dark) — that is the intended removal, not a regression, and it is the one value in this probe allowed to change.
+
 - [ ] **Step 7: Verify, then commit**
 
 ```bash
