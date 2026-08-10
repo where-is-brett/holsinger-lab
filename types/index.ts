@@ -44,12 +44,13 @@ export type ProfilePayload = ProfileQueryResult[number]
 // object satisfying that shape. Shared here so it's defined once, not duplicated seven times.
 //
 // The three `show*` booleans are `null`, not `false`: the pre-existing `?? {}` fallback left them
-// `undefined`, which every consuming route's `=== false` notFound() guard and Navbar's
-// `showX = true` default parameter both treat as "unset, use the default" (render/show) rather
-// than "explicitly disabled." Using `null` here preserves that fail-open behavior for the rare case
-// where the `settings` singleton itself is missing, instead of silently flipping to fail-closed
-// (which would 404 three public routes and hide their nav links) as a side effect of this object
-// existing.
+// `undefined`, which every consuming route's `=== false` notFound() guard treats as "unset, use the
+// default" (render/show). `null === false` is `false`, same as `undefined === false`, so `null`
+// here preserves that guard behavior for the rare case where the `settings` singleton itself is
+// missing, instead of silently flipping to fail-closed (which would 404 three public routes) as a
+// side effect of this object existing. Note `null` does NOT trigger a JS default parameter the way
+// `undefined` does — `Layout.tsx` explicitly coalesces `settings?.showX ?? true` before passing
+// these flags to `Navbar`, so nav-link visibility fails open the same way the route guards do.
 export const fallbackSettings: SettingsPayload = {
   menuItems: [],
   showPublications: null,
