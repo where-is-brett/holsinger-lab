@@ -12,10 +12,14 @@ const requestLog = new Map<string, { count: number; resetAt: number }>()
  * Only these fields reach Formspree. Everything else in the request body is
  * dropped — this endpoint accepts contact-form submissions, not arbitrary JSON
  * forwarded on the lab's Formspree account.
+ *
+ * NOTE: if the contact form gains a field, add it here too or it will be
+ * silently discarded. `email` is deliberately kept: Formspree reads the field
+ * named `email` to set the notification's Reply-To address.
  */
 const FIELD_MAX_LENGTH = {
   name: 200,
-  email: 320,
+  email: 320, // RFC 5321 maximum address length
   message: 5000,
 } as const
 
@@ -51,7 +55,7 @@ function getClientIp(request: NextRequest): string {
   if (forwarded) {
     return forwarded.split(',')[0].trim()
   }
-  return 'unknown'
+  return request.headers.get('x-real-ip') || 'unknown'
 }
 
 function isRateLimited(ip: string): boolean {
@@ -67,8 +71,8 @@ function isRateLimited(ip: string): boolean {
 
 function isTrustedOrigin(request: NextRequest): boolean {
   const origin = request.headers.get('origin')
-  if (!origin) return true
-  if (process.env.VERCEL_ENV !== 'production') return true
+  if (!origin) return true // same-origin form posts and non-browser tools may omit Origin
+  if (process.env.VERCEL_ENV !== 'production') return true // don't block preview/dev deployments
   const trusted = [
     siteUrl,
     process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`,
@@ -130,7 +134,7 @@ export async function POST(request: NextRequest) {
       throw new Error('Formspree request failed')
     }
     return NextResponse.json({ success: true, message: data })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         success: false,
