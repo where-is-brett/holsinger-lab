@@ -1,9 +1,8 @@
 'use client'
-import { Transition } from '@headlessui/react'
+import { Dialog, DialogPanel } from '@headlessui/react'
 import { resolveHref } from 'lib/sanity.links'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import logo from 'public/logo.svg'
 import { useEffect, useState } from 'react'
 import { MenuItem } from 'types'
@@ -21,7 +20,6 @@ const MobileNavBar = ({
   showPeople?: boolean | null
   showContactForm?: boolean | null
 }) => {
-  const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -38,16 +36,7 @@ const MobileNavBar = ({
     setIsMenuOpen((open) => !open)
   }
 
-  const handleLinkClick = (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
-    href: string
-  ) => {
-    e.preventDefault()
-    handleMenuClick()
-    setTimeout(() => {
-      router.push(href)
-    }, 500)
-  }
+  const closeMenu = () => setIsMenuOpen(false)
 
   return (
     <>
@@ -64,7 +53,9 @@ const MobileNavBar = ({
 
           <button
             type="button"
-            aria-label="button"
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-menu-panel"
+            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
             className="absolute right-6 border-0 bg-transparent py-4"
             onClick={handleMenuClick}
           >
@@ -85,72 +76,80 @@ const MobileNavBar = ({
             />
           </button>
         </div>
-        <Transition
-          as="div"
-          show={isMenuOpen}
-          enter="transition ease-out duration-500"
-          enterFrom="transform translate-x-full"
-          enterTo="transform translate-x-0"
-          leave="transition duration-500"
-          leaveFrom="transform ease-in translate-x-0"
-          leaveTo="transform translate-x-full"
-          className="fixed z-20 flex h-[100lvh]
-                    w-full flex-col items-center justify-center gap-8
-                    bg-background text-center text-2xl font-[400] text-black"
+        <Dialog
+          open={isMenuOpen}
+          onClose={closeMenu}
+          transition
+          unmount={false}
+          aria-label="Mobile menu"
+          className="fixed inset-0 z-20"
         >
-          {menuItems &&
-            menuItems.map((menuItem: MenuItem, key: number) => {
-              const href = resolveHref(menuItem?._type, menuItem?.slug)
-              if (!href) {
-                return null
-              }
-              return (
-                <Link
-                  key={key}
-                  onClick={(e) => {
-                    handleLinkClick(e, href)
-                  }}
-                  className={`hover:text-gray-600`}
-                  href={href}
-                >
-                  {href === '/' ? 'Home' : menuItem.title}
-                </Link>
-              )
-            })}
-          {showPublications && (
-            <Link
-              onClick={(e) => {
-                handleLinkClick(e, '/publications')
-              }}
-              className="hover:text-gray-600"
-              href={'/publications'}
-            >
-              Publications
-            </Link>
-          )}
-          {showPeople && (
-            <Link
-              onClick={(e) => {
-                handleLinkClick(e, '/people')
-              }}
-              className="hover:text-gray-600"
-              href={'/people'}
-            >
-              People
-            </Link>
-          )}
-          {showContactForm && (
-            <Link
-              onClick={(e) => {
-                handleLinkClick(e, '/contact')
-              }}
-              className="hover:text-gray-600"
-              href={'/contact'}
-            >
-              Contact
-            </Link>
-          )}
-        </Transition>
+          {/*
+            Headless UI's Dialog makes everything outside its own portaled
+            tree `inert`+`aria-hidden` while open (see useInertOthers) -
+            including the always-visible header button above, since that
+            button lives outside <Dialog>. That header button therefore
+            becomes unclickable/unfocusable/invisible-to-a11y-tree the
+            moment the menu opens, even though it still visually renders
+            (inert doesn't affect paint, only interaction+a11y). This
+            second button is the *real* close control while open: it's
+            part of the Dialog's own tree (so it stays interactive and
+            focus-trap/tab-order-participating), and it's positioned to
+            exactly overlay the header button's hit area so the single
+            visible "X" icon underneath remains the only thing the user
+            perceives, while this transparent button is what actually
+            receives the click/tap/keyboard activation.
+          */}
+          <button
+            type="button"
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-menu-panel"
+            aria-label="Close menu"
+            className="absolute right-6 top-0 z-30 h-16 w-9 border-0 bg-transparent"
+            onClick={closeMenu}
+          />
+          <DialogPanel
+            id="mobile-menu-panel"
+            transition
+            className="fixed inset-0 flex h-[100lvh] w-full flex-col items-center
+                      justify-center gap-8 bg-background text-center text-2xl
+                      font-[400] text-black transition duration-500
+                      data-closed:translate-x-full data-enter:ease-out data-leave:ease-in"
+          >
+            {menuItems &&
+              menuItems.map((menuItem: MenuItem, key: number) => {
+                const href = resolveHref(menuItem?._type, menuItem?.slug)
+                if (!href) {
+                  return null
+                }
+                return (
+                  <Link
+                    key={key}
+                    onClick={closeMenu}
+                    className={`hover:text-gray-600`}
+                    href={href}
+                  >
+                    {href === '/' ? 'Home' : menuItem.title}
+                  </Link>
+                )
+              })}
+            {showPublications && (
+              <Link onClick={closeMenu} className="hover:text-gray-600" href={'/publications'}>
+                Publications
+              </Link>
+            )}
+            {showPeople && (
+              <Link onClick={closeMenu} className="hover:text-gray-600" href={'/people'}>
+                People
+              </Link>
+            )}
+            {showContactForm && (
+              <Link onClick={closeMenu} className="hover:text-gray-600" href={'/contact'}>
+                Contact
+              </Link>
+            )}
+          </DialogPanel>
+        </Dialog>
       </nav>
     </>
   )
