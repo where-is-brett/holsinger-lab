@@ -22,7 +22,7 @@ const fallbackPage: HomePagePayload = {
 const getData = cache(async () => {
   const [{ data: settingsData }, { data: pageData }] = await Promise.all([
     sanityFetch({ query: settingsQuery, stega: false }),
-    sanityFetch({ query: homePageQuery, stega: false }),
+    sanityFetch({ query: homePageQuery }),
   ])
   const settings = (settingsData as SettingsPayload | null) ?? {}
   const page = (pageData as HomePagePayload | null) ?? fallbackPage

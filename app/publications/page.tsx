@@ -29,7 +29,7 @@ const getData = cache(async () => {
   ] = await Promise.all([
     sanityFetch({ query: settingsQuery, stega: false }),
     sanityFetch({ query: homePageTitleQuery, stega: false }),
-    sanityFetch({ query: publicationsQuery, stega: false }),
+    sanityFetch({ query: publicationsQuery }),
   ])
   const settings = (settingsData as SettingsPayload | null) ?? {}
   const publications = publicationsData as PublicationPayload[] | null

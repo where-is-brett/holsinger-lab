@@ -32,7 +32,6 @@ const getData = cache(async (slug: string) => {
       sanityFetch({
         query: projectBySlugQuery,
         params: { slug },
-        stega: false,
       }),
       sanityFetch({ query: homePageTitleQuery, stega: false }),
     ])
