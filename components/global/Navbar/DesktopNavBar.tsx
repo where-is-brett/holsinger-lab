@@ -14,10 +14,10 @@ const DesktopNavBar = ({
   showContactForm?: boolean | null
 }) => {
   return (
-    <div
-      className={`sticky top-0 z-10 flex flex-wrap items-center gap-x-5
+    <nav
+      className={`sticky top-0 z-10 hidden flex-wrap items-center gap-x-5
             border-y border-primary bg-background/80
-            px-4 py-4 uppercase backdrop-blur md:px-16 md:py-5 lg:px-32`}
+            px-4 py-4 uppercase backdrop-blur md:flex md:px-16 md:py-5 lg:px-32`}
     >
       {menuItems &&
         menuItems.map((menuItem: MenuItem, key: number) => {
@@ -65,7 +65,7 @@ const DesktopNavBar = ({
           Contact
         </Link>
       )}
-    </div>
+    </nav>
   )
 }
 

@@ -23,11 +23,11 @@ export default function Layout({
         showContactForm={settings?.showContactForm ?? true}
       />
 
-      <div
+      <main
         className={`mt-32 flex-grow md:mt-16 md:px-16 lg:px-32 ${childrenStyles}`}
       >
         {children}
-      </div>
+      </main>
 
       <Footer footer={settings?.footer} />
     </div>

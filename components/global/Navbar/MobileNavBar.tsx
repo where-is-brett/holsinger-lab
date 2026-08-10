@@ -5,26 +5,38 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import logo from 'public/logo.svg'
+import { useEffect, useState } from 'react'
 import { MenuItem } from 'types'
 
 const hamburgerLine = `h-[2px] w-6 my-[6px] bg-black transition ease transform duration-500`
 
 const MobileNavBar = ({
-  handleMenuClick,
-  isMenuOpen,
   menuItems,
   showPublications,
   showPeople,
   showContactForm,
 }: {
-  handleMenuClick: () => void
-  isMenuOpen: boolean
   menuItems?: MenuItem[] | null
   showPublications?: boolean | null
   showPeople?: boolean | null
   showContactForm?: boolean | null
 }) => {
   const router = useRouter()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsMenuOpen(false)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const handleMenuClick = () => {
+    setIsMenuOpen((open) => !open)
+  }
 
   const handleLinkClick = (
     e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
@@ -39,7 +51,7 @@ const MobileNavBar = ({
 
   return (
     <>
-      <div className={`uppercase`}>
+      <nav className="uppercase md:hidden">
         <div className="fixed bottom-auto left-0 right-0 top-0 z-50 h-16 border-y border-primary bg-background">
           <Link href="/">
             <Image
@@ -139,7 +151,7 @@ const MobileNavBar = ({
             </Link>
           )}
         </Transition>
-      </div>
+      </nav>
     </>
   )
 }
