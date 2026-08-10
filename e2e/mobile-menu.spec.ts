@@ -176,45 +176,75 @@ test.describe('mobile menu accessibility contract', () => {
     await expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 
-  test('tapping the visible header logo (not just the overlay links own hit box) navigates home and closes the menu', async ({
-    page,
-  }) => {
-    await page.goto('/')
+  test.describe('touch input', () => {
+    // Scoped to just this test: Playwright's touchscreen API requires a
+    // touch-capable browser context (`hasTouch: true`), which the default
+    // Desktop Chrome project doesn't have. This is not incidental to the
+    // test - it's the whole point. The bug this test guards against only
+    // reproduces on touch input specifically: Headless UI's outside-click
+    // handling calls `preventDefault()` on `touchend` for elements outside
+    // DialogPanel's `resolveContainers()`, which suppresses the synthesized
+    // `click` event a touch tap would otherwise produce - but has no effect
+    // on a real `mouse.click()`, which fires a `click` event directly. A
+    // mouse-click version of this test would stay green even if the logo
+    // overlay regressed back to living outside DialogPanel, because mouse
+    // and touch take different code paths through that handler. See the
+    // logo overlay's comment in MobileNavBar.tsx for the full mechanism.
+    test.use({ hasTouch: true })
 
-    const trigger = page.getByRole('button', { name: 'Open menu' })
-    await trigger.click()
-    await expect(
-      page.getByRole('button', { name: 'Close menu' })
-    ).toHaveAttribute('aria-expanded', 'true')
+    test('tapping the visible header logo (not just the overlay links own hit box) navigates home and closes the menu', async ({
+      page,
+    }) => {
+      // Start from a non-home route so the eventual `toHaveURL(/\/$/)`
+      // assertion is a real transition, not trivially true because we
+      // never left "/" in the first place.
+      await page.goto('/publications')
 
-    // Locate the actual visible logo image in the header - the one that
-    // keeps painting while the dialog is open but is `inert` (its wrapping
-    // <Link> is a sibling of <Dialog>), so it is not the element that
-    // actually receives clicks. Measuring the <img> itself (rather than its
-    // wrapping anchor, whose own box collapses since its only child is
-    // absolutely positioned) gives the real on-screen pixels a user taps.
-    const logoRect = await page.evaluate(() => {
-      const dialog = document.querySelector('[role="dialog"]')
-      const logoImage = document.querySelector('img[alt="logo"]')
-      if (!logoImage || dialog?.contains(logoImage)) {
-        return null
-      }
-      const rect = logoImage.getBoundingClientRect()
-      return { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+      const trigger = page.getByRole('button', { name: 'Open menu' })
+      await trigger.click()
+      await expect(
+        page.getByRole('button', { name: 'Close menu' })
+      ).toHaveAttribute('aria-expanded', 'true')
+
+      // Locate the actual visible logo image in the header - the one that
+      // keeps painting while the dialog is open but is `inert` (its
+      // wrapping <Link> is a sibling of <Dialog>), so it is not the
+      // element that actually receives taps. Measuring the <img> itself
+      // (rather than its wrapping anchor, whose own box collapses since
+      // its only child is absolutely positioned) gives the real on-screen
+      // pixels a user taps. This element's own screen position doesn't
+      // change depending on where the overlay lives (inside or outside
+      // DialogPanel) - only whether tapping at these coordinates actually
+      // navigates does.
+      const logoRect = await page.evaluate(() => {
+        const dialog = document.querySelector('[role="dialog"]')
+        const logoImage = document.querySelector('img[alt="logo"]')
+        if (!logoImage || dialog?.contains(logoImage)) {
+          return null
+        }
+        const rect = logoImage.getBoundingClientRect()
+        return { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+      })
+      expect(logoRect).not.toBeNull()
+
+      // Tap (not click) at the exact screen coordinates of the *visible*
+      // logo, via the touchscreen API - not `page.mouse.click()`, and not
+      // a role-resolved locator's own bounding box. Using touch is the
+      // direct regression guard for the bug this test exists to catch:
+      // navigating the logo overlay from inside DialogPanel back out to
+      // being a Dialog-level sibling would make this tap close the menu
+      // (via Headless UI's own outside-click-closes-dialog behavior) but
+      // silently fail to navigate, while leaving a mouse-click version of
+      // this same test green. This is also still the geometry-coupling
+      // regression guard documented in MobileNavBar.tsx: if the logo's
+      // `left-4`/`my-4` or the header bar's `h-16` ever drifts out of sync
+      // with the overlay link's `left-4 top-0 h-16 w-[120px]`, this tap
+      // lands on nothing functional and this test fails.
+      const { x, y, width, height } = logoRect!
+      await page.touchscreen.tap(x + width / 2, y + height / 2)
+
+      await expect(page).toHaveURL(/\/$/)
+      await expect(trigger).toHaveAttribute('aria-expanded', 'false')
     })
-    expect(logoRect).not.toBeNull()
-
-    // Click at the exact screen coordinates of the *visible* logo - not a
-    // role-resolved locator's own bounding box. This is the direct
-    // regression guard for the geometry coupling documented in
-    // MobileNavBar.tsx: if the logo's `left-4`/`my-4` or the header bar's
-    // `h-16` ever drifts out of sync with the overlay link's
-    // `left-4 top-0 h-16 w-[120px]`, this click lands on nothing functional
-    // and this test fails.
-    const { x, y, width, height } = logoRect!
-    await page.mouse.click(x + width / 2, y + height / 2)
-
-    await expect(page).toHaveURL(/\/$/)
-    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 })

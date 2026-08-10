@@ -48,11 +48,13 @@ const MobileNavBar = ({
             open (Headless UI's useInertOthers makes everything outside the
             Dialog's own portaled tree inert while it's open). It keeps
             painting normally (`inert` doesn't affect paint) but is silently
-            unclickable while open. The transparent Link inside <Dialog>'s
-            tree below (see its comment, near the close button) is what
-            actually receives the tap and navigates home while the menu is
-            open, using the same click-passthrough mechanism as the
-            hamburger/close button pair.
+            unclickable while open. A transparent Link at this same screen
+            position is what actually receives the tap and navigates home
+            while the menu is open - but unlike the hamburger/close button
+            pair, that Link has to live *inside <DialogPanel>* itself, not
+            merely inside <Dialog>. See its comment (near the bottom of
+            <DialogPanel>'s children) for why: it's not a stylistic choice,
+            it's required for the tap to actually navigate on touch input.
           */}
           <Link href="/">
             <Image
@@ -133,9 +135,18 @@ const MobileNavBar = ({
             exactly overlay the header button's hit area so the single
             visible "X" icon underneath remains the only thing the user
             perceives, while this transparent button is what actually
-            receives the click/tap/keyboard activation. The logo link just
-            below uses the identical pattern for the header logo. Verified
-            on Chromium and real WebKit (Mobile Safari device profile);
+            receives the click/tap/keyboard activation. The header logo
+            uses a *related but not identical* pattern - it has to sit
+            inside <DialogPanel> rather than here as a Dialog-level sibling
+            of DialogPanel, because unlike this button's job (closing the
+            menu, which happens automatically via outside-click regardless
+            of whether this onClick fires), the logo's job is navigation,
+            which does NOT happen automatically and is specifically
+            suppressed by touch input when the element lives here instead
+            of inside DialogPanel. See the logo overlay's own comment
+            (inside <DialogPanel>'s children) for the full mechanism.
+            Verified on Chromium and real WebKit (Mobile Safari device
+            profile);
             untested on Firefox but expected to work, since this is
             standard, spec-mandated hit-testing behavior rather than a
             browser quirk. Regression-guarded by the geometry-click test
@@ -159,38 +170,6 @@ const MobileNavBar = ({
             className="absolute right-6 top-0 z-30 h-16 w-9 border-0 bg-transparent"
             onClick={closeMenu}
           />
-          {/*
-            Same click-passthrough pattern as the close button above,
-            applied to the header logo: the header logo <Link> is a
-            sibling of <Dialog>, so it goes `inert` while the menu is
-            open and is excluded from pointer-event hit-testing per the
-            HTML spec. A click that physically lands on the
-            visually-on-top-but-inert logo passes through it to this
-            Link, which lives inside <Dialog>'s own tree and stays
-            interactive, so tapping the visible logo while the menu is
-            open genuinely navigates home (via `onClick={closeMenu}` plus
-            Next's own <Link> navigation, mirroring how the menu links
-            below close the menu on click).
-
-            Geometry coupling: `left-4 top-0 h-16` must stay in sync with
-            the header logo's own `left-4` position and the header bar's
-            `h-16` height (see the comment on the logo above) - if either
-            drifts, the visible logo and the actual clickable area fall
-            out of alignment and the logo becomes dead to clicks. `z-30`
-            is needed for the same reason as the close button above: it
-            must sit above `DialogPanel` within the Dialog's own stacking
-            context. Verified on Chromium and real WebKit (Mobile Safari
-            device profile); untested on Firefox but expected to work,
-            since this is standard, spec-mandated hit-testing behavior.
-            Regression-guarded by the "tapping the visible logo..."
-            geometry-click test in e2e/mobile-menu.spec.ts.
-          */}
-          <Link
-            href="/"
-            onClick={closeMenu}
-            aria-label="Home"
-            className="absolute left-4 top-0 z-30 h-16 w-[120px]"
-          />
           <DialogPanel
             id="mobile-menu-panel"
             transition
@@ -199,6 +178,79 @@ const MobileNavBar = ({
                       gap-8 text-center text-2xl font-[400]
                       text-black transition duration-500"
           >
+            {/*
+              Same visual-overlay purpose as the close button above (make
+              the *visible* header logo tappable while the menu is open,
+              since the real logo <Link> above is a sibling of <Dialog>
+              and goes `inert`) - but this element must be an actual DOM
+              child of <DialogPanel> itself, not merely of <Dialog> like
+              the close button (where it used to live too, as a sibling of
+              this DialogPanel). That's not a style preference, it fixes a
+              real bug found by building a live repro against this repo's
+              installed @headlessui/react@2.2.10 + React 19:
+
+              Headless UI's outside-click handling (`useOutsideClick`,
+              which backs "click/tap outside the panel closes the dialog")
+              calls `event.preventDefault()` on the `touchend` event for
+              anything outside its `resolveContainers()` list, and that
+              list resolves to DialogPanel's own subtree - a sibling of
+              DialogPanel (even though it's inside <Dialog>) counts as
+              "outside" and gets this treatment. `preventDefault()` on
+              `touchend` suppresses the `click` event a touchscreen tap
+              would otherwise synthesize afterward, so on real touch input
+              specifically (not mouse) a sibling-of-DialogPanel overlay's
+              own onClick/navigation never fires - even though the same
+              tap still closes the menu, because that part happens via
+              Headless UI's own outside-click-closes-dialog behavior,
+              independent of this element's onClick.
+
+              That was harmless for the close button above: its only job
+              (`closeMenu`) already happens automatically on outside-click
+              regardless of whether the button's own onClick fires. It is
+              NOT harmless here: this element's job is navigating home,
+              which does not happen automatically - it specifically
+              requires this Link's own onClick/navigation to fire, exactly
+              what touch input was suppressing while this lived outside
+              DialogPanel. Being an actual child of DialogPanel puts it
+              inside resolveContainers(), so it's never "outside" and its
+              click handler fires normally for both mouse and touch.
+              Verified on Chromium and real WebKit (Mobile Safari device
+              profile) via the live repro above.
+
+              Tradeoff accepted: DialogPanel carries a translate-x
+              transform for its ~500ms open/close transition
+              (`data-closed:translate-x-full`). A transform on an ancestor
+              establishes a new containing block for descendants
+              (including this absolutely-positioned Link), so this
+              element's screen position only matches the real logo once
+              the panel finishes sliding to translate-x-0 - i.e. for the
+              entire time the menu is fully open, not during the brief
+              slide itself. The close button above has the same class of
+              imprecision, unaddressed; this doesn't worsen it, just
+              doesn't fix it either.
+
+              Geometry coupling: `left-4 top-0 h-16 w-[120px]` must stay
+              in sync with the header logo's own `left-4` position and the
+              header bar's `h-16` height (see the comment on the visible
+              logo near the top of this file) - if either drifts, the
+              visible logo and the actual tappable area fall out of
+              alignment and the logo goes dead to taps/clicks. `z-10`
+              keeps it above the menu links below in DOM/paint order, in
+              case their boxes ever overlap this fixed header-sized area
+              on a very short viewport. `onClick={closeMenu}` here is
+              load-bearing (not redundant with outside-click) precisely
+              because this element is now *inside* the dialog, so tapping
+              it doesn't count as an outside tap - closing still has to
+              come from its own handler. Regression-guarded by the
+              "tapping the visible logo..." touch-tap test in
+              e2e/mobile-menu.spec.ts.
+            */}
+            <Link
+              href="/"
+              onClick={closeMenu}
+              aria-label="Home"
+              className="absolute left-4 top-0 z-10 h-16 w-[120px]"
+            />
             {menuItems &&
               menuItems.map((menuItem: MenuItem, key: number) => {
                 const href = resolveHref(menuItem?._type, menuItem?.slug)
