@@ -41,7 +41,7 @@ const MobileNavBar = ({
   return (
     <>
       <nav className="uppercase md:hidden">
-        <div className="fixed bottom-auto left-0 right-0 top-0 z-50 h-16 border-y border-primary bg-background">
+        <div className="border-primary bg-background fixed bottom-auto left-0 right-0 top-0 z-50 h-16 border-y">
           <Link href="/">
             <Image
               src={logo}
@@ -51,6 +51,16 @@ const MobileNavBar = ({
             />
           </Link>
 
+          {/*
+            This button's visible icon is the only one the user ever sees,
+            but while the menu is open it is `inert` (see the comment on the
+            overlay button inside <Dialog> below) and purely decorative -
+            the overlay button is what actually receives the click. Its
+            `right-6` position and this header bar's `h-16` height must stay
+            in sync with the overlay button's `right-6 top-0 h-16 w-9`, or
+            the click-passthrough geometry breaks and the visible icon goes
+            dead.
+          */}
           <button
             type="button"
             aria-expanded={isMenuOpen}
@@ -82,7 +92,7 @@ const MobileNavBar = ({
           transition
           unmount={false}
           aria-label="Mobile menu"
-          className="fixed inset-0 z-20"
+          className="data-closed:pointer-events-none fixed inset-0 z-20"
         >
           {/*
             Headless UI's Dialog makes everything outside its own portaled
@@ -99,6 +109,15 @@ const MobileNavBar = ({
             visible "X" icon underneath remains the only thing the user
             perceives, while this transparent button is what actually
             receives the click/tap/keyboard activation.
+
+            Geometry coupling: `right-6 top-0 h-16 w-9` must stay in sync
+            with the header button's own `right-6` position and the header
+            bar's `h-16` height (see the comment on that button above) -
+            if either drifts, the visible icon and the actual clickable
+            area fall out of alignment and the icon becomes dead to clicks.
+            `z-30` (vs. the Dialog wrapper's `z-20`) is needed so this
+            button sits above `DialogPanel` within the Dialog's own
+            stacking context, since DialogPanel covers the full viewport.
           */}
           <button
             type="button"
@@ -111,10 +130,10 @@ const MobileNavBar = ({
           <DialogPanel
             id="mobile-menu-panel"
             transition
-            className="fixed inset-0 flex h-[100lvh] w-full flex-col items-center
-                      justify-center gap-8 bg-background text-center text-2xl
-                      font-[400] text-black transition duration-500
-                      data-closed:translate-x-full data-enter:ease-out data-leave:ease-in"
+            className="bg-background data-closed:translate-x-full data-enter:ease-out data-leave:ease-in fixed inset-0 flex
+                      h-[100lvh] w-full flex-col items-center justify-center
+                      gap-8 text-center text-2xl font-[400]
+                      text-black transition duration-500"
           >
             {menuItems &&
               menuItems.map((menuItem: MenuItem, key: number) => {
@@ -134,17 +153,29 @@ const MobileNavBar = ({
                 )
               })}
             {showPublications && (
-              <Link onClick={closeMenu} className="hover:text-gray-600" href={'/publications'}>
+              <Link
+                onClick={closeMenu}
+                className="hover:text-gray-600"
+                href={'/publications'}
+              >
                 Publications
               </Link>
             )}
             {showPeople && (
-              <Link onClick={closeMenu} className="hover:text-gray-600" href={'/people'}>
+              <Link
+                onClick={closeMenu}
+                className="hover:text-gray-600"
+                href={'/people'}
+              >
                 People
               </Link>
             )}
             {showContactForm && (
-              <Link onClick={closeMenu} className="hover:text-gray-600" href={'/contact'}>
+              <Link
+                onClick={closeMenu}
+                className="hover:text-gray-600"
+                href={'/contact'}
+              >
                 Contact
               </Link>
             )}

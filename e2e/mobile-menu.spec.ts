@@ -47,9 +47,7 @@ test.describe('mobile menu accessibility contract', () => {
 
     const trigger = page.getByRole('button', { name: 'Open menu' })
     await trigger.click()
-    await expect(
-      page.getByRole('button', { name: 'Close menu' })
-    ).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Close menu' })).toBeVisible()
 
     await page.keyboard.press('Escape')
     await expect(trigger).toHaveAttribute('aria-expanded', 'false')
@@ -104,7 +102,10 @@ test.describe('mobile menu accessibility contract', () => {
     await page.goto('/')
 
     await page.getByRole('button', { name: 'Open menu' }).click()
-    await page.getByRole('dialog').getByRole('link', { name: 'Publications' }).click()
+    await page
+      .getByRole('dialog')
+      .getByRole('link', { name: 'Publications' })
+      .click()
 
     await expect(page).toHaveURL(/\/publications$/)
     await expect(
@@ -119,6 +120,52 @@ test.describe('mobile menu accessibility contract', () => {
     await expect(page.getByRole('dialog')).toBeVisible()
 
     const results = await new AxeBuilder({ page }).analyze()
-    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
+    expect(
+      results.violations,
+      JSON.stringify(results.violations, null, 2)
+    ).toEqual([])
+  })
+
+  test('tapping the visible header icon (not just the overlay buttons own hit box) closes the menu', async ({
+    page,
+  }) => {
+    await page.goto('/')
+
+    const trigger = page.getByRole('button', { name: 'Open menu' })
+    await trigger.click()
+    await expect(
+      page.getByRole('button', { name: 'Close menu' })
+    ).toHaveAttribute('aria-expanded', 'true')
+
+    // Locate the ORIGINAL header button - the one that still visually paints
+    // the hamburger/close icon while the dialog is open, but is `inert` (and
+    // therefore not the element that actually receives clicks). It's the
+    // <button> that is NOT inside [role="dialog"]'s tree; the overlay button
+    // that *does* handle the click lives inside that tree.
+    const headerButtonRect = await page.evaluate(() => {
+      const dialog = document.querySelector('[role="dialog"]')
+      const headerButton = Array.from(document.querySelectorAll('button')).find(
+        (button) => !dialog?.contains(button)
+      )
+      const rect = headerButton?.getBoundingClientRect()
+      return rect
+        ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+        : null
+    })
+    expect(headerButtonRect).not.toBeNull()
+
+    // Click at the exact screen coordinates of the *visible* icon - not a
+    // role-resolved locator's own bounding box (which would still pass even
+    // if the overlay drifted out of alignment with the header button). This
+    // is the direct regression guard for the geometry coupling documented in
+    // MobileNavBar.tsx: if the header button's `right-6`/`py-4` or the
+    // header bar's `h-16` ever drifts out of sync with the overlay button's
+    // `right-6 top-0 h-16 w-9`, this click lands on nothing functional and
+    // this test fails, even though every other test here (which clicks the
+    // overlay's own bounding box directly) would stay green.
+    const { x, y, width, height } = headerButtonRect!
+    await page.mouse.click(x + width / 2, y + height / 2)
+
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 })
