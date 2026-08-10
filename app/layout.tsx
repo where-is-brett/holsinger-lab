@@ -7,7 +7,7 @@ import { siteName, siteUrl } from 'lib/site'
 import { SanityLive } from 'lib/sanity.live'
 import { VisualEditing } from 'next-sanity/visual-editing'
 import { draftMode } from 'next/headers'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 
 const mono = IBM_Plex_Mono({
   variable: '--font-mono',
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
       { url: '/favicon/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
     ],
     shortcut: '/favicon/favicon.ico',
-    apple: '/favicon/apple-touch-icon.png',
+    apple: { url: '/favicon/apple-touch-icon.png', sizes: '180x180' },
   },
   manifest: '/favicon/site.webmanifest',
   other: {
@@ -91,6 +91,8 @@ export const metadata: Metadata = {
     'msapplication-config': '/favicon/browserconfig.xml',
   },
 }
+
+export const viewport: Viewport = { themeColor: '#F8F8F8' }
 
 export default async function RootLayout({
   children,
