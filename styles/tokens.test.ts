@@ -248,3 +248,27 @@ describe('readTokens helper', () => {
     })
   })
 })
+
+describe('dark theme tokens', () => {
+  const t = readTokens('@media (prefers-color-scheme: dark)')
+
+  it('defines every token the light theme defines', () => {
+    const light = Object.keys(readTokens(':root {')).sort()
+    expect(Object.keys(t).sort()).toEqual(light)
+  })
+
+  it('every text token meets WCAG AA on both dark surfaces', () => {
+    for (const name of ['--sem-text', '--sem-text-muted', '--sem-link']) {
+      expect(contrast(t[name], t['--sem-surface']), `${name} on surface`).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(t[name], t['--sem-surface-raised']), `${name} on raised`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('accent meets WCAG AA for non-text on the dark surface', () => {
+    expect(contrast(t['--sem-accent'], t['--sem-surface'])).toBeGreaterThanOrEqual(3)
+  })
+
+  it('inverse text meets WCAG AA on the inverse surface', () => {
+    expect(contrast(t['--sem-text-inverse'], t['--sem-surface-inverse'])).toBeGreaterThanOrEqual(4.5)
+  })
+})

@@ -25,6 +25,7 @@
 }
 
 :root {
+  color-scheme: light dark;
   --sem-surface: #f8f8f8;
   --sem-surface-raised: #f6f6f8;
   --sem-surface-inverse: #1b1d27;
@@ -36,6 +37,22 @@
   --sem-accent: #2d6a4f;
   --sem-field: #bbbdc9;
   --sem-rule: #e3e4e8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sem-surface: #0d0e12;
+    --sem-surface-raised: #1b1d27;
+    --sem-surface-inverse: #f6f6f8;
+    --sem-scrim: #0d0e12;
+    --sem-text: #f6f6f8;
+    --sem-text-muted: #bbbdc9;
+    --sem-text-inverse: #0d0e12;
+    --sem-link: #9da2f2;
+    --sem-accent: #4e9a79;
+    --sem-field: #515870;
+    --sem-rule: #252837;
+  }
 }
 
 @layer base {
