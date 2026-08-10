@@ -34,7 +34,7 @@ export function buildMetadata({
     title: resolvedTitle,
     description,
     alternates: { canonical: canonicalUrl },
-    robots: shouldNoindex ? { index: false, follow: true } : undefined,
+    robots: shouldNoindex ? { index: false } : undefined,
     openGraph: {
       type: 'website',
       siteName,
