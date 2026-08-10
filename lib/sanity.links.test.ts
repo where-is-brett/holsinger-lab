@@ -30,6 +30,11 @@ describe('resolveHref', () => {
     expect(resolveHref('project')).toBeUndefined()
   })
 
+  it('resolves a settings document to the root path, ignoring any slug', () => {
+    expect(resolveHref('settings')).toBe('/')
+    expect(resolveHref('settings', 'ignored')).toBe('/')
+  })
+
   it('returns undefined and warns for an unrecognized document type', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
@@ -54,6 +59,7 @@ describe('resolveHref', () => {
     resolveHref('home')
     resolveHref('page', 'about')
     resolveHref('project', 'my-project')
+    resolveHref('settings')
     expect(warn).not.toHaveBeenCalled()
 
     warn.mockRestore()
