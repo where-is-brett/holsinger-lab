@@ -133,7 +133,7 @@ const ContactForm: React.FC = () => {
                 opacity: 0,
               }}
             />
-            <p className="font-ariana text-base text-gray-600 md:text-lg">
+            <p className="font-ariana text-base text-text-muted md:text-lg">
               We would love to hear from you! Whether you have a question,
               suggestion, or just want to say hello, feel free to send us a
               message using the form below.
@@ -149,7 +149,7 @@ const ContactForm: React.FC = () => {
                 onChange={handleOnChange}
                 required
                 value={inputs.name}
-                className="w-full border border-gray-300 px-4 py-2 outline-none focus:border-gray-600"
+                className="w-full border border-field px-4 py-2 outline-none focus:border-text-muted"
               />
             </div>
             <div className="flex flex-col space-y-1">
@@ -163,7 +163,7 @@ const ContactForm: React.FC = () => {
                 onChange={handleOnChange}
                 required
                 value={inputs.email}
-                className="w-full border border-gray-300 px-4 py-2 outline-none focus:border-gray-600"
+                className="w-full border border-field px-4 py-2 outline-none focus:border-text-muted"
               />
             </div>
             <div className="flex flex-col space-y-1">
@@ -176,14 +176,14 @@ const ContactForm: React.FC = () => {
                 onChange={handleOnChange}
                 required
                 value={inputs.message}
-                className="w-full border border-gray-300 px-4 py-2 outline-none focus:border-gray-600"
+                className="w-full border border-field px-4 py-2 outline-none focus:border-text-muted"
                 rows={6}
               />
             </div>
             <button
               type="submit"
               disabled={status.submitting}
-              className="w-full bg-gray-900 px-6 py-3 text-white"
+              className="w-full bg-surface-inverse px-6 py-3 text-text-inverse"
             >
               {!status.submitting
                 ? !status.submitted

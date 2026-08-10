@@ -108,7 +108,7 @@ export default async function RootLayout({
       lang="en"
       className={`${mono.variable} ${antarcticanMono.variable} ${serif.variable} ${arianaPro.variable}`}
     >
-      <body className="bg-background text-black dark:bg-black dark:text-white">
+      <body className="bg-surface text-text">
         <JsonLd data={buildOrganizationJsonLd()} />
         {isDraftMode && <PreviewBanner />}
         {children}

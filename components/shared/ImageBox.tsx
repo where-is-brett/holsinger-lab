@@ -22,7 +22,7 @@ export default function ImageBox({
     image && urlForImage(image)?.height(height).width(width).fit('crop').url()
 
   return (
-    <div className={`w-full overflow-hidden bg-gray-50 ${classesWrapper}`}>
+    <div className={`w-full overflow-hidden bg-surface-raised ${classesWrapper}`}>
       {imageUrl && (
         <Image
           className="absolute h-full w-full"

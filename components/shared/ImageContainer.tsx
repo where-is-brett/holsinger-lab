@@ -28,7 +28,7 @@ export default function ImageContainer({
   const imageUrl = urlForImage(image)?.width(width).height(height).fit('max').url()
 
   return (
-    <div className={`w-full overflow-hidden bg-gray-50 ${classesWrapper}`}>
+    <div className={`w-full overflow-hidden bg-surface-raised ${classesWrapper}`}>
       {imageUrl && (
         <Image
           className="h-full w-full"

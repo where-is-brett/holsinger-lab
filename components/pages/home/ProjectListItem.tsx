@@ -12,7 +12,7 @@ export function ProjectListItem(props: ProjectProps) {
 
   return (
     <div
-      className={`flex flex-col transition hover:bg-gray-100/0 md:flex-row ${
+      className={`flex flex-col transition hover:bg-surface-raised/0 md:flex-row ${
         odd && 'border-y md:flex-row-reverse'
       }`}
     >
@@ -45,7 +45,7 @@ function TextBox({ project }: { project: ShowcaseProject }) {
           {project.title}
         </h3>
         {/* Overview  */}
-        <div className="font-ariana text-gray-500">
+        <div className="font-ariana text-text-subtle">
           <CustomPortableText value={project.overview!} />
         </div>
       </div>

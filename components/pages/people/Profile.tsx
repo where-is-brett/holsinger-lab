@@ -70,8 +70,8 @@ const Profile = ({ profile }: { profile: ProfilePayload }) => {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="absolute bottom-0 top-0 flex items-center overflow-y-auto bg-gray-600/70 p-2">
-            <p className="text-center text-white sm:text-sm lg:text-base">
+          <div className="absolute bottom-0 top-0 flex items-center overflow-y-auto bg-text-muted/70 p-2">
+            <p className="text-center text-text-inverse sm:text-sm lg:text-base">
               {profile.bio}
             </p>
           </div>
@@ -82,7 +82,7 @@ const Profile = ({ profile }: { profile: ProfilePayload }) => {
       <div className="flex w-full items-baseline justify-between">
         <div>
           <h2 className="text-lg font-semibold">{profile.name}</h2>
-          <p className="text-sm text-gray-600">{profile.role}</p>
+          <p className="text-sm text-text-muted">{profile.role}</p>
         </div>
         {profile.bio && (
           <button
@@ -105,7 +105,7 @@ const Profile = ({ profile }: { profile: ProfilePayload }) => {
         {profile.email && (
           <div className="inline-flex space-x-1">
             <MailIcon />
-            <a href={`mailto:${profile.email}`} className="hover:text-blue-600">
+            <a href={`mailto:${profile.email}`} className="hover:text-link">
               {profile.email}
             </a>
           </div>
@@ -113,7 +113,7 @@ const Profile = ({ profile }: { profile: ProfilePayload }) => {
         {profile.phone && (
           <div className="inline-flex space-x-1">
             <PhoneIcon />
-            <a href={`tel:${profile.phone}`} className="hover:text-blue-600">
+            <a href={`tel:${profile.phone}`} className="hover:text-link">
               {profile.phone}
             </a>
           </div>

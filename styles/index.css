@@ -21,6 +21,44 @@
   --font-ariana: var(--font-ariana-pro);
 }
 
+/* Semantic tokens. Components reference these, never the palette above.
+   `@theme inline` makes utilities resolve to the `--sem-*` custom property
+   rather than to a snapshot of its value, which is what lets a media query
+   below re-point the whole system for dark mode (Task 3). */
+@theme inline {
+  --color-surface: var(--sem-surface);
+  --color-surface-raised: var(--sem-surface-raised);
+  --color-surface-inverse: var(--sem-surface-inverse);
+  --color-scrim: var(--sem-scrim);
+  --color-text: var(--sem-text);
+  --color-text-strong: var(--sem-text-strong);
+  --color-text-body: var(--sem-text-body);
+  --color-text-muted: var(--sem-text-muted);
+  --color-text-subtle: var(--sem-text-subtle);
+  --color-text-inverse: var(--sem-text-inverse);
+  --color-link: var(--sem-link);
+  --color-accent: var(--sem-accent);
+  --color-field: var(--sem-field);
+  --color-rule: var(--sem-rule);
+}
+
+:root {
+  --sem-surface: #f8f8f8;
+  --sem-surface-raised: #f6f6f8;
+  --sem-surface-inverse: #1b1d27;
+  --sem-scrim: #0d0e12;
+  --sem-text: #0d0e12;
+  --sem-text-strong: #1b1d27;
+  --sem-text-body: #252837;
+  --sem-text-muted: #515870;
+  --sem-text-subtle: #727892;
+  --sem-text-inverse: #ffffff;
+  --sem-link: #4043e7;
+  --sem-accent: #2d6a4f;
+  --sem-field: #bbbdc9;
+  --sem-rule: #e3e4e8;
+}
+
 @layer base {
   *,
   ::after,

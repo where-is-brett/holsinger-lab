@@ -15,7 +15,7 @@ export default function Layout({
   childrenStyles = 'px-6',
 }: LayoutProps) {
   return (
-    <div className={`flex min-h-screen flex-col bg-background text-black`}>
+    <div className={`flex min-h-screen flex-col bg-surface text-text`}>
       <Navbar
         menuItems={settings?.menuItems}
         showPublications={settings?.showPublications ?? true}

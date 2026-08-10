@@ -30,7 +30,7 @@ export function CustomPortableText({
       blockquote: ({ children }) => {
         return (
           <blockquote
-            className={`quotes my-[1em] text-left font-serif text-2xl text-gray-600`}
+            className={`quotes my-[1em] text-left font-serif text-2xl text-text-muted`}
           >
             <span className="pr-2 text-4xl">“</span>
             {children}
@@ -136,7 +136,7 @@ export function CustomPortableText({
               alt={value.alt || value.caption || ''}
             />
             {value?.caption && (
-              <div className="font-antarctican text-sm text-gray-600">
+              <div className="font-antarctican text-sm text-text-muted">
                 {value.caption}
               </div>
             )}

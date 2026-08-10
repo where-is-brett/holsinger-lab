@@ -7,7 +7,7 @@ import logo from 'public/logo.svg'
 import { useEffect, useState } from 'react'
 import { MenuItem } from 'types'
 
-const hamburgerLine = `h-[2px] w-6 my-[6px] bg-black transition ease transform duration-500`
+const hamburgerLine = `h-[2px] w-6 my-[6px] bg-scrim transition ease transform duration-500`
 
 const MobileNavBar = ({
   menuItems,
@@ -41,7 +41,7 @@ const MobileNavBar = ({
   return (
     <>
       <nav className="uppercase md:hidden">
-        <div className="border-primary bg-background fixed bottom-auto left-0 right-0 top-0 z-50 h-16 border-y">
+        <div className="border-accent bg-surface fixed bottom-auto left-0 right-0 top-0 z-50 h-16 border-y">
           {/*
             This logo link is a sibling of <Dialog>, so - like the hamburger
             button below - it goes `inert`+`aria-hidden` while the menu is
@@ -173,10 +173,10 @@ const MobileNavBar = ({
           <DialogPanel
             id="mobile-menu-panel"
             transition
-            className="bg-background data-closed:translate-x-full data-enter:ease-out data-leave:ease-in fixed inset-0 flex
+            className="bg-surface data-closed:translate-x-full data-enter:ease-out data-leave:ease-in fixed inset-0 flex
                       h-[100lvh] w-full flex-col items-center justify-center
                       gap-8 text-center text-2xl font-[400]
-                      text-black transition duration-500"
+                      text-text transition duration-500"
           >
             {/*
               Same visual-overlay purpose as the close button above (make
@@ -261,7 +261,7 @@ const MobileNavBar = ({
                   <Link
                     key={key}
                     onClick={closeMenu}
-                    className={`hover:text-gray-600`}
+                    className={`hover:text-text-muted`}
                     href={href}
                   >
                     {href === '/' ? 'Home' : menuItem.title}
@@ -271,7 +271,7 @@ const MobileNavBar = ({
             {showPublications && (
               <Link
                 onClick={closeMenu}
-                className="hover:text-gray-600"
+                className="hover:text-text-muted"
                 href={'/publications'}
               >
                 Publications
@@ -280,7 +280,7 @@ const MobileNavBar = ({
             {showPeople && (
               <Link
                 onClick={closeMenu}
-                className="hover:text-gray-600"
+                className="hover:text-text-muted"
                 href={'/people'}
               >
                 People
@@ -289,7 +289,7 @@ const MobileNavBar = ({
             {showContactForm && (
               <Link
                 onClick={closeMenu}
-                className="hover:text-gray-600"
+                className="hover:text-text-muted"
                 href={'/contact'}
               >
                 Contact
