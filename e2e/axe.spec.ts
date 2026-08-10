@@ -30,19 +30,40 @@ const KNOWN_VIOLATIONS: Record<string, string[]> = {
   '/projects/publication-highlights': [],
 }
 
-for (const [path, knownIds] of Object.entries(KNOWN_VIOLATIONS)) {
-  test(`${path} has no unexpected accessibility violations`, async ({ page }) => {
-    await page.goto(path)
-    const results = await new AxeBuilder({ page }).analyze()
-    const observedIds = results.violations.map((v) => v.id)
+// Run against both the mobile and desktop nav render paths (Phase 2C's
+// CSS-breakpoint split means the two can genuinely diverge), per this
+// phase's design doc §5. color-contrast and heading-order are
+// viewport-independent (CSS/content issues, not layout), so the same
+// KNOWN_VIOLATIONS map is expected to hold at both — this loop verifies
+// that rather than assuming it.
+const VIEWPORTS: Record<string, { width: number; height: number }> = {
+  desktop: { width: 1280, height: 800 },
+  mobile: { width: 375, height: 812 },
+}
 
-    const unexpected = results.violations.filter((v) => !knownIds.includes(v.id))
-    expect(unexpected, JSON.stringify(unexpected, null, 2)).toEqual([])
+for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
+  test.describe(`${viewportName} viewport`, () => {
+    test.use({ viewport })
 
-    const stale = knownIds.filter((id) => !observedIds.includes(id))
-    expect(
-      stale,
-      `These KNOWN_VIOLATIONS entries no longer fire — delete them from the list: ${stale.join(', ')}`
-    ).toEqual([])
+    for (const [path, knownIds] of Object.entries(KNOWN_VIOLATIONS)) {
+      test(`${path} has no unexpected accessibility violations`, async ({
+        page,
+      }) => {
+        await page.goto(path)
+        const results = await new AxeBuilder({ page }).analyze()
+        const observedIds = results.violations.map((v) => v.id)
+
+        const unexpected = results.violations.filter(
+          (v) => !knownIds.includes(v.id)
+        )
+        expect(unexpected, JSON.stringify(unexpected, null, 2)).toEqual([])
+
+        const stale = knownIds.filter((id) => !observedIds.includes(id))
+        expect(
+          stale,
+          `These KNOWN_VIOLATIONS entries no longer fire — delete them from the list: ${stale.join(', ')}`
+        ).toEqual([])
+      })
+    }
   })
 }
