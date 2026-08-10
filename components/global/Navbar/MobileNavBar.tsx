@@ -33,7 +33,11 @@ const MobileNavBar = ({
     e.preventDefault()
     handleMenuClick()
     setTimeout(() => {
-      router?.push(href)
+      if (router) {
+        router.push(href)
+      } else {
+        window.location.assign(href)
+      }
     }, 500)
   }
 
