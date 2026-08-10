@@ -30,5 +30,13 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Sanity TypeGen freshness
+        run: |
+          npm run typegen
+          if ! git diff --exit-code sanity.types.ts; then
+            echo "::error::sanity.types.ts is out of date — run 'npm run typegen' and commit the result."
+            exit 1
+          fi
+
       - name: Build
         run: npm run build
