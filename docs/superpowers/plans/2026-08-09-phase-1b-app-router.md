@@ -46,6 +46,8 @@ This is the largest single task because the design doc requires it: every one of
 
 `typescript`, `@types/styled-components`, `autoprefixer`, `postcss`, `prettier*`, `tailwindcss`, `@sanity/demo`, `eslint-plugin-simple-import-sort` are untouched here (Tailwind 4 is Phase 1C).
 
+Shipped at `9.39.5`, not the `10.8.1` above: `eslint-plugin-react` (a transitive dependency of `eslint-config-next@16.3.0`) caps its `eslint` peer dependency at `^9.7`, so ESLint 10 fails to install/crashes — verified against the installed package's `package.json` peerDependencies.
+
 **Three verified findings that change what "bump the version" means beyond a `package.json` edit** (each checked against the actual package tarball on npm, not documentation prose):
 
 1. **`@headlessui/react` 2 removes `Dialog.Overlay` entirely** — not deprecated-but-present like `Dialog.Panel`/`Dialog.Title`/`Transition.Root`/`Transition.Child` (which keep working via deprecated aliases). `components/pages/contact/ErrorDialog.tsx:30` uses `<Dialog.Overlay>`, which will be `undefined` at runtime and crash. This is a required code change, not an optional modernization.
