@@ -1,5 +1,6 @@
 import { PublicationPayload } from 'types'
 
+import { groupByYear } from './groupByYear'
 import Publication from './Publication'
 
 const Publications = ({
@@ -7,28 +8,26 @@ const Publications = ({
 }: {
   publications: PublicationPayload[]
 }) => {
+  const groups = groupByYear(publications)
+
   return (
     <>
       <h1 className="mb-8 text-3xl font-black md:text-5xl">Publications</h1>
 
-      <ul className="mb-16 ml-0 space-y-6">
-        {publications.map((publication: PublicationPayload, index: number) => {
-          const prevYear = index && publications[index - 1].date?.slice(0, 4)
-          const currentYear = publication.date?.slice(0, 4)
-          return (
-            <div key={publication._id}>
-              {(index === 0 || prevYear !== currentYear) && (
-                <li className="my-5 text-3xl font-bold lg:text-4xl">
-                  {currentYear}
+      <div className="mb-16 space-y-10">
+        {groups.map(({ year, publications: yearPublications }) => (
+          <section key={year}>
+            <h2 className="mb-5 text-3xl font-bold lg:text-4xl">{year}</h2>
+            <ul className="ml-0 space-y-6">
+              {yearPublications.map((publication) => (
+                <li key={publication._id}>
+                  <Publication publication={publication} />
                 </li>
-              )}
-              <li>
-                <Publication publication={publication} />
-              </li>
-            </div>
-          )
-        })}
-      </ul>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
     </>
   )
 }

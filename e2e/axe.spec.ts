@@ -9,9 +9,6 @@ import { expect, test } from '@playwright/test'
 // - landmark-one-main / region: components/shared/Layout.tsx wraps every
 //   route's content in a plain <div>, not a <main> element. Fixed by 2C's
 //   Layout.tsx landmark task.
-// - list / listitem (serious on /publications only): the <div> direct
-//   child of <ul> in components/pages/publications/Publications.tsx.
-//   Fixed by 2C's <ul> markup task.
 // - color-contrast (serious on / only): components/pages/home/ProjectListItem.tsx
 //   renders each showcase project's overview text (live Sanity content) in
 //   `text-gray-500` against the page's light background — measured at a
@@ -31,7 +28,7 @@ const KNOWN_VIOLATIONS: Record<string, string[]> = {
   '/': ['landmark-one-main', 'region', 'color-contrast'],
   '/contact': ['landmark-one-main', 'region'],
   '/people': ['landmark-one-main', 'region'],
-  '/publications': ['landmark-one-main', 'region', 'list', 'listitem'],
+  '/publications': ['landmark-one-main', 'region'],
   '/tutorial': ['landmark-one-main', 'region', 'heading-order'],
   '/projects/publication-highlights': ['landmark-one-main', 'region'],
 }

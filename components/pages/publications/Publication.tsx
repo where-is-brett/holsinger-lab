@@ -52,7 +52,7 @@ export default function Publication({
         <h3 className="font-ariana font-light md:text-base lg:text-lg">
           {author}
         </h3>
-        <h4 className="flex gap-4 font-ariana md:text-base lg:text-lg">
+        <div className="flex gap-4 font-ariana md:text-base lg:text-lg">
           <div>
             {journal}. {`${month} ${year}`}
           </div>
@@ -74,7 +74,7 @@ export default function Publication({
               hideMessage="Citation"
             />
           </div>
-        </h4>
+        </div>
       </div>
 
       {/* CONTENT */}
