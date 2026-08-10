@@ -45,7 +45,7 @@ function TextBox({ project }: { project: ShowcaseProject }) {
           {project.title}
         </h3>
         {/* Overview  */}
-        <div className="font-ariana text-text-subtle">
+        <div className="font-ariana text-text-muted">
           <CustomPortableText value={project.overview!} />
         </div>
       </div>

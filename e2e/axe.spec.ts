@@ -6,13 +6,6 @@ import { expect, test } from '@playwright/test'
 // lands — this test then starts enforcing zero violations of that kind on
 // that route again, with no further change needed here.
 //
-// - color-contrast (serious on / only): components/pages/home/ProjectListItem.tsx
-//   renders each showcase project's overview text (live Sanity content) in
-//   `text-gray-500` against the page's light background — measured at a
-//   4.1:1 contrast ratio, below the 4.5:1 WCAG AA minimum. Not present in
-//   this plan's original research pass (production Sanity content is live
-//   and can change independent of code); found when this task's Step 3 was
-//   actually run on 2026-08-10. Fixed by a future 2C color-contrast task.
 // - heading-order (moderate on /tutorial only): the page's Sanity portable-
 //   text body content contains a heading block rendered as a literal <h4>
 //   (components/shared/CustomPortableText.tsx maps each CMS heading style
@@ -22,7 +15,7 @@ import { expect, test } from '@playwright/test'
 //   task's Step 4. Fixed by a future 2C task correcting that page's content
 //   heading levels (or CustomPortableText enforcing sequential order).
 const KNOWN_VIOLATIONS: Record<string, string[]> = {
-  '/': ['color-contrast'],
+  '/': [],
   '/contact': [],
   '/people': [],
   '/publications': [],

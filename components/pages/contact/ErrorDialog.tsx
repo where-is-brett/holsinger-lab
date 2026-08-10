@@ -50,7 +50,7 @@ const ErrorDialog = ({
               <DialogTitle as="h3" className="mb-2 text-lg font-semibold">
                 Submission Failed
               </DialogTitle>
-              <p className="px-4 text-justify text-text-body">{message}</p>
+              <p className="px-4 text-justify text-text">{message}</p>
               <div className="mt-4">
                 <button
                   type="button"
