@@ -1,4 +1,6 @@
 import People from 'components/pages/people/People'
+import { JsonLd } from 'components/shared/JsonLd'
+import { buildPersonListJsonLd } from 'lib/json-ld'
 import { buildMetadata } from 'lib/metadata'
 import { sanityFetch } from 'lib/sanity.live'
 import {
@@ -61,5 +63,10 @@ export default async function PeoplePage() {
     notFound()
   }
 
-  return <People settings={settings} profiles={profiles} />
+  return (
+    <>
+      <JsonLd data={buildPersonListJsonLd(profiles)} />
+      <People settings={settings} profiles={profiles} />
+    </>
+  )
 }

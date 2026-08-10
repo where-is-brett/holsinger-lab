@@ -1,6 +1,8 @@
 import 'styles/index.css'
 
 import { PreviewBanner } from 'components/preview/PreviewBanner'
+import { JsonLd } from 'components/shared/JsonLd'
+import { buildOrganizationJsonLd } from 'lib/json-ld'
 import { SanityLive } from 'lib/sanity.live'
 import { siteName, siteUrl } from 'lib/site'
 import type { Metadata, Viewport } from 'next'
@@ -107,6 +109,7 @@ export default async function RootLayout({
       className={`${mono.variable} ${antarcticanMono.variable} ${serif.variable} ${arianaPro.variable}`}
     >
       <body className="bg-background text-black dark:bg-black dark:text-white">
+        <JsonLd data={buildOrganizationJsonLd()} />
         {isDraftMode && <PreviewBanner />}
         {children}
         <SanityLive />
