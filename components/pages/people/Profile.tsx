@@ -70,7 +70,7 @@ const Profile = ({ profile }: { profile: ProfilePayload }) => {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="absolute bottom-0 top-0 flex items-center overflow-y-auto bg-gray-600 bg-opacity-70 p-2">
+          <div className="absolute bottom-0 top-0 flex items-center overflow-y-auto bg-gray-600/70 p-2">
             <p className="text-center text-white sm:text-sm lg:text-base">
               {profile.bio}
             </p>

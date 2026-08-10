@@ -12,12 +12,28 @@
   --color-blue-600: #4043e7;
   --color-primary: #2d6a4f;
   --color-background: #f8f8f8;
+  --color-black: #0d0e12;
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
   --font-antarctican: var(--font-antarctican-mono);
   --font-ariana: var(--font-ariana-pro);
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-primary, currentColor);
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 :root {
