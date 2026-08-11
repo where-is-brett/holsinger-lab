@@ -81,6 +81,20 @@ export default defineType({
       type: 'string',
     }),
     defineField({
+      name: 'status',
+      title: 'Status',
+      type: 'string',
+      description: 'Shown on the project page. Optional -- leave unset if not applicable.',
+      options: {
+        list: [
+          { title: 'Active', value: 'active' },
+          { title: 'Completed', value: 'completed' },
+          { title: 'Seeking Students', value: 'seeking-students' },
+        ],
+        layout: 'dropdown',
+      },
+    }),
+    defineField({
       name: 'site',
       title: 'Site',
       type: 'url',
