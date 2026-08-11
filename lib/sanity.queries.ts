@@ -90,6 +90,7 @@ export const publicationsQuery = groq`
     pages,
     abstract,
     url,
+    doi,
     date,
   }
 `
@@ -101,6 +102,7 @@ export const profileQuery = groq`
     orderRank,
     name,
     role,
+    roleGroup,
     email,
     phone,
     bio
