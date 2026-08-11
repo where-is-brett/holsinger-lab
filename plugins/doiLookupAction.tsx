@@ -54,6 +54,20 @@ const DoiLookupAction: DocumentActionComponent = (props: DocumentActionProps) =>
   const applyPatch = useCallback(() => {
     if (!pendingPatch) return
 
+    // `patch.disabled` is `false | ErrorStrings | 'NOT_READY'` (see
+    // OperationsAPI['patch'] in the sanity package) -- the document-operations
+    // store can be unready or refuse the patch for a documented reason. Don't
+    // call execute() blindly; surface that reason and bail out instead.
+    if (patch.disabled) {
+      toast.push({
+        status: 'error',
+        title: "Can't apply changes",
+        description: `The document isn't ready to edit right now (${patch.disabled}). Try again in a moment.`,
+      })
+      setPendingPatch(null)
+      return
+    }
+
     // Sanity patches don't take `null` for "no value" -- unset those fields
     // instead of setting them to null (e.g. Crossref returning no abstract).
     const setFields: Record<string, string | number> = {}
