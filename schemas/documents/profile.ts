@@ -36,8 +36,28 @@ export default defineType({
       name: 'role',
       title: 'Role',
       type: 'string',
-      description: 'Short description of role in lab',
+      description:
+        'Short free-text description shown on this person\'s card, e.g. "Honours Student (BioMedEng)". Does not affect grouping on the People page -- set Role Group below for that.',
       validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'roleGroup',
+      title: 'Role Group',
+      type: 'string',
+      description:
+        'Groups this person on the public People page. Provisional list, derived from the lab\'s current composition (2026-08-11) -- confirm with the lab before relying on it for every profile. Leave unset to show under "Other".',
+      options: {
+        list: [
+          { title: 'Lab Head', value: 'lab-head' },
+          { title: 'Research Scientist', value: 'research-scientist' },
+          { title: 'PhD Student', value: 'phd-student' },
+          { title: 'Honours Student', value: 'honours-student' },
+          { title: 'Research Student', value: 'research-student' },
+          { title: 'Undergraduate', value: 'undergraduate' },
+          { title: 'Alumni', value: 'alumni' },
+        ],
+        layout: 'dropdown',
+      },
     }),
     defineField({
       name: 'email',

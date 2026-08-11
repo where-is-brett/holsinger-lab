@@ -44,6 +44,14 @@ export type Profile = {
   }
   name?: string
   role?: string
+  roleGroup?:
+    | 'lab-head'
+    | 'research-scientist'
+    | 'phd-student'
+    | 'honours-student'
+    | 'research-student'
+    | 'undergraduate'
+    | 'alumni'
   email?: string
   phone?: string
   bio?: string
