@@ -44,14 +44,14 @@ export function ProjectPage({ project, settings }: ProjectPageProps) {
               {!!(startYear && endYear) && (
                 <div className="p-3 lg:p-4">
                   <div className="text-xs md:text-sm">Duration</div>
-                  <div className="text-md md:text-lg">{`${startYear} -  ${endYear}`}</div>
+                  <div className="text-body md:text-lg">{`${startYear} -  ${endYear}`}</div>
                 </div>
               )}
 
               {category && (
                 <div className="p-3 lg:p-4">
                   <div className="text-xs md:text-sm">Category</div>
-                  <div className="text-md md:text-lg">{category}</div>
+                  <div className="text-body md:text-lg">{category}</div>
                 </div>
               )}
 
@@ -61,7 +61,7 @@ export function ProjectPage({ project, settings }: ProjectPageProps) {
                   {site && (
                     <Link
                       target="_blank"
-                      className="text-md break-words hover:underline md:text-lg"
+                      className="text-body break-words hover:underline md:text-lg"
                       href={site}
                     >
                       {site}
@@ -72,7 +72,7 @@ export function ProjectPage({ project, settings }: ProjectPageProps) {
 
               <div className="p-3 lg:p-4">
                 <div className="text-xs md:text-sm">Tags</div>
-                <div className="text-md flex flex-row flex-wrap md:text-lg">
+                <div className="text-body flex flex-row flex-wrap md:text-lg">
                   {tags?.map((tag, key) => (
                     <div key={key} className="mr-1 break-words">
                       #{tag}

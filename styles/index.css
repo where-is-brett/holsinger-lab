@@ -22,6 +22,15 @@
   --font-serif: var(--font-serif);
   --font-antarctican: var(--font-antarctican-mono);
   --font-ariana: var(--font-ariana-pro);
+
+  /* Type roles. Values are Tailwind's existing steps -- this names the scale
+     the site already uses so components stop picking raw steps ad hoc. It
+     deliberately does not change any rendered size. */
+  --text-display: var(--text-3xl);
+  --text-title: var(--text-xl);
+  --text-lead: var(--text-lg);
+  --text-body: var(--text-base);
+  --text-meta: var(--text-sm);
 }
 
 :root {
