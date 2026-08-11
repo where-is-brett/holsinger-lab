@@ -77,6 +77,7 @@ export type Publication = {
   issue?: number
   pages?: string
   journal?: string
+  doi?: string
   url?: string
   abstract?: string
   date?: string
