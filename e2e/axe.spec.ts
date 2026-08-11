@@ -1,19 +1,15 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-// Violations already known to exist today, each tracked to the Phase 2C task
-// that fixes it. Delete an entry (not just an id inside it) once its fix
-// lands — this test then starts enforcing zero violations of that kind on
-// that route again, with no further change needed here.
+// `/` previously carried a `color-contrast` violation (ProjectListItem's
+// overview text, gray-500 #727892 on #f8f8f8 = 4.10:1, below AA's 4.5).
+// Phase 2C deferred it here as a design-token decision; Phase 3A Task 2
+// resolved it by repointing that text to the muted token (6.64:1).
 //
-// - heading-order (moderate on /tutorial only): the page's Sanity portable-
-//   text body content contains a heading block rendered as a literal <h4>
-//   (components/shared/CustomPortableText.tsx maps each CMS heading style
-//   straight to its HTML tag) without an intervening <h2>/<h3>, so heading
-//   levels jump. A content-authoring issue in the /tutorial page's body,
-//   not a component bug. Found while confirming this route's entry in this
-//   task's Step 4. Fixed by a future 2C task correcting that page's content
-//   heading levels (or CustomPortableText enforcing sequential order).
+// `/tutorial`'s heading-order violation remains and is deliberately not
+// fixed: it is authored Sanity content, not a component defect. Fixing it
+// means editing live CMS content or making CustomPortableText enforce
+// sequential heading order programmatically -- a distinct, larger change.
 const KNOWN_VIOLATIONS: Record<string, string[]> = {
   '/': [],
   '/contact': [],
