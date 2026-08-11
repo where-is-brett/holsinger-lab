@@ -65,7 +65,14 @@ const Profile = ({ profile }: { profile: ProfilePayload }) => {
           // the measured range with a small safety margin.
           size="(min-width: 768px) 28vw, 100vw"
           alt={`Profile image of ${profile.name}`}
-          classesWrapper="relative aspect-[1/1]"
+          // A subtle frame plus a grayscale-to-colour hover, design doc
+          // §1.2's suggested mitigation for the 19 profile photos'
+          // inconsistent backgrounds/crops -- can't fix heterogeneous source
+          // photography, but gives every card the same visual treatment.
+          // Targets the descendant <img> via an arbitrary variant rather
+          // than adding a new prop to the shared ImageBox component, so no
+          // other call site is affected.
+          classesWrapper="relative aspect-[1/1] rounded border border-rule [&_img]:grayscale [&_img]:transition-all [&_img]:duration-300 hover:[&_img]:grayscale-0"
         />
         {/* Bio Overlay */}
         <Transition
