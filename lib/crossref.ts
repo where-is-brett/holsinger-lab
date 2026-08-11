@@ -55,15 +55,20 @@ export function crossrefDateToIsoDate(dateParts: number[]): string {
 }
 
 /**
- * Strips Crossref's JATS XML markup out of an `abstract` string. Removes any
+ * Strips Crossref's inline HTML/XML markup out of a string. Removes any
  * `<jats:title>` block outright (Crossref's abstracts are conventionally
- * wrapped in a redundant "Abstract" title element), strips the remaining
- * tags, and collapses whitespace.
+ * wrapped in a redundant "Abstract" title element -- unique to that field),
+ * strips any remaining tag (not just `jats:`-namespaced ones -- Crossref also
+ * embeds plain inline formatting like `<i>`/`<sub>`/`<sup>` in `title` and
+ * `container-title`), and collapses whitespace. Tags are removed with no
+ * replacement text (not a space) so formatting-only tags directly adjacent to
+ * word characters -- e.g. `K<sub>0.5</sub>Na<sub>0.5</sub>NbO<sub>3</sub>` --
+ * collapse back to `K0.5Na0.5NbO3` instead of being split apart.
  */
 export function stripJatsTags(input: string): string {
   return input
     .replace(/<jats:title>[\s\S]*?<\/jats:title>/gi, '')
-    .replace(/<\/?jats:[a-z]+[^>]*>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -105,9 +110,9 @@ export async function fetchCrossrefWork(
   }
 
   return {
-    title,
+    title: stripJatsTags(title),
     author: formatCrossrefAuthors(message.author ?? []),
-    journal,
+    journal: stripJatsTags(journal),
     volume: parseNumericField(message.volume),
     issue: parseNumericField(message.issue),
     pages: message.page ?? message['article-number'] ?? null,

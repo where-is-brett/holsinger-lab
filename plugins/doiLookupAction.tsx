@@ -102,7 +102,24 @@ const DoiLookupAction: DocumentActionComponent = (props: DocumentActionProps) =>
     onHandle: runLookup,
     dialog: pendingPatch && {
       type: 'confirm',
-      message: `Overwrite Title, Author, Journal, Volume, Issue, Pages, Date, and Abstract with Crossref data for ${normalizedDoi}?\n\nTitle: ${pendingPatch.title}\nAuthor: ${pendingPatch.author}`,
+      message: [
+        `Overwrite Title, Author, Journal, Volume, Issue, Pages, Date, and Abstract with Crossref data for ${normalizedDoi}?`,
+        '',
+        `Title: ${pendingPatch.title}`,
+        `Author: ${pendingPatch.author}`,
+        `Journal: ${pendingPatch.journal}`,
+        `Volume: ${pendingPatch.volume ?? '(none)'}`,
+        `Issue: ${pendingPatch.issue ?? '(none)'}`,
+        `Pages: ${pendingPatch.pages ?? '(none)'}`,
+        `Date: ${pendingPatch.date}`,
+        `Abstract: ${
+          pendingPatch.abstract
+            ? pendingPatch.abstract.length > 100
+              ? `${pendingPatch.abstract.slice(0, 100)}…`
+              : pendingPatch.abstract
+            : '(none)'
+        }`,
+      ].join('\n'),
       onConfirm: applyPatch,
       onCancel: cancelPatch,
     },

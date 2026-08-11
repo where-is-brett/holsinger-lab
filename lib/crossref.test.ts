@@ -46,6 +46,10 @@ describe('stripJatsTags', () => {
   it('collapses internal whitespace/newlines to single spaces', () => {
     expect(stripJatsTags('<jats:p>Line one.\n   Line two.</jats:p>')).toBe('Line one. Line two.')
   })
+
+  it('strips plain (non-jats:) inline tags like <i> and <sub>', () => {
+    expect(stripJatsTags('<i>Foo</i> <sub>Bar</sub>')).toBe('Foo Bar')
+  })
 })
 
 // Real Crossref API responses (trimmed to the fields this module reads),
@@ -145,7 +149,7 @@ describe('fetchCrossrefWork', () => {
     const result = await fetchCrossrefWork('10.1021/acsabm.0c01111', fakeFetch(CROSSREF_FIXTURE_THIN_FILMS))
     expect(result).toEqual({
       title:
-        '<i>In Vitro</i> Biocompatibility of Piezoelectric K<sub>0.5</sub>Na<sub>0.5</sub>NbO<sub>3</sub> Thin Films on Platinized Silicon Substrates',
+        'In Vitro Biocompatibility of Piezoelectric K0.5Na0.5NbO3 Thin Films on Platinized Silicon Substrates',
       author: 'Gaukås N.H., Huynh Q.S., Pratap A.A., Einarsrud M.A., Grande T., Holsinger R.M.D., Glaum J.',
       journal: 'ACS Applied Bio Materials',
       volume: 3,
