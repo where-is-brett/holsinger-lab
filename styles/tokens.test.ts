@@ -366,7 +366,16 @@ describe('token-role misuse guard', () => {
   // the current palette's hex values happen to be, so — unlike every other
   // guard in this file — this checks source text, not resolved colours: no
   // component may combine the two classes in the same className value.
-  const COMPONENTS_ROOT = new URL('../components/', import.meta.url)
+  //
+  // Scans both components/ and app/ — the token classes these checks care
+  // about aren't confined to components/ (app/layout.tsx and
+  // app/not-found.tsx use them too), so a misused pairing landing directly
+  // in an app/ route would otherwise go undetected.
+  const SCAN_ROOTS = [new URL('../components/', import.meta.url), new URL('../app/', import.meta.url)]
+  const PROJECT_ROOT = fileURLToPath(new URL('../', import.meta.url))
+
+  // The one legitimate consumer of --sem-scrim (see rationale above).
+  const SCRIM_ALLOWED_FILES = ['components/pages/contact/ErrorDialog.tsx']
 
   function collectTsxFiles(dirUrl: URL): string[] {
     const files: string[] = []
@@ -381,9 +390,13 @@ describe('token-role misuse guard', () => {
     return files
   }
 
+  function allTsxFiles(): string[] {
+    return SCAN_ROOTS.flatMap(collectTsxFiles)
+  }
+
   it('no component composites inverse text directly onto bg-scrim', () => {
     const offenders: string[] = []
-    for (const file of collectTsxFiles(COMPONENTS_ROOT)) {
+    for (const file of allTsxFiles()) {
       const src = readFileSync(file, 'utf8')
       // Tailwind classes only ever appear inside a quoted/template string
       // literal, so it's enough to check each such literal in isolation —
@@ -396,6 +409,31 @@ describe('token-role misuse guard', () => {
         }
       }
     }
+    expect(offenders, offenders.join('\n')).toEqual([])
+  })
+
+  it('bg-scrim is a backdrop-only role and may only appear in the allowlisted file(s)', () => {
+    // Generalizes past the co-occurrence check above. That check can only
+    // ever catch bg-scrim paired with inverse text on a scanned className —
+    // it structurally cannot see the *other* shape this same review found:
+    // MobileNavBar's hamburger icon used bg-scrim as a bare fill (no text
+    // involved anywhere) on a bg-scrim-coloured bar, so the icon and its
+    // background were the literal same colour. The fix here is to encode the
+    // actual invariant directly — "--sem-scrim is a backdrop-only role; its
+    // only legitimate consumer is ErrorDialog's DialogBackdrop" — rather than
+    // continuing to guard one specific misuse shape of it.
+    //
+    // This also isn't scoped to a single quoted/template literal the way the
+    // check above is: it looks for the literal substring 'bg-scrim' anywhere
+    // in a file's source, so a multi-literal composition — e.g.
+    // `clsx('bg-scrim', 'text-text-inverse')`, which is exactly the style
+    // MobileNavBar's own `hamburgerLine` constant uses for its classes —
+    // can't evade it by splitting the class across separate string literals.
+    const offenders = allTsxFiles()
+      .filter((file) => readFileSync(file, 'utf8').includes('bg-scrim'))
+      .map((file) => file.replace(PROJECT_ROOT, ''))
+      .filter((relativePath) => !SCRIM_ALLOWED_FILES.includes(relativePath))
+
     expect(offenders, offenders.join('\n')).toEqual([])
   })
 })
