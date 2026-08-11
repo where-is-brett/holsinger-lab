@@ -51,6 +51,7 @@ export const projectBySlugQuery = groq`
     overview,
     site,
     "slug": slug.current,
+    status,
     tags,
     title,
   }
@@ -90,6 +91,7 @@ export const publicationsQuery = groq`
     pages,
     abstract,
     url,
+    doi,
     date,
   }
 `
@@ -101,6 +103,7 @@ export const profileQuery = groq`
     orderRank,
     name,
     role,
+    roleGroup,
     email,
     phone,
     bio

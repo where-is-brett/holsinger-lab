@@ -71,6 +71,7 @@ function makeProfile(
     orderRank: null,
     name: 'Ada Lovelace',
     role: 'Postdoctoral Fellow',
+    roleGroup: null,
     email: null,
     phone: null,
     bio: null,
@@ -151,6 +152,7 @@ function makePublication(
     pages: null,
     abstract: null,
     url: 'https://doi.org/10.1000/example',
+    doi: null,
     date: '2024-05-01',
     ...overrides,
   }

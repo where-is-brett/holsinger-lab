@@ -3,12 +3,16 @@ import { LaunchIcon } from '@sanity/icons/Launch'
 import { useState } from 'react'
 import type { PublicationPayload } from 'types'
 
+import { formatApaCitation, formatBibtexCitation } from './citation'
+import { CopyButton } from './CopyButton'
 import { Toggle, ToggleContent } from './Toggle'
 
 export default function Publication({
   publication,
+  citeKey,
 }: {
   publication: PublicationPayload
+  citeKey: string
 }) {
   const [showAbstract, setShowAbstract] = useState(false)
   const [showCitation, setShowCitation] = useState(false)
@@ -21,7 +25,7 @@ export default function Publication({
     setShowAbstract(!showAbstract) // Toggle abstract visibility
   }
 
-  const { title, author, journal, volume, issue, pages, abstract, url, date } =
+  const { title, author, journal, volume, issue, pages, abstract, url, doi, date } =
     publication
 
   const parsedDate = date ? new Date(Date.parse(date)) : null
@@ -31,6 +35,10 @@ export default function Publication({
   const year = parsedDate
     ? new Intl.DateTimeFormat('en-AU', { year: 'numeric' }).format(parsedDate)
     : ''
+
+  const citationFields = { title, author, journal, volume, issue, pages, date, doi, url }
+  const apaCitation = formatApaCitation(citationFields)
+  const bibtexCitation = formatBibtexCitation(citationFields, citeKey)
 
   return (
     <div className="inline-block w-full max-w-3xl text-sm">
@@ -52,10 +60,20 @@ export default function Publication({
         <h3 className="font-ariana font-light md:text-base lg:text-lg">
           {author}
         </h3>
-        <div className="flex gap-4 font-ariana md:text-base lg:text-lg">
+        <div className="flex flex-wrap items-center gap-4 font-ariana md:text-base lg:text-lg">
           <div>
             {journal}. {`${month} ${year}`}
           </div>
+          {doi && (
+            <a
+              href={`https://doi.org/${doi}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-text-muted hover:text-link hover:underline"
+            >
+              DOI: {doi}
+            </a>
+          )}
           <div>
             {/* Abstract */}
             {abstract && (
@@ -78,21 +96,17 @@ export default function Publication({
       </div>
 
       {/* CONTENT */}
-      {/* Abstract */}
-      <ToggleContent show={showCitation}>
-        <p className="m-4 lg:text-lg">
-          {`${author} (${year}). ${title}. `}
-          <em>{journal}</em>
-          <em>{volume ? `, ${volume}` : ''}</em>
-          {`${issue ? `(${issue})` : ''}${pages ? `, ${pages}` : ''}. `}
-          {url && (
-            <a href={url} className="text-link hover:underline">
-              {url}
-            </a>
-          )}
-        </p>
-      </ToggleContent>
       {/* Citation */}
+      <ToggleContent show={showCitation}>
+        <div className="m-4 space-y-2 lg:text-lg">
+          <p>{apaCitation}</p>
+          <div className="flex gap-4 text-sm">
+            <CopyButton label="Copy APA" text={apaCitation} />
+            <CopyButton label="Copy BibTeX" text={bibtexCitation} />
+          </div>
+        </div>
+      </ToggleContent>
+      {/* Abstract */}
       <ToggleContent show={showAbstract}>
         <p className="m-4 md:text-base lg:text-lg">{abstract}</p>
       </ToggleContent>

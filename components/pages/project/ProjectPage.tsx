@@ -19,12 +19,27 @@ export function ProjectPage({ project, settings }: ProjectPageProps) {
     duration,
     overview,
     site,
+    status,
     tags,
     title,
   } = project || {}
 
-  const startYear = new Date(duration?.start!).getFullYear()
-  const endYear = duration?.end ? new Date(duration?.end).getFullYear() : 'Now'
+  // `duration?.start!` (the non-null assertion this replaces) was load-bearing
+  // on optional data: when duration/start is unset, `new Date(undefined!)` is
+  // an Invalid Date whose getFullYear() is NaN, and the render below only
+  // avoided showing "NaN - Now" because `{!!(startYear && endYear) && (...)}`
+  // happened to short-circuit on the falsy NaN. Replacing the assertion with
+  // real optional handling keeps the same behaviour (hide the block when
+  // there's no start date; show "<year> - Now" for an ongoing project with a
+  // start but no end date) without depending on that coincidence.
+  const startYear = duration?.start ? new Date(duration.start).getFullYear() : undefined
+  const endYear = duration?.end ? new Date(duration.end).getFullYear() : 'Now'
+
+  const STATUS_LABELS: Record<string, string> = {
+    active: 'Active',
+    completed: 'Completed',
+    'seeking-students': 'Seeking Students',
+  }
 
   return (
     <Layout settings={settings}>
@@ -41,7 +56,7 @@ export function ProjectPage({ project, settings }: ProjectPageProps) {
             />
 
             <div className="divide-inherit grid grid-cols-1 divide-y border-t lg:grid-cols-4 lg:divide-x lg:divide-y-0">
-              {!!(startYear && endYear) && (
+              {startYear && (
                 <div className="p-3 lg:p-4">
                   <div className="text-xs md:text-sm">Duration</div>
                   <div className="text-body md:text-lg">{`${startYear} -  ${endYear}`}</div>
@@ -52,6 +67,13 @@ export function ProjectPage({ project, settings }: ProjectPageProps) {
                 <div className="p-3 lg:p-4">
                   <div className="text-xs md:text-sm">Category</div>
                   <div className="text-body md:text-lg">{category}</div>
+                </div>
+              )}
+
+              {status && (
+                <div className="p-3 lg:p-4">
+                  <div className="text-xs md:text-sm">Status</div>
+                  <div className="text-body md:text-lg">{STATUS_LABELS[status] ?? status}</div>
                 </div>
               )}
 

@@ -151,6 +151,7 @@ export type Project = {
   }
   duration?: Duration
   category?: string
+  status?: 'active' | 'completed' | 'seeking-students'
   site?: string
   tags?: Array<string>
   description?: Array<
@@ -644,7 +645,7 @@ export type PagesBySlugQueryResult = {
 
 // Source: lib/sanity.queries.ts
 // Variable: projectBySlugQuery
-// Query: *[_type == "project" && slug.current == $slug][0] {    _id,    category,    coverImage,    description,    duration,    overview,    site,    "slug": slug.current,    tags,    title,  }
+// Query: *[_type == "project" && slug.current == $slug][0] {    _id,    category,    coverImage,    description,    duration,    overview,    site,    "slug": slug.current,    status,    tags,    title,  }
 export type ProjectBySlugQueryResult = {
   _id: string
   category: string | null
@@ -705,6 +706,7 @@ export type ProjectBySlugQueryResult = {
   }> | null
   site: string | null
   slug: string | null
+  status: 'active' | 'completed' | 'seeking-students' | null
   tags: Array<string> | null
   title: string | null
 } | null
@@ -772,7 +774,7 @@ export type SettingsQueryResult = {
 
 // Source: lib/sanity.queries.ts
 // Variable: publicationsQuery
-// Query: *[_type == "publication"] | order(date desc) {    _id,    title,    author,    journal,    volume,    issue,    pages,    abstract,    url,    date,  }
+// Query: *[_type == "publication"] | order(date desc) {    _id,    title,    author,    journal,    volume,    issue,    pages,    abstract,    url,    doi,    date,  }
 export type PublicationsQueryResult = Array<{
   _id: string
   title: string | null
@@ -783,12 +785,13 @@ export type PublicationsQueryResult = Array<{
   pages: string | null
   abstract: string | null
   url: string | null
+  doi: string | null
   date: string | null
 }>
 
 // Source: lib/sanity.queries.ts
 // Variable: profileQuery
-// Query: *[_type == "profile"] | order(orderRank) {    _id,    image,    orderRank,    name,    role,    email,    phone,    bio  }
+// Query: *[_type == "profile"] | order(orderRank) {    _id,    image,    orderRank,    name,    role,    roleGroup,    email,    phone,    bio  }
 export type ProfileQueryResult = Array<{
   _id: string
   image: {
@@ -801,6 +804,15 @@ export type ProfileQueryResult = Array<{
   orderRank: string | null
   name: string | null
   role: string | null
+  roleGroup:
+    | 'alumni'
+    | 'honours-student'
+    | 'lab-head'
+    | 'phd-student'
+    | 'research-scientist'
+    | 'research-student'
+    | 'undergraduate'
+    | null
   email: string | null
   phone: string | null
   bio: string | null
@@ -813,11 +825,11 @@ declare module '@sanity/client' {
     '\n  *[_type == "home"][0]{\n    _id,\n    overview,\n    showcaseProjects[]->{\n      _type,\n      coverImage,\n      overview,\n      "slug": slug.current,\n      tags,\n      title,\n    },\n    title,\n  }\n': HomePageQueryResult
     '\n  *[_type == "home"][0].title\n': HomePageTitleQueryResult
     '\n  *[_type == "page" && slug.current == $slug][0] {\n    _id,\n    body[]{\n      ...,\n      _type == "block" => {\n        markDefs[]{\n          ...,\n          _type == "internalLink" => {\n            "slug": reference->slug.current,\n            "title": reference->title,\n          }\n        }\n      }\n    },\n    overview,\n    title,\n    "slug": slug.current,\n  }\n': PagesBySlugQueryResult
-    '\n  *[_type == "project" && slug.current == $slug][0] {\n    _id,\n    category,\n    coverImage,\n    description,\n    duration,\n    overview,\n    site,\n    "slug": slug.current,\n    tags,\n    title,\n  }\n': ProjectBySlugQueryResult
+    '\n  *[_type == "project" && slug.current == $slug][0] {\n    _id,\n    category,\n    coverImage,\n    description,\n    duration,\n    overview,\n    site,\n    "slug": slug.current,\n    status,\n    tags,\n    title,\n  }\n': ProjectBySlugQueryResult
     '\n  *[_type == "project" && slug.current != null].slug.current\n': ProjectPathsResult
     '\n  *[_type == "page" && slug.current != null].slug.current\n': PagePathsResult
     '\n  *[_type == "settings"][0]{\n    footer,\n    showPublications,\n    showPeople,\n    showContactForm,\n    menuItems[]->{\n      _type,\n      "slug": slug.current,\n      title\n    },\n    ogImage,\n  }\n': SettingsQueryResult
-    '\n  *[_type == "publication"] | order(date desc) {\n    _id,\n    title,\n    author,\n    journal,\n    volume,\n    issue,\n    pages,\n    abstract,\n    url,\n    date,\n  }\n': PublicationsQueryResult
-    '\n  *[_type == "profile"] | order(orderRank) {\n    _id,\n    image,\n    orderRank,\n    name,\n    role,\n    email,\n    phone,\n    bio\n  }\n': ProfileQueryResult
+    '\n  *[_type == "publication"] | order(date desc) {\n    _id,\n    title,\n    author,\n    journal,\n    volume,\n    issue,\n    pages,\n    abstract,\n    url,\n    doi,\n    date,\n  }\n': PublicationsQueryResult
+    '\n  *[_type == "profile"] | order(orderRank) {\n    _id,\n    image,\n    orderRank,\n    name,\n    role,\n    roleGroup,\n    email,\n    phone,\n    bio\n  }\n': ProfileQueryResult
   }
 }
