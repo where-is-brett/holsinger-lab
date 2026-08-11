@@ -57,6 +57,13 @@ const Profile = ({ profile }: { profile: ProfilePayload }) => {
           image={profile.image}
           width={800}
           height={800}
+          // Measured, not the naive "1/3 of the grid" arithmetic: the People
+          // grid sits inside Layout's `md:px-16 lg:px-32` side padding, which
+          // that arithmetic didn't subtract out. Real card width across
+          // 768-1536px viewports measures ~23-26vw of the full viewport (e.g.
+          // 320px at a 1280px viewport), not 33vw. 28vw covers the measured
+          // range with a small safety margin.
+          size="(min-width: 768px) 28vw, 100vw"
           alt={`Profile image of ${profile.name}`}
           classesWrapper="relative aspect-[1/1]"
         />

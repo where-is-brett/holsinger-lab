@@ -15,6 +15,11 @@ export default function ImageBox({
   alt = 'Cover image',
   width = 3500,
   height = 2000,
+  // Callers render this component at widely different widths (a full-bleed
+  // project cover vs. a one-third-width profile card). `100vw` is only correct
+  // for the full-bleed case and makes every other call site download a far
+  // larger candidate than it can display -- a 325px People card was selecting
+  // the 3840w image. Pass the real layout.
   size = '100vw',
   classesWrapper,
 }: ImageBoxProps) {

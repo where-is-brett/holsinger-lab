@@ -131,9 +131,22 @@ export function CustomPortableText({
       }) => {
         return (
           <div className="my-6 space-y-2">
+            {/* This renderer's wrapping div carries no width constraint of its
+                own -- `paragraphClasses` (e.g. max-w-3xl/max-w-4xl) is applied
+                by callers only to text blocks, not to this image block, and
+                CustomPortableText doesn't thread a `size` prop through from
+                its own callers. So this same value has to hold across every
+                embedding context. Measured on the one live body image
+                (Page.tsx's `body` field, /tutorial): ~79vw at a 1280px
+                viewport, i.e. close to the full Layout content column, not a
+                separate ~66vw "content column" -- that column doesn't exist
+                in the markup. 66vw would under-declare (blurrier) for that
+                real case, so this stays 100vw rather than following the
+                brief's arithmetic. */}
             <ImageContainer
               image={value}
               alt={value.alt || value.caption || ''}
+              size="100vw"
             />
             {value?.caption && (
               <div className="font-antarctican text-sm text-text-muted">

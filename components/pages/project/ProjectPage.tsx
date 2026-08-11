@@ -36,6 +36,7 @@ export function ProjectPage({ project, settings }: ProjectPageProps) {
             <ImageBox
               image={coverImage}
               alt={`Cover image for ${title}`}
+              size="100vw"
               classesWrapper="relative aspect-[16/9]"
             />
 
