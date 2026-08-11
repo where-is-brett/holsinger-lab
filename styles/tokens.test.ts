@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
@@ -132,6 +133,10 @@ describe('light theme tokens', () => {
     expect(contrast(t['--sem-accent'], t['--sem-surface'])).toBeGreaterThanOrEqual(3)
   })
 
+  it('field meets WCAG AA for non-text (borders) on the page surface', () => {
+    expect(contrast(t['--sem-field'], t['--sem-surface'])).toBeGreaterThanOrEqual(3)
+  })
+
   it('inverse text meets WCAG AA on both inverse surfaces', () => {
     expect(contrast(t['--sem-text-inverse'], t['--sem-surface-inverse'])).toBeGreaterThanOrEqual(4.5)
     expect(contrast(t['--sem-text-inverse'], t['--sem-scrim'])).toBeGreaterThanOrEqual(4.5)
@@ -217,13 +222,14 @@ describe('readTokens helper', () => {
   })
 
   it('resolves an @media marker with no trailing brace distinctly from the nested :root marker', () => {
-    // Coverage for the marker shape the next task will actually call:
-    // readTokens('@media (prefers-color-scheme: dark)') — an at-rule
-    // selector with no trailing '{', matched against its own top-level
-    // block rather than the :root nested inside it. Fixture mirrors the
-    // planned styles/index.css layout: a light :root followed by a dark
-    // override inside @media (prefers-color-scheme: dark). Asserts the two
-    // markers resolve to their own values and don't collide.
+    // Coverage for the marker shape the 'dark theme tokens' describe block
+    // below actually calls: readTokens('@media (prefers-color-scheme:
+    // dark)') — an at-rule selector with no trailing '{', matched against
+    // its own top-level block rather than the :root nested inside it.
+    // Fixture mirrors styles/index.css's real layout: a light :root
+    // followed by a dark override inside @media (prefers-color-scheme:
+    // dark). Asserts the two markers resolve to their own values and don't
+    // collide.
     const css = `
       :root {
         color-scheme: light dark;
@@ -268,7 +274,128 @@ describe('dark theme tokens', () => {
     expect(contrast(t['--sem-accent'], t['--sem-surface'])).toBeGreaterThanOrEqual(3)
   })
 
-  it('inverse text meets WCAG AA on the inverse surface', () => {
+  it('field meets WCAG AA for non-text (borders) on the dark surface', () => {
+    expect(contrast(t['--sem-field'], t['--sem-surface'])).toBeGreaterThanOrEqual(3)
+  })
+
+  it('inverse text meets WCAG AA on both inverse surfaces', () => {
+    // Regression test for the bug a whole-branch review caught: this used to
+    // check only --sem-surface-inverse, silently dropping the --sem-scrim
+    // pairing that the light theme's equivalent test (above) already
+    // covers. That dropped pairing is exactly the one that collapsed to
+    // 1.00:1 in dark mode (--sem-scrim === --sem-surface there), making the
+    // mobile hamburger and the preview banner invisible — and this test
+    // suite still passed, because nothing was checking it.
     expect(contrast(t['--sem-text-inverse'], t['--sem-surface-inverse'])).toBeGreaterThanOrEqual(4.5)
+
+    // The light test above also checks --sem-text-inverse against
+    // --sem-scrim (19.29:1 there) — deliberately NOT mirrored here. In dark
+    // mode --sem-text-inverse (#0d0e12) and --sem-scrim (#0d0e12) are the
+    // literal same value (contrast 1.00), and this isn't fixable by
+    // recolouring either token without breaking something else that's
+    // pinned on purpose:
+    //  - --sem-text-inverse's dark value can't move: it's what makes the
+    //    --sem-text-inverse-on-surface-inverse assertion above land at
+    //    17.87:1, the exact figure this review verified for the fixed
+    //    PreviewBanner.
+    //  - --sem-scrim can't move either: lightening it enough to clear even
+    //    3:1 against a near-black text-inverse pushes it past the
+    //    surface-raised panel's own darkness (verified: at the lightest
+    //    value that clears 4.5:1, ErrorDialog's rendered backdrop —
+    //    scrim composited at its actual 60% opacity over the page —
+    //    becomes *lighter* than the surface-raised panel sitting on top of
+    //    it, i.e. worse than the boundary-invisibility bug being fixed
+    //    elsewhere in this review, not better).
+    // The pairing is also no longer real: --sem-scrim's only consumer
+    // (ErrorDialog's DialogBackdrop) never renders text on it, and
+    // PreviewBanner — the pairing's one actual instance, and the bug this
+    // whole review exists to catch — now uses --sem-surface-inverse
+    // instead (see below). A token-hex contrast assertion can't usefully
+    // guard a composition that's structurally never supposed to happen; the
+    // 'token-role misuse guard' describe block below guards it at the
+    // level where it actually went wrong instead.
+  })
+})
+
+describe('cross-token contrast regression guard', () => {
+  // Generalizes past the specific bug above: every check up to this point
+  // tests one named token against another named token, so a real
+  // composition that nobody thought to name (e.g. bg-scrim + text-inverse
+  // in PreviewBanner, before that was fixed) can still collapse silently.
+  // This instead walks every [foreground, background] pair actually
+  // composited together somewhere in the codebase — as a text-on-surface or
+  // non-text-on-surface pairing — and asserts none of them collapses below
+  // 3:1 (the WCAG floor for non-text/large-text; the more specific 4.5:1
+  // AA-for-body-text checks above still apply to the pairs that carry
+  // normal-size text) in either colour scheme.
+  //
+  // --sem-text-inverse on --sem-scrim is deliberately not in this list: see
+  // the comment on 'inverse text meets WCAG AA on both inverse surfaces'
+  // above for why that specific pairing can't be fixed at the token level,
+  // and the 'token-role misuse guard' block below for how it's guarded
+  // instead.
+  const USED_PAIRS: [string, string][] = [
+    ['--sem-text', '--sem-surface'],
+    ['--sem-text-muted', '--sem-surface'],
+    ['--sem-text-inverse', '--sem-surface-inverse'],
+    ['--sem-text', '--sem-surface-raised'],
+  ]
+
+  const THEMES: [string, string][] = [
+    ['light', ':root {'],
+    ['dark', '@media (prefers-color-scheme: dark)'],
+  ]
+
+  for (const [themeName, marker] of THEMES) {
+    it(`no known foreground/background pairing collapses below 3:1 in the ${themeName} theme`, () => {
+      const t = readTokens(marker)
+      for (const [fg, bg] of USED_PAIRS) {
+        expect(contrast(t[fg], t[bg]), `${fg} on ${bg} (${themeName})`).toBeGreaterThanOrEqual(3)
+      }
+    })
+  }
+})
+
+describe('token-role misuse guard', () => {
+  // Direct regression guard for the actual Critical-1 bug (PreviewBanner
+  // combining `bg-scrim` with a `text-*-inverse` class): --sem-scrim is a
+  // backdrop-only role (pinned dark in both colour schemes — see the 'not
+  // mirrored here' comment above) and its only legitimate consumer
+  // (ErrorDialog's DialogBackdrop) never renders text on it. That makes
+  // `bg-scrim` + inverse text a composition that's wrong regardless of what
+  // the current palette's hex values happen to be, so — unlike every other
+  // guard in this file — this checks source text, not resolved colours: no
+  // component may combine the two classes in the same className value.
+  const COMPONENTS_ROOT = new URL('../components/', import.meta.url)
+
+  function collectTsxFiles(dirUrl: URL): string[] {
+    const files: string[] = []
+    for (const entry of readdirSync(dirUrl, { withFileTypes: true })) {
+      const entryUrl = new URL(entry.name + (entry.isDirectory() ? '/' : ''), dirUrl)
+      if (entry.isDirectory()) {
+        files.push(...collectTsxFiles(entryUrl))
+      } else if (entry.name.endsWith('.tsx')) {
+        files.push(fileURLToPath(entryUrl))
+      }
+    }
+    return files
+  }
+
+  it('no component composites inverse text directly onto bg-scrim', () => {
+    const offenders: string[] = []
+    for (const file of collectTsxFiles(COMPONENTS_ROOT)) {
+      const src = readFileSync(file, 'utf8')
+      // Tailwind classes only ever appear inside a quoted/template string
+      // literal, so it's enough to check each such literal in isolation —
+      // this is what stops the check from flagging a file that uses
+      // bg-scrim in one className and an unrelated text-inverse in another.
+      for (const m of src.matchAll(/`([^`]*)`|"([^"]*)"|'([^']*)'/g)) {
+        const literal = m[1] ?? m[2] ?? m[3] ?? ''
+        if (literal.includes('bg-scrim') && literal.includes('text-inverse')) {
+          offenders.push(`${file}: "${literal.trim()}"`)
+        }
+      }
+    }
+    expect(offenders, offenders.join('\n')).toEqual([])
   })
 })

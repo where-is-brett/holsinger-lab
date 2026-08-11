@@ -51,7 +51,7 @@
   --sem-text-inverse: #ffffff;
   --sem-link: #4043e7;
   --sem-accent: #2d6a4f;
-  --sem-field: #bbbdc9;
+  --sem-field: #787d89;
   --sem-rule: #e3e4e8;
 }
 
@@ -66,7 +66,7 @@
     --sem-text-inverse: #0d0e12;
     --sem-link: #9da2f2;
     --sem-accent: #4e9a79;
-    --sem-field: #515870;
+    --sem-field: #787d89;
     --sem-rule: #252837;
   }
 }

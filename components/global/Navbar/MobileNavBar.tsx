@@ -1,13 +1,11 @@
 'use client'
 import { Dialog, DialogPanel } from '@headlessui/react'
 import { resolveHref } from 'lib/sanity.links'
-import Image from 'next/image'
 import Link from 'next/link'
-import logo from 'public/logo.svg'
 import { useEffect, useState } from 'react'
 import { MenuItem } from 'types'
 
-const hamburgerLine = `h-[2px] w-6 my-[6px] bg-scrim transition ease transform duration-500`
+const hamburgerLine = `h-[2px] w-6 my-[6px] bg-text transition ease transform duration-500`
 
 const MobileNavBar = ({
   menuItems,
@@ -57,12 +55,43 @@ const MobileNavBar = ({
             it's required for the tap to actually navigate on touch input.
           */}
           <Link href="/">
-            <Image
-              src={logo}
-              width={120}
-              alt="logo"
-              className="absolute left-4 my-4 h-[50%]"
-            />
+            {/*
+              Inlined from public/logo.svg (rather than referenced as an
+              external asset via next/image) because the source file hardcodes
+              `stroke:#000000` and a default black text fill -- colours an
+              external <img>/next/image reference can't override with CSS. Once
+              inline, `stroke="currentColor"` and the `text-text` className let
+              it pick up the same token-driven colour as the hamburger bars
+              (bg-text), so it stays visible against `bg-surface` in both
+              colour schemes instead of disappearing in dark mode. `role="img"`
+              + `aria-label` restore the accessible name the removed <img>'s
+              `alt="logo"` used to provide.
+            */}
+            <svg
+              viewBox="0 0 524 120"
+              role="img"
+              aria-label="logo"
+              fill="currentColor"
+              className="text-text absolute left-4 my-4 h-[50%]"
+            >
+              <text
+                transform="matrix(1 0 0 1 19.0408 89.3398)"
+                fontFamily="Menlo-Regular"
+                fontSize="80.71px"
+              >
+                HOLSINGLER
+              </text>
+              <rect
+                x="3.7"
+                y="4"
+                width="516.7"
+                height="111.9"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="5"
+                strokeMiterlimit="10"
+              />
+            </svg>
           </Link>
 
           {/*

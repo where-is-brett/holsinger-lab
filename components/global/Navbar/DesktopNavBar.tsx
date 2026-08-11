@@ -17,7 +17,7 @@ const DesktopNavBar = ({
     <nav
       className={`sticky top-0 z-10 hidden flex-wrap items-center gap-x-5
             border-y border-accent bg-surface/80
-            px-4 py-4 uppercase backdrop-blur md:flex md:px-16 md:py-5 lg:px-32`}
+            px-4 py-4 uppercase backdrop-blur md:flex md:px-gutter-md md:py-5 lg:px-gutter-lg`}
     >
       {menuItems &&
         menuItems.map((menuItem: MenuItem, key: number) => {

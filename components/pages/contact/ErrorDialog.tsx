@@ -46,7 +46,7 @@ const ErrorDialog = ({
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <div className="mx-auto max-w-md space-y-5 bg-surface p-4 text-center">
+            <div className="mx-auto max-w-md space-y-5 bg-surface-raised p-4 text-center">
               <DialogTitle as="h3" className="mb-2 text-lg font-semibold">
                 Submission Failed
               </DialogTitle>

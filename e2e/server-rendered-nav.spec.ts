@@ -18,6 +18,9 @@ test.describe('navigation renders without client-side JavaScript', () => {
   }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/')
-    await expect(page.getByAltText('logo')).toBeVisible()
+    // The logo is an inlined <svg role="img" aria-label="logo"> (Phase 3A
+    // Task 5 -- an external image reference couldn't pick up the dark-mode
+    // token colour), so it has no `alt` attribute for getByAltText to match.
+    await expect(page.getByRole('img', { name: 'logo' })).toBeVisible()
   })
 })

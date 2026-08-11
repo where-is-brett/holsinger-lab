@@ -30,28 +30,44 @@ const VIEWPORTS: Record<string, { width: number; height: number }> = {
   mobile: { width: 375, height: 812 },
 }
 
+// Phase 3A doubled the site's rendered surface area (a light AND a dark
+// palette via `prefers-color-scheme`), and this suite previously only ever
+// ran under Playwright's default light scheme — half the site was
+// unchecked. That's how the dark-mode black-on-black hamburger (this
+// review's Critical 1) shipped past a fully green axe run: color-contrast
+// only ever got evaluated against the light tokens. colorScheme is a second
+// axis alongside viewport, so every route is checked at every (viewport ×
+// colour scheme) combination.
+const COLOR_SCHEMES: Array<'light' | 'dark'> = ['light', 'dark']
+
 for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
   test.describe(`${viewportName} viewport`, () => {
     test.use({ viewport })
 
-    for (const [path, knownIds] of Object.entries(KNOWN_VIOLATIONS)) {
-      test(`${path} has no unexpected accessibility violations`, async ({
-        page,
-      }) => {
-        await page.goto(path)
-        const results = await new AxeBuilder({ page }).analyze()
-        const observedIds = results.violations.map((v) => v.id)
+    for (const colorScheme of COLOR_SCHEMES) {
+      test.describe(`${colorScheme} colour scheme`, () => {
+        test.use({ colorScheme })
 
-        const unexpected = results.violations.filter(
-          (v) => !knownIds.includes(v.id)
-        )
-        expect(unexpected, JSON.stringify(unexpected, null, 2)).toEqual([])
+        for (const [path, knownIds] of Object.entries(KNOWN_VIOLATIONS)) {
+          test(`${path} has no unexpected accessibility violations`, async ({
+            page,
+          }) => {
+            await page.goto(path)
+            const results = await new AxeBuilder({ page }).analyze()
+            const observedIds = results.violations.map((v) => v.id)
 
-        const stale = knownIds.filter((id) => !observedIds.includes(id))
-        expect(
-          stale,
-          `These KNOWN_VIOLATIONS entries no longer fire — delete them from the list: ${stale.join(', ')}`
-        ).toEqual([])
+            const unexpected = results.violations.filter(
+              (v) => !knownIds.includes(v.id)
+            )
+            expect(unexpected, JSON.stringify(unexpected, null, 2)).toEqual([])
+
+            const stale = knownIds.filter((id) => !observedIds.includes(id))
+            expect(
+              stale,
+              `These KNOWN_VIOLATIONS entries no longer fire — delete them from the list: ${stale.join(', ')}`
+            ).toEqual([])
+          })
+        }
       })
     }
   })
