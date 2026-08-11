@@ -1287,7 +1287,9 @@ npm run backfill:publication-dois
 
 **Do not pass `--commit`.** This is a read-only dry run (the script only queries; it does not write unless `--commit` is present — confirm this by reading Step 2's code before running).
 
-Expected output: `10 publication(s) missing doi.` (since Task 3 added the field but nothing has set it yet), `10 recoverable from url, 0 not.` (every live publication is missing `doi` right now, and per Task 1's fixtures, `9` of the `10` missing+recoverable... re-derive: all 19 currently lack `doi`, 10 of the 19 have a recoverable URL), and exactly these 10 id → DOI lines (order may vary; match as a set):
+Expected output: `19 publication(s) missing doi.` (since Task 3 added the field but nothing has set it yet, all 19 live publications lack it), `10 recoverable from url, 9 not.` (per Task 1's fixtures, 10 of the 19 have a machine-recoverable DOI in their `url`), and exactly these 10 id → DOI lines (order may vary; match as a set):
+
+> **Plan correction, recorded during Task 6's execution.** This step originally read the headline count as `10 publication(s) missing doi.`, inconsistent with its own parenthetical (which correctly derived 19). Task 6's implementer caught this by running the real dry run, matched the actual output against the parenthetical rather than the wrong headline number, and reported the discrepancy rather than silently editing the plan text to fit. Corrected here.
 
 ```
 06604d2e-fc21-47d5-9f4c-a95f9e50e22a -> 10.1038/s41420-025-02362-7
