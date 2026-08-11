@@ -31,6 +31,13 @@
   --text-lead: var(--text-lg);
   --text-body: var(--text-base);
   --text-meta: var(--text-sm);
+
+  /* Page gutters. One owner: Layout. Page components must not re-add
+     horizontal padding -- People and Publications previously did, producing
+     doubled gutters at some breakpoints. */
+  --spacing-gutter: 1.5rem;
+  --spacing-gutter-md: 4rem;
+  --spacing-gutter-lg: 8rem;
 }
 
 :root {
@@ -108,8 +115,12 @@ ul {
   margin-left: 1rem;
 }
 
-ol {
+ul {
   list-style-type: disc;
+}
+
+ol {
+  list-style-type: decimal;
 }
 
 /* Reset input field appearances */

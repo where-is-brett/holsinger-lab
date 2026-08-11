@@ -12,7 +12,7 @@ export interface LayoutProps {
 export default function Layout({
   children,
   settings = fallbackSettings,
-  childrenStyles = 'px-6',
+  childrenStyles = 'px-gutter',
 }: LayoutProps) {
   return (
     <div className={`flex min-h-screen flex-col bg-surface text-text`}>
@@ -24,7 +24,7 @@ export default function Layout({
       />
 
       <main
-        className={`mt-32 flex-grow md:mt-16 md:px-16 lg:px-32 ${childrenStyles}`}
+        className={`mt-32 flex-grow md:mt-16 md:px-gutter-md lg:px-gutter-lg ${childrenStyles}`}
       >
         {children}
       </main>
