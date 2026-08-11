@@ -8,7 +8,9 @@
 // Apply the writes:
 //   node scripts/backfill-publication-dois.ts --commit
 //
-// Requires SANITY_API_WRITE_TOKEN in the environment (see .env.local.example).
+// The dataset is publicly readable (see .github/workflows/ci.yml), so a dry
+// run needs no token at all. SANITY_API_WRITE_TOKEN is only required when
+// --commit is passed (see .env.local.example).
 // Uses @sanity/client directly rather than this repo's next-sanity wrapper
 // (lib/sanity.client.ts), since this script runs under plain Node, outside
 // Next's runtime.
@@ -18,20 +20,23 @@ import { createClient } from '@sanity/client'
 import { extractDoiFromUrl } from '../lib/doi.ts'
 import { apiVersion, dataset, projectId } from '../lib/sanity.api.ts'
 
-const token = process.env.SANITY_API_WRITE_TOKEN
-if (!token) {
-  throw new Error(
-    'Set SANITY_API_WRITE_TOKEN to a token with write access (see .env.local.example).'
-  )
-}
-
 const commit = process.argv.includes('--commit')
+
+let writeToken: string | undefined
+if (commit) {
+  writeToken = process.env.SANITY_API_WRITE_TOKEN
+  if (!writeToken) {
+    throw new Error(
+      'Set SANITY_API_WRITE_TOKEN to a token with write access (see .env.local.example).'
+    )
+  }
+}
 
 const client = createClient({
   projectId,
   dataset,
   apiVersion,
-  token,
+  token: commit ? writeToken : undefined,
   useCdn: false,
   perspective: 'published',
 })
