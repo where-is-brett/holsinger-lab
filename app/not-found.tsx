@@ -49,7 +49,7 @@ export default async function NotFound() {
           {`We couldn't find the page you were looking for. Perhaps the`}
           <Link
             href={'/'}
-            className="text-black underline hover:text-gray-600"
+            className="text-text underline hover:text-text-muted"
           >
             home page
           </Link>

@@ -34,7 +34,7 @@ const ErrorDialog = ({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <DialogBackdrop className="fixed inset-0 bg-black opacity-60" />
+            <DialogBackdrop className="fixed inset-0 bg-scrim opacity-60" />
           </TransitionChild>
 
           <TransitionChild
@@ -46,16 +46,16 @@ const ErrorDialog = ({
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <div className="mx-auto max-w-md space-y-5 bg-background p-4 text-center">
+            <div className="mx-auto max-w-md space-y-5 bg-surface-raised p-4 text-center">
               <DialogTitle as="h3" className="mb-2 text-lg font-semibold">
                 Submission Failed
               </DialogTitle>
-              <p className="px-4 text-justify text-gray-800">{message}</p>
+              <p className="px-4 text-justify text-text">{message}</p>
               <div className="mt-4">
                 <button
                   type="button"
                   onClick={handleDialogClose}
-                  className="bg-gray-900 px-4 py-2 text-white"
+                  className="bg-surface-inverse px-4 py-2 text-text-inverse"
                 >
                   Close
                 </button>

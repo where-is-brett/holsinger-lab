@@ -16,8 +16,8 @@ const DesktopNavBar = ({
   return (
     <nav
       className={`sticky top-0 z-10 hidden flex-wrap items-center gap-x-5
-            border-y border-primary bg-background/80
-            px-4 py-4 uppercase backdrop-blur md:flex md:px-16 md:py-5 lg:px-32`}
+            border-y border-accent bg-surface/80
+            px-4 py-4 uppercase backdrop-blur md:flex md:px-gutter-md md:py-5 lg:px-gutter-lg`}
     >
       {menuItems &&
         menuItems.map((menuItem: MenuItem, key: number) => {
@@ -28,10 +28,10 @@ const DesktopNavBar = ({
           return (
             <Link
               key={key}
-              className={`text-lg hover:text-black md:text-xl ${
+              className={`text-lg hover:text-text md:text-xl ${
                 menuItem?._type === 'home'
-                  ? 'font-extrabold text-black'
-                  : 'text-gray-600'
+                  ? 'font-extrabold text-text'
+                  : 'text-text-muted'
               }`}
               href={href}
             >
@@ -43,7 +43,7 @@ const DesktopNavBar = ({
       {/* Custom pages: Publications, Our Team */}
       {showPublications && (
         <Link
-          className={`text-lg text-gray-600 hover:text-black md:text-xl`}
+          className={`text-lg text-text-muted hover:text-text md:text-xl`}
           href={'/publications'}
         >
           Publications
@@ -51,7 +51,7 @@ const DesktopNavBar = ({
       )}
       {showPeople && (
         <Link
-          className={`text-lg text-gray-600 hover:text-black md:text-xl`}
+          className={`text-lg text-text-muted hover:text-text md:text-xl`}
           href={'/people'}
         >
           People
@@ -59,7 +59,7 @@ const DesktopNavBar = ({
       )}
       {showContactForm && (
         <Link
-          className={`text-lg text-gray-600 hover:text-black md:text-xl`}
+          className={`text-lg text-text-muted hover:text-text md:text-xl`}
           href={'/contact'}
         >
           Contact

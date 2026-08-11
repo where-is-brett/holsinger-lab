@@ -16,6 +16,11 @@ export default function ImageContainer({
   alt = 'Cover image',
   width = 1200,
   height = 800,
+  // Callers render this component at widely different widths (a full-bleed
+  // project cover vs. a one-third-width profile card). `100vw` is only correct
+  // for the full-bleed case and makes every other call site download a far
+  // larger candidate than it can display -- a 325px People card was selecting
+  // the 3840w image. Pass the real layout.
   size = '100vw',
   classesWrapper,
 }: ImageBoxProps) {
@@ -28,7 +33,7 @@ export default function ImageContainer({
   const imageUrl = urlForImage(image)?.width(width).height(height).fit('max').url()
 
   return (
-    <div className={`w-full overflow-hidden bg-gray-50 ${classesWrapper}`}>
+    <div className={`w-full overflow-hidden bg-surface-raised ${classesWrapper}`}>
       {imageUrl && (
         <Image
           className="h-full w-full"

@@ -206,23 +206,25 @@ test.describe('mobile menu accessibility contract', () => {
         page.getByRole('button', { name: 'Close menu' })
       ).toHaveAttribute('aria-expanded', 'true')
 
-      // Locate the actual visible logo image in the header - the one that
-      // keeps painting while the dialog is open but is `inert` (its
-      // wrapping <Link> is a sibling of <Dialog>), so it is not the
-      // element that actually receives taps. Measuring the <img> itself
-      // (rather than its wrapping anchor, whose own box collapses since
-      // its only child is absolutely positioned) gives the real on-screen
-      // pixels a user taps. This element's own screen position doesn't
-      // change depending on where the overlay lives (inside or outside
-      // DialogPanel) - only whether tapping at these coordinates actually
-      // navigates does.
+      // Locate the actual visible logo in the header - the one that keeps
+      // painting while the dialog is open but is `inert` (its wrapping
+      // <Link> is a sibling of <Dialog>), so it is not the element that
+      // actually receives taps. Measuring the <svg> itself (rather than its
+      // wrapping anchor, whose own box collapses since its only child is
+      // absolutely positioned) gives the real on-screen pixels a user taps.
+      // This element's own screen position doesn't change depending on
+      // where the overlay lives (inside or outside DialogPanel) - only
+      // whether tapping at these coordinates actually navigates does. The
+      // logo is an inlined <svg role="img" aria-label="logo"> (Phase 3A
+      // Task 5), not an <img>, so it's selected by its aria-label rather
+      // than an alt attribute.
       const logoRect = await page.evaluate(() => {
         const dialog = document.querySelector('[role="dialog"]')
-        const logoImage = document.querySelector('img[alt="logo"]')
-        if (!logoImage || dialog?.contains(logoImage)) {
+        const logoSvg = document.querySelector('svg[aria-label="logo"]')
+        if (!logoSvg || dialog?.contains(logoSvg)) {
           return null
         }
-        const rect = logoImage.getBoundingClientRect()
+        const rect = logoSvg.getBoundingClientRect()
         return { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
       })
       expect(logoRect).not.toBeNull()

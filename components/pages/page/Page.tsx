@@ -18,7 +18,7 @@ export function Page({ page, settings }: PageProps) {
 
         {body && (
           <CustomPortableText
-            paragraphClasses="font-ariana max-w-4xl text-gray-900 text-base md:text-lg"
+            paragraphClasses="font-ariana max-w-4xl text-text text-base md:text-lg"
             value={body}
           />
         )}

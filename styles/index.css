@@ -1,24 +1,74 @@
 @import 'tailwindcss';
 
-@theme {
-  --color-gray-50: #f6f6f8;
-  --color-gray-100: #eeeef1;
-  --color-gray-200: #e3e4e8;
-  --color-gray-300: #bbbdc9;
-  --color-gray-500: #727892;
-  --color-gray-600: #515870;
-  --color-gray-800: #252837;
-  --color-gray-900: #1b1d27;
-  --color-blue-600: #4043e7;
-  --color-primary: #2d6a4f;
-  --color-background: #f8f8f8;
-  --color-black: #0d0e12;
+/* Semantic tokens. Components reference these, never a raw palette.
+   `@theme inline` makes utilities resolve to the `--sem-*` custom property
+   rather than to a snapshot of its value, which is what lets a media query
+   below re-point the whole system for dark mode (Task 3). */
+@theme inline {
+  --color-surface: var(--sem-surface);
+  --color-surface-raised: var(--sem-surface-raised);
+  --color-surface-inverse: var(--sem-surface-inverse);
+  --color-scrim: var(--sem-scrim);
+  --color-text: var(--sem-text);
+  --color-text-muted: var(--sem-text-muted);
+  --color-text-inverse: var(--sem-text-inverse);
+  --color-link: var(--sem-link);
+  --color-accent: var(--sem-accent);
+  --color-field: var(--sem-field);
+  --color-rule: var(--sem-rule);
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
   --font-antarctican: var(--font-antarctican-mono);
   --font-ariana: var(--font-ariana-pro);
+
+  /* Type roles. Values are Tailwind's existing steps -- this names the scale
+     the site already uses so components stop picking raw steps ad hoc. It
+     deliberately does not change any rendered size. */
+  --text-display: var(--text-3xl);
+  --text-title: var(--text-xl);
+  --text-lead: var(--text-lg);
+  --text-body: var(--text-base);
+  --text-meta: var(--text-sm);
+
+  /* Page gutters. One owner: Layout. Page components must not re-add
+     horizontal padding -- People and Publications previously did, producing
+     doubled gutters at some breakpoints. */
+  --spacing-gutter: 1.5rem;
+  --spacing-gutter-md: 4rem;
+  --spacing-gutter-lg: 8rem;
+}
+
+:root {
+  color-scheme: light dark;
+  --sem-surface: #f8f8f8;
+  --sem-surface-raised: #f6f6f8;
+  --sem-surface-inverse: #1b1d27;
+  --sem-scrim: #0d0e12;
+  --sem-text: #0d0e12;
+  --sem-text-muted: #515870;
+  --sem-text-inverse: #ffffff;
+  --sem-link: #4043e7;
+  --sem-accent: #2d6a4f;
+  --sem-field: #787d89;
+  --sem-rule: #e3e4e8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sem-surface: #0d0e12;
+    --sem-surface-raised: #1b1d27;
+    --sem-surface-inverse: #f6f6f8;
+    --sem-scrim: #0d0e12;
+    --sem-text: #f6f6f8;
+    --sem-text-muted: #bbbdc9;
+    --sem-text-inverse: #0d0e12;
+    --sem-link: #9da2f2;
+    --sem-accent: #4e9a79;
+    --sem-field: #787d89;
+    --sem-rule: #252837;
+  }
 }
 
 @layer base {
@@ -27,7 +77,7 @@
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-primary, currentColor);
+    border-color: var(--color-accent, currentColor);
   }
 
   button:not(:disabled),
@@ -65,8 +115,12 @@ ul {
   margin-left: 1rem;
 }
 
-ol {
+ul {
   list-style-type: disc;
+}
+
+ol {
+  list-style-type: decimal;
 }
 
 /* Reset input field appearances */

@@ -54,3 +54,6 @@ studio/.env.development
 # Sanity TypeGen intermediate artifact (schema.json regenerates every run;
 # sanity.types.ts is the committed, reviewable output)
 /schema.json
+
+# Isolated per-sub-phase worktrees (superpowers:using-git-worktrees)
+/.worktrees/

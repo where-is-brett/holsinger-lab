@@ -12,7 +12,7 @@ export function ProjectListItem(props: ProjectProps) {
 
   return (
     <div
-      className={`flex flex-col transition hover:bg-gray-100/0 md:flex-row ${
+      className={`flex flex-col transition hover:bg-surface-raised/0 md:flex-row ${
         odd && 'border-y md:flex-row-reverse'
       }`}
     >
@@ -24,6 +24,14 @@ export function ProjectListItem(props: ProjectProps) {
         <ImageBox
           image={project.coverImage}
           alt={`Cover image from ${project.title}`}
+          // Measured, not the naive Tailwind fraction: `md:w-7/12`/`lg:w-8/12`
+          // apply against the content box inside Layout's
+          // `md:px-gutter-md lg:px-gutter-lg` side padding, so as a fraction
+          // of the full viewport the card is smaller than 58%/67%. Measured
+          // across 900-1536px viewports: ~49vw in the md range, ~49-55vw in
+          // the lg range. 50vw/58vw cover the measured range with a small
+          // safety margin.
+          size="(min-width: 1024px) 58vw, (min-width: 768px) 50vw, 100vw"
           classesWrapper="relative aspect-[16/9] h-full h-full "
         />
       </div>
@@ -45,7 +53,7 @@ function TextBox({ project }: { project: ShowcaseProject }) {
           {project.title}
         </h3>
         {/* Overview  */}
-        <div className="font-ariana text-gray-500">
+        <div className="font-ariana text-text-muted">
           <CustomPortableText value={project.overview!} />
         </div>
       </div>

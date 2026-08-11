@@ -86,7 +86,7 @@ export default function Publication({
           <em>{volume ? `, ${volume}` : ''}</em>
           {`${issue ? `(${issue})` : ''}${pages ? `, ${pages}` : ''}. `}
           {url && (
-            <a href={url} className="text-blue-600 hover:underline">
+            <a href={url} className="text-link hover:underline">
               {url}
             </a>
           )}

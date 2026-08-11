@@ -31,13 +31,13 @@ export function TimelineItem({
           />
         </div>
         {/* Vertical line */}
-        {!isLast && <div className="mt-2 w-px grow self-center bg-gray-200" />}
+        {!isLast && <div className="mt-2 w-px grow self-center bg-rule" />}
       </div>
       <div className="flex-initial pl-4">
         {/* Title */}
-        <div className="font-bold text-black">{title}</div>
+        <div className="font-bold text-text">{title}</div>
         {/* Tags */}
-        <div className="text-sm text-gray-600 ">
+        <div className="text-sm text-text-muted ">
           {tags?.map((tag, key) => (
             <span key={key}>
               {tag}
@@ -47,7 +47,7 @@ export function TimelineItem({
           {startYear} - {endYear}
         </div>
         {/* Description */}
-        <div className="pb-5 pt-3 font-ariana text-gray-600">{description}</div>
+        <div className="pb-5 pt-3 font-ariana text-text-muted">{description}</div>
       </div>
     </div>
   )

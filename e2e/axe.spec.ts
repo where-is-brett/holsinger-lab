@@ -1,28 +1,17 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-// Violations already known to exist today, each tracked to the Phase 2C task
-// that fixes it. Delete an entry (not just an id inside it) once its fix
-// lands — this test then starts enforcing zero violations of that kind on
-// that route again, with no further change needed here.
+// `/` previously carried a `color-contrast` violation (ProjectListItem's
+// overview text, gray-500 #727892 on #f8f8f8 = 4.10:1, below AA's 4.5).
+// Phase 2C deferred it here as a design-token decision; Phase 3A Task 2
+// resolved it by repointing that text to the muted token (6.64:1).
 //
-// - color-contrast (serious on / only): components/pages/home/ProjectListItem.tsx
-//   renders each showcase project's overview text (live Sanity content) in
-//   `text-gray-500` against the page's light background — measured at a
-//   4.1:1 contrast ratio, below the 4.5:1 WCAG AA minimum. Not present in
-//   this plan's original research pass (production Sanity content is live
-//   and can change independent of code); found when this task's Step 3 was
-//   actually run on 2026-08-10. Fixed by a future 2C color-contrast task.
-// - heading-order (moderate on /tutorial only): the page's Sanity portable-
-//   text body content contains a heading block rendered as a literal <h4>
-//   (components/shared/CustomPortableText.tsx maps each CMS heading style
-//   straight to its HTML tag) without an intervening <h2>/<h3>, so heading
-//   levels jump. A content-authoring issue in the /tutorial page's body,
-//   not a component bug. Found while confirming this route's entry in this
-//   task's Step 4. Fixed by a future 2C task correcting that page's content
-//   heading levels (or CustomPortableText enforcing sequential order).
+// `/tutorial`'s heading-order violation remains and is deliberately not
+// fixed: it is authored Sanity content, not a component defect. Fixing it
+// means editing live CMS content or making CustomPortableText enforce
+// sequential heading order programmatically -- a distinct, larger change.
 const KNOWN_VIOLATIONS: Record<string, string[]> = {
-  '/': ['color-contrast'],
+  '/': [],
   '/contact': [],
   '/people': [],
   '/publications': [],
@@ -41,28 +30,44 @@ const VIEWPORTS: Record<string, { width: number; height: number }> = {
   mobile: { width: 375, height: 812 },
 }
 
+// Phase 3A doubled the site's rendered surface area (a light AND a dark
+// palette via `prefers-color-scheme`), and this suite previously only ever
+// ran under Playwright's default light scheme — half the site was
+// unchecked. That's how the dark-mode black-on-black hamburger (this
+// review's Critical 1) shipped past a fully green axe run: color-contrast
+// only ever got evaluated against the light tokens. colorScheme is a second
+// axis alongside viewport, so every route is checked at every (viewport ×
+// colour scheme) combination.
+const COLOR_SCHEMES: Array<'light' | 'dark'> = ['light', 'dark']
+
 for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
   test.describe(`${viewportName} viewport`, () => {
     test.use({ viewport })
 
-    for (const [path, knownIds] of Object.entries(KNOWN_VIOLATIONS)) {
-      test(`${path} has no unexpected accessibility violations`, async ({
-        page,
-      }) => {
-        await page.goto(path)
-        const results = await new AxeBuilder({ page }).analyze()
-        const observedIds = results.violations.map((v) => v.id)
+    for (const colorScheme of COLOR_SCHEMES) {
+      test.describe(`${colorScheme} colour scheme`, () => {
+        test.use({ colorScheme })
 
-        const unexpected = results.violations.filter(
-          (v) => !knownIds.includes(v.id)
-        )
-        expect(unexpected, JSON.stringify(unexpected, null, 2)).toEqual([])
+        for (const [path, knownIds] of Object.entries(KNOWN_VIOLATIONS)) {
+          test(`${path} has no unexpected accessibility violations`, async ({
+            page,
+          }) => {
+            await page.goto(path)
+            const results = await new AxeBuilder({ page }).analyze()
+            const observedIds = results.violations.map((v) => v.id)
 
-        const stale = knownIds.filter((id) => !observedIds.includes(id))
-        expect(
-          stale,
-          `These KNOWN_VIOLATIONS entries no longer fire — delete them from the list: ${stale.join(', ')}`
-        ).toEqual([])
+            const unexpected = results.violations.filter(
+              (v) => !knownIds.includes(v.id)
+            )
+            expect(unexpected, JSON.stringify(unexpected, null, 2)).toEqual([])
+
+            const stale = knownIds.filter((id) => !observedIds.includes(id))
+            expect(
+              stale,
+              `These KNOWN_VIOLATIONS entries no longer fire — delete them from the list: ${stale.join(', ')}`
+            ).toEqual([])
+          })
+        }
       })
     }
   })
