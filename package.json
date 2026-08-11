@@ -5,6 +5,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "backfill:publication-dois": "node scripts/backfill-publication-dois.ts",
     "build": "next build",
     "dev": "next dev",
     "format": "npx prettier --write . --ignore-path .gitignore",
