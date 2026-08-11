@@ -252,7 +252,7 @@ document action (Task 5), and the backfill script (Task 6)."
 - Consumes: nothing from Task 1 directly (takes an already-validated bare DOI as input; validation is the caller's job).
 - Produces: `fetchCrossrefWork(doi: string, fetchImpl?: typeof fetch): Promise<CrossrefWorkFields>` and the `CrossrefWorkFields` interface (`title`, `author`, `journal`, `volume`, `issue`, `pages`, `date`, `abstract`) — used by Task 5's document action.
 
-**Real fixtures.** The two fixtures below are trimmed real responses from `https://api.crossref.org/works/{doi}` for two of this dataset's actual DOIs, captured live while writing this plan (2026-08-11) — not invented. They exercise different shapes deliberately: the first has a multi-part given name, a null `page` with a populated `article-number`, and a `<jats:title>`-wrapped abstract; the second has a normal `page` range and a single-token given name, and is used to test the case where Crossref returns no `abstract` field at all.
+**Real fixtures.** The two fixtures below are trimmed real responses from `https://api.crossref.org/works/{doi}` for two of this dataset's actual DOIs, captured live while writing this plan (2026-08-11, corrected during Task 2's review — see the note above `CROSSREF_FIXTURE_CBX7` in Step 1) — not invented. They exercise different shapes deliberately: the first has a multi-part given name, a null `page` with a populated `article-number`, and a `<jats:title>`-wrapped abstract; the second has a genuinely absent `abstract` field, a normal `page` range, and a 7-author list exercising hyphenated and multi-part given names.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -314,6 +314,19 @@ describe('stripJatsTags', () => {
 // two of the live dataset's actual DOIs -- design doc §5's "real data, not
 // invented fixtures" standard, extended from the 19 URLs (Task 1) to Crossref
 // itself.
+//
+// Plan correction, recorded during Task 2's review. This section originally
+// paired CBX7 with a second fixture for 10.1002/jnr.24819 (the wiley/GDM
+// paper), claiming a "Paul J. Paasila" author and no abstract field. Neither
+// was true of the live record -- the real first author is "Patrick Jarmo
+// Paasila" among 12 authors, and the record does carry a JATS-wrapped
+// abstract. That fixture was fabricated at plan-writing time, not captured,
+// which the task's own re-review (dispatched against the live implementation)
+// caught by re-fetching the DOI. It has been replaced below with a DOI that
+// is genuinely abstract-less in the live Crossref data
+// (10.1021/acsabm.0c01111, the piezoelectric thin-films paper -- also in
+// the 19-publication dataset), keeping the "no abstract" code path tested
+// against a real response rather than an invented one.
 const CROSSREF_FIXTURE_CBX7 = {
   message: {
     title: [
@@ -340,16 +353,27 @@ const CROSSREF_FIXTURE_CBX7 = {
   },
 }
 
-const CROSSREF_FIXTURE_GDM = {
+const CROSSREF_FIXTURE_THIN_FILMS = {
   message: {
-    title: ['Ground state depletion microscopy as a tool for studying microglia–synapse interactions'],
-    author: [{ given: 'Paul J.', family: 'Paasila' }],
-    'container-title': ['Journal of Neuroscience Research'],
-    volume: '99',
-    issue: '6',
-    page: '1515-1532',
-    published: { 'date-parts': [[2021, 3, 7]] },
+    title: [
+      '<i>In Vitro</i> Biocompatibility of Piezoelectric K<sub>0.5</sub>Na<sub>0.5</sub>NbO<sub>3</sub> Thin Films on Platinized Silicon Substrates',
+    ],
+    author: [
+      { given: 'Nikolai Helth', family: 'Gaukås' },
+      { given: 'Quy-Susan', family: 'Huynh' },
+      { given: 'Anishchal A.', family: 'Pratap' },
+      { given: 'Mari-Ann', family: 'Einarsrud' },
+      { given: 'Tor', family: 'Grande' },
+      { given: 'R. M. Damian', family: 'Holsinger' },
+      { given: 'Julia', family: 'Glaum' },
+    ],
+    'container-title': ['ACS Applied Bio Materials'],
+    volume: '3',
+    issue: '12',
+    page: '8714-8721',
+    published: { 'date-parts': [[2020, 11, 6]] },
     // No `abstract` field at all -- Crossref omits it for some records.
+    // Confirmed absent on the live record, not merely undefined here.
   },
 }
 
@@ -378,16 +402,17 @@ describe('fetchCrossrefWork', () => {
     })
   })
 
-  it('parses a record with a page range and no abstract field', async () => {
-    const result = await fetchCrossrefWork('10.1002/jnr.24819', fakeFetch(CROSSREF_FIXTURE_GDM))
+  it('parses a real record with no abstract field and a 7-author list', async () => {
+    const result = await fetchCrossrefWork('10.1021/acsabm.0c01111', fakeFetch(CROSSREF_FIXTURE_THIN_FILMS))
     expect(result).toEqual({
-      title: 'Ground state depletion microscopy as a tool for studying microglia–synapse interactions',
-      author: 'Paasila P.J.',
-      journal: 'Journal of Neuroscience Research',
-      volume: 99,
-      issue: 6,
-      pages: '1515-1532',
-      date: '2021-03-07',
+      title:
+        '<i>In Vitro</i> Biocompatibility of Piezoelectric K<sub>0.5</sub>Na<sub>0.5</sub>NbO<sub>3</sub> Thin Films on Platinized Silicon Substrates',
+      author: 'Gaukås N.H., Huynh Q.S., Pratap A.A., Einarsrud M.A., Grande T., Holsinger R.M.D., Glaum J.',
+      journal: 'ACS Applied Bio Materials',
+      volume: 3,
+      issue: 12,
+      pages: '8714-8721',
+      date: '2020-11-06',
       abstract: null,
     })
   })
