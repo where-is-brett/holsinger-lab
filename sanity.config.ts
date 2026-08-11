@@ -1,4 +1,5 @@
 import { apiVersion, dataset, previewSecretId, projectId } from 'lib/sanity.api'
+import { doiLookupPlugin } from 'plugins/doiLookupAction'
 import { previewDocumentNode } from 'plugins/previewPane'
 import { productionUrl } from 'plugins/productionUrl'
 import { pageStructure, singletonPlugin } from 'plugins/settings'
@@ -51,6 +52,7 @@ export default defineConfig({
     }),
     media(),
     singletonPlugin([home.name, settings.name]),
+    doiLookupPlugin(),
     productionUrl({
       apiVersion,
       previewSecretId,

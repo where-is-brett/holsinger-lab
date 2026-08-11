@@ -1,4 +1,5 @@
 import { BookIcon } from '@sanity/icons/Book'
+import { isValidDoi } from 'lib/doi'
 import { defineField, defineType } from 'sanity'
 
 export default defineType({
@@ -18,6 +19,8 @@ export default defineType({
       name: 'author',
       title: 'Author',
       type: 'string',
+      description:
+        'Format: "Family Initials." per author, separated by commas -- e.g. "Holsinger R.M.D., Smith J.A." The "Fetch from DOI" action (see the DOI field below) writes this format automatically from Crossref\'s structured author data; existing records were entered by hand and are not all consistent.',
       validation: (Rule) => Rule.required(),
     }),
     defineField({
@@ -67,9 +70,22 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'doi',
+      title: 'DOI',
+      type: 'string',
+      description:
+        'Bare DOI only, e.g. "10.1038/s41420-025-02362-7" -- no "https://doi.org/" prefix. Powers the "Fetch from DOI" action in the document menu, which autofills Title, Author, Journal, Volume, Issue, Pages, Date, and Abstract from Crossref. Leave blank if this publication has no DOI.',
+      validation: (Rule) =>
+        Rule.custom((value: string | undefined) => {
+          if (value === undefined || value === '') return true
+          return isValidDoi(value) || 'Must be a bare DOI, e.g. 10.1038/s41420-025-02362-7 (no URL prefix)'
+        }),
+    }),
+    defineField({
       name: 'url',
       title: 'URL',
-      description: 'Enter the full DOI / URL of the journal',
+      description:
+        "The publisher's article page (e.g. the journal's own URL for this article). If this publication has a DOI, enter it in the DOI field above instead -- this field no longer doubles as the DOI source.",
       type: 'url',
     }),
     defineField({
