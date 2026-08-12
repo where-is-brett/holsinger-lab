@@ -11,10 +11,15 @@ const WIDTHS = [
 
 /**
  * Routes for the undefined-class sweep. Deliberately a superset of
- * ROUTES: `/tutorial` renders the widest variety of portable-text blocks
- * (lists, headings, body images), so it exercises `paragraphClasses`
- * interpolation sites the other routes never reach. Both `/` and
- * `/tutorial` carried the original defect.
+ * ROUTES, with `/tutorial` added as defence-in-depth breadth rather than
+ * because it currently reaches an interpolation site the other routes
+ * miss: today, every call site that omits `paragraphClasses` (Header,
+ * ProjectListItem) renders only `normal` paragraph blocks, and both
+ * already appear on `/` and the project route, while `/tutorial`'s
+ * richer blocks (lists, headings) come via Page.tsx, which always
+ * passes a non-empty `paragraphClasses`. The extra route guards against
+ * a future caller or future content that changes that, not a gap that
+ * exists today.
  */
 const CLASS_SWEEP_ROUTES = [...ROUTES, '/tutorial']
 
