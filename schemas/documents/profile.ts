@@ -11,6 +11,9 @@ export default defineType({
   title: 'People',
   icon: UserIcon,
   orderings: [orderRankOrdering],
+  preview: {
+    select: { title: 'name', subtitle: 'role', media: 'image' },
+  },
   fields: [
     orderRankField({
       type: 'profile',
