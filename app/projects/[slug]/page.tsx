@@ -1,5 +1,6 @@
 import { toPlainText } from '@portabletext/react'
 import { ProjectPage as ProjectPageComponent } from 'components/pages/project/ProjectPage'
+import { resolveBranding } from 'lib/branding'
 import { buildMetadata } from 'lib/metadata'
 import { getClient } from 'lib/sanity.client'
 import { sanityFetch } from 'lib/sanity.live'
@@ -62,12 +63,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (Object.prototype.hasOwnProperty.call(legacyProjectSlugs, slug)) {
     return {}
   }
-  const { project, homePageTitle } = await getData(slug)
+  const { settings, project, homePageTitle } = await getData(slug)
   if (!project) {
     return {}
   }
+  const { siteName } = resolveBranding(settings)
   return buildMetadata({
     path: `/projects/${slug}`,
+    siteName,
     baseTitle: homePageTitle,
     title: project.title ?? undefined,
     description: project.overview ? toPlainText(project.overview) : '',

@@ -1,4 +1,5 @@
 import Contact from 'components/pages/contact/Contact'
+import { resolveBranding } from 'lib/branding'
 import { buildMetadata } from 'lib/metadata'
 import { sanityFetch } from 'lib/sanity.live'
 import { homePageTitleQuery, settingsQuery } from 'lib/sanity.queries'
@@ -32,8 +33,10 @@ const getData = cache(async () => {
 
 export async function generateMetadata(): Promise<Metadata> {
   const { settings, homePageTitle } = await getData()
+  const { siteName } = resolveBranding(settings)
   return buildMetadata({
     path: '/contact',
+    siteName,
     baseTitle: homePageTitle,
     title: 'Contact',
     description,

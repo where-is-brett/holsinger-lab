@@ -1,5 +1,6 @@
 import { toPlainText } from '@portabletext/react'
 import { Page as PageComponent } from 'components/pages/page/Page'
+import { resolveBranding } from 'lib/branding'
 import { buildMetadata } from 'lib/metadata'
 import { getClient } from 'lib/sanity.client'
 import { sanityFetch } from 'lib/sanity.live'
@@ -62,8 +63,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!page) {
     return {}
   }
+  const { siteName } = resolveBranding(settings)
   return buildMetadata({
     path: `/${slug}`,
+    siteName,
     baseTitle: homePageTitle,
     title: page.title ?? undefined,
     description: page.overview ? toPlainText(page.overview) : '',

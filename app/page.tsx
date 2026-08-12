@@ -1,5 +1,6 @@
 import { toPlainText } from '@portabletext/react'
 import { HomePage } from 'components/pages/home/HomePage'
+import { resolveBranding } from 'lib/branding'
 import { buildMetadata } from 'lib/metadata'
 import { sanityFetch } from 'lib/sanity.live'
 import { homePageQuery, settingsQuery } from 'lib/sanity.queries'
@@ -34,8 +35,10 @@ const getData = cache(async () => {
 
 export async function generateMetadata(): Promise<Metadata> {
   const { settings, page } = await getData()
+  const { siteName } = resolveBranding(settings)
   return buildMetadata({
     path: '/',
+    siteName,
     title: page.title ?? undefined,
     description: page.overview ? toPlainText(page.overview) : '',
     // The generated `ogImage` shape leaves crop/hotspot bounds optional (honest to what GROQ
