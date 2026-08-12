@@ -70,6 +70,12 @@ These are bugs, not missing features. They are in scope because nobody will find
 | D6 | `themeColor` is a flat light-surface `#F8F8F8` served to everyone, so dark-mode users get light browser chrome above a `#0d0e12` page | `app/layout.tsx:97` |
 | D7 | `robots.txt` hardcodes the `holsingerlab.vercel.app` sitemap URL while `siteUrl` is env-configurable | `public/robots.txt` |
 | D8 | `Publications.tsx` sticky bar is `top-16` (64px, the *mobile* nav height) at all breakpoints while the desktop nav is ~70px — the "~6px overlap" Minor already on record from Phase 3C | `components/pages/publications/Publications.tsx:35` |
+| D9 | `exclude: ['node_modules', …]` matches only a *top-level* `node_modules`, so `npm test` also runs any git worktree under `.claude/worktrees/` against its own dependency tree. Currently turns a clean 15-file/142-test run into 741 files / 56 failures | `vitest.config.ts:7` |
+
+**On D9:** this repo's own methodology creates worktrees under `.claude/worktrees/`, so every sub-phase
+of this plan makes it worse. It must be fixed before 4A's first task, not alongside it — an
+implementer who runs `npm test` and sees 56 unrelated failures cannot tell whether their own change
+is sound.
 
 **On D5, specifically:** the visible mobile logo is `h-[50%]` of an `h-16` bar → 32px tall, with a
 524×120 viewBox → aspect ratio 4.37 → ~140px rendered width. The overlay `<Link>` inside
@@ -116,8 +122,15 @@ current definitions and move into the Navigation and Footer groups unchanged.
 | Branding | `icon` | `image` | no | Square source for favicon / app icons |
 | Branding | `theme` | `string` (`options.list`) | no | Neutral preset name; defaults to `default` |
 | Branding | `brandColor` | `color` | no | Drives the chromatic tokens (§3.3) |
+| Identity | `ogImage` | `image` | no | Unchanged definition; regrouped here as site-level presentation |
 | Navigation | `menuItems`, `showPublications`, `showPeople`, `showContactForm` | — | — | Unchanged |
-| Footer | `footer`, `ogImage` | — | — | Unchanged |
+| Footer | `footer` | — | — | Unchanged |
+
+**Fields are added by the sub-phase that consumes them, not all at once in 4A.** 4A creates the
+group scaffolding and the Identity fields it actually uses (`siteName`, `shortName`, and regrouping
+`ogImage`); 4B adds `logo`/`logoDark`; 4C adds `theme`/`brandColor` and the `@sanity/color-input`
+dependency; 4D adds `icon`. This keeps each sub-phase independently shippable and avoids exposing
+Studio fields that silently do nothing if a later sub-phase does not land.
 
 `brandColor` uses `@sanity/color-input` — **verified compatible**: version 6.1.3 declares
 `sanity: ^5 || ^6.0.0-0` and `react: ^19.2`; this repo has `sanity@6.9.1` and `react@19.2.8`. Note
@@ -286,6 +299,8 @@ IE11 (EOL June 2022) and Edge Legacy (EOL March 2021). Repairing dead technology
 will maintain is worse than removing it. `mstile-150x150.png` goes with them.
 
 **`generateViewport()` returns light and dark theme colours** from the active palette, fixing D6.
+`viewport` stays a static export until this point — 4A has no reason to convert it, since nothing
+before 4C makes the colour dynamic.
 
 **`public/logo.svg` is deleted outright**, permanently removing D1 from the repo. After 4B nothing
 renders it; the only remaining consumer is JSON-LD, which instead emits the Sanity CDN URL when a
@@ -316,7 +331,7 @@ procedure for adding a colour preset.
 
 | Sub-phase | Content | Depends on |
 |---|---|---|
-| **4A — Identity foundation** | Schema fields + groups, `settingsQuery`, typegen, root-layout `generateMetadata`/`generateViewport` with try/catch fallback, `siteName` single source of truth | — |
+| **4A — Identity foundation** | D9 fix, schema groups + Identity fields, `settingsQuery`, typegen, root-layout `generateMetadata` with try/catch fallback, `siteName` single source of truth | — |
 | **4B — Logo & navigation** | `Logo.tsx`, wordmark fallback, both navbars, derived overlay geometry, shared nav-height token | 4A |
 | **4C — Colour** | `lib/color.ts`, `lib/theme.ts`, presets in `index.css`, injected style block, `@sanity/color-input` | 4A |
 | **4D — Icons, manifest, OG** | `app/manifest.ts`, `app/robots.ts`, CMS favicon, `generateViewport` colours, JSON-LD, deletions, docs | 4A, 4C |
