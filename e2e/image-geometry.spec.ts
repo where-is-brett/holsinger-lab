@@ -9,6 +9,15 @@ const WIDTHS = [
   { label: 'desktop', width: 1280, height: 900 },
 ]
 
+/**
+ * Routes for the undefined-class sweep. Deliberately a superset of
+ * ROUTES: `/tutorial` renders the widest variety of portable-text blocks
+ * (lists, headings, body images), so it exercises `paragraphClasses`
+ * interpolation sites the other routes never reach. Both `/` and
+ * `/tutorial` carried the original defect.
+ */
+const CLASS_SWEEP_ROUTES = [...ROUTES, '/tutorial']
+
 for (const { label, width, height } of WIDTHS) {
   for (const route of ROUTES) {
     test(`${route} renders undistorted images at ${label}`, async ({
@@ -66,7 +75,7 @@ for (const { label, width, height } of WIDTHS) {
 }
 
 test('no element renders a literal "undefined" CSS class', async ({ page }) => {
-  for (const route of ROUTES) {
+  for (const route of CLASS_SWEEP_ROUTES) {
     await page.goto(route)
     const offenders = await page.evaluate(() =>
       [...document.querySelectorAll('*')]
