@@ -28,6 +28,13 @@ export type SanityImageAssetReference = {
   [internalGroqTypeReferenceTo]?: 'sanity.imageAsset'
 }
 
+export type RoleGroupReference = {
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'roleGroup'
+}
+
 export type Profile = {
   _id: string
   _type: 'profile'
@@ -44,17 +51,20 @@ export type Profile = {
   }
   name?: string
   role?: string
-  roleGroup?:
-    | 'lab-head'
-    | 'research-scientist'
-    | 'phd-student'
-    | 'honours-student'
-    | 'research-student'
-    | 'undergraduate'
-    | 'alumni'
+  roleGroup?: RoleGroupReference
   email?: string
   phone?: string
   bio?: string
+}
+
+export type RoleGroup = {
+  _id: string
+  _type: 'roleGroup'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  orderRank?: string
+  title?: string
 }
 
 export type SanityImageCrop = {
@@ -481,7 +491,9 @@ export type Geopoint = {
 
 export type AllSanitySchemaTypes =
   | SanityImageAssetReference
+  | RoleGroupReference
   | Profile
+  | RoleGroup
   | SanityImageCrop
   | SanityImageHotspot
   | Publication
@@ -790,8 +802,16 @@ export type PublicationsQueryResult = Array<{
 }>
 
 // Source: lib/sanity.queries.ts
+// Variable: roleGroupQuery
+// Query: *[_type == "roleGroup"] | order(orderRank) {    _id,    title,  }
+export type RoleGroupQueryResult = Array<{
+  _id: string
+  title: string | null
+}>
+
+// Source: lib/sanity.queries.ts
 // Variable: profileQuery
-// Query: *[_type == "profile"] | order(orderRank) {    _id,    image,    orderRank,    name,    role,    roleGroup,    email,    phone,    bio  }
+// Query: *[_type == "profile"] | order(orderRank) {    _id,    image,    orderRank,    name,    role,    roleGroup->{      _id,      title,    },    email,    phone,    bio  }
 export type ProfileQueryResult = Array<{
   _id: string
   image: {
@@ -804,15 +824,10 @@ export type ProfileQueryResult = Array<{
   orderRank: string | null
   name: string | null
   role: string | null
-  roleGroup:
-    | 'alumni'
-    | 'honours-student'
-    | 'lab-head'
-    | 'phd-student'
-    | 'research-scientist'
-    | 'research-student'
-    | 'undergraduate'
-    | null
+  roleGroup: {
+    _id: string
+    title: string | null
+  } | null
   email: string | null
   phone: string | null
   bio: string | null
@@ -830,6 +845,7 @@ declare module '@sanity/client' {
     '\n  *[_type == "page" && slug.current != null].slug.current\n': PagePathsResult
     '\n  *[_type == "settings"][0]{\n    footer,\n    showPublications,\n    showPeople,\n    showContactForm,\n    menuItems[]->{\n      _type,\n      "slug": slug.current,\n      title\n    },\n    ogImage,\n  }\n': SettingsQueryResult
     '\n  *[_type == "publication"] | order(date desc) {\n    _id,\n    title,\n    author,\n    journal,\n    volume,\n    issue,\n    pages,\n    abstract,\n    url,\n    doi,\n    date,\n  }\n': PublicationsQueryResult
-    '\n  *[_type == "profile"] | order(orderRank) {\n    _id,\n    image,\n    orderRank,\n    name,\n    role,\n    roleGroup,\n    email,\n    phone,\n    bio\n  }\n': ProfileQueryResult
+    '\n  *[_type == "roleGroup"] | order(orderRank) {\n    _id,\n    title,\n  }\n': RoleGroupQueryResult
+    '\n  *[_type == "profile"] | order(orderRank) {\n    _id,\n    image,\n    orderRank,\n    name,\n    role,\n    roleGroup->{\n      _id,\n      title,\n    },\n    email,\n    phone,\n    bio\n  }\n': ProfileQueryResult
   }
 }

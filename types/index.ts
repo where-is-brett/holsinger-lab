@@ -5,6 +5,7 @@ import type {
   ProfileQueryResult,
   ProjectBySlugQueryResult,
   PublicationsQueryResult,
+  RoleGroupQueryResult,
   SettingsQueryResult,
 } from 'sanity.types'
 
@@ -38,6 +39,8 @@ export type MenuItem = NonNullable<SettingsPayload['menuItems']>[number]
 export type PublicationPayload = PublicationsQueryResult[number]
 
 export type ProfilePayload = ProfileQueryResult[number]
+
+export type RoleGroupPayload = RoleGroupQueryResult[number]
 
 // `SettingsPayload` now requires every key (nullable values are fine, but the keys themselves
 // must be present) — the seven call sites that used to fall back to a bare `?? {}` need a real
