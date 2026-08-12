@@ -21,10 +21,17 @@ export function CustomPortableText({
   paragraphClasses?: string
   value: (PortableTextBlock | ArbitraryTypedObject)[]
 }) {
+  /**
+   * `paragraphClasses` is optional; interpolating it directly renders the
+   * literal string "undefined" as a CSS class when a caller omits it.
+   */
+  const withParagraphClasses = (...rest: string[]) =>
+    [paragraphClasses, ...rest].filter(Boolean).join(' ')
+
   const components: PortableTextComponents = {
     block: {
       normal: ({ children }) => {
-        return <p className={`${paragraphClasses} my-[1em]`}>{children}</p>
+        return <p className={withParagraphClasses('my-[1em]')}>{children}</p>
       },
       // Adding block quote
       blockquote: ({ children }) => {
@@ -40,42 +47,42 @@ export function CustomPortableText({
       },
       h1: ({ children }) => {
         return (
-          <div className={`${paragraphClasses}`}>
+          <div className={withParagraphClasses()}>
             <h2 className="my-[0.67em] text-4xl md:text-5xl">{children}</h2>
           </div>
         )
       },
       h2: ({ children }) => {
         return (
-          <div className={`${paragraphClasses}`}>
+          <div className={withParagraphClasses()}>
             <h2 className="my-[0.83em] text-3xl md:text-4xl">{children}</h2>
           </div>
         )
       },
       h3: ({ children }) => {
         return (
-          <div className={`${paragraphClasses}`}>
+          <div className={withParagraphClasses()}>
             <h3 className="my-[1em] text-2xl md:text-3xl">{children}</h3>
           </div>
         )
       },
       h4: ({ children }) => {
         return (
-          <div className={`${paragraphClasses}`}>
+          <div className={withParagraphClasses()}>
             <h4 className="my-[1.33em] text-xl md:text-2xl">{children}</h4>
           </div>
         )
       },
       h5: ({ children }) => {
         return (
-          <div className={`${paragraphClasses}`}>
+          <div className={withParagraphClasses()}>
             <h5 className="my-[1.67em] text-lg md:text-xl">{children}</h5>
           </div>
         )
       },
       h6: ({ children }) => {
         return (
-          <div className={`${paragraphClasses}`}>
+          <div className={withParagraphClasses()}>
             <h6 className="my-[2em] text-base md:text-lg">{children}</h6>
           </div>
         )
@@ -108,7 +115,13 @@ export function CustomPortableText({
     list: {
       bullet: ({ children }) => {
         return (
-          <ul className={`${paragraphClasses} my-[1rem] list-disc pl-[40px]`}>
+          <ul
+            className={withParagraphClasses(
+              'my-[1rem]',
+              'list-disc',
+              'pl-[40px]',
+            )}
+          >
             {children}
           </ul>
         )
@@ -116,7 +129,11 @@ export function CustomPortableText({
       number: ({ children }) => {
         return (
           <ol
-            className={`${paragraphClasses} my-[1rem] list-decimal pl-[40px]`}
+            className={withParagraphClasses(
+              'my-[1rem]',
+              'list-decimal',
+              'pl-[40px]',
+            )}
           >
             {children}
           </ol>
@@ -157,7 +174,11 @@ export function CustomPortableText({
         )
       },
       timeline: ({ value }) => {
-        const { items } = value || {}
+        const { items, hidden } = value || {}
+        // Unset means visible: every document published before this field
+        // existed has `hidden === undefined`, and those must keep
+        // rendering. Only an explicit `true` hides the block.
+        if (hidden === true) return null
         return <TimelineSection timelines={items} />
       },
     },

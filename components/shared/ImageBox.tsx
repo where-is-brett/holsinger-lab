@@ -27,10 +27,20 @@ export default function ImageBox({
     image && urlForImage(image)?.height(height).width(width).fit('crop').url()
 
   return (
-    <div className={`w-full overflow-hidden bg-surface-raised ${classesWrapper}`}>
+    <div
+      className={`media-frame bg-surface-raised relative w-full overflow-hidden ${
+        classesWrapper ?? ''
+      }`}
+    >
       {imageUrl && (
         <Image
-          className="absolute h-full w-full"
+          // `object-cover`, not the browser default `fill`: this component
+          // fills fixed-aspect cover slots whose box is not guaranteed to
+          // match the server-side crop. `fill` stretches the bitmap; at
+          // `md:`+ the home cards' box was measured as far off as AR 1.165
+          // against a 1.750 crop -- a 1.5x vertical stretch. `cover` crops
+          // the overflow instead of distorting it.
+          className="absolute h-full w-full object-cover"
           alt={alt}
           width={width}
           height={height}

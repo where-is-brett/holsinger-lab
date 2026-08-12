@@ -25,9 +25,21 @@ export function TimelineItem({
           <ImageBox
             image={image}
             alt={title || 'Timeline item icon'}
-            size="10vw"
-            width={65}
-            height={65}
+            // The box is a fixed 65px square, so declare it in pixels --
+            // `10vw` over-declares on a wide viewport and under-declares on
+            // a narrow one. `width`/`height` cap what Sanity renders and
+            // next/image never upscales past its source, so they are set to
+            // 4x the CSS box to cover high-DPR screens; at this size the
+            // byte cost is negligible.
+            size="65px"
+            width={260}
+            height={260}
+            // ImageBox positions its own wrapper (`relative`), and its
+            // <img> is `absolute`, so the img contributes no height to
+            // that wrapper. Without an explicit height here, the wrapper
+            // collapses to 0 inside this fixed 65x65 parent and the
+            // thumbnail is invisible.
+            classesWrapper="h-full"
           />
         </div>
         {/* Vertical line */}
