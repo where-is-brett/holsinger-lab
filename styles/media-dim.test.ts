@@ -8,9 +8,16 @@ describe('dark-mode media dimming', () => {
   it('defines a .media-frame filter only inside a dark-scheme media query', () => {
     expect(css, '.media-frame rule must exist').toContain('.media-frame')
 
-    // Asserts containment, not merely "appears later in the file": the
-    // rule must open inside a dark-scheme block, with no intervening
-    // at-rule between the block's `{` and the selector.
+    // Checks that a `.media-frame` rule opens somewhere after a
+    // `@media (prefers-color-scheme: dark) {`, with no intervening at-rule
+    // between that block's `{` and the selector. Note this regex alone does
+    // NOT prove brace-balanced containment: `[^@]*` only refuses to cross an
+    // `@` character, so it would also match a `.media-frame` rule sitting at
+    // the top level after the dark block has already closed, as long as no
+    // other at-rule appears in between. It's the `topLevel` assertion below
+    // -- which strips real @media blocks by brace-matching -- that actually
+    // rules out a top-level definition. The two assertions only work
+    // together.
     expect(css).toMatch(
       /@media \(prefers-color-scheme: dark\)\s*\{[^@]*\.media-frame\s*\{[^}]*brightness\(/
     )
