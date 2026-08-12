@@ -60,11 +60,16 @@ test.describe('citation copy', () => {
 })
 
 test.describe('DOI links degrade gracefully', () => {
-  test('no publication shows a DOI link against the current unset-doi dataset', async ({
+  test('shows a DOI link for exactly the 10 publications with a recoverable DOI, none for the other 9', async ({
     page,
   }) => {
+    // Backfilled 2026-08-12 via `scripts/backfill-publication-dois.ts --commit`
+    // (see docs/superpowers/plans/2026-08-11-phase-3b-studio-doi-rolegroup.md's
+    // dry-run output for the 10 recoverable DOIs). The other 9 publications'
+    // `url` values don't encode a machine-recoverable DOI and stay unset --
+    // this asserts that split, not just "some exist."
     await page.goto('/publications')
-    await expect(page.getByText(/^DOI: /)).toHaveCount(0)
+    await expect(page.getByText(/^DOI: /)).toHaveCount(10)
   })
 })
 
