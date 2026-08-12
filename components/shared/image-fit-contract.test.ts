@@ -33,7 +33,10 @@ describe('shared image components', () => {
   it('ImageBox positions its own wrapper rather than relying on callers', () => {
     const source = readFileSync('components/shared/ImageBox.tsx', 'utf8')
     // The <img> is absolutely positioned; without `relative` here it
-    // resolves against whatever ancestor happens to be positioned.
-    expect(source).toMatch(/relative/)
+    // resolves against whatever ancestor happens to be positioned. Assert
+    // `relative` is an actual class token on the wrapper's className, not
+    // just a substring that would also match inside a comment.
+    const wrapperClassName = source.match(/className=\{`([^`]*)`\}/)?.[1]
+    expect(wrapperClassName?.split(/\s+/)).toContain('relative')
   })
 })
