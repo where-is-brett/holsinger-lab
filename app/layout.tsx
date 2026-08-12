@@ -2,14 +2,18 @@ import 'styles/index.css'
 
 import { PreviewBanner } from 'components/preview/PreviewBanner'
 import { JsonLd } from 'components/shared/JsonLd'
+import { resolveBranding } from 'lib/branding'
 import { buildOrganizationJsonLd } from 'lib/json-ld'
-import { SanityLive } from 'lib/sanity.live'
-import { siteName, siteUrl } from 'lib/site'
+import { sanityFetch, SanityLive } from 'lib/sanity.live'
+import { settingsQuery } from 'lib/sanity.queries'
+import { fetchSettingsSafely } from 'lib/settings'
+import { siteUrl } from 'lib/site'
 import type { Metadata, Viewport } from 'next'
 import { IBM_Plex_Mono, PT_Serif } from 'next/font/google'
 import localFont from 'next/font/local'
 import { draftMode } from 'next/headers'
 import { VisualEditing } from 'next-sanity/visual-editing'
+import { cache } from 'react'
 
 const mono = IBM_Plex_Mono({
   variable: '--font-mono',
@@ -76,22 +80,38 @@ const arianaPro = localFont({
   variable: '--font-ariana-pro',
 })
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  applicationName: siteName,
-  icons: {
-    icon: [
-      { url: '/favicon/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-    ],
-    shortcut: '/favicon/favicon.ico',
-    apple: { url: '/favicon/apple-touch-icon.png', sizes: '180x180' },
-  },
-  manifest: '/favicon/site.webmanifest',
-  other: {
-    'msapplication-TileColor': '#000000',
-    'msapplication-config': '/favicon/browserconfig.xml',
-  },
+export const revalidate = 60
+
+/**
+ * Cached per request, so `generateMetadata` and the component below share one
+ * fetch. `stega: false` is required, not cosmetic: siteName reaches <title>,
+ * Open Graph tags and JSON-LD, and stega encodes invisible characters into
+ * strings during draft-mode sessions (Phase 2D's recorded lesson).
+ */
+const getSettings = cache(() =>
+  fetchSettingsSafely(() => sanityFetch({ query: settingsQuery, stega: false }))
+)
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { siteName } = resolveBranding(await getSettings())
+
+  return {
+    metadataBase: new URL(siteUrl),
+    applicationName: siteName,
+    icons: {
+      icon: [
+        { url: '/favicon/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/favicon/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      ],
+      shortcut: '/favicon/favicon.ico',
+      apple: { url: '/favicon/apple-touch-icon.png', sizes: '180x180' },
+    },
+    manifest: '/favicon/site.webmanifest',
+    other: {
+      'msapplication-TileColor': '#000000',
+      'msapplication-config': '/favicon/browserconfig.xml',
+    },
+  }
 }
 
 export const viewport: Viewport = { themeColor: '#F8F8F8' }
@@ -102,6 +122,7 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const { isEnabled: isDraftMode } = await draftMode()
+  const { siteName } = resolveBranding(await getSettings())
 
   return (
     <html

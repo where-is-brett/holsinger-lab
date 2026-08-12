@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { resolveBranding } from './branding'
-import { siteName as fallbackSiteName } from './site'
+import { fallbackSiteName } from './site'
 
 describe('resolveBranding', () => {
   it('uses the configured site name when set', () => {

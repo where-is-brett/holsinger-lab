@@ -1,4 +1,4 @@
-import { siteName as fallbackSiteName } from 'lib/site'
+import { fallbackSiteName } from 'lib/site'
 
 export interface Branding {
   /** Full name: browser tab titles, Open Graph, JSON-LD, web app manifest `name`. */

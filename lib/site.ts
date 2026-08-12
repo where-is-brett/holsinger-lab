@@ -2,7 +2,12 @@ export const siteUrl = (
   process.env.NEXT_PUBLIC_SITE_URL || 'https://holsingerlab.vercel.app'
 ).replace(/\/$/, '')
 
-export const siteName = 'Holsinger Lab'
+/**
+ * Fallback name, used only when `settings.siteName` is unset or the settings
+ * singleton is unreachable. `resolveBranding` (lib/branding.ts) is the sole
+ * consumer — every other module takes a resolved name as a parameter.
+ */
+export const fallbackSiteName = 'Holsinger Lab'
 
 /**
  * Routes that are published for lab members but should not surface in search
