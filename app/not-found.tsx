@@ -1,4 +1,5 @@
 import Layout from 'components/shared/Layout'
+import { resolveBranding } from 'lib/branding'
 import { buildMetadata } from 'lib/metadata'
 import { getClient } from 'lib/sanity.client'
 import { homePageTitleQuery, settingsQuery } from 'lib/sanity.queries'
@@ -23,9 +24,11 @@ const getData = cache(async () => {
 })
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { homePageTitle } = await getData()
+  const { settings, homePageTitle } = await getData()
+  const { siteName } = resolveBranding(settings)
   return buildMetadata({
     path: '/404',
+    siteName,
     baseTitle: homePageTitle,
     title: 'Page Not Found',
     description:

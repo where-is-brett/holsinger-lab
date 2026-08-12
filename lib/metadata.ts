@@ -1,10 +1,11 @@
 import { urlForImage } from 'lib/sanity.image'
-import { isNoindexPath, siteName, siteUrl } from 'lib/site'
+import { isNoindexPath, siteUrl } from 'lib/site'
 import type { Metadata } from 'next'
 import type { Image } from 'sanity'
 
 export function buildMetadata({
   path,
+  siteName,
   baseTitle,
   title,
   description,
@@ -12,6 +13,12 @@ export function buildMetadata({
   noindex = false,
 }: {
   path: string
+  /**
+   * Resolved via `resolveBranding` (lib/branding.ts). Required rather than
+   * defaulted so the type checker names any call site that forgets it — a
+   * silent default would reintroduce the hardcoded name this phase removes.
+   */
+  siteName: string
   baseTitle?: string
   title?: string
   description?: string

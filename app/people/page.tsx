@@ -1,5 +1,6 @@
 import People from 'components/pages/people/People'
 import { JsonLd } from 'components/shared/JsonLd'
+import { resolveBranding } from 'lib/branding'
 import { buildPersonListJsonLd } from 'lib/json-ld'
 import { buildMetadata } from 'lib/metadata'
 import { sanityFetch } from 'lib/sanity.live'
@@ -50,8 +51,10 @@ const getData = cache(async () => {
 
 export async function generateMetadata(): Promise<Metadata> {
   const { settings, homePageTitle } = await getData()
+  const { siteName } = resolveBranding(settings)
   return buildMetadata({
     path: '/people',
+    siteName,
     baseTitle: homePageTitle,
     title: 'People',
     description,

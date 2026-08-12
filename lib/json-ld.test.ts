@@ -47,17 +47,38 @@ describe('serializeJsonLd', () => {
 })
 
 describe('buildOrganizationJsonLd', () => {
-  it('returns a valid schema.org Organization with name, url, and logo', () => {
-    const org = buildOrganizationJsonLd()
+  it('returns a valid schema.org Organization from the supplied values', () => {
+    const org = buildOrganizationJsonLd({
+      name: 'Holsinger Lab',
+      url: siteUrl,
+      logo: `${siteUrl}/logo.svg`,
+    })
     expect(org['@context']).toBe('https://schema.org')
     expect(org['@type']).toBe('Organization')
-    expect(org.name.length).toBeGreaterThan(0)
+    expect(org.name).toBe('Holsinger Lab')
     expect(org.url).toBe(siteUrl)
     expect(org.logo).toBe(`${siteUrl}/logo.svg`)
   })
 
+  it('uses the supplied name rather than any built-in constant', () => {
+    const org = buildOrganizationJsonLd({
+      name: 'A Different Lab',
+      url: siteUrl,
+    })
+    expect(org.name).toBe('A Different Lab')
+  })
+
+  it('omits logo entirely when none is supplied', () => {
+    const org = buildOrganizationJsonLd({ name: 'Holsinger Lab', url: siteUrl })
+    expect('logo' in org).toBe(false)
+  })
+
   it('serializes to valid JSON with no undefined fields', () => {
-    const org = buildOrganizationJsonLd()
+    const org = buildOrganizationJsonLd({
+      name: 'Holsinger Lab',
+      url: siteUrl,
+      logo: `${siteUrl}/logo.svg`,
+    })
     expect(JSON.parse(JSON.stringify(org))).toEqual(org)
   })
 })

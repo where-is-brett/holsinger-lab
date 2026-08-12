@@ -1,6 +1,7 @@
 import Publications from 'components/pages/publications/Publications'
 import { JsonLd } from 'components/shared/JsonLd'
 import Layout from 'components/shared/Layout'
+import { resolveBranding } from 'lib/branding'
 import { buildScholarlyArticleListJsonLd } from 'lib/json-ld'
 import { buildMetadata } from 'lib/metadata'
 import { sanityFetch } from 'lib/sanity.live'
@@ -46,8 +47,10 @@ const getData = cache(async () => {
 
 export async function generateMetadata(): Promise<Metadata> {
   const { settings, homePageTitle } = await getData()
+  const { siteName } = resolveBranding(settings)
   return buildMetadata({
     path: '/publications',
+    siteName,
     baseTitle: homePageTitle,
     title: 'Publications',
     description,
