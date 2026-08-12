@@ -34,6 +34,12 @@ export function TimelineItem({
             size="65px"
             width={260}
             height={260}
+            // ImageBox positions its own wrapper (`relative`), and its
+            // <img> is `absolute`, so the img contributes no height to
+            // that wrapper. Without an explicit height here, the wrapper
+            // collapses to 0 inside this fixed 65x65 parent and the
+            // thumbnail is invisible.
+            classesWrapper="h-full"
           />
         </div>
         {/* Vertical line */}

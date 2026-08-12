@@ -18,4 +18,12 @@ describe('TimelineItem thumbnail', () => {
     // and under-declares on narrow ones.
     expect(source).toMatch(/size="65px"/)
   })
+
+  it('gives the ImageBox wrapper a definite height', () => {
+    // ImageBox positions its own wrapper, and its <img> is absolutely
+    // positioned, so it contributes no height. Without an explicit height
+    // the wrapper collapses to 0 inside this fixed-size 65px parent and the
+    // thumbnail becomes invisible.
+    expect(source).toMatch(/classesWrapper="[^"]*h-full/)
+  })
 })
