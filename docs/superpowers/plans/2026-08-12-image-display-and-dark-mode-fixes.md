@@ -531,6 +531,15 @@ describe('timeline visibility toggle', () => {
     expect(source).toMatch(/hidden/)
     expect(source).not.toMatch(/if \(!hidden\)/)
   })
+
+  it('never interpolates an undefined paragraphClasses into className', () => {
+    const source = readFileSync('components/shared/CustomPortableText.tsx', 'utf8')
+    // `paragraphClasses` is an optional prop, and most callers omit it.
+    // Every `${paragraphClasses}` then renders the literal string
+    // "undefined" as a CSS class -- confirmed live on `/`, where 11
+    // elements carried `class="undefined my-[1em]"`.
+    expect(source).not.toMatch(/\$\{paragraphClasses\}/)
+  })
 })
 ```
 
@@ -568,6 +577,39 @@ In `components/shared/CustomPortableText.tsx`, replace the `timeline` component 
         return <TimelineSection timelines={items} />
       },
 ```
+
+- [ ] **Step 4b: Remove the `undefined` class from every `paragraphClasses` interpolation**
+
+`paragraphClasses` is optional and most callers omit it, so all nine
+`${paragraphClasses}` sites render a literal `undefined` class. Verified live
+on `/`: 11 elements carried `class="undefined my-[1em]"`. Task 6's e2e test
+asserts the site emits none, so this must be fixed here.
+
+Introduce one local helper directly above the `components` object in
+`components/shared/CustomPortableText.tsx`:
+
+```tsx
+/**
+ * `paragraphClasses` is optional; interpolating it directly renders the
+ * literal string "undefined" as a CSS class when a caller omits it.
+ */
+const withParagraphClasses = (...rest: string[]) =>
+  [paragraphClasses, ...rest].filter(Boolean).join(' ')
+```
+
+Note it closes over the `paragraphClasses` parameter, so it must be declared
+inside the component function, not at module scope.
+
+Then replace every interpolation site, preserving each one's existing extra
+classes exactly:
+
+- `` `${paragraphClasses} my-[1em]` `` → `withParagraphClasses('my-[1em]')`
+- `` `${paragraphClasses}` `` (the six `<div>` wrappers) → `withParagraphClasses()`
+- `` `${paragraphClasses} my-[1rem] list-disc pl-[40px]` `` → `withParagraphClasses('my-[1rem]', 'list-disc', 'pl-[40px]')`
+- `` `${paragraphClasses} my-[1rem] list-decimal pl-[40px]` `` → `withParagraphClasses('my-[1rem]', 'list-decimal', 'pl-[40px]')`
+
+Do not change the `quotes my-[1em] …` blockquote line — it does not
+reference `paragraphClasses`.
 
 - [ ] **Step 5: Run the test to verify it passes**
 
