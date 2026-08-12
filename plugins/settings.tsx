@@ -2,6 +2,7 @@
  * This plugin contains all the logic for setting up the singletons
  */
 
+import { TagIcon } from '@sanity/icons/Tag'
 import { UserIcon } from '@sanity/icons/User'
 import { orderableDocumentListDeskItem } from '@sanity/orderable-document-list'
 import { apiVersion, previewSecretId } from 'lib/sanity.api'
@@ -88,6 +89,7 @@ export const pageStructure = (
           (singleton) => singleton.name === listItem.getId()
         ) &&
         listItem.getId() !== 'profile' && // we include an orderable list for people
+        listItem.getId() !== 'roleGroup' && // we include an orderable list for role groups
         listItem.getTitle() !== 'Media Tag' // edit media tags in the media browser
     )
 
@@ -111,6 +113,14 @@ export const pageStructure = (
           //   lang: 'en_US',
           // },
           // pass from the structure callback params above
+          S,
+          context,
+        }),
+
+        orderableDocumentListDeskItem({
+          type: 'roleGroup',
+          title: 'Role Groups',
+          icon: TagIcon,
           S,
           context,
         }),
