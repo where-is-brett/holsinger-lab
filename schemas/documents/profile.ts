@@ -43,21 +43,10 @@ export default defineType({
     defineField({
       name: 'roleGroup',
       title: 'Role Group',
-      type: 'string',
+      type: 'reference',
+      to: [{ type: 'roleGroup' }],
       description:
-        'Groups this person on the public People page. Provisional list, derived from the lab\'s current composition (2026-08-11) -- confirm with the lab before relying on it for every profile. Leave unset to show under "Other".',
-      options: {
-        list: [
-          { title: 'Lab Head', value: 'lab-head' },
-          { title: 'Research Scientist', value: 'research-scientist' },
-          { title: 'PhD Student', value: 'phd-student' },
-          { title: 'Honours Student', value: 'honours-student' },
-          { title: 'Research Student', value: 'research-student' },
-          { title: 'Undergraduate', value: 'undergraduate' },
-          { title: 'Alumni', value: 'alumni' },
-        ],
-        layout: 'dropdown',
-      },
+        'Groups this person on the public People page. Manage the list of groups (add, rename, reorder, delete) from the "Role Groups" entry in the Studio sidebar. Leave unset to show under "Other".',
     }),
     defineField({
       name: 'email',
