@@ -6,13 +6,14 @@ import { sanityFetch } from 'lib/sanity.live'
 import {
   homePageTitleQuery,
   profileQuery,
+  roleGroupQuery,
   settingsQuery,
 } from 'lib/sanity.queries'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import type { Image } from 'sanity'
-import type { ProfilePayload, SettingsPayload } from 'types'
+import type { ProfilePayload, RoleGroupPayload, SettingsPayload } from 'types'
 import { fallbackSettings } from 'types'
 
 export const revalidate = 60
@@ -29,17 +30,21 @@ const getData = cache(async () => {
     { data: homePageTitle },
     { data: settingsData },
     { data: profilesData },
+    { data: roleGroupsData },
   ] = await Promise.all([
     sanityFetch({ query: homePageTitleQuery, stega: false }),
     sanityFetch({ query: settingsQuery, stega: false }),
     sanityFetch({ query: profileQuery }),
+    sanityFetch({ query: roleGroupQuery }),
   ])
   const settings = (settingsData as SettingsPayload | null) ?? fallbackSettings
   const profiles = (profilesData as ProfilePayload[] | null) ?? []
+  const roleGroups = (roleGroupsData as RoleGroupPayload[] | null) ?? []
   return {
     homePageTitle: (homePageTitle as string | null) ?? undefined,
     settings,
     profiles,
+    roleGroups,
   }
 })
 
@@ -57,7 +62,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PeoplePage() {
-  const { settings, profiles } = await getData()
+  const { settings, profiles, roleGroups } = await getData()
 
   if (settings.showPeople === false) {
     notFound()
@@ -66,7 +71,7 @@ export default async function PeoplePage() {
   return (
     <>
       <JsonLd data={buildPersonListJsonLd(profiles)} />
-      <People settings={settings} profiles={profiles} />
+      <People settings={settings} profiles={profiles} roleGroups={roleGroups} />
     </>
   )
 }

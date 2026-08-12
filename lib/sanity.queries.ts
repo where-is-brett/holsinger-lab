@@ -96,6 +96,13 @@ export const publicationsQuery = groq`
   }
 `
 
+export const roleGroupQuery = groq`
+  *[_type == "roleGroup"] | order(orderRank) {
+    _id,
+    title,
+  }
+`
+
 export const profileQuery = groq`
   *[_type == "profile"] | order(orderRank) {
     _id,
@@ -103,7 +110,10 @@ export const profileQuery = groq`
     orderRank,
     name,
     role,
-    roleGroup,
+    roleGroup->{
+      _id,
+      title,
+    },
     email,
     phone,
     bio

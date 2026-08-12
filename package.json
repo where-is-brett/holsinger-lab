@@ -5,6 +5,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "backfill:profile-role-groups": "node scripts/backfill-profile-role-groups.ts",
     "backfill:publication-dois": "node scripts/backfill-publication-dois.ts",
     "build": "next build",
     "dev": "next dev",
