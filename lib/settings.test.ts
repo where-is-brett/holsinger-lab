@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { fetchSettingsSafely } from './settings'
 import { fallbackSettings } from '../types'
+import { fetchSettingsSafely } from './settings'
 
 describe('fetchSettingsSafely', () => {
   it('returns the fetched settings when the fetch succeeds', async () => {
