@@ -2,57 +2,65 @@ import { describe, expect, it } from 'vitest'
 
 import { groupByRoleGroup } from './groupByRoleGroup'
 
+const PHD = { _id: 'rg-phd', title: 'PhD Student' }
+const LAB_HEAD = { _id: 'rg-lab-head', title: 'Lab Head' }
+const ALUMNI = { _id: 'rg-alumni', title: 'Alumni' }
+
 describe('groupByRoleGroup', () => {
   it('buckets every profile under "Other" when roleGroup is unset on all of them', () => {
-    // The live dataset's actual current state, 2026-08-11: 0/19 profiles have
-    // roleGroup set. This is the case every reader-facing feature in this
-    // phase must render correctly against.
     const profiles = [
       { _id: '1', roleGroup: null },
       { _id: '2', roleGroup: null },
     ]
-    const result = groupByRoleGroup(profiles)
+    const result = groupByRoleGroup(profiles, [PHD, LAB_HEAD])
     expect(result).toEqual([
-      { value: 'other', title: 'Other', profiles: [{ _id: '1', roleGroup: null }, { _id: '2', roleGroup: null }] },
+      {
+        id: 'other',
+        title: 'Other',
+        profiles: [
+          { _id: '1', roleGroup: null },
+          { _id: '2', roleGroup: null },
+        ],
+      },
     ])
   })
 
-  it('buckets recognised values into their named section, in the fixed order, and preserves input order within a bucket', () => {
+  it('buckets by matching roleGroup._id, in the order roleGroups was given, preserving input order within a bucket', () => {
     const profiles = [
-      { _id: '1', roleGroup: 'phd-student' },
-      { _id: '2', roleGroup: 'lab-head' },
-      { _id: '3', roleGroup: 'phd-student' },
+      { _id: '1', roleGroup: PHD },
+      { _id: '2', roleGroup: LAB_HEAD },
+      { _id: '3', roleGroup: PHD },
     ]
-    const result = groupByRoleGroup(profiles)
-    expect(result.map((s) => s.value)).toEqual(['lab-head', 'phd-student'])
-    expect(result.find((s) => s.value === 'phd-student')?.profiles.map((p) => p._id)).toEqual([
-      '1',
-      '3',
-    ])
+    const result = groupByRoleGroup(profiles, [LAB_HEAD, PHD])
+    expect(result.map((s) => s.id)).toEqual(['rg-lab-head', 'rg-phd'])
+    expect(result.find((s) => s.id === 'rg-phd')?.profiles.map((p) => p._id)).toEqual(['1', '3'])
   })
 
   it('omits empty sections entirely', () => {
-    const profiles = [{ _id: '1', roleGroup: 'alumni' }]
-    const result = groupByRoleGroup(profiles)
+    const profiles = [{ _id: '1', roleGroup: ALUMNI }]
+    const result = groupByRoleGroup(profiles, [PHD, LAB_HEAD, ALUMNI])
     expect(result).toHaveLength(1)
-    expect(result[0].value).toBe('alumni')
+    expect(result[0].id).toBe('rg-alumni')
   })
 
-  it('puts a mix of recognised and unrecognised values in their respective buckets, Other last', () => {
+  it('puts unset and dangling-reference (null) roleGroup values in "Other", after named sections', () => {
     const profiles = [
-      { _id: '1', roleGroup: 'undergraduate' },
-      { _id: '2', roleGroup: 'not-a-real-value' },
+      { _id: '1', roleGroup: PHD },
+      { _id: '2', roleGroup: null },
       { _id: '3', roleGroup: null },
     ]
-    const result = groupByRoleGroup(profiles)
-    expect(result.map((s) => s.value)).toEqual(['undergraduate', 'other'])
-    expect(result.find((s) => s.value === 'other')?.profiles.map((p) => p._id)).toEqual([
-      '2',
-      '3',
-    ])
+    const result = groupByRoleGroup(profiles, [PHD])
+    expect(result.map((s) => s.id)).toEqual(['rg-phd', 'other'])
+    expect(result.find((s) => s.id === 'other')?.profiles.map((p) => p._id)).toEqual(['2', '3'])
   })
 
-  it('returns an empty array for an empty input', () => {
-    expect(groupByRoleGroup([])).toEqual([])
+  it('returns an empty array for empty profiles and empty roleGroups', () => {
+    expect(groupByRoleGroup([], [])).toEqual([])
+  })
+
+  it('returns a single "Other" section when roleGroups is empty but profiles are not', () => {
+    const profiles = [{ _id: '1', roleGroup: null }]
+    const result = groupByRoleGroup(profiles, [])
+    expect(result).toEqual([{ id: 'other', title: 'Other', profiles: [{ _id: '1', roleGroup: null }] }])
   })
 })
