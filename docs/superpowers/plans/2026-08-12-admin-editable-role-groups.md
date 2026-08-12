@@ -15,7 +15,7 @@
 - Every task must leave `npx tsc --noEmit` and `npx eslint .` clean before its commit.
 - Sanity write scripts are dry-run-by-default; writes require an explicit `--commit` flag with no alternate trigger, and a write token is only loaded/required when `--commit` is passed (established pattern: `scripts/backfill-publication-dois.ts`).
 - Sanity patches use `unset` for "no value," never `set: { field: null }`.
-- Every reader-facing change must render correctly when the new/changed field is unset on all profiles — no required-field validation added anywhere in this plan.
+- Every reader-facing change must render correctly when `profile.roleGroup` is unset on all profiles — `profile.roleGroup` itself must never gain required-field validation. (This does not apply to `roleGroup.title`, Task 1: a Role Group document without a title is a genuinely broken document, not a "feature not yet used" case — its `Rule.required()` is intentional and matches the spec.)
 - The `profile.roleGroup` field type change (string → reference, Task 2) is safe only because 0/19 live profiles have it set. Task 2 re-verifies this count against production immediately before editing the schema — do not trust this plan's or the spec's snapshot.
 - Node 22 runs `.ts` scripts directly (no build step); relative imports between `.ts` files need explicit `.ts` extensions (already enabled via `allowImportingTsExtensions` in `tsconfig.json` — see `scripts/backfill-publication-dois.ts` for the pattern).
 - Verification commands that need to reach the live dataset use `NEXT_PUBLIC_SANITY_PROJECT_ID=j3f9z8os NEXT_PUBLIC_SANITY_DATASET=production` (public read access, no token needed for reads).
