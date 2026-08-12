@@ -103,6 +103,7 @@ export type Publication = {
 
 export type Timeline = {
   _type: 'timeline'
+  hidden?: boolean
   items?: Array<{
     title?: string
     milestones?: Array<
@@ -627,6 +628,7 @@ export type PagesBySlugQueryResult = {
     | {
         _key: string
         _type: 'timeline'
+        hidden?: boolean
         items?: Array<{
           title?: string
           milestones?: Array<

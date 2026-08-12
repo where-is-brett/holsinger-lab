@@ -32,7 +32,16 @@ export function ProjectListItem(props: ProjectProps) {
           // the lg range. 50vw/58vw cover the measured range with a small
           // safety margin.
           size="(min-width: 1024px) 58vw, (min-width: 768px) 50vw, 100vw"
-          classesWrapper="relative aspect-[16/9] h-full h-full "
+          // Both `aspect-[16/9]` and `h-full` are load-bearing, at
+          // different breakpoints. Below `md:` the card is `flex-col`, the
+          // column has no definite height, and `aspect-[16/9]` gives the
+          // box its shape. At `md:`+ the card is `flex-row`, the row
+          // stretches this column to the *text* column's height, `h-full`
+          // makes that height definite, and a box with definite width and
+          // height ignores `aspect-ratio` entirely -- so the card stays
+          // visually filled. That is intended; `ImageBox`'s `object-cover`
+          // is what keeps the bitmap undistorted in the `md:`+ case.
+          classesWrapper="aspect-[16/9] h-full"
         />
       </div>
       <div

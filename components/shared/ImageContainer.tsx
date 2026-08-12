@@ -30,13 +30,26 @@ export default function ImageContainer({
   // for any non-3:2 source image. `fit('max')` scales down to fit within the bounds while
   // preserving the source's own aspect ratio, matching `lib/sanity.image.ts`'s own base builder
   // default.
-  const imageUrl = urlForImage(image)?.width(width).height(height).fit('max').url()
+  const imageUrl = urlForImage(image)
+    ?.width(width)
+    .height(height)
+    .fit('max')
+    .url()
 
   return (
-    <div className={`w-full overflow-hidden bg-surface-raised ${classesWrapper}`}>
+    <div
+      className={`media-frame bg-surface-raised relative w-full overflow-hidden ${
+        classesWrapper ?? ''
+      }`}
+    >
       {imageUrl && (
         <Image
-          className="h-full w-full"
+          // `object-contain`, not `object-cover`: this component renders
+          // arbitrary body-content images and already requests `fit('max')`
+          // server-side to preserve the source aspect ratio. Contain never
+          // crops, matching that intent; `cover` could silently clip a
+          // figure. The browser default `fill` would stretch it.
+          className="h-full w-full object-contain"
           alt={alt}
           width={width}
           height={height}
