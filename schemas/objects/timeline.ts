@@ -5,6 +5,14 @@ export default defineType({
   title: 'Timeline',
   type: 'object',
   fields: [
+    defineField({
+      name: 'hidden',
+      title: 'Hide this timeline',
+      type: 'boolean',
+      initialValue: false,
+      description:
+        'Hides the timeline on the published page without deleting its content. Leave off to show it.',
+    }),
     {
       name: 'items',
       title: 'Items',
