@@ -303,6 +303,15 @@ export type Settings = {
   _createdAt: string
   _updatedAt: string
   _rev: string
+  siteName?: string
+  shortName?: string
+  ogImage?: {
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    _type: 'image'
+  }
   menuItems?: ArrayOf<HomeReference | PageReference | ProjectReference>
   showPublications?: boolean
   showPeople?: boolean
@@ -325,13 +334,6 @@ export type Settings = {
     _type: 'block'
     _key: string
   }>
-  ogImage?: {
-    asset?: SanityImageAssetReference
-    media?: unknown
-    hotspot?: SanityImageHotspot
-    crop?: SanityImageCrop
-    _type: 'image'
-  }
 }
 
 export type Home = {
@@ -735,8 +737,10 @@ export type PagePathsResult = Array<string | null>
 
 // Source: lib/sanity.queries.ts
 // Variable: settingsQuery
-// Query: *[_type == "settings"][0]{    footer,    showPublications,    showPeople,    showContactForm,    menuItems[]->{      _type,      "slug": slug.current,      title    },    ogImage,  }
+// Query: *[_type == "settings"][0]{    siteName,    shortName,    footer,    showPublications,    showPeople,    showContactForm,    menuItems[]->{      _type,      "slug": slug.current,      title    },    ogImage,  }
 export type SettingsQueryResult = {
+  siteName: string | null
+  shortName: string | null
   footer: Array<{
     children?: Array<{
       marks?: Array<string>
@@ -843,7 +847,7 @@ declare module '@sanity/client' {
     '\n  *[_type == "project" && slug.current == $slug][0] {\n    _id,\n    category,\n    coverImage,\n    description,\n    duration,\n    overview,\n    site,\n    "slug": slug.current,\n    status,\n    tags,\n    title,\n  }\n': ProjectBySlugQueryResult
     '\n  *[_type == "project" && slug.current != null].slug.current\n': ProjectPathsResult
     '\n  *[_type == "page" && slug.current != null].slug.current\n': PagePathsResult
-    '\n  *[_type == "settings"][0]{\n    footer,\n    showPublications,\n    showPeople,\n    showContactForm,\n    menuItems[]->{\n      _type,\n      "slug": slug.current,\n      title\n    },\n    ogImage,\n  }\n': SettingsQueryResult
+    '\n  *[_type == "settings"][0]{\n    siteName,\n    shortName,\n    footer,\n    showPublications,\n    showPeople,\n    showContactForm,\n    menuItems[]->{\n      _type,\n      "slug": slug.current,\n      title\n    },\n    ogImage,\n  }\n': SettingsQueryResult
     '\n  *[_type == "publication"] | order(date desc) {\n    _id,\n    title,\n    author,\n    journal,\n    volume,\n    issue,\n    pages,\n    abstract,\n    url,\n    doi,\n    date,\n  }\n': PublicationsQueryResult
     '\n  *[_type == "roleGroup"] | order(orderRank) {\n    _id,\n    title,\n  }\n': RoleGroupQueryResult
     '\n  *[_type == "profile"] | order(orderRank) {\n    _id,\n    image,\n    orderRank,\n    name,\n    role,\n    roleGroup->{\n      _id,\n      title,\n    },\n    email,\n    phone,\n    bio\n  }\n': ProfileQueryResult

@@ -55,6 +55,8 @@ export type RoleGroupPayload = RoleGroupQueryResult[number]
 // `undefined` does — `Layout.tsx` explicitly coalesces `settings?.showX ?? true` before passing
 // these flags to `Navbar`, so nav-link visibility fails open the same way the route guards do.
 export const fallbackSettings: SettingsPayload = {
+  siteName: null,
+  shortName: null,
   menuItems: [],
   showPublications: null,
   showPeople: null,
