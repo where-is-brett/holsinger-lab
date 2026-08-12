@@ -684,6 +684,8 @@ for (const { label, width, height } of WIDTHS) {
             const r = i.getBoundingClientRect()
             return {
               alt: i.alt,
+              width: r.width,
+              height: r.height,
               boxAR: r.width / r.height,
               natAR: i.naturalWidth / i.naturalHeight,
               objectFit: getComputedStyle(i).objectFit,
@@ -697,6 +699,15 @@ for (const { label, width, height } of WIDTHS) {
         // `fill` is the browser default and the original defect: it
         // stretches the bitmap to the box instead of cropping.
         expect(row.objectFit, `${row.alt} must not use object-fit: fill`).not.toBe('fill')
+
+        // Non-zero rendered size. This is the assertion that catches a
+        // collapsed containing block: during Task 4 every source-string
+        // contract test passed while all four timeline thumbnails rendered
+        // at 65x0 and were invisible, because ImageBox positions its own
+        // wrapper and an absolutely-positioned child contributes no height.
+        // Source inspection cannot see this; only a rendered measurement can.
+        expect(row.width, `${row.alt} must have non-zero rendered width`).toBeGreaterThan(0)
+        expect(row.height, `${row.alt} must have non-zero rendered height`).toBeGreaterThan(0)
       }
     })
   }
