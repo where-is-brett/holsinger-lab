@@ -9,6 +9,11 @@ deferred `roleGroup` backfill (see `2026-08-11-phase-3-foundations-design.md` §
 piece of work, same methodology as every phase before it (worktree, `subagent-driven-development`,
 whole-branch review before merge).
 
+**Scope note:** §3.6 folds in one small, unrelated Studio polish item (a list preview for the People
+desk list) because it touches the same file (`schemas/documents/profile.ts`) this work already opens.
+It has no dependency on the roleGroup work and could ship standalone; bundled here for delivery
+convenience, not because the two are architecturally linked.
+
 ---
 
 ## 1. Problem
@@ -156,6 +161,29 @@ inconsistent order that only a Studio reorder can fix. Creating 8 documents by h
 of minutes and is exactly the task this feature exists to hand to the lab — scripting it would
 undercut the point.
 
+### 3.6 People list preview (bundled fix)
+
+`schemas/documents/profile.ts` currently defines no `preview` block, so Studio's default document
+list falls back to its built-in heuristics — title only, no subtitle or thumbnail. Given the People
+desk list already holds 19 entries and is the one most frequently opened (it's the only orderable
+list besides the new Role Groups one), add:
+
+```ts
+preview: {
+  select: { title: 'name', subtitle: 'role', media: 'image' },
+},
+```
+
+This surfaces each person's `role` string and profile photo directly in the list — no schema
+change, no data migration, nothing to backfill. `publication` and `project` have the identical gap
+(no `preview` block) but are explicitly **not** touched here — out of scope, see §8.
+
+**Verification caveat:** this sandboxed environment has no Sanity Studio login (the same wall every
+prior phase touching Studio UI has hit — see the Phase 3B lesson in
+`2026-08-11-phase-3b-studio-doi-rolegroup.md`), so this can't be visually confirmed rendering
+correctly here. Flag it as an outstanding manual item in the PR, same category as the carried-forward
+webhook-secret/`VisualEditing` checks.
+
 ## 4. Sequencing
 
 1. Ship the code (schema, Studio structure, query/grouping changes, backfill script) as one
@@ -188,6 +216,9 @@ now 8 items (§4, step 2); the backfill script's lookup table (§3.4) reflects t
 - Existing `e2e/publications-interactive.spec.ts` "single Other section" assertion should still pass
   right after merge (step 1, before steps 2/3 populate any data) — worth an explicit check that it
   wasn't accidentally coupled to the old string-based shape.
+- §3.6's preview block has no automated coverage (Studio's desk UI isn't exercised by this repo's
+  Playwright suite, which only tests reader-facing routes) — verified by reading the `select` keys
+  against `profile`'s actual field names, plus the manual Studio check noted in §3.6.
 
 ## 7. Risks
 
@@ -204,3 +235,5 @@ now 8 items (§4, step 2); the backfill script's lookup table (§3.4) reflects t
   ships, without needing another code change.
 - Any change to `profile.role` (the free-text display string) or its normalisation — untouched,
   same as Phase 3B/3C.
+- List previews for `publication` and `project` — same gap as §3.6 identified for `profile`, but
+  neither file is otherwise touched by this work. Worth a small standalone follow-up.
