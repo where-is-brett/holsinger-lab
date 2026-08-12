@@ -109,7 +109,13 @@ export default async function RootLayout({
       className={`${mono.variable} ${antarcticanMono.variable} ${serif.variable} ${arianaPro.variable}`}
     >
       <body className="bg-surface text-text">
-        <JsonLd data={buildOrganizationJsonLd()} />
+        <JsonLd
+          data={buildOrganizationJsonLd({
+            name: siteName,
+            url: siteUrl,
+            logo: `${siteUrl}/logo.svg`,
+          })}
+        />
         {isDraftMode && <PreviewBanner />}
         {children}
         <SanityLive />

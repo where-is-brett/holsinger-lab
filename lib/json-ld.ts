@@ -1,5 +1,4 @@
 import { urlForImage } from 'lib/sanity.image'
-import { siteName, siteUrl } from 'lib/site'
 import type { Image } from 'sanity'
 import type { ProfilePayload, PublicationPayload } from 'types'
 
@@ -12,17 +11,34 @@ export interface OrganizationJsonLd {
   '@type': 'Organization'
   name: string
   url: string
-  logo: string
+  logo?: string
 }
 
-export function buildOrganizationJsonLd(): OrganizationJsonLd {
-  return {
+export function buildOrganizationJsonLd({
+  name,
+  url,
+  logo,
+}: {
+  name: string
+  url: string
+  /**
+   * Optional: schema.org treats Organization.logo as recommended, not
+   * required. Phase 4D supplies a Sanity CDN URL when the lab has uploaded a
+   * logo and omits it otherwise, rather than pointing structured data at a
+   * placeholder.
+   */
+  logo?: string
+}): OrganizationJsonLd {
+  const organization: OrganizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: siteName,
-    url: siteUrl,
-    logo: `${siteUrl}/logo.svg`,
+    name,
+    url,
   }
+  if (logo) {
+    organization.logo = logo
+  }
+  return organization
 }
 
 interface PersonJsonLd {
