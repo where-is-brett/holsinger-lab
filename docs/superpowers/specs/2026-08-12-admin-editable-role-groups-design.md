@@ -141,7 +141,7 @@ already worked out against the live 19 `role` strings (2026-08-12):
 | `Honours Student (BioMedEng)`, `Honours Student (Biomedical Engineering)`, `Honours student (Biomed Eng)`, `Honours student (Diagnostic Radiography)` | Honours Student |
 | `Research Student - BSc/MD`, `Research Student - MD (UNSW)`, `Research Student - MDiagRad` | Research Student |
 | `BAppSci (Diagnostic Radiography)`, `BAppSci (Speech Pathology)`, `BSc (Medical Sciences)`, `Ungergraduate student - Diagnostic Radiography` | Undergraduate |
-| `Study Abroad Student` | *unresolved — see §5* |
+| `Study Abroad Student` | Study Abroad Student |
 
 The script fails loudly (not silently skips) if a `roleGroup` title it needs doesn't exist yet in
 Studio, since it depends on the manual seeding step (§3.5) having happened first.
@@ -152,7 +152,7 @@ Creating the initial `roleGroup` documents themselves (Lab Head, Research Scient
 manual Studio task, not a script. `@sanity/orderable-document-list` computes rank values internally
 when documents are created/reordered through its own Studio UI; there's no supported way to
 pre-compute correct ranks from a standalone script, and faking them risks producing an
-inconsistent order that only a Studio reorder can fix. Creating 7 documents by hand takes a couple
+inconsistent order that only a Studio reorder can fix. Creating 8 documents by hand takes a couple
 of minutes and is exactly the task this feature exists to hand to the lab — scripting it would
 undercut the point.
 
@@ -160,20 +160,22 @@ undercut the point.
 
 1. Ship the code (schema, Studio structure, query/grouping changes, backfill script) as one
    worktree/PR, same as every prior sub-phase.
-2. A human with Studio access creates the initial `roleGroup` documents (the 7 above, or whatever
-   the lab actually wants — nothing forces the provisional list once this ships).
+2. A human with Studio access creates the initial `roleGroup` documents (the 8 below, or whatever
+   the lab actually wants — nothing forces the provisional list once this ships): Lab Head, Research
+   Scientist, PhD Student, Honours Student, Research Student, Undergraduate, **Study Abroad
+   Student**, Alumni.
 3. Run the backfill script (dry-run first) to link the 19 profiles.
 
 Nothing in step 1 depends on steps 2 or 3 happening — `/people` must render correctly (single
 "Other" section, current behaviour) with zero `roleGroup` documents and zero profiles linked, same
 "degrades gracefully when unset" bar every Phase 3 field met.
 
-## 5. Open item
+## 5. Resolved item
 
-`Study Abroad Student` (Fritz Graham) doesn't cleanly match any of the 7 provisional categories.
-Two options, both fine: bucket him under **Research Student**, or leave his `roleGroup` unset (he
-renders under "Other," which already works). **Decision needed before the backfill script's lookup
-table is finalised — not a blocker for shipping the code itself.**
+`Study Abroad Student` (Fritz Graham) doesn't match any of Phase 3B's original 7 provisional
+categories. **Decided (2026-08-12): it becomes its own, eighth category** — `Study Abroad Student` —
+rather than folding him into Research Student or leaving him under "Other." The provisional list is
+now 8 items (§4, step 2); the backfill script's lookup table (§3.4) reflects this.
 
 ## 6. Testing
 
@@ -192,12 +194,12 @@ table is finalised — not a blocker for shipping the code itself.**
 | Risk | Mitigation |
 |---|---|
 | Field type change (string → reference) on `roleGroup` | Safe only because 0/19 profiles have it set today. This plan must re-verify that count immediately before the schema change, not trust this document's 2026-08-12 snapshot. |
-| Lab creates a `roleGroup` document with a typo or duplicate title | Not prevented by schema (no uniqueness constraint on `title`). Low stakes — same fix as any Studio content typo, edit the document. Not worth a validation rule for a ~7-item list one lab manages. |
+| Lab creates a `roleGroup` document with a typo or duplicate title | Not prevented by schema (no uniqueness constraint on `title`). Low stakes — same fix as any Studio content typo, edit the document. Not worth a validation rule for a ~8-item list one lab manages. |
 | Backfill script's lookup table goes stale the moment a new profile is added with a new `role` string | Same shape as the DOI script's limitation — it's a one-off/re-runnable tool, not a live sync. Future new profiles get `roleGroup` set by hand in Studio via the reference picker, which is now trivial (searchable dropdown), not a script's job. |
 
 ## 8. Out of scope
 
-- Re-litigating the 7 provisional category names — this document only changes *how* categories are
+- Re-litigating the 8 provisional category names — this document only changes *how* categories are
   defined (code vs. Studio), not what they currently are. The lab can rename/add/remove after this
   ships, without needing another code change.
 - Any change to `profile.role` (the free-text display string) or its normalisation — untouched,
