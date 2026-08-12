@@ -71,6 +71,33 @@
   }
 }
 
+/* Stopgap for source images with baked-in white backgrounds.
+
+   Measured across the live dataset: 4 of 5 project covers have 100% white
+   edge pixels and 5 of 18 profile photos are 57-84% white, while *zero*
+   assets carry an alpha channel. Nothing in the pipeline is flattening
+   transparency -- the white is in the source files, so no CSS can recolour
+   it selectively (CSS cannot select "background" pixels). `invert()` and
+   `mix-blend-mode: multiply` were both prototyped against the live site
+   and destroy photographic content: multiply over --sem-surface crushes a
+   portrait to a black silhouette, invert renders a photo negative.
+
+   Dimming the wrapper is the honest compromise: it cuts the glare without
+   touching hue. It is applied to the frame rather than the <img> because
+   Profile.tsx sets `grayscale` on the <img> itself, and `filter` is a
+   single property -- a second <img> rule would replace that grayscale.
+   Filters compose down the element tree, so the wrapper stacks with it.
+
+   REMOVE THIS RULE once the 9 affected assets are re-exported with
+   transparent backgrounds; the wrapper's own `bg-surface-raised` will then
+   show through and match the page in both themes with no filter at all.
+   The asset list is in the PR description. */
+@media (prefers-color-scheme: dark) {
+  .media-frame {
+    filter: brightness(0.78) contrast(1.04);
+  }
+}
+
 @layer base {
   *,
   ::after,
