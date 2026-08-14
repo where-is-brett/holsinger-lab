@@ -57,7 +57,14 @@ export function PersonBio({
       </div>
       <div className="flex-1 space-y-4">
         <div>
-          {name && <h2 className="text-2xl font-bold md:text-3xl">{name}</h2>}
+          {name &&
+            (layout === 'page' ? (
+              <h1 className="text-3xl font-extrabold tracking-tight md:text-5xl">
+                {name}
+              </h1>
+            ) : (
+              <h2 className="text-2xl font-bold md:text-3xl">{name}</h2>
+            ))}
           {role && <p className="text-text-muted">{role}</p>}
         </div>
         <ContactLinks email={email} phone={phone} />
