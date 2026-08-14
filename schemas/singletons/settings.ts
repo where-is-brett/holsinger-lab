@@ -11,6 +11,7 @@ export default defineType({
   // ungrouped list would become an unusable wall for a non-technical editor.
   groups: [
     { name: 'identity', title: 'Identity', default: true },
+    { name: 'labHead', title: 'Lab head' },
     { name: 'navigation', title: 'Navigation' },
     { name: 'footer', title: 'Footer' },
   ],
@@ -46,6 +47,24 @@ export default defineType({
       options: {
         hotspot: true,
       },
+    }),
+    defineField({
+      name: 'labHead',
+      title: 'Lab head',
+      type: 'reference',
+      to: [{ type: 'profile' }],
+      group: 'labHead',
+      description:
+        'The lab head, shown in a spotlight at the top of the People page. Leave unset for no spotlight.',
+    }),
+    defineField({
+      name: 'showLabHeadOnHome',
+      title: 'Show lab head on the home page',
+      type: 'boolean',
+      group: 'labHead',
+      initialValue: true,
+      description:
+        'Toggle to show a card about the lab head on the home page, below the research projects. Affects only the home page -- the People page spotlight and the lab head\'s own page (if enabled) are unaffected.',
     }),
     defineField({
       name: 'menuItems',

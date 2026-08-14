@@ -96,6 +96,9 @@ function makeProfile(
     email: null,
     phone: null,
     bio: null,
+    slug: null,
+    hasPage: null,
+    fullBio: null,
     ...overrides,
   }
 }
