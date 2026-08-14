@@ -21,3 +21,17 @@ test.skip('/people spotlights the lab head above the grid once settings.labHead 
 }) => {
   await page.goto('/people')
 })
+
+test('an unknown person slug 404s', async ({ page }) => {
+  const response = await page.goto('/people/not-a-real-person')
+  expect(response?.status()).toBe(404)
+})
+
+// No profile with hasPage=true exists in live data yet (same limitation as
+// above). Hand-verify a 200 render, its title/description/JSON-LD, and the
+// hasPage=false / showPeople=false 404 paths once one does.
+test.skip('a person page renders for a profile with hasPage enabled', async ({
+  page,
+}) => {
+  await page.goto('/people/damian-holsinger')
+})
