@@ -21,6 +21,7 @@ import type { ProfilePayload, PublicationPayload } from 'types'
 
 import {
   buildOrganizationJsonLd,
+  buildPersonJsonLd,
   buildPersonListJsonLd,
   buildScholarlyArticleListJsonLd,
   serializeJsonLd,
@@ -160,6 +161,47 @@ describe('buildPersonListJsonLd', () => {
 
   it('returns an empty list for no profiles', () => {
     expect(buildPersonListJsonLd([]).itemListElement).toEqual([])
+  })
+})
+
+describe('buildPersonJsonLd', () => {
+  const url = `${siteUrl}/people/ada-lovelace`
+
+  it('builds Person JSON-LD from a name alone', () => {
+    const result = buildPersonJsonLd({ name: 'Ada Lovelace', url })
+    expect(result).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      name: 'Ada Lovelace',
+      url,
+    })
+  })
+
+  it('includes jobTitle when role is given', () => {
+    const result = buildPersonJsonLd({
+      name: 'Ada Lovelace',
+      role: 'Postdoctoral Fellow',
+      url,
+    })
+    expect(result?.jobTitle).toBe('Postdoctoral Fellow')
+  })
+
+  it('includes an image URL when an image is given', () => {
+    const result = buildPersonJsonLd({
+      name: 'Ada Lovelace',
+      role: 'Postdoctoral Fellow',
+      image: {
+        _type: 'image',
+        asset: { _ref: 'image-abc', _type: 'reference' },
+      },
+      url,
+    })
+    expect(result?.image).toBe('https://cdn.sanity.io/mock-image.jpg')
+  })
+
+  it('returns null when there is no name to describe', () => {
+    expect(buildPersonJsonLd({ name: null, url })).toBeNull()
+    expect(buildPersonJsonLd({ name: '  ', url })).toBeNull()
   })
 })
 
