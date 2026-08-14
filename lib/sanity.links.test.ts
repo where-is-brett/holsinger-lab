@@ -30,6 +30,17 @@ describe('resolveHref', () => {
     expect(resolveHref('project')).toBeUndefined()
   })
 
+  it('resolves a profile document to /people/<slug>', () => {
+    expect(resolveHref('profile', 'damian-holsinger')).toBe(
+      '/people/damian-holsinger'
+    )
+  })
+
+  it('returns undefined for a profile document with no slug', () => {
+    expect(resolveHref('profile')).toBeUndefined()
+    expect(resolveHref('profile', null)).toBeUndefined()
+  })
+
   it('resolves a settings document to the root path, ignoring any slug', () => {
     expect(resolveHref('settings')).toBe('/')
     expect(resolveHref('settings', 'ignored')).toBe('/')
@@ -59,6 +70,7 @@ describe('resolveHref', () => {
     resolveHref('home')
     resolveHref('page', 'about')
     resolveHref('project', 'my-project')
+    resolveHref('profile', 'damian-holsinger')
     resolveHref('settings')
     expect(warn).not.toHaveBeenCalled()
 

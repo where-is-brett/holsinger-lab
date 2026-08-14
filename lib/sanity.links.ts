@@ -11,6 +11,8 @@ export function resolveHref(
       return slug ? `/${slug}` : undefined
     case 'project':
       return slug ? `/projects/${slug}` : undefined
+    case 'profile':
+      return slug ? `/people/${slug}` : undefined
     default:
       console.warn('Invalid document type:', documentType)
       return undefined
