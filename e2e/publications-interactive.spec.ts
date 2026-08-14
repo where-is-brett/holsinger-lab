@@ -74,18 +74,23 @@ test.describe('DOI links degrade gracefully', () => {
 })
 
 test.describe('People role grouping', () => {
-  test('renders a single "Other" section holding every profile, against the current unset-roleGroup dataset', async ({
+  test('renders every profile under an unheaded section, against the current unset-roleGroup dataset', async ({
     page,
   }) => {
     await page.goto('/people')
-    await expect(page.getByRole('heading', { level: 2, name: 'Other' })).toBeVisible()
+    // `groupByRoleGroup` suppresses the "Other" heading when it's the only
+    // section (spec: docs/superpowers/specs/2026-08-12-lab-head-and-person-pages-design.md
+    // D8) -- with 0 roleGroup documents in production, that's every profile
+    // today, so no section heading renders at all.
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Other' })
+    ).toHaveCount(0)
     // Scoped to direct children of <section>: Profile.tsx also renders each
     // profile's name in an <h2> (nested several levels inside the section),
     // so an unscoped `getByRole('heading', { level: 2 })` count conflates
-    // role-group section titles with profile-name headings (19 profiles + 1
-    // section heading = 20). Only the role-group section title is a direct
-    // `section > h2` child.
-    const otherHeadings = await page.locator('section > h2').count()
-    expect(otherHeadings).toBe(1)
+    // role-group section titles with profile-name headings. A role-group
+    // section title would be a direct `section > h2` child; there is none now.
+    const sectionHeadings = await page.locator('section > h2').count()
+    expect(sectionHeadings).toBe(0)
   })
 })
