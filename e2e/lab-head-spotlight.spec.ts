@@ -35,3 +35,28 @@ test.skip('a person page renders for a profile with hasPage enabled', async ({
 }) => {
   await page.goto('/people/damian-holsinger')
 })
+
+test('the home page renders without a lab-head card when no lab head is set (current live data)', async ({
+  page,
+}) => {
+  await page.goto('/')
+  // Scoped to level: 2 -- the lab-head card's own heading is an `<h2>`
+  // ("About {name}"), distinct from showcase projects' `<h3>` titles. Live
+  // data currently has a showcase project literally titled "About Dr Damian
+  // Holsinger" (the same project the design doc's future migration deletes
+  // from home.showcaseProjects), whose `<h3>` would otherwise false-match an
+  // unscoped /^About / heading query.
+  await expect(
+    page.getByRole('heading', { level: 2, name: /^About / })
+  ).toHaveCount(0)
+})
+
+// Same live-data limitation as the rest of this file. Hand-verify the card's
+// presence, its "About <name>" heading, and its link once settings.labHead
+// and showLabHeadOnHome are set in Studio -- and separately verify it
+// disappears again when showLabHeadOnHome is turned off.
+test.skip('the home page shows the lab-head card when showLabHeadOnHome is on', async ({
+  page,
+}) => {
+  await page.goto('/')
+})

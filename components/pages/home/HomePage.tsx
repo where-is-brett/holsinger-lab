@@ -1,10 +1,12 @@
+import { FeatureRow } from 'components/pages/home/FeatureRow'
 import { ProjectListItem } from 'components/pages/home/ProjectListItem'
+import { resolveLabHeadHref } from 'components/pages/home/resolveLabHeadHref'
+import { shouldShowLabHeadCard } from 'components/pages/home/shouldShowLabHeadCard'
 import { Header } from 'components/shared/Header'
 import Layout from 'components/shared/Layout'
 import { resolveHref } from 'lib/sanity.links'
 import Link from 'next/link'
-import type { HomePagePayload } from 'types'
-import { SettingsPayload } from 'types'
+import type { HomePagePayload, SettingsPayload } from 'types'
 
 export interface HomePageProps {
   settings: SettingsPayload
@@ -13,6 +15,8 @@ export interface HomePageProps {
 
 export function HomePage({ page, settings }: HomePageProps) {
   const { overview, showcaseProjects, title = 'Personal website' } = page ?? {}
+  const labHead = settings.labHead
+  const showLabHeadCard = shouldShowLabHeadCard(settings) && Boolean(labHead)
 
   return (
     <Layout settings={settings} childrenStyles={`px-0`}>
@@ -39,6 +43,31 @@ export function HomePage({ page, settings }: HomePageProps) {
               )
             })}
           </div>
+        )}
+
+        {/* Lab head */}
+        {showLabHeadCard && labHead && (
+          <>
+            <h2 className="text-center text-xl font-[600] md:text-left md:text-2xl">
+              About {labHead.name}
+            </h2>
+            <div className="mx-auto max-w-[100rem] border-y md:border">
+              <Link href={resolveLabHeadHref(labHead)}>
+                <FeatureRow
+                  image={labHead.image}
+                  alt={
+                    labHead.name
+                      ? `Portrait of ${labHead.name}`
+                      : 'Lab head portrait'
+                  }
+                  side="right"
+                  title={labHead.role ?? ''}
+                >
+                  {labHead.bio && <p>{labHead.bio}</p>}
+                </FeatureRow>
+              </Link>
+            </div>
+          </>
         )}
       </div>
     </Layout>
