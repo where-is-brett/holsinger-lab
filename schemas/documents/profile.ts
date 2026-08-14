@@ -3,7 +3,8 @@ import {
   orderRankField,
   orderRankOrdering,
 } from '@sanity/orderable-document-list'
-import { defineField, defineType } from 'sanity'
+import { defineArrayMember, defineField, defineType } from 'sanity'
+import { slugify, validateSlugFormat } from 'schemas/lib/slug'
 
 export default defineType({
   type: 'document',
@@ -67,6 +68,71 @@ export default defineType({
       name: 'bio',
       title: 'Bio',
       type: 'text',
+      description:
+        'Short blurb, one or two sentences. Shown on this person\'s card on the People page (behind the "+" button), and as the body text if they are the Lab Head\'s home-page card. For a long-form biography, use Full biography below.',
+    }),
+    defineField({
+      name: 'fullBio',
+      title: 'Full biography',
+      type: 'array',
+      description:
+        'Long-form biography. Shown on this person\'s own page, and in the spotlight if they are set as the Lab Head in Settings.',
+      of: [
+        defineArrayMember({
+          type: 'block',
+          styles: [],
+          lists: [],
+          marks: {
+            decorators: [
+              { title: 'Italic', value: 'em' },
+              { title: 'Strong', value: 'strong' },
+            ],
+            annotations: [
+              {
+                name: 'link',
+                type: 'object',
+                title: 'Link',
+                fields: [{ name: 'href', type: 'url', title: 'Url' }],
+              },
+            ],
+          },
+        }),
+      ],
+    }),
+    defineField({
+      name: 'slug',
+      title: 'Slug',
+      type: 'slug',
+      description:
+        'Used in this person\'s page URL: /people/<slug>. Required once "Give this person their own page" below is turned on.',
+      options: {
+        source: 'name',
+        maxLength: 96,
+        slugify,
+        isUnique: (value, context) => context.defaultIsUnique(value, context),
+      },
+      validation: (rule) =>
+        rule.custom((slug, context) => {
+          const formatResult = validateSlugFormat(slug)
+          if (formatResult !== true) {
+            return formatResult
+          }
+          const hasPage = (
+            context.parent as { hasPage?: boolean } | undefined
+          )?.hasPage
+          if (hasPage && !slug?.current) {
+            return 'A slug is required when "Give this person their own page" is enabled.'
+          }
+          return true
+        }),
+    }),
+    defineField({
+      name: 'hasPage',
+      title: 'Give this person their own page',
+      type: 'boolean',
+      initialValue: false,
+      description:
+        'When on, this person gets their own page at /people/<slug>, using the slug above.',
     }),
   ],
 })

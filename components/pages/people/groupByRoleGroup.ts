@@ -35,5 +35,18 @@ export function groupByRoleGroup<T extends { roleGroup?: RoleGroup | null }>(
     }
   }
 
-  return [...sections, other].filter((section) => section.profiles.length > 0)
+  const nonEmpty = [...sections, other].filter(
+    (section) => section.profiles.length > 0
+  )
+
+  // When the catch-all is the only section, a heading reading literally
+  // "Other" looks like a label for the whole page rather than a real
+  // category -- suppress it. Named sections are unaffected, and the moment
+  // the lab creates its first Role Group, a second section returns and
+  // headings come back.
+  if (nonEmpty.length === 1 && nonEmpty[0].id === 'other') {
+    return [{ ...nonEmpty[0], title: null }]
+  }
+
+  return nonEmpty
 }

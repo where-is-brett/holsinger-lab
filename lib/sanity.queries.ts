@@ -73,12 +73,25 @@ export const settingsQuery = groq`
     showPublications,
     showPeople,
     showContactForm,
+    showLabHeadOnHome,
     menuItems[]->{
       _type,
       "slug": slug.current,
       title
     },
     ogImage,
+    labHead->{
+      _id,
+      image,
+      name,
+      role,
+      email,
+      phone,
+      bio,
+      "slug": slug.current,
+      hasPage,
+      fullBio,
+    },
   }
 `
 
@@ -118,6 +131,28 @@ export const profileQuery = groq`
     },
     email,
     phone,
-    bio
+    bio,
+    "slug": slug.current,
+    hasPage,
+    fullBio,
   }
+`
+
+export const profileBySlugQuery = groq`
+  *[_type == "profile" && slug.current == $slug && hasPage == true][0]{
+    _id,
+    image,
+    name,
+    role,
+    email,
+    phone,
+    bio,
+    "slug": slug.current,
+    hasPage,
+    fullBio,
+  }
+`
+
+export const profilePaths = groq`
+  *[_type == "profile" && hasPage == true && slug.current != null].slug.current
 `

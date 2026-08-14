@@ -2,6 +2,7 @@ import type { Image } from 'sanity'
 import type {
   HomePageQueryResult,
   PagesBySlugQueryResult,
+  ProfileBySlugQueryResult,
   ProfileQueryResult,
   ProjectBySlugQueryResult,
   PublicationsQueryResult,
@@ -39,6 +40,8 @@ export type MenuItem = NonNullable<SettingsPayload['menuItems']>[number]
 export type PublicationPayload = PublicationsQueryResult[number]
 
 export type ProfilePayload = ProfileQueryResult[number]
+export type ProfileBySlugPayload = NonNullable<ProfileBySlugQueryResult>
+export type LabHeadPayload = NonNullable<SettingsPayload['labHead']>
 
 export type RoleGroupPayload = RoleGroupQueryResult[number]
 
@@ -61,6 +64,8 @@ export const fallbackSettings: SettingsPayload = {
   showPublications: null,
   showPeople: null,
   showContactForm: null,
+  showLabHeadOnHome: null,
+  labHead: null,
   footer: [],
   ogImage: null,
 }

@@ -41,7 +41,7 @@ export function buildOrganizationJsonLd({
   return organization
 }
 
-interface PersonJsonLd {
+export interface PersonJsonLd {
   '@type': 'Person'
   name: string
   jobTitle?: string
@@ -93,6 +93,52 @@ export function buildPersonListJsonLd(
       return { '@type': 'ListItem' as const, position: index + 1, item }
     }),
   }
+}
+
+export interface SinglePersonJsonLd extends PersonJsonLd {
+  '@context': 'https://schema.org'
+  url: string
+}
+
+/**
+ * Person JSON-LD for a single person page. Returns null when there is no
+ * name to describe -- schema.org requires it, and the caller (Task 7) only
+ * reaches this from data already guarded by `!profile` in the route, so
+ * this is defensive completeness rather than an expected path.
+ */
+export function buildPersonJsonLd({
+  name,
+  role,
+  image,
+  url,
+}: {
+  name?: string | null
+  role?: string | null
+  image?: Image | null
+  url: string
+}): SinglePersonJsonLd | null {
+  if (!name || !name.trim()) {
+    return null
+  }
+
+  const person: SinglePersonJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name,
+    url,
+  }
+
+  if (role) {
+    person.jobTitle = role
+  }
+
+  const imageUrl =
+    image && urlForImage(image)?.width(800).height(800).fit('crop').url()
+  if (imageUrl) {
+    person.image = imageUrl
+  }
+
+  return person
 }
 
 interface ScholarlyArticleJsonLd {

@@ -21,68 +21,6 @@ type ArrayOf<T> = Array<
 >
 
 // Source: schema.json
-export type SanityImageAssetReference = {
-  _ref: string
-  _type: 'reference'
-  _weak?: boolean
-  [internalGroqTypeReferenceTo]?: 'sanity.imageAsset'
-}
-
-export type RoleGroupReference = {
-  _ref: string
-  _type: 'reference'
-  _weak?: boolean
-  [internalGroqTypeReferenceTo]?: 'roleGroup'
-}
-
-export type Profile = {
-  _id: string
-  _type: 'profile'
-  _createdAt: string
-  _updatedAt: string
-  _rev: string
-  orderRank?: string
-  image?: {
-    asset?: SanityImageAssetReference
-    media?: unknown
-    hotspot?: SanityImageHotspot
-    crop?: SanityImageCrop
-    _type: 'image'
-  }
-  name?: string
-  role?: string
-  roleGroup?: RoleGroupReference
-  email?: string
-  phone?: string
-  bio?: string
-}
-
-export type RoleGroup = {
-  _id: string
-  _type: 'roleGroup'
-  _createdAt: string
-  _updatedAt: string
-  _rev: string
-  orderRank?: string
-  title?: string
-}
-
-export type SanityImageCrop = {
-  _type: 'sanity.imageCrop'
-  top?: number
-  bottom?: number
-  left?: number
-  right?: number
-}
-
-export type SanityImageHotspot = {
-  _type: 'sanity.imageHotspot'
-  x?: number
-  y?: number
-  height?: number
-  width?: number
-}
-
 export type Publication = {
   _id: string
   _type: 'publication'
@@ -114,6 +52,13 @@ export type Timeline = {
     _type: 'item'
     _key: string
   }>
+}
+
+export type SanityImageAssetReference = {
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'sanity.imageAsset'
 }
 
 export type Milestone = {
@@ -200,6 +145,22 @@ export type Project = {
   >
 }
 
+export type SanityImageCrop = {
+  _type: 'sanity.imageCrop'
+  top?: number
+  bottom?: number
+  left?: number
+  right?: number
+}
+
+export type SanityImageHotspot = {
+  _type: 'sanity.imageHotspot'
+  x?: number
+  y?: number
+  height?: number
+  width?: number
+}
+
 export type Duration = {
   _type: 'duration'
   start?: string
@@ -284,6 +245,13 @@ export type Page = {
   >
 }
 
+export type ProfileReference = {
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'profile'
+}
+
 export type HomeReference = {
   _ref: string
   _type: 'reference'
@@ -313,6 +281,8 @@ export type Settings = {
     crop?: SanityImageCrop
     _type: 'image'
   }
+  labHead?: ProfileReference
+  showLabHeadOnHome?: boolean
   menuItems?: ArrayOf<HomeReference | PageReference | ProjectReference>
   showPublications?: boolean
   showPeople?: boolean
@@ -335,6 +305,65 @@ export type Settings = {
     _type: 'block'
     _key: string
   }>
+}
+
+export type RoleGroupReference = {
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'roleGroup'
+}
+
+export type Profile = {
+  _id: string
+  _type: 'profile'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  orderRank?: string
+  image?: {
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    _type: 'image'
+  }
+  name?: string
+  role?: string
+  roleGroup?: RoleGroupReference
+  email?: string
+  phone?: string
+  bio?: string
+  fullBio?: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+  slug?: Slug
+  hasPage?: boolean
+}
+
+export type RoleGroup = {
+  _id: string
+  _type: 'roleGroup'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  orderRank?: string
+  title?: string
 }
 
 export type Home = {
@@ -493,23 +522,24 @@ export type Geopoint = {
 }
 
 export type AllSanitySchemaTypes =
-  | SanityImageAssetReference
-  | RoleGroupReference
-  | Profile
-  | RoleGroup
-  | SanityImageCrop
-  | SanityImageHotspot
   | Publication
   | Timeline
+  | SanityImageAssetReference
   | Milestone
   | Project
+  | SanityImageCrop
+  | SanityImageHotspot
   | Duration
   | Slug
   | PageReference
   | Page
+  | ProfileReference
   | HomeReference
   | ProjectReference
   | Settings
+  | RoleGroupReference
+  | Profile
+  | RoleGroup
   | Home
   | MediaFolderReference
   | MediaFolder
@@ -739,7 +769,7 @@ export type PagePathsResult = Array<string | null>
 
 // Source: lib/sanity.queries.ts
 // Variable: settingsQuery
-// Query: *[_type == "settings"][0]{    siteName,    shortName,    footer,    showPublications,    showPeople,    showContactForm,    menuItems[]->{      _type,      "slug": slug.current,      title    },    ogImage,  }
+// Query: *[_type == "settings"][0]{    siteName,    shortName,    footer,    showPublications,    showPeople,    showContactForm,    showLabHeadOnHome,    menuItems[]->{      _type,      "slug": slug.current,      title    },    ogImage,    labHead->{      _id,      image,      name,      role,      email,      phone,      bio,      "slug": slug.current,      hasPage,      fullBio,    },  }
 export type SettingsQueryResult = {
   siteName: string | null
   shortName: string | null
@@ -764,6 +794,7 @@ export type SettingsQueryResult = {
   showPublications: boolean | null
   showPeople: boolean | null
   showContactForm: boolean | null
+  showLabHeadOnHome: boolean | null
   menuItems: Array<
     | {
         _type: 'home'
@@ -787,6 +818,41 @@ export type SettingsQueryResult = {
     hotspot?: SanityImageHotspot
     crop?: SanityImageCrop
     _type: 'image'
+  } | null
+  labHead: {
+    _id: string
+    image: {
+      asset?: SanityImageAssetReference
+      media?: unknown
+      hotspot?: SanityImageHotspot
+      crop?: SanityImageCrop
+      _type: 'image'
+    } | null
+    name: string | null
+    role: string | null
+    email: string | null
+    phone: string | null
+    bio: string | null
+    slug: string | null
+    hasPage: boolean | null
+    fullBio: Array<{
+      children?: Array<{
+        marks?: Array<string>
+        text?: string
+        _type: 'span'
+        _key: string
+      }>
+      style?: 'normal'
+      listItem?: never
+      markDefs?: Array<{
+        href?: string
+        _type: 'link'
+        _key: string
+      }>
+      level?: number
+      _type: 'block'
+      _key: string
+    }> | null
   } | null
 } | null
 
@@ -817,7 +883,7 @@ export type RoleGroupQueryResult = Array<{
 
 // Source: lib/sanity.queries.ts
 // Variable: profileQuery
-// Query: *[_type == "profile"] | order(orderRank) {    _id,    image,    orderRank,    name,    role,    roleGroup->{      _id,      title,    },    email,    phone,    bio  }
+// Query: *[_type == "profile"] | order(orderRank) {    _id,    image,    orderRank,    name,    role,    roleGroup->{      _id,      title,    },    email,    phone,    bio,    "slug": slug.current,    hasPage,    fullBio,  }
 export type ProfileQueryResult = Array<{
   _id: string
   image: {
@@ -837,7 +903,71 @@ export type ProfileQueryResult = Array<{
   email: string | null
   phone: string | null
   bio: string | null
+  slug: string | null
+  hasPage: boolean | null
+  fullBio: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
 }>
+
+// Source: lib/sanity.queries.ts
+// Variable: profileBySlugQuery
+// Query: *[_type == "profile" && slug.current == $slug && hasPage == true][0]{    _id,    image,    name,    role,    email,    phone,    bio,    "slug": slug.current,    hasPage,    fullBio,  }
+export type ProfileBySlugQueryResult = {
+  _id: string
+  image: {
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    _type: 'image'
+  } | null
+  name: string | null
+  role: string | null
+  email: string | null
+  phone: string | null
+  bio: string | null
+  slug: string | null
+  hasPage: boolean | null
+  fullBio: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+} | null
+
+// Source: lib/sanity.queries.ts
+// Variable: profilePaths
+// Query: *[_type == "profile" && hasPage == true && slug.current != null].slug.current
+export type ProfilePathsResult = Array<string | null>
 
 // Query TypeMap
 import '@sanity/client'
@@ -849,9 +979,11 @@ declare module '@sanity/client' {
     '\n  *[_type == "project" && slug.current == $slug][0] {\n    _id,\n    category,\n    coverImage,\n    description,\n    duration,\n    overview,\n    site,\n    "slug": slug.current,\n    status,\n    tags,\n    title,\n  }\n': ProjectBySlugQueryResult
     '\n  *[_type == "project" && slug.current != null].slug.current\n': ProjectPathsResult
     '\n  *[_type == "page" && slug.current != null].slug.current\n': PagePathsResult
-    '\n  *[_type == "settings"][0]{\n    siteName,\n    shortName,\n    footer,\n    showPublications,\n    showPeople,\n    showContactForm,\n    menuItems[]->{\n      _type,\n      "slug": slug.current,\n      title\n    },\n    ogImage,\n  }\n': SettingsQueryResult
+    '\n  *[_type == "settings"][0]{\n    siteName,\n    shortName,\n    footer,\n    showPublications,\n    showPeople,\n    showContactForm,\n    showLabHeadOnHome,\n    menuItems[]->{\n      _type,\n      "slug": slug.current,\n      title\n    },\n    ogImage,\n    labHead->{\n      _id,\n      image,\n      name,\n      role,\n      email,\n      phone,\n      bio,\n      "slug": slug.current,\n      hasPage,\n      fullBio,\n    },\n  }\n': SettingsQueryResult
     '\n  *[_type == "publication"] | order(date desc) {\n    _id,\n    title,\n    author,\n    journal,\n    volume,\n    issue,\n    pages,\n    abstract,\n    url,\n    doi,\n    date,\n  }\n': PublicationsQueryResult
     '\n  *[_type == "roleGroup"] | order(orderRank) {\n    _id,\n    title,\n  }\n': RoleGroupQueryResult
-    '\n  *[_type == "profile"] | order(orderRank) {\n    _id,\n    image,\n    orderRank,\n    name,\n    role,\n    roleGroup->{\n      _id,\n      title,\n    },\n    email,\n    phone,\n    bio\n  }\n': ProfileQueryResult
+    '\n  *[_type == "profile"] | order(orderRank) {\n    _id,\n    image,\n    orderRank,\n    name,\n    role,\n    roleGroup->{\n      _id,\n      title,\n    },\n    email,\n    phone,\n    bio,\n    "slug": slug.current,\n    hasPage,\n    fullBio,\n  }\n': ProfileQueryResult
+    '\n  *[_type == "profile" && slug.current == $slug && hasPage == true][0]{\n    _id,\n    image,\n    name,\n    role,\n    email,\n    phone,\n    bio,\n    "slug": slug.current,\n    hasPage,\n    fullBio,\n  }\n': ProfileBySlugQueryResult
+    '\n  *[_type == "profile" && hasPage == true && slug.current != null].slug.current\n': ProfilePathsResult
   }
 }
