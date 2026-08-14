@@ -7,7 +7,7 @@ const LAB_HEAD = { _id: 'rg-lab-head', title: 'Lab Head' }
 const ALUMNI = { _id: 'rg-alumni', title: 'Alumni' }
 
 describe('groupByRoleGroup', () => {
-  it('buckets every profile under "Other" when roleGroup is unset on all of them', () => {
+  it('suppresses the "Other" heading when it is the only section', () => {
     const profiles = [
       { _id: '1', roleGroup: null },
       { _id: '2', roleGroup: null },
@@ -16,7 +16,7 @@ describe('groupByRoleGroup', () => {
     expect(result).toEqual([
       {
         id: 'other',
-        title: 'Other',
+        title: null,
         profiles: [
           { _id: '1', roleGroup: null },
           { _id: '2', roleGroup: null },
@@ -58,9 +58,18 @@ describe('groupByRoleGroup', () => {
     expect(groupByRoleGroup([], [])).toEqual([])
   })
 
-  it('returns a single "Other" section when roleGroups is empty but profiles are not', () => {
+  it('suppresses the "Other" heading when roleGroups is empty but profiles are not', () => {
     const profiles = [{ _id: '1', roleGroup: null }]
     const result = groupByRoleGroup(profiles, [])
-    expect(result).toEqual([{ id: 'other', title: 'Other', profiles: [{ _id: '1', roleGroup: null }] }])
+    expect(result).toEqual([{ id: 'other', title: null, profiles: [{ _id: '1', roleGroup: null }] }])
+  })
+
+  it('keeps the "Other" title when it appears alongside a named section', () => {
+    const profiles = [
+      { _id: '1', roleGroup: PHD },
+      { _id: '2', roleGroup: null },
+    ]
+    const result = groupByRoleGroup(profiles, [PHD])
+    expect(result.find((s) => s.id === 'other')?.title).toBe('Other')
   })
 })
