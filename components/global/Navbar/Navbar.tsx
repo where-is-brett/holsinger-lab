@@ -1,3 +1,4 @@
+import type { LogoImageSource } from 'lib/logo'
 import { MenuItem } from 'types'
 
 import DesktopNavBar from './DesktopNavBar'
@@ -8,6 +9,9 @@ interface NavbarProps {
   showPublications?: boolean | null
   showPeople?: boolean | null
   showContactForm?: boolean | null
+  logo?: LogoImageSource | null
+  logoDark?: LogoImageSource | null
+  shortName: string
 }
 
 export function Navbar({
@@ -15,6 +19,9 @@ export function Navbar({
   showPublications = true,
   showPeople = true,
   showContactForm = true,
+  logo,
+  logoDark,
+  shortName,
 }: NavbarProps) {
   return (
     <>
@@ -23,12 +30,18 @@ export function Navbar({
         showPublications={showPublications}
         showPeople={showPeople}
         showContactForm={showContactForm}
+        logo={logo}
+        logoDark={logoDark}
+        shortName={shortName}
       />
       <DesktopNavBar
         menuItems={menuItems}
         showPublications={showPublications}
         showPeople={showPeople}
         showContactForm={showContactForm}
+        logo={logo}
+        logoDark={logoDark}
+        shortName={shortName}
       />
     </>
   )
