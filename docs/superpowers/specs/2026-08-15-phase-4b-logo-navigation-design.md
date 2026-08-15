@@ -335,40 +335,65 @@ it to `fallbackSettings`, so the unset-logo path is covered by machinery 4A buil
 
 ## 4. Testing
 
-**Unit (Vitest):**
-- `resolveLogo` width, across a range of aspect ratios **including extreme ones** — a very wide
+**This repo has no React render-testing stack, and 4B does not add one.** There are zero `.test.tsx`
+files, no jsdom/happy-dom, no `@testing-library`, and `vitest.config.ts` includes only
+`**/*.test.ts`. Adding that stack for one component contradicts the governing constraint that a repo
+nobody will maintain benefits from every dependency it does not have. The repo's established idiom
+covers this case in three layers, and 4B follows it:
+
+| Layer | Mechanism | Precedent in repo |
+|---|---|---|
+| Pure logic | Real unit tests | `lib/branding.test.ts` |
+| Component invariants | **Source-parsing contract tests** | `components/shared/image-fit-contract.test.ts` |
+| CSS invariants | Source-parsing tests | `styles/media-dim.test.ts`, `tokens.test.ts` |
+| Real rendering | Playwright e2e | `e2e/mobile-menu.spec.ts` |
+
+**Unit (Vitest) — `lib/logo.test.ts`:**
+- `resolveLogo` width across a range of aspect ratios **including extreme ones** — a very wide
   banner, a near-square, a tall logo. This is the case the derived-width design exists to protect.
-- `resolveLogo` mode selection, including the degradation paths: missing, null, zero and negative
-  `aspectRatio` all resolve to `wordmark` with a positive width.
-- `resolveLogo` wordmark width scales with `shortName.length`, so a 4-character and a 20-character
-  name do not produce the same box.
-- `Logo` render-mode output: `logo` only / `logo` + `logoDark` / neither → wordmark; that mode 2
-  exposes exactly one non-`aria-hidden` image; plus a whitespace-only `shortName` falling through to
-  `siteName`, mirroring `resolveBranding`'s existing whitespace handling.
+- `resolveLogo` mode selection and its degradation paths: missing, null, zero, negative, `NaN` and
+  `Infinity` aspect ratios all resolve to `wordmark` with a **positive** width.
+- Wordmark width scales with `shortName.length`, so a 4-character and a 20-character name do not
+  produce the same box; and an empty name still yields a positive width, never a zero-width tap
+  target.
 
-**E2E (Playwright) — must update, these break otherwise:**
-- `e2e/mobile-menu.spec.ts:223` locates the logo via
-  `document.querySelector('svg[aria-label="logo"]')`, which breaks the moment the logo is an `<img>`.
-  Needs a selector covering both render modes.
+**Contract (Vitest) — `components/global/logo-contract.test.ts`:**
+- `MobileNavBar.tsx` contains **no hardcoded overlay width** (`w-[120px]` and any
+  `w-[<number>px]` literal are both absent) and derives it from the shared helper instead. This is
+  the guard that actually protects D5/§3.2, and it works without rendering anything.
+- `MobileNavBar.tsx` still has the tap-overlay `<Link>` inside `DialogPanel` and still calls
+  `closeMenu` — the Phase 2C invariants §3.5 promises not to disturb.
+- `Logo.tsx` emits `alt="logo"` and, in the dark-variant path, `aria-hidden` — the §3.4 guarantee
+  that exactly one logo is ever exposed as a named image.
+- Both navbars size themselves from `var(--nav-height)` rather than a literal height.
+
+**E2E (Playwright):**
+- `e2e/mobile-menu.spec.ts:223`'s `document.querySelector('svg[aria-label="logo"]')` is widened to
+  match both render modes. Note it does **not** break today (see §6 — production renders the
+  wordmark, still an `<svg>`); it is widened so it does not silently start passing vacuously the day
+  a logo is uploaded.
 - `e2e/server-rendered-nav.spec.ts:24`'s `getByRole('img', { name: 'logo' })` **keeps working
-  unchanged**, because §3.4 fixes `alt="logo"` as a literal. Verify across all three modes rather
-  than assuming.
+  unchanged**, because §3.4 fixes `alt="logo"` as a literal. Verified, not assumed.
+- **New:** desktop nav renders a logo, and the Publications sticky bar's `top` equals the desktop
+  nav's rendered height — the assertion that would have caught D8, and the one that will catch it
+  again if the token drifts.
 
-**E2E — new:**
-- The existing touch-tap regression test, extended to a CMS logo with a deliberately **non-default
-  aspect ratio**. This is the exact scenario the single-derived-width design protects against, and
-  the one that fails silently and only while the menu is open.
-- Desktop nav renders a logo, and the Publications sticky bar's `top` equals the desktop nav's
-  height — an assertion that would have caught D8.
-
-**Not covered by automation, per §6:** Studio rendering of the Branding group and a real image
-upload exercising the derived-geometry path end to end.
+**Cannot be automated in this environment — stated rather than quietly dropped.** The parent spec
+asks for the touch-tap test to be "extended to a CMS logo with a deliberately non-default aspect
+ratio". **That is not achievable here.** E2E runs against a real production build in which
+`sanityFetch` executes *server-side*, so Playwright's route interception — which only sees browser
+requests — cannot substitute a CMS response, and §6's missing write token means no logo can be
+uploaded to make it real. Image mode is therefore covered by the unit tests (geometry) and the
+contract tests (no hardcoded width) rather than end-to-end, and **the touch-tap e2e continues to
+exercise wordmark mode only**. This is a genuine coverage gap in the highest-risk area of the phase
+and must be called out explicitly in the PR, alongside the existing webhook-secret and VisualEditing
+carry-forwards.
 
 ## 5. Risks
 
 | Risk | Mitigation |
 |---|---|
-| CMS logo breaks the Dialog tap-overlay on touch, silently and only while the menu is open | One derived width from one pure function covering **both** render modes (§3.2); e2e touch test extended to a non-default aspect ratio |
+| CMS logo breaks the Dialog tap-overlay on touch, silently and only while the menu is open | One derived width from one pure function covering **both** render modes (§3.2). Note the e2e touch test **cannot** cover image mode here (§4) — the contract test asserting no hardcoded width is the real guard |
 | An implementer "simplifies" `MobileNavBar`'s Dialog structure while replacing the logo markup | §3.5 states the structure is unchanged; existing comments preserved and corrected rather than deleted |
 | Desktop logo silently breaks Publications sticky/jump-nav geometry | Nav-height token (§3.3), with both the sticky offset and both `scroll-mt` values repointed at it |
 | Uploaded SVG logo routed through `next/image` would require `dangerouslyAllowSVG` site-wide | Plain `<img>` (§2), with width/height computed server-side so CLS protection is retained |
@@ -385,8 +410,10 @@ scoping; writes and interactive Studio verification do not.
 Consequences specific to 4B, which should be budgeted up front rather than discovered mid-task:
 
 - The Branding group's Studio rendering cannot be verified interactively.
-- No logo can actually be uploaded, so **image mode cannot be exercised against real CMS data.** Unit
-  tests must carry the derived-geometry proof, with object literals standing in for uploaded assets.
+- No logo can actually be uploaded, so **image mode cannot be exercised against real CMS data** — not
+  by e2e either, since `sanityFetch` runs server-side and is unreachable from Playwright's route
+  interception (§4). Unit and contract tests carry the derived-geometry proof, with object literals
+  standing in for uploaded assets.
 - The production site will keep rendering the **wordmark fallback** after this ships, until someone
   uploads a logo in Studio. That is the correct and expected outcome, not a failure — but it means
   the visible production change from this phase is the desktop logo appearing and the typo
