@@ -53,6 +53,24 @@
   --sem-accent: #2d6a4f;
   --sem-field: #787d89;
   --sem-rule: #e3e4e8;
+
+  /* Single authority for the height of the site header, at both breakpoints.
+     Both navbars set their own height FROM this, and the Publications sticky
+     bar and its jump-nav offsets are positioned against it -- so the nav can
+     grow (as it does in Phase 4B, when the desktop nav gains a logo) without
+     silently sliding content under it. That desync is defect D8: the bar was
+     pinned at a literal 64px while the desktop nav measured 70px.
+     4.75rem = a 32px logo + the nav's 20px vertical padding + 1px borders,
+     rounded up to a round value for a little optical breathing room. */
+  --nav-height: 4rem;
+}
+
+@media (min-width: 48rem) {
+  :root {
+    /* Must match Tailwind's `md` breakpoint, which is where both navbars
+       swap over. */
+    --nav-height: 4.75rem;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -95,6 +113,30 @@
 @media (prefers-color-scheme: dark) {
   .media-frame {
     filter: brightness(0.78) contrast(1.04);
+  }
+}
+
+/* Dark-scheme logo switching. Emitted by Logo.tsx only when a dark variant is
+   actually uploaded -- a single-logo site renders one <img> carrying neither
+   class, visible in both schemes. Class-based rather than a Tailwind `dark:`
+   variant because Phase 3A implemented dark mode entirely through tokens and
+   prefers-color-scheme; there are no `dark:` variants anywhere in this repo.
+   No JS, so no hydration mismatch. */
+.logo-light {
+  display: block;
+}
+
+.logo-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .logo-light {
+    display: none;
+  }
+
+  .logo-dark {
+    display: block;
   }
 }
 

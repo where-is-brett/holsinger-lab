@@ -209,22 +209,29 @@ test.describe('mobile menu accessibility contract', () => {
       // Locate the actual visible logo in the header - the one that keeps
       // painting while the dialog is open but is `inert` (its wrapping
       // <Link> is a sibling of <Dialog>), so it is not the element that
-      // actually receives taps. Measuring the <svg> itself (rather than its
-      // wrapping anchor, whose own box collapses since its only child is
-      // absolutely positioned) gives the real on-screen pixels a user taps.
-      // This element's own screen position doesn't change depending on
-      // where the overlay lives (inside or outside DialogPanel) - only
-      // whether tapping at these coordinates actually navigates does. The
-      // logo is an inlined <svg role="img" aria-label="logo"> (Phase 3A
-      // Task 5), not an <img>, so it's selected by its aria-label rather
-      // than an alt attribute.
+      // actually receives taps. Measuring the logo element itself (rather
+      // than its wrapping anchor, whose own box collapses since its only
+      // child is absolutely positioned) gives the real on-screen pixels a
+      // user taps. This element's own screen position doesn't change
+      // depending on where the overlay lives (inside or outside
+      // DialogPanel) - only whether tapping at these coordinates actually
+      // navigates does. In wordmark mode the logo is an inlined <svg
+      // role="img" aria-label="logo"> (Phase 3A Task 5); in image mode
+      // (Phase 4B) it's an <img alt="logo"> instead, so both are checked.
       const logoRect = await page.evaluate(() => {
         const dialog = document.querySelector('[role="dialog"]')
-        const logoSvg = document.querySelector('svg[aria-label="logo"]')
-        if (!logoSvg || dialog?.contains(logoSvg)) {
+        // Matches both render modes: the wordmark fallback is an
+        // <svg aria-label="logo">, an uploaded logo is an <img alt="logo">.
+        // Production currently renders the wordmark (no logo is uploaded),
+        // so this test exercises that path -- the selector is widened so it
+        // does not silently start passing vacuously the day one is.
+        const logoEl =
+          document.querySelector('svg[aria-label="logo"]') ??
+          document.querySelector('img[alt="logo"]')
+        if (!logoEl || dialog?.contains(logoEl)) {
           return null
         }
-        const rect = logoSvg.getBoundingClientRect()
+        const rect = logoEl.getBoundingClientRect()
         return { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
       })
       expect(logoRect).not.toBeNull()

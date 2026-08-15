@@ -1,5 +1,6 @@
 import { Footer } from 'components/global/Footer'
 import { Navbar } from 'components/global/Navbar/Navbar'
+import { resolveBranding } from 'lib/branding'
 import { fallbackSettings } from 'types'
 import { SettingsPayload } from 'types'
 
@@ -14,6 +15,8 @@ export default function Layout({
   settings = fallbackSettings,
   childrenStyles = 'px-gutter',
 }: LayoutProps) {
+  const { shortName } = resolveBranding(settings)
+
   return (
     <div className={`flex min-h-screen flex-col bg-surface text-text`}>
       <Navbar
@@ -21,6 +24,9 @@ export default function Layout({
         showPublications={settings?.showPublications ?? true}
         showPeople={settings?.showPeople ?? true}
         showContactForm={settings?.showContactForm ?? true}
+        logo={settings?.logo}
+        logoDark={settings?.logoDark}
+        shortName={shortName}
       />
 
       <main
