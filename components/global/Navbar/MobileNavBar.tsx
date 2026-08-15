@@ -1,5 +1,7 @@
 'use client'
 import { Dialog, DialogPanel } from '@headlessui/react'
+import Logo from 'components/global/Logo'
+import { getAspectRatio, type LogoImageSource, resolveLogo } from 'lib/logo'
 import { resolveHref } from 'lib/sanity.links'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
@@ -12,11 +14,17 @@ const MobileNavBar = ({
   showPublications,
   showPeople,
   showContactForm,
+  logo,
+  logoDark,
+  shortName,
 }: {
   menuItems?: MenuItem[] | null
   showPublications?: boolean | null
   showPeople?: boolean | null
   showContactForm?: boolean | null
+  logo?: LogoImageSource | null
+  logoDark?: LogoImageSource | null
+  shortName: string
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
@@ -36,10 +44,20 @@ const MobileNavBar = ({
 
   const closeMenu = () => setIsMenuOpen(false)
 
+  // The visible logo and the transparent tap-overlay below take their width
+  // from this single call. They cannot drift, in either render mode, because
+  // there is one function -- which is what keeps the Phase 2C overlay
+  // mitigation intact once the logo becomes CMS-editable and its aspect ratio
+  // stops being a constant. See lib/logo.ts.
+  const logoGeometry = resolveLogo({
+    aspectRatio: getAspectRatio(logo),
+    shortName,
+  })
+
   return (
     <>
       <nav className="uppercase md:hidden">
-        <div className="border-accent bg-surface fixed bottom-auto left-0 right-0 top-0 z-50 h-16 border-y">
+        <div className="border-accent bg-surface fixed bottom-auto left-0 right-0 top-0 z-50 h-[var(--nav-height)] border-y">
           {/*
             This logo link is a sibling of <Dialog>, so - like the hamburger
             button below - it goes `inert`+`aria-hidden` while the menu is
@@ -56,42 +74,19 @@ const MobileNavBar = ({
           */}
           <Link href="/">
             {/*
-              Inlined from public/logo.svg (rather than referenced as an
-              external asset via next/image) because the source file hardcodes
-              `stroke:#000000` and a default black text fill -- colours an
-              external <img>/next/image reference can't override with CSS. Once
-              inline, `stroke="currentColor"` and the `text-text` className let
-              it pick up the same token-driven colour as the hamburger bars
-              (bg-text), so it stays visible against `bg-surface` in both
-              colour schemes instead of disappearing in dark mode. `role="img"`
-              + `aria-label` restore the accessible name the removed <img>'s
-              `alt="logo"` used to provide.
+              The logo's three render modes live in components/global/Logo.tsx.
+              Wordmark mode is still inline SVG themed with
+              `stroke="currentColor"` -- that is what lets it pick up the same
+              token-driven colour as the hamburger bars (`bg-text`) and stay
+              visible against `bg-surface` in both colour schemes. Image mode
+              cannot use `currentColor` (it is a bitmap or an external SVG), so
+              a dark-scheme variant is handled by the `.logo-light`/`.logo-dark`
+              pair in styles/index.css instead. Both modes carry the accessible
+              name "logo".
             */}
-            <svg
-              viewBox="0 0 524 120"
-              role="img"
-              aria-label="logo"
-              fill="currentColor"
-              className="text-text absolute left-4 my-4 h-[50%]"
-            >
-              <text
-                transform="matrix(1 0 0 1 19.0408 89.3398)"
-                fontFamily="Menlo-Regular"
-                fontSize="80.71px"
-              >
-                HOLSINGLER
-              </text>
-              <rect
-                x="3.7"
-                y="4"
-                width="516.7"
-                height="111.9"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="5"
-                strokeMiterlimit="10"
-              />
-            </svg>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2">
+              <Logo logo={logo} logoDark={logoDark} shortName={shortName} />
+            </span>
           </Link>
 
           {/*
@@ -109,9 +104,10 @@ const MobileNavBar = ({
             spec-mandated hit-testing behavior rather than a browser quirk.
             Regression-guarded by the geometry-click test "tapping the
             visible header icon..." in e2e/mobile-menu.spec.ts. Its
-            `right-6` position and this header bar's `h-16` height must stay
-            in sync with the overlay button's `right-6 top-0 h-16 w-9`, or
-            the click-passthrough geometry breaks and the visible icon goes
+            `right-6` position and this header bar's height (the shared
+            `--nav-height` token) must stay in sync with the overlay
+            button's `right-6 top-0 h-[var(--nav-height)] w-9`, or the
+            click-passthrough geometry breaks and the visible icon goes
             dead.
           */}
           <button
@@ -182,9 +178,10 @@ const MobileNavBar = ({
             "tapping the visible header icon..." in
             e2e/mobile-menu.spec.ts.
 
-            Geometry coupling: `right-6 top-0 h-16 w-9` must stay in sync
-            with the header button's own `right-6` position and the header
-            bar's `h-16` height (see the comment on that button above) -
+            Geometry coupling: `right-6 top-0 h-[var(--nav-height)] w-9`
+            must stay in sync with the header button's own `right-6`
+            position and the header bar's height, both now the shared
+            `--nav-height` token (see the comment on that button above) -
             if either drifts, the visible icon and the actual clickable
             area fall out of alignment and the icon becomes dead to clicks.
             `z-30` (vs. the Dialog wrapper's `z-20`) is needed so this
@@ -196,7 +193,7 @@ const MobileNavBar = ({
             aria-expanded={isMenuOpen}
             aria-controls="mobile-menu-panel"
             aria-label="Close menu"
-            className="absolute right-6 top-0 z-30 h-16 w-9 border-0 bg-transparent"
+            className="absolute right-6 top-0 z-30 h-[var(--nav-height)] w-9 border-0 bg-transparent"
             onClick={closeMenu}
           />
           <DialogPanel
@@ -258,19 +255,22 @@ const MobileNavBar = ({
               imprecision, unaddressed; this doesn't worsen it, just
               doesn't fix it either.
 
-              Geometry coupling: `left-4 top-0 h-16 w-[120px]` must stay
-              in sync with the header logo's own `left-4` position and the
-              header bar's `h-16` height (see the comment on the visible
-              logo near the top of this file) - if either drifts, the
-              visible logo and the actual tappable area fall out of
-              alignment and the logo goes dead to taps/clicks. `z-10`
-              keeps it above the menu links below in DOM/paint order, in
-              case their boxes ever overlap this fixed header-sized area
-              on a very short viewport. `onClick={closeMenu}` here is
-              load-bearing (not redundant with outside-click) precisely
-              because this element is now *inside* the dialog, so tapping
-              it doesn't count as an outside tap - closing still has to
-              come from its own handler. Regression-guarded by the
+              Geometry coupling: this element's height comes from the same
+              `--nav-height` token as the header bar (see the comment on the
+              visible logo near the top of this file), and its width from
+              `logoGeometry` above -- the same call that sizes the visible
+              logo. Both couplings are now structural (one token, one
+              function) rather than comment-enforced, but they still have to
+              hold: if either drifts, the visible logo and the actual
+              tappable area fall out of alignment and the logo goes dead to
+              taps/clicks. `left-4` still has to match the header logo's own
+              `left-4` position. `z-10` keeps it above the menu links below
+              in DOM/paint order, in case their boxes ever overlap this
+              fixed header-sized area on a very short viewport. `onClick={closeMenu}`
+              here is load-bearing (not redundant with outside-click)
+              precisely because this element is now *inside* the dialog, so
+              tapping it doesn't count as an outside tap - closing still has
+              to come from its own handler. Regression-guarded by the
               "tapping the visible logo..." touch-tap test in
               e2e/mobile-menu.spec.ts.
             */}
@@ -278,7 +278,11 @@ const MobileNavBar = ({
               href="/"
               onClick={closeMenu}
               aria-label="Home"
-              className="absolute left-4 top-0 z-10 h-16 w-[120px]"
+              className="absolute left-4 top-0 z-10 h-[var(--nav-height)]"
+              // Tailwind arbitrary values cannot take a runtime variable, so
+              // this width is an inline style. It is the SAME number the
+              // visible logo renders at -- see logoGeometry above.
+              style={{ width: logoGeometry.width }}
             />
             {menuItems &&
               menuItems.map((menuItem: MenuItem, key: number) => {
