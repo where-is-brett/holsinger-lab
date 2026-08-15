@@ -44,11 +44,13 @@ const MobileNavBar = ({
 
   const closeMenu = () => setIsMenuOpen(false)
 
-  // The visible logo and the transparent tap-overlay below take their width
-  // from this single call. They cannot drift, in either render mode, because
-  // there is one function -- which is what keeps the Phase 2C overlay
-  // mitigation intact once the logo becomes CMS-editable and its aspect ratio
-  // stops being a constant. See lib/logo.ts.
+  // The transparent tap-overlay below takes its width from this call to
+  // resolveLogo. The visible logo (rendered by <Logo> below) makes its own,
+  // independent call to that same pure function with the same aspectRatio/
+  // shortName inputs, so the two widths cannot drift apart even though
+  // neither call's result is passed to the other -- which is what keeps the
+  // Phase 2C overlay mitigation intact once the logo becomes CMS-editable
+  // and its aspect ratio stops being a constant. See lib/logo.ts.
   const logoGeometry = resolveLogo({
     aspectRatio: getAspectRatio(logo),
     shortName,
@@ -258,11 +260,13 @@ const MobileNavBar = ({
               Geometry coupling: this element's height comes from the same
               `--nav-height` token as the header bar (see the comment on the
               visible logo near the top of this file), and its width from
-              `logoGeometry` above -- the same call that sizes the visible
-              logo. Both couplings are now structural (one token, one
-              function) rather than comment-enforced, but they still have to
-              hold: if either drifts, the visible logo and the actual
-              tappable area fall out of alignment and the logo goes dead to
+              `logoGeometry` above -- a second, independent call to the same
+              pure `resolveLogo` function that sizes the visible logo, given
+              the same `aspectRatio`/`shortName` inputs, so it cannot resolve
+              to a different number. Both couplings are now structural (one
+              token, one function) rather than comment-enforced, but they
+              still have to hold: if either drifts, the visible logo and the
+              actual tappable area fall out of alignment and the logo goes dead to
               taps/clicks. `left-4` still has to match the header logo's own
               `left-4` position. `z-10` keeps it above the menu links below
               in DOM/paint order, in case their boxes ever overlap this
