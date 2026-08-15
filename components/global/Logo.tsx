@@ -54,6 +54,19 @@ export default function Logo({ logo, logoDark, shortName }: LogoProps) {
     if (lightUrl && darkUrl) {
       return (
         <>
+          {/*
+            Both images carry the identical accessible name. Exactly one is
+            ever visible at a time -- styles/index.css §3.4 sets
+            `.logo-light { display: block }` / `.logo-dark { display: none }`
+            and flips that pairing under `prefers-color-scheme: dark`. A
+            `display: none` element is already removed from the accessibility
+            tree in every browser and by Playwright's role-based locators, so
+            exactly one "logo"-named image is exposed at a time by
+            construction, in both colour schemes, with no manual
+            accessibility-tree bookkeeping needed on this element (and no
+            risk of the two drifting out of sync, which previously hid the
+            visible image's name entirely in dark mode).
+          */}
           <img
             className="logo-light"
             src={lightUrl}
@@ -61,17 +74,10 @@ export default function Logo({ logo, logoDark, shortName }: LogoProps) {
             width={resolved.width}
             height={resolved.height}
           />
-          {/*
-            Exactly one logo is ever exposed as a named image. The inactive
-            variant is hidden from the accessibility tree explicitly rather
-            than relying on `display: none`'s side effect, so the guarantee
-            does not depend on how a given tool resolves hidden elements.
-          */}
           <img
             className="logo-dark"
             src={darkUrl}
-            alt=""
-            aria-hidden="true"
+            alt="logo"
             width={resolved.width}
             height={resolved.height}
           />
@@ -91,12 +97,32 @@ export default function Logo({ logo, logoDark, shortName }: LogoProps) {
     }
   }
 
-  // Wordmark fallback. `role="img"` + `aria-label` supply the accessible name
-  // that the <img> modes get from `alt`.
-  const { width, height, text } = resolved as Extract<
-    typeof resolved,
-    { mode: 'wordmark' }
-  >
+  // Wordmark fallback: either `resolveLogo` returned `mode: 'wordmark'` from
+  // the start (no `logo` uploaded), or it returned `mode: 'image'` but
+  // neither `logo` nor `logoDark` produced a usable URL (a malformed asset
+  // reference -- `metadata.dimensions.aspectRatio` present but `asset._ref`
+  // missing or otherwise unresolvable by `urlForImage`). In the latter case
+  // `resolved` is image-shaped and has no `text` field, so it cannot be
+  // reused here -- recompute a genuine wordmark result instead of casting
+  // the image-shaped value into the wordmark shape.
+  const wordmark =
+    resolved.mode === 'wordmark'
+      ? resolved
+      : resolveLogo({ aspectRatio: null, shortName })
+
+  // `resolveLogo` always returns `mode: 'wordmark'` when `aspectRatio` is
+  // `null` (see lib/logo.ts), but that fact isn't visible in its return type
+  // -- a single call signature returning the full `ResolvedLogo` union -- so
+  // this narrows via a runtime check instead of asserting it away with a
+  // cast. Unreachable in practice; a thrown error is safer here than an
+  // unsound assumption if that invariant ever changes.
+  if (wordmark.mode !== 'wordmark') {
+    throw new Error(
+      'Logo: resolveLogo({ aspectRatio: null }) did not return wordmark mode'
+    )
+  }
+
+  const { width, height, text } = wordmark
 
   return (
     <svg

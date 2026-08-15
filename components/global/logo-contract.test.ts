@@ -19,11 +19,30 @@ describe('Logo contract', () => {
     expect(logo()).toMatch(/aria-label="logo"/)
   })
 
-  it('hides the inactive dark-mode variant from assistive tech', () => {
-    // Mode 2 renders two <img>s. If both were named "logo" there would be two
-    // matches for that accessible name -- ambiguous under Playwright strict
-    // mode, and a duplicate announcement for screen-reader users.
-    expect(logo()).toMatch(/aria-hidden/)
+  it('gives both dark-mode-pair <img>s the identical accessible name, with no manual aria-hidden', () => {
+    // Mode 2 renders two <img>s, one per colour scheme, CSS-switched by
+    // styles/index.css §3.4 (`.logo-light`/`.logo-dark`, `display: none` /
+    // `display: block` flipped under `prefers-color-scheme: dark`). Because
+    // exactly one of the pair is ever `display: block` at a time, exactly one
+    // is ever in the accessibility tree at a time -- in every browser and
+    // under Playwright's role-based locators -- with no manual
+    // accessibility-tree bookkeeping required. Both must carry the SAME alt
+    // text so neither
+    // colour scheme is left with zero elements named "logo" (the bug this
+    // guards: an asymmetric alt="logo"/alt="" pairing hides the accessible
+    // name entirely in dark mode, since the light image -- the one carrying
+    // the name -- is the one CSS hides there).
+    const source = logo()
+    const imgTags = source.match(/<img\b[^>]*\/?>/g) ?? []
+    const pairTags = imgTags.filter(
+      (tag) => tag.includes('logo-light') || tag.includes('logo-dark')
+    )
+    expect(pairTags).toHaveLength(2)
+    for (const tag of pairTags) {
+      expect(tag).toMatch(/alt="logo"/)
+      expect(tag).not.toMatch(/aria-hidden/)
+    }
+    expect(source).not.toMatch(/aria-hidden/)
   })
 
   it('derives its dimensions from the shared resolver, not literals', () => {
@@ -57,5 +76,23 @@ describe('Logo contract', () => {
     // images.dangerouslyAllowSVG is enabled site-wide -- which would route
     // every future user-uploaded SVG through the image pipeline. Spec §2.
     expect(logo()).not.toMatch(/from 'next\/image'/)
+  })
+
+  it('never reuses an image-mode resolveLogo() result to render the wordmark', () => {
+    // If `resolveLogo` resolves `mode: 'image'` (an aspect ratio is present)
+    // but `urlForImage` can't produce a URL for either `logo` or `logoDark`
+    // -- a malformed asset reference, e.g. `metadata.dimensions.aspectRatio`
+    // present but `asset._ref` missing -- execution falls through to the
+    // wordmark JSX. `resolved` at that point is image-shaped (`{width,
+    // height}`, no `text`). An `as Extract<typeof resolved, {mode:
+    // 'wordmark'}>` cast there would hide that mismatch from `tsc` and
+    // silently render an empty wordmark (`text` becomes `undefined`) instead
+    // of a real one. The fix recomputes a genuine wordmark via
+    // `resolveLogo({ aspectRatio: null, shortName })` at the fallthrough
+    // point rather than casting the image-shaped value, so this guards
+    // against the unsound cast coming back.
+    expect(logo()).not.toMatch(/as Extract/)
+    // The recompute this guards for.
+    expect(logo()).toMatch(/resolveLogo\(\{\s*aspectRatio:\s*null,\s*shortName\s*\}\)/)
   })
 })
