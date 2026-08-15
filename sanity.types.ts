@@ -281,6 +281,20 @@ export type Settings = {
     crop?: SanityImageCrop
     _type: 'image'
   }
+  logo?: {
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    _type: 'image'
+  }
+  logoDark?: {
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    _type: 'image'
+  }
   labHead?: ProfileReference
   showLabHeadOnHome?: boolean
   menuItems?: ArrayOf<HomeReference | PageReference | ProjectReference>
@@ -769,7 +783,7 @@ export type PagePathsResult = Array<string | null>
 
 // Source: lib/sanity.queries.ts
 // Variable: settingsQuery
-// Query: *[_type == "settings"][0]{    siteName,    shortName,    footer,    showPublications,    showPeople,    showContactForm,    showLabHeadOnHome,    menuItems[]->{      _type,      "slug": slug.current,      title    },    ogImage,    labHead->{      _id,      image,      name,      role,      email,      phone,      bio,      "slug": slug.current,      hasPage,      fullBio,    },  }
+// Query: *[_type == "settings"][0]{    siteName,    shortName,    footer,    showPublications,    showPeople,    showContactForm,    showLabHeadOnHome,    menuItems[]->{      _type,      "slug": slug.current,      title    },    ogImage,    logo{      ...,      asset->{        ...,        metadata { dimensions { aspectRatio } }      }    },    logoDark{      ...,      asset->{        ...,        metadata { dimensions { aspectRatio } }      }    },    labHead->{      _id,      image,      name,      role,      email,      phone,      bio,      "slug": slug.current,      hasPage,      fullBio,    },  }
 export type SettingsQueryResult = {
   siteName: string | null
   shortName: string | null
@@ -814,6 +828,70 @@ export type SettingsQueryResult = {
   > | null
   ogImage: {
     asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    _type: 'image'
+  } | null
+  logo: {
+    asset: {
+      _id: string
+      _type: 'sanity.imageAsset'
+      _createdAt: string
+      _updatedAt: string
+      _rev: string
+      originalFilename?: string
+      label?: string
+      title?: string
+      description?: string
+      altText?: string
+      sha1hash?: string
+      extension?: string
+      mimeType?: string
+      size?: number
+      assetId?: string
+      uploadId?: string
+      path?: string
+      url?: string
+      metadata: {
+        dimensions: {
+          aspectRatio: number | null
+        } | null
+      } | null
+      source?: SanityAssetSourceData
+    } | null
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    _type: 'image'
+  } | null
+  logoDark: {
+    asset: {
+      _id: string
+      _type: 'sanity.imageAsset'
+      _createdAt: string
+      _updatedAt: string
+      _rev: string
+      originalFilename?: string
+      label?: string
+      title?: string
+      description?: string
+      altText?: string
+      sha1hash?: string
+      extension?: string
+      mimeType?: string
+      size?: number
+      assetId?: string
+      uploadId?: string
+      path?: string
+      url?: string
+      metadata: {
+        dimensions: {
+          aspectRatio: number | null
+        } | null
+      } | null
+      source?: SanityAssetSourceData
+    } | null
     media?: unknown
     hotspot?: SanityImageHotspot
     crop?: SanityImageCrop
@@ -979,7 +1057,7 @@ declare module '@sanity/client' {
     '\n  *[_type == "project" && slug.current == $slug][0] {\n    _id,\n    category,\n    coverImage,\n    description,\n    duration,\n    overview,\n    site,\n    "slug": slug.current,\n    status,\n    tags,\n    title,\n  }\n': ProjectBySlugQueryResult
     '\n  *[_type == "project" && slug.current != null].slug.current\n': ProjectPathsResult
     '\n  *[_type == "page" && slug.current != null].slug.current\n': PagePathsResult
-    '\n  *[_type == "settings"][0]{\n    siteName,\n    shortName,\n    footer,\n    showPublications,\n    showPeople,\n    showContactForm,\n    showLabHeadOnHome,\n    menuItems[]->{\n      _type,\n      "slug": slug.current,\n      title\n    },\n    ogImage,\n    labHead->{\n      _id,\n      image,\n      name,\n      role,\n      email,\n      phone,\n      bio,\n      "slug": slug.current,\n      hasPage,\n      fullBio,\n    },\n  }\n': SettingsQueryResult
+    '\n  *[_type == "settings"][0]{\n    siteName,\n    shortName,\n    footer,\n    showPublications,\n    showPeople,\n    showContactForm,\n    showLabHeadOnHome,\n    menuItems[]->{\n      _type,\n      "slug": slug.current,\n      title\n    },\n    ogImage,\n    logo{\n      ...,\n      asset->{\n        ...,\n        metadata { dimensions { aspectRatio } }\n      }\n    },\n    logoDark{\n      ...,\n      asset->{\n        ...,\n        metadata { dimensions { aspectRatio } }\n      }\n    },\n    labHead->{\n      _id,\n      image,\n      name,\n      role,\n      email,\n      phone,\n      bio,\n      "slug": slug.current,\n      hasPage,\n      fullBio,\n    },\n  }\n': SettingsQueryResult
     '\n  *[_type == "publication"] | order(date desc) {\n    _id,\n    title,\n    author,\n    journal,\n    volume,\n    issue,\n    pages,\n    abstract,\n    url,\n    doi,\n    date,\n  }\n': PublicationsQueryResult
     '\n  *[_type == "roleGroup"] | order(orderRank) {\n    _id,\n    title,\n  }\n': RoleGroupQueryResult
     '\n  *[_type == "profile"] | order(orderRank) {\n    _id,\n    image,\n    orderRank,\n    name,\n    role,\n    roleGroup->{\n      _id,\n      title,\n    },\n    email,\n    phone,\n    bio,\n    "slug": slug.current,\n    hasPage,\n    fullBio,\n  }\n': ProfileQueryResult

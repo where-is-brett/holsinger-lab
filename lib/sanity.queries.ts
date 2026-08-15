@@ -80,6 +80,20 @@ export const settingsQuery = groq`
       title
     },
     ogImage,
+    logo{
+      ...,
+      asset->{
+        ...,
+        metadata { dimensions { aspectRatio } }
+      }
+    },
+    logoDark{
+      ...,
+      asset->{
+        ...,
+        metadata { dimensions { aspectRatio } }
+      }
+    },
     labHead->{
       _id,
       image,

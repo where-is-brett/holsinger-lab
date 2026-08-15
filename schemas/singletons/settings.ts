@@ -11,6 +11,7 @@ export default defineType({
   // ungrouped list would become an unusable wall for a non-technical editor.
   groups: [
     { name: 'identity', title: 'Identity', default: true },
+    { name: 'branding', title: 'Branding' },
     { name: 'labHead', title: 'Lab head' },
     { name: 'navigation', title: 'Navigation' },
     { name: 'footer', title: 'Footer' },
@@ -47,6 +48,24 @@ export default defineType({
       options: {
         hotspot: true,
       },
+    }),
+    defineField({
+      name: 'logo',
+      title: 'Logo',
+      type: 'image',
+      group: 'branding',
+      // No `hotspot`: the logo is rendered whole at a fixed height, never
+      // cropped to a box, so a crop UI would only offer a way to break it.
+      description:
+        'Shown in the site header. Any shape works — the site scales it to fit the header and works out the width itself. Leave empty to show the site’s short name in a box instead.',
+    }),
+    defineField({
+      name: 'logoDark',
+      title: 'Logo (dark mode)',
+      type: 'image',
+      group: 'branding',
+      description:
+        'Optional. Used instead of Logo when the visitor’s device is set to dark mode — useful if your logo is dark-coloured and would disappear. Leave empty to use the same logo in both.',
     }),
     defineField({
       name: 'labHead',
