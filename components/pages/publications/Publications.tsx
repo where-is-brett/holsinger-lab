@@ -94,7 +94,7 @@ const Publications = ({
               // Note the previous md+ value (145px) had NO buffer -- it was
               // exactly the measured stack height, and its comment claimed a
               // stale "~139px". Both are corrected here.
-              className="scroll-mt-[calc(var(--nav-height)+156px)] md:scroll-mt-[calc(var(--nav-height)+80px)]"
+              className="scroll-mt-[calc(var(--nav-height)_+_156px)] md:scroll-mt-[calc(var(--nav-height)_+_80px)]"
             >
               <h2 className="mb-5 text-3xl font-bold lg:text-4xl">{groupYear}</h2>
               <ul className="ml-0 space-y-6">

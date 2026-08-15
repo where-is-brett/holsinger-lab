@@ -35,9 +35,11 @@ function logoUrl(image: LogoImageSource): string | undefined {
  *   3. neither                    -> wordmark fallback (the stroked box)
  *
  * All three take their width from `resolveLogo`, which is also what sizes
- * MobileNavBar's transparent tap-overlay. That shared call is the whole
- * safety property of Phase 4B: the overlay cannot drift from the logo it
- * overlays, because one function produces both numbers.
+ * MobileNavBar's transparent tap-overlay -- a second, independent call to
+ * that same pure function, given the same `aspectRatio`/`shortName` inputs,
+ * so it cannot resolve to a different number. That is the whole safety
+ * property of Phase 4B: the overlay cannot drift from the logo it overlays,
+ * even though neither call's result is passed to the other.
  *
  * A plain <img> rather than next/image is deliberate — see the contract test.
  */

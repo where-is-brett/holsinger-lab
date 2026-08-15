@@ -29,6 +29,9 @@ describe('dark-mode logo variant switching', () => {
     expect(css).toMatch(
       /@media \(prefers-color-scheme: dark\)\s*\{[^@]*\.logo-light\s*\{[^}]*display:\s*none/
     )
+    expect(css).toMatch(
+      /@media \(prefers-color-scheme: dark\)\s*\{[^@]*\.logo-dark\s*\{[^}]*display:\s*block/
+    )
   })
 
   it('uses colour-scheme CSS rather than Tailwind dark: variants', () => {
