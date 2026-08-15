@@ -32,7 +32,7 @@ const Publications = ({
     <>
       <h1 className="mb-8 text-3xl font-black md:text-5xl">Publications</h1>
 
-      <div className="sticky top-16 z-0 mb-8 flex flex-col gap-4 border-b border-rule bg-surface/95 py-4 backdrop-blur md:flex-row md:items-center md:justify-between">
+      <div className="sticky top-[var(--nav-height)] z-0 mb-8 flex flex-col gap-4 border-b border-rule bg-surface/95 py-4 backdrop-blur md:flex-row md:items-center md:justify-between">
         <input
           type="search"
           value={query}
@@ -81,12 +81,20 @@ const Publications = ({
               // Anchor-jump targets need enough top offset to clear both
               // stacked sticky bars (site nav + this page's search/filter
               // bar), or the browser's default hash-scroll lands the year
-              // heading directly under them, fully hidden -- measured
-              // combined sticky-stack height is ~215px on mobile (nav's
-              // fixed h-16 + this bar's taller flex-col layout) and ~139px
-              // at md+ (nav's shorter sticky bar + this bar's flex-row
-              // layout), each rounded up with a small buffer.
-              className="scroll-mt-[220px] md:scroll-mt-[145px]"
+              // heading directly under them, fully hidden.
+              //
+              // The nav portion is --nav-height rather than a literal, so
+              // this tracks the header automatically -- that is the whole
+              // point of the token, and what stops defect D8 recurring here
+              // the next time the nav's height changes. The added constant is
+              // this page's own filter bar, measured against production:
+              // 151px on mobile (flex-col) and 75px at md+ (flex-row), each
+              // plus a 5px buffer.
+              //
+              // Note the previous md+ value (145px) had NO buffer -- it was
+              // exactly the measured stack height, and its comment claimed a
+              // stale "~139px". Both are corrected here.
+              className="scroll-mt-[calc(var(--nav-height)+156px)] md:scroll-mt-[calc(var(--nav-height)+80px)]"
             >
               <h2 className="mb-5 text-3xl font-bold lg:text-4xl">{groupYear}</h2>
               <ul className="ml-0 space-y-6">
