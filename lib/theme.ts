@@ -106,8 +106,8 @@ export function deriveTheme(
   light: { link: string; accent: string }
   dark: { link: string; accent: string }
 } | null {
+  if (!THEME_NAMES.includes(theme)) return null
   const surfaces = PRESET_SURFACES[theme]
-  if (!surfaces) return null
 
   const light = {
     link: deriveToken(brandHex, surfaces.light, LINK_MIN_CONTRAST, 'darken'),

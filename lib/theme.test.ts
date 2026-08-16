@@ -7,6 +7,7 @@ import {
   resolveThemeName,
   THEME_NAMES,
 } from 'lib/theme'
+import type { ThemeName } from 'lib/theme'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
@@ -103,6 +104,18 @@ describe('deriveTheme — accessible by construction', () => {
   it('returns null rather than throwing on malformed input', () => {
     for (const bad of ['', 'nope', '#fff', '#gggggg']) {
       expect(deriveTheme(bad, 'default'), bad).toBeNull()
+    }
+  })
+
+  it('returns null rather than throwing for an Object.prototype member name as theme', () => {
+    // PRESET_SURFACES[theme] is a bare property lookup, so a `theme` value
+    // that names an inherited Object.prototype member (e.g. 'toString') would
+    // resolve truthy via the prototype chain instead of being caught by
+    // `if (!surfaces)`. 'toString' and '__proto__' exercise different code
+    // paths through JS (an inherited method vs. the prototype-linkage getter).
+    for (const bad of ['toString', '__proto__'] as unknown as ThemeName[]) {
+      expect(() => deriveTheme('#2d6a4f', bad)).not.toThrow()
+      expect(deriveTheme('#2d6a4f', bad), bad as string).toBeNull()
     }
   })
 })
