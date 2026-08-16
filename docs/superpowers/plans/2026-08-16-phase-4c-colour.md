@@ -1289,7 +1289,7 @@ git commit -m "feat: apply the CMS brand colour and neutral preset in the root l
 - Create: `e2e/brand-colour.spec.ts`
 
 **Interfaces:**
-- Consumes: `buildBrandStyle` from `lib/theme` (Task 4); the `warm` preset selector from `styles/index.css` (Task 3).
+- Consumes: `buildBrandStyle` and `deriveTheme` from `lib/theme` (Task 4); the `warm` preset selector from `styles/index.css` (Task 3).
 - Produces: nothing.
 
 **Why the test injects rather than configures.** The specificity question — does a Next-injected `<style>` beat `:root[data-theme='warm']` in `index.css`? — is a browser cascade question, not a data question. Injecting the exact string `buildBrandStyle` produces into a page that has already loaded `index.css` tests precisely that, and does not require `brandColor` to be set in the shared production dataset.
@@ -1300,15 +1300,18 @@ Create `e2e/brand-colour.spec.ts`:
 
 ```ts
 import { expect, test } from '@playwright/test'
-import { buildBrandStyle } from 'lib/theme'
+import { buildBrandStyle, deriveTheme } from 'lib/theme'
 
-/** Parses `rgb(r, g, b)` into a lowercase `#rrggbb`. */
-function toHex(value: string): string {
-  const m = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
-  if (!m) throw new Error(`unparseable colour: ${value}`)
-  return `#${[1, 2, 3].map((i) => Number(m[i]).toString(16).padStart(2, '0')).join('')}`
-}
+const BRAND = '#ff7a00'
 
+/**
+ * A custom property read back with `getPropertyValue` returns the value as
+ * authored -- the literal `#rrggbb` this codebase injected -- so the expected
+ * value can be compared directly against what `deriveTheme` computed. No rgb()
+ * parsing is involved, and the assertion is an equality rather than a
+ * "something changed", so it fails loudly if the cascade picks a third value
+ * neither block authored.
+ */
 const readToken = (name: string) =>
   `getComputedStyle(document.documentElement).getPropertyValue(${JSON.stringify(name)}).trim()`
 
@@ -1321,11 +1324,11 @@ for (const scheme of ['light', 'dark'] as const) {
       const before = await page.evaluate(readToken('--sem-accent'))
       expect(before).not.toBe('')
 
-      const css = buildBrandStyle('#ff7a00', 'default')!
-      await page.addStyleTag({ content: css })
+      await page.addStyleTag({ content: buildBrandStyle(BRAND, 'default')! })
 
-      const after = await page.evaluate(readToken('--sem-accent'))
-      expect(after).not.toBe(before)
+      const expected = deriveTheme(BRAND, 'default')![scheme].accent
+      expect(await page.evaluate(readToken('--sem-accent'))).toBe(expected)
+      expect(expected).not.toBe(before)
     })
 
     test('outranks a preset block, which is the specificity this design depends on', async ({
@@ -1335,14 +1338,14 @@ for (const scheme of ['light', 'dark'] as const) {
       // Apply the preset the way the layout would.
       await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'warm'))
       const presetSurface = await page.evaluate(readToken('--sem-surface'))
+      expect(presetSurface).not.toBe('')
 
-      const css = buildBrandStyle('#ff7a00', 'warm')!
-      await page.addStyleTag({ content: css })
+      await page.addStyleTag({ content: buildBrandStyle(BRAND, 'warm')! })
 
-      const accent = await page.evaluate(readToken('--sem-accent'))
-      // The injected chromatic token won...
-      expect(accent).not.toBe('')
-      expect(toHex(await page.evaluate(`getComputedStyle(document.body).color`))).toBeTruthy()
+      // The injected chromatic tokens won outright...
+      const derived = deriveTheme(BRAND, 'warm')![scheme]
+      expect(await page.evaluate(readToken('--sem-accent'))).toBe(derived.accent)
+      expect(await page.evaluate(readToken('--sem-link'))).toBe(derived.link)
       // ...and the preset's neutrals are untouched by it.
       expect(await page.evaluate(readToken('--sem-surface'))).toBe(presetSurface)
     })
