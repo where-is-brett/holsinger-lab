@@ -68,6 +68,33 @@ export default defineType({
         'Optional. Used instead of Logo when the visitor’s device is set to dark mode — useful if your logo is dark-coloured and would disappear. Leave empty to use the same logo in both.',
     }),
     defineField({
+      name: 'brandColor',
+      title: 'Brand colour',
+      type: 'color',
+      group: 'branding',
+      // No alpha: a semi-transparent token has no defined contrast against a
+      // surface, which is the one property this whole feature guarantees.
+      options: { disableAlpha: true },
+      description:
+        'Your lab’s main colour, used for links and small accents. The site works out readable shades of it automatically for both light and dark mode, so any colour you pick here stays legible. Leave empty to keep the site’s built-in colours.',
+    }),
+    defineField({
+      name: 'theme',
+      title: 'Background tone',
+      type: 'string',
+      group: 'branding',
+      initialValue: 'default',
+      options: {
+        list: [
+          { title: 'Default — cool grey', value: 'default' },
+          { title: 'Warm — cream and ink', value: 'warm' },
+        ],
+        layout: 'radio',
+      },
+      description:
+        'The overall page tone. This changes only the greys — your brand colour is unaffected.',
+    }),
+    defineField({
       name: 'labHead',
       title: 'Lab head',
       type: 'reference',
