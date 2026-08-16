@@ -295,6 +295,8 @@ export type Settings = {
     crop?: SanityImageCrop
     _type: 'image'
   }
+  brandColor?: Color
+  theme?: 'default' | 'warm'
   labHead?: ProfileReference
   showLabHeadOnHome?: boolean
   menuItems?: ArrayOf<HomeReference | PageReference | ProjectReference>
@@ -380,6 +382,15 @@ export type RoleGroup = {
   title?: string
 }
 
+export type Color = {
+  _type: 'color'
+  hex?: string
+  alpha?: number
+  hsl?: HslaColor
+  hsv?: HsvaColor
+  rgb?: RgbaColor
+}
+
 export type Home = {
   _id: string
   _type: 'home'
@@ -410,6 +421,30 @@ export type Home = {
       _key: string
     } & ProjectReference
   >
+}
+
+export type RgbaColor = {
+  _type: 'rgbaColor'
+  r?: number
+  g?: number
+  b?: number
+  a?: number
+}
+
+export type HsvaColor = {
+  _type: 'hsvaColor'
+  h?: number
+  s?: number
+  v?: number
+  a?: number
+}
+
+export type HslaColor = {
+  _type: 'hslaColor'
+  h?: number
+  s?: number
+  l?: number
+  a?: number
 }
 
 export type MediaFolderReference = {
@@ -554,7 +589,11 @@ export type AllSanitySchemaTypes =
   | RoleGroupReference
   | Profile
   | RoleGroup
+  | Color
   | Home
+  | RgbaColor
+  | HsvaColor
+  | HslaColor
   | MediaFolderReference
   | MediaFolder
   | MediaTag
@@ -783,7 +822,7 @@ export type PagePathsResult = Array<string | null>
 
 // Source: lib/sanity.queries.ts
 // Variable: settingsQuery
-// Query: *[_type == "settings"][0]{    siteName,    shortName,    footer,    showPublications,    showPeople,    showContactForm,    showLabHeadOnHome,    menuItems[]->{      _type,      "slug": slug.current,      title    },    ogImage,    logo{      ...,      asset->{        ...,        metadata { dimensions { aspectRatio } }      }    },    logoDark{      ...,      asset->{        ...,        metadata { dimensions { aspectRatio } }      }    },    labHead->{      _id,      image,      name,      role,      email,      phone,      bio,      "slug": slug.current,      hasPage,      fullBio,    },  }
+// Query: *[_type == "settings"][0]{    siteName,    shortName,    footer,    showPublications,    showPeople,    showContactForm,    showLabHeadOnHome,    menuItems[]->{      _type,      "slug": slug.current,      title    },    ogImage,    brandColor{hex},    theme,    logo{      ...,      asset->{        ...,        metadata { dimensions { aspectRatio } }      }    },    logoDark{      ...,      asset->{        ...,        metadata { dimensions { aspectRatio } }      }    },    labHead->{      _id,      image,      name,      role,      email,      phone,      bio,      "slug": slug.current,      hasPage,      fullBio,    },  }
 export type SettingsQueryResult = {
   siteName: string | null
   shortName: string | null
@@ -833,6 +872,10 @@ export type SettingsQueryResult = {
     crop?: SanityImageCrop
     _type: 'image'
   } | null
+  brandColor: {
+    hex: string | null
+  } | null
+  theme: 'default' | 'warm' | null
   logo: {
     asset: {
       _id: string
@@ -1057,7 +1100,7 @@ declare module '@sanity/client' {
     '\n  *[_type == "project" && slug.current == $slug][0] {\n    _id,\n    category,\n    coverImage,\n    description,\n    duration,\n    overview,\n    site,\n    "slug": slug.current,\n    status,\n    tags,\n    title,\n  }\n': ProjectBySlugQueryResult
     '\n  *[_type == "project" && slug.current != null].slug.current\n': ProjectPathsResult
     '\n  *[_type == "page" && slug.current != null].slug.current\n': PagePathsResult
-    '\n  *[_type == "settings"][0]{\n    siteName,\n    shortName,\n    footer,\n    showPublications,\n    showPeople,\n    showContactForm,\n    showLabHeadOnHome,\n    menuItems[]->{\n      _type,\n      "slug": slug.current,\n      title\n    },\n    ogImage,\n    logo{\n      ...,\n      asset->{\n        ...,\n        metadata { dimensions { aspectRatio } }\n      }\n    },\n    logoDark{\n      ...,\n      asset->{\n        ...,\n        metadata { dimensions { aspectRatio } }\n      }\n    },\n    labHead->{\n      _id,\n      image,\n      name,\n      role,\n      email,\n      phone,\n      bio,\n      "slug": slug.current,\n      hasPage,\n      fullBio,\n    },\n  }\n': SettingsQueryResult
+    '\n  *[_type == "settings"][0]{\n    siteName,\n    shortName,\n    footer,\n    showPublications,\n    showPeople,\n    showContactForm,\n    showLabHeadOnHome,\n    menuItems[]->{\n      _type,\n      "slug": slug.current,\n      title\n    },\n    ogImage,\n    brandColor{hex},\n    theme,\n    logo{\n      ...,\n      asset->{\n        ...,\n        metadata { dimensions { aspectRatio } }\n      }\n    },\n    logoDark{\n      ...,\n      asset->{\n        ...,\n        metadata { dimensions { aspectRatio } }\n      }\n    },\n    labHead->{\n      _id,\n      image,\n      name,\n      role,\n      email,\n      phone,\n      bio,\n      "slug": slug.current,\n      hasPage,\n      fullBio,\n    },\n  }\n': SettingsQueryResult
     '\n  *[_type == "publication"] | order(date desc) {\n    _id,\n    title,\n    author,\n    journal,\n    volume,\n    issue,\n    pages,\n    abstract,\n    url,\n    doi,\n    date,\n  }\n': PublicationsQueryResult
     '\n  *[_type == "roleGroup"] | order(orderRank) {\n    _id,\n    title,\n  }\n': RoleGroupQueryResult
     '\n  *[_type == "profile"] | order(orderRank) {\n    _id,\n    image,\n    orderRank,\n    name,\n    role,\n    roleGroup->{\n      _id,\n      title,\n    },\n    email,\n    phone,\n    bio,\n    "slug": slug.current,\n    hasPage,\n    fullBio,\n  }\n': ProfileQueryResult
