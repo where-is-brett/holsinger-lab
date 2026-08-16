@@ -141,6 +141,13 @@ function readResolved(selector: string, scheme: Scheme): Record<string, string> 
   return resolveTokens(css, selector, scheme)
 }
 
+/** A selector's own declarations in one scheme, with no base layered under it. */
+function ownDeclarations(css: string, selector: string, scheme: Scheme): Record<string, string> {
+  const own: Record<string, string> = {}
+  for (const block of blocksFor(css, selector, scheme)) Object.assign(own, block)
+  return own
+}
+
 describe('resolveTokens', () => {
   const CSS = `
     :root {
@@ -428,4 +435,63 @@ describe('token-role misuse guard', () => {
 
     expect(offenders, offenders.join('\n')).toEqual([])
   })
+})
+
+const THEMES: { name: string; selector: string }[] = [
+  { name: 'default', selector: ':root' },
+  { name: 'warm', selector: ":root[data-theme='warm']" },
+]
+
+/** Tokens whose values come from brandColor at runtime, not from a preset. */
+const CHROMATIC = ['--sem-link', '--sem-accent']
+
+describe('every preset passes the contrast guards', () => {
+  for (const { name, selector } of THEMES) {
+    for (const scheme of ['light', 'dark'] as Scheme[]) {
+      it(`${name} / ${scheme}`, () => {
+        const t = readResolved(selector, scheme)
+
+        for (const token of ['--sem-text', '--sem-text-muted']) {
+          expect(contrast(t[token], t['--sem-surface']), `${token} on surface`).toBeGreaterThanOrEqual(4.5)
+          expect(contrast(t[token], t['--sem-surface-raised']), `${token} on raised`).toBeGreaterThanOrEqual(4.5)
+        }
+        expect(contrast(t['--sem-link'], t['--sem-surface']), 'link on surface').toBeGreaterThanOrEqual(4.5)
+        expect(contrast(t['--sem-accent'], t['--sem-surface']), 'accent on surface').toBeGreaterThanOrEqual(3)
+        expect(contrast(t['--sem-field'], t['--sem-surface']), 'field on surface').toBeGreaterThanOrEqual(3)
+        expect(
+          contrast(t['--sem-text-inverse'], t['--sem-surface-inverse']),
+          'inverse text on inverse surface'
+        ).toBeGreaterThanOrEqual(4.5)
+      })
+    }
+  }
+})
+
+describe('preset structure', () => {
+  const presets = THEMES.filter((t) => t.selector !== ':root')
+
+  for (const { name, selector } of presets) {
+    it(`${name} declares no chromatic token`, () => {
+      // Presets vary neutrals only -- chroma is brandColor's job (spec §2). This
+      // is read from the preset's own blocks, not the resolved merge, because
+      // the merge would always show the base's chromatic values.
+      const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8')
+      for (const scheme of ['light', 'dark'] as Scheme[]) {
+        const own = ownDeclarations(css, selector, scheme)
+        for (const token of CHROMATIC) {
+          expect(own[token], `${name}/${scheme} must not declare ${token}`).toBeUndefined()
+        }
+      }
+    })
+
+    it(`${name} redeclares in dark every token it declares in light`, () => {
+      // A preset's light block (0,2,0) outranks the base's dark block (0,1,0),
+      // so any token the preset declares in light but not in dark keeps its
+      // LIGHT value in dark mode. That is a silent, real rendering bug.
+      const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8')
+      expect(Object.keys(ownDeclarations(css, selector, 'dark')).sort()).toEqual(
+        Object.keys(ownDeclarations(css, selector, 'light')).sort()
+      )
+    })
+  }
 })
