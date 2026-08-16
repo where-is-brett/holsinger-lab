@@ -30,7 +30,12 @@ export function resolveBrandStyle(
   // for every site that never touches this setting.
   const dataTheme = theme === 'default' ? undefined : theme
 
-  const hex = settings?.brandColor?.hex?.trim()
+  // settings comes from a GROQ query result, typed but not runtime-validated,
+  // so brandColor.hex is only assumed to be a string -- guard it explicitly
+  // rather than trusting the type, per this module's job of never throwing
+  // regardless of what shape actually arrives.
+  const rawHex = settings?.brandColor?.hex
+  const hex = typeof rawHex === 'string' ? rawHex.trim() : ''
   if (!hex) return { dataTheme, style: null }
 
   return { dataTheme, style: buildBrandStyle(hex, theme) }

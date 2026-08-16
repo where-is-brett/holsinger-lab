@@ -61,7 +61,7 @@ function parseCssBlocks(css: string): CssBlock[] {
       selectorStart = i + 1
     } else if (ch === '}') {
       const frame = stack.pop()
-      if (!frame) throw new Error(`readTokens: unbalanced '}' while parsing CSS at index ${i}`)
+      if (!frame) throw new Error(`resolveTokens: unbalanced '}' while parsing CSS at index ${i}`)
       depth--
       blocks.push({
         selector: frame.selector,
@@ -73,7 +73,7 @@ function parseCssBlocks(css: string): CssBlock[] {
     }
   }
   if (stack.length > 0) {
-    throw new Error(`readTokens: unbalanced '{' while parsing CSS — ${stack.length} block(s) never closed`)
+    throw new Error(`resolveTokens: unbalanced '{' while parsing CSS — ${stack.length} block(s) never closed`)
   }
   return blocks
 }
@@ -127,10 +127,10 @@ function resolveTokens(css: string, selector: string, scheme: Scheme): Record<st
   }
 
   if (layers.length === 0) {
-    throw new Error(`readTokens: no block matching "${selector}" declares any --sem-* tokens`)
+    throw new Error(`resolveTokens: no block matching "${selector}" declares any --sem-* tokens`)
   }
   if (selector !== ':root' && blocksFor(css, selector, 'light').length === 0 && blocksFor(css, selector, 'dark').length === 0) {
-    throw new Error(`readTokens: no block matching "${selector}" was found in any scheme`)
+    throw new Error(`resolveTokens: no block matching "${selector}" was found in any scheme`)
   }
 
   return Object.assign({}, ...layers)
@@ -341,6 +341,7 @@ describe('cross-token contrast regression guard', () => {
     ['--sem-text-muted', '--sem-surface'],
     ['--sem-text-inverse', '--sem-surface-inverse'],
     ['--sem-text', '--sem-surface-raised'],
+    ['--sem-link', '--sem-surface-raised'],
   ]
 
   const SCHEMES: Scheme[] = ['light', 'dark']

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
 import { buildBrandStyle, deriveTheme } from 'lib/theme'
 
 const BRAND = '#ff7a00'
@@ -14,12 +15,34 @@ const BRAND = '#ff7a00'
 const readToken = (name: string) =>
   `getComputedStyle(document.documentElement).getPropertyValue(${JSON.stringify(name)}).trim()`
 
+/**
+ * React 19 renders the layout's own brand `<style>` as the first child of
+ * `<body>`, after everything `page.addStyleTag` puts in `<head>`. Both blocks
+ * share the same (0,3,0) `:root:root:root` specificity, so document order is
+ * the tiebreaker. That's fine in production -- the layout's block is the only
+ * one there -- but it means these tests only prove their cascade claim when
+ * nothing from the live/shared dataset has already injected a competing
+ * production block. Strip any such block, and reset `data-theme` to the
+ * no-attribute baseline, so every test starts clean regardless of what
+ * `brandColor`/`theme` happen to be set to right now.
+ */
+const resetInjectedBrandState = (page: Page) =>
+  page.evaluate(() => {
+    document.querySelectorAll('style').forEach((style) => {
+      if (style.textContent?.includes(':root:root:root')) {
+        style.remove()
+      }
+    })
+    document.documentElement.removeAttribute('data-theme')
+  })
+
 for (const scheme of ['light', 'dark'] as const) {
   test.describe(`injected brand colour, ${scheme} scheme`, () => {
     test.use({ colorScheme: scheme })
 
     test('outranks the base :root', async ({ page }) => {
       await page.goto('/')
+      await resetInjectedBrandState(page)
       const before = await page.evaluate(readToken('--sem-accent'))
       expect(before).not.toBe('')
 
@@ -34,6 +57,7 @@ for (const scheme of ['light', 'dark'] as const) {
       page,
     }) => {
       await page.goto('/')
+      await resetInjectedBrandState(page)
       // Apply the preset the way the layout would.
       await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'warm'))
       const presetSurface = await page.evaluate(readToken('--sem-surface'))
@@ -54,6 +78,7 @@ for (const scheme of ['light', 'dark'] as const) {
 test.describe('warm preset', () => {
   test('changes the page surface when data-theme is set', async ({ page }) => {
     await page.goto('/')
+    await resetInjectedBrandState(page)
     const before = await page.evaluate(readToken('--sem-surface'))
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'warm'))
     const after = await page.evaluate(readToken('--sem-surface'))

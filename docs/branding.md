@@ -98,7 +98,11 @@ same contrast rules in `styles/tokens.test.ts`.
    light value, because the preset selector outranks the base dark override.
 2. Add `<name>` to `THEME_NAMES` and its two surface pairs to `PRESET_SURFACES`
    in `lib/theme.ts`.
-3. Add it to the `theme` field's option list in `schemas/singletons/settings.ts`.
+3. Add it to the `theme` field's option list in `schemas/singletons/settings.ts`, then
+   re-run `npm run typegen` so the generated `theme` type stays in sync with the
+   schema. Nothing breaks immediately if you skip this — the runtime code accepts
+   any string and narrows it safely via `resolveThemeName` — but the generated
+   type quietly goes stale.
 4. Add it to `THEMES` in `styles/tokens.test.ts`.
 
 `npm test` then checks the new tone against every contrast rule automatically,

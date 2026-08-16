@@ -88,7 +88,7 @@ describe('deriveTheme — accessible by construction', () => {
     })
   }
 
-  it('handles the extremes that stress the chroma fallback', () => {
+  it('handles the achromatic and fully-saturated extremes', () => {
     for (const brand of [
       '#ffff00',
       '#00ffff',
