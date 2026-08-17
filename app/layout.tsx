@@ -127,7 +127,6 @@ export async function generateMetadata(): Promise<Metadata> {
         sizes: '180x180',
       },
     },
-    manifest: '/favicon/site.webmanifest',
   }
 }
 

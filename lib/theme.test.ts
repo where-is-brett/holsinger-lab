@@ -1,4 +1,7 @@
+import { readFileSync } from 'node:fs'
+
 import { contrast } from 'lib/color'
+import type { ThemeName } from 'lib/theme'
 import {
   buildBrandStyle,
   deriveTheme,
@@ -6,9 +9,8 @@ import {
   PRESET_SURFACES,
   resolveThemeName,
   THEME_NAMES,
+  themeColorFor,
 } from 'lib/theme'
-import type { ThemeName } from 'lib/theme'
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 describe('deriveToken', () => {
@@ -203,5 +205,15 @@ describe('resolveThemeName', () => {
     for (const bad of [undefined, null, '', 'neutral', 42, {}]) {
       expect(resolveThemeName(bad)).toBe('default')
     }
+  })
+})
+
+describe('themeColorFor', () => {
+  it('returns the light and dark base surface for the default preset', () => {
+    expect(themeColorFor('default')).toEqual({ light: '#f8f8f8', dark: '#0d0e12' })
+  })
+
+  it('returns the light and dark base surface for the warm preset', () => {
+    expect(themeColorFor('warm')).toEqual({ light: '#faf8f4', dark: '#12100d' })
   })
 })
