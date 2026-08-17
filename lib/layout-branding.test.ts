@@ -1,4 +1,4 @@
-import { resolveBrandStyle } from 'lib/layout-branding'
+import { resolveBrandStyle, resolveViewportColors } from 'lib/layout-branding'
 import { describe, expect, it } from 'vitest'
 
 describe('resolveBrandStyle', () => {
@@ -35,5 +35,25 @@ describe('resolveBrandStyle', () => {
   it('injects nothing for a malformed brand colour rather than throwing', () => {
     expect(() => resolveBrandStyle({ brandColor: { hex: 'nope' } })).not.toThrow()
     expect(resolveBrandStyle({ brandColor: { hex: 'nope' } }).style).toBeNull()
+  })
+})
+
+describe('resolveViewportColors', () => {
+  it('returns the default preset colours when theme is unset', () => {
+    expect(resolveViewportColors({})).toEqual({ light: '#f8f8f8', dark: '#0d0e12' })
+  })
+
+  it('returns the warm preset colours when theme is warm', () => {
+    expect(resolveViewportColors({ theme: 'warm' })).toEqual({
+      light: '#faf8f4',
+      dark: '#12100d',
+    })
+  })
+
+  it('falls back to default for an unknown theme value', () => {
+    expect(resolveViewportColors({ theme: 'chartreuse' })).toEqual({
+      light: '#f8f8f8',
+      dark: '#0d0e12',
+    })
   })
 })

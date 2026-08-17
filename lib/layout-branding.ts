@@ -5,7 +5,7 @@
  * effectively untested.
  */
 
-import { buildBrandStyle, resolveThemeName } from 'lib/theme'
+import { buildBrandStyle, resolveThemeName, themeColorFor } from 'lib/theme'
 
 /** The subset of the settings payload this reads, declared structurally. */
 export interface BrandStyleSource {
@@ -39,4 +39,16 @@ export function resolveBrandStyle(
   if (!hex) return { dataTheme, style: null }
 
   return { dataTheme, style: buildBrandStyle(hex, theme) }
+}
+
+/**
+ * The `theme-color` values `generateViewport` serves, resolved the same way
+ * `resolveBrandStyle` resolves `data-theme` -- reusing `resolveThemeName` so
+ * an invalid or missing CMS value degrades to the default preset instead of
+ * an unstyled browser chrome colour.
+ */
+export function resolveViewportColors(
+  settings: BrandStyleSource | null | undefined
+): { light: string; dark: string } {
+  return themeColorFor(resolveThemeName(settings?.theme))
 }

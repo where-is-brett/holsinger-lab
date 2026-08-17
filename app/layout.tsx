@@ -5,7 +5,7 @@ import { JsonLd } from 'components/shared/JsonLd'
 import { resolveBranding } from 'lib/branding'
 import { resolveIconUrl } from 'lib/icons'
 import { buildOrganizationJsonLd } from 'lib/json-ld'
-import { resolveBrandStyle } from 'lib/layout-branding'
+import { resolveBrandStyle, resolveViewportColors } from 'lib/layout-branding'
 import { sanityFetch, SanityLive } from 'lib/sanity.live'
 import { settingsQuery } from 'lib/sanity.queries'
 import { fetchSettingsSafely } from 'lib/settings'
@@ -130,7 +130,15 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export const viewport: Viewport = { themeColor: '#F8F8F8' }
+export async function generateViewport(): Promise<Viewport> {
+  const { light, dark } = resolveViewportColors(await getSettings())
+  return {
+    themeColor: [
+      { media: '(prefers-color-scheme: light)', color: light },
+      { media: '(prefers-color-scheme: dark)', color: dark },
+    ],
+  }
+}
 
 export default async function RootLayout({
   children,
