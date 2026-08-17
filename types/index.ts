@@ -65,6 +65,7 @@ export const fallbackSettings: SettingsPayload = {
   showPeople: null,
   showContactForm: null,
   showLabHeadOnHome: null,
+  showLabHeadOnPeople: null,
   labHead: null,
   footer: [],
   ogImage: null,
