@@ -4,7 +4,10 @@ import { PreviewBanner } from 'components/preview/PreviewBanner'
 import { JsonLd } from 'components/shared/JsonLd'
 import { resolveBranding } from 'lib/branding'
 import { resolveIconUrl } from 'lib/icons'
-import { buildOrganizationJsonLd } from 'lib/json-ld'
+import {
+  buildOrganizationJsonLd,
+  resolveOrganizationLogoUrl,
+} from 'lib/json-ld'
 import { resolveBrandStyle, resolveViewportColors } from 'lib/layout-branding'
 import { sanityFetch, SanityLive } from 'lib/sanity.live'
 import { settingsQuery } from 'lib/sanity.queries'
@@ -146,8 +149,9 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const { isEnabled: isDraftMode } = await draftMode()
-  const { siteName } = resolveBranding(await getSettings())
-  const { dataTheme, style: brandStyle } = resolveBrandStyle(await getSettings())
+  const settings = await getSettings()
+  const { siteName } = resolveBranding(settings)
+  const { dataTheme, style: brandStyle } = resolveBrandStyle(settings)
 
   return (
     <html
@@ -169,7 +173,9 @@ export default async function RootLayout({
           data={buildOrganizationJsonLd({
             name: siteName,
             url: siteUrl,
-            logo: `${siteUrl}/logo.svg`,
+            logo: resolveOrganizationLogoUrl(
+              settings.logo as Image | null | undefined
+            ),
           })}
         />
         {isDraftMode && <PreviewBanner />}
