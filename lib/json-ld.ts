@@ -41,6 +41,22 @@ export function buildOrganizationJsonLd({
   return organization
 }
 
+/**
+ * Resolves the JSON-LD Organization's logo to a Sanity CDN URL, or returns
+ * undefined so the caller omits it entirely -- schema.org treats
+ * Organization.logo as recommended, not required, and pointing structured
+ * data at `public/logo.svg` (which reads "HOLSINGLER", a shipped typo) is
+ * worse than omitting it. Capped at 600px: this is structured-data
+ * metadata, not a rendered asset, so the full-resolution original is
+ * unnecessary weight.
+ */
+export function resolveOrganizationLogoUrl(
+  logo: Image | null | undefined
+): string | undefined {
+  if (!logo) return undefined
+  return urlForImage(logo)?.width(600).url()
+}
+
 export interface PersonJsonLd {
   '@type': 'Person'
   name: string

@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
+import { siteUrl } from 'lib/site'
 
 // Mirrors e2e/routes.spec.ts's CONTENT_ROUTES — Organization JSON-LD ships
 // from the root layout, so it must be present on every one of them, not
@@ -31,7 +32,17 @@ for (const path of CONTENT_ROUTES) {
     expect(typeof organization.name).toBe('string')
     expect(organization.name.length).toBeGreaterThan(0)
     expect(organization.url).toMatch(/^https?:\/\//)
-    expect(organization.logo).toContain('/logo.svg')
+    // settings.logo may or may not be uploaded in the shared dataset this
+    // suite runs against -- asserting only "not the old broken value"
+    // (rather than requiring a CDN URL to be present) keeps this true in
+    // both states, instead of accidentally depending on which one happens
+    // to be live right now. This is the exact class of trap Phase 4C's
+    // cascade e2e test hit: a claim that only held because a CMS field was
+    // unset in the shared dataset.
+    expect(organization.logo).not.toBe(`${siteUrl}/logo.svg`)
+    if (organization.logo !== undefined) {
+      expect(organization.logo).toMatch(/^https:\/\/cdn\.sanity\.io\//)
+    }
   })
 }
 

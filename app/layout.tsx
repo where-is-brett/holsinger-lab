@@ -3,8 +3,12 @@ import 'styles/index.css'
 import { PreviewBanner } from 'components/preview/PreviewBanner'
 import { JsonLd } from 'components/shared/JsonLd'
 import { resolveBranding } from 'lib/branding'
-import { buildOrganizationJsonLd } from 'lib/json-ld'
-import { resolveBrandStyle } from 'lib/layout-branding'
+import { resolveIconUrl } from 'lib/icons'
+import {
+  buildOrganizationJsonLd,
+  resolveOrganizationLogoUrl,
+} from 'lib/json-ld'
+import { resolveBrandStyle, resolveViewportColors } from 'lib/layout-branding'
 import { sanityFetch, SanityLive } from 'lib/sanity.live'
 import { settingsQuery } from 'lib/sanity.queries'
 import { fetchSettingsSafely } from 'lib/settings'
@@ -15,6 +19,7 @@ import localFont from 'next/font/local'
 import { draftMode } from 'next/headers'
 import { VisualEditing } from 'next-sanity/visual-editing'
 import { cache } from 'react'
+import type { Image } from 'sanity'
 
 const mono = IBM_Plex_Mono({
   variable: '--font-mono',
@@ -94,28 +99,49 @@ const getSettings = cache(() =>
 )
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { siteName } = resolveBranding(await getSettings())
+  const settings = await getSettings()
+  const { siteName } = resolveBranding(settings)
+  const icon = settings.icon as Image | null | undefined
 
   return {
     metadataBase: new URL(siteUrl),
     applicationName: siteName,
     icons: {
       icon: [
-        { url: '/favicon/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-        { url: '/favicon/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+        {
+          url: resolveIconUrl(icon, 32) ?? '/favicon/favicon-32x32.png',
+          sizes: '32x32',
+          type: 'image/png',
+        },
+        {
+          url: resolveIconUrl(icon, 16) ?? '/favicon/favicon-16x16.png',
+          sizes: '16x16',
+          type: 'image/png',
+        },
       ],
+      // /favicon.ico is requested by browsers at a fixed path outside
+      // Next's metadata system. Generating a real .ico requires ICO
+      // container encoding, not worth the complexity here -- this stays
+      // the static legacy fallback while the CMS-driven PNGs above (which
+      // browsers prefer when both are present) do the real work.
       shortcut: '/favicon/favicon.ico',
-      apple: { url: '/favicon/apple-touch-icon.png', sizes: '180x180' },
-    },
-    manifest: '/favicon/site.webmanifest',
-    other: {
-      'msapplication-TileColor': '#000000',
-      'msapplication-config': '/favicon/browserconfig.xml',
+      apple: {
+        url: resolveIconUrl(icon, 180) ?? '/favicon/apple-touch-icon.png',
+        sizes: '180x180',
+      },
     },
   }
 }
 
-export const viewport: Viewport = { themeColor: '#F8F8F8' }
+export async function generateViewport(): Promise<Viewport> {
+  const { light, dark } = resolveViewportColors(await getSettings())
+  return {
+    themeColor: [
+      { media: '(prefers-color-scheme: light)', color: light },
+      { media: '(prefers-color-scheme: dark)', color: dark },
+    ],
+  }
+}
 
 export default async function RootLayout({
   children,
@@ -123,8 +149,9 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const { isEnabled: isDraftMode } = await draftMode()
-  const { siteName } = resolveBranding(await getSettings())
-  const { dataTheme, style: brandStyle } = resolveBrandStyle(await getSettings())
+  const settings = await getSettings()
+  const { siteName } = resolveBranding(settings)
+  const { dataTheme, style: brandStyle } = resolveBrandStyle(settings)
 
   return (
     <html
@@ -146,7 +173,9 @@ export default async function RootLayout({
           data={buildOrganizationJsonLd({
             name: siteName,
             url: siteUrl,
-            logo: `${siteUrl}/logo.svg`,
+            logo: resolveOrganizationLogoUrl(
+              settings.logo as Image | null | undefined
+            ),
           })}
         />
         {isDraftMode && <PreviewBanner />}

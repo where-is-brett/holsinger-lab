@@ -168,3 +168,16 @@ export function resolveThemeName(value: unknown): ThemeName {
     ? (value as ThemeName)
     : 'default'
 }
+
+/**
+ * The `theme-color` a browser or manifest should use for one preset, per
+ * colour scheme -- always the base surface, matching what an unstyled page
+ * paints before any content renders. Shared by `generateViewport` and
+ * `app/manifest.ts` so the two never disagree about what one preset means.
+ */
+export function themeColorFor(theme: ThemeName): { light: string; dark: string } {
+  return {
+    light: PRESET_SURFACES[theme].light[0],
+    dark: PRESET_SURFACES[theme].dark[0],
+  }
+}

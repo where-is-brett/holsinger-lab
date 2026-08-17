@@ -108,3 +108,17 @@ same contrast rules in `styles/tokens.test.ts`.
 `npm test` then checks the new tone against every contrast rule automatically,
 in both colour schemes, and fails if the CSS and `PRESET_SURFACES` disagree.
 Never relax a contrast floor to make a palette pass.
+
+## Icons, manifest and robots
+
+**Favicon** is uploaded in Studio under **Settings → Branding → Icon**. It drives the PNG
+`<link rel="icon">` tags Next serves from `generateMetadata`, at 16×16, 32×32 and 180×180 (the Apple
+touch icon), through the same Sanity image pipeline as the logo. `/favicon.ico` is the one exception:
+browsers request it at a fixed path outside Next's metadata system, and generating a real `.ico`
+requires ICO container encoding — not worth adding here, so `public/favicon/favicon.ico` stays a
+static legacy fallback, never CMS-driven. Leaving Icon empty falls back to the site's built-in PNGs.
+
+**`app/manifest.ts`** and **`app/robots.ts`** are generated, not files to hand-edit. Next serves them
+at `/manifest.webmanifest` and `/robots.txt` respectively, built from the same CMS settings as
+everything else in this document — there is no `public/favicon/site.webmanifest` or
+`public/robots.txt` to look for any more.

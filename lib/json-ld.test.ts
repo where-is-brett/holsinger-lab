@@ -8,15 +8,18 @@ import { describe, expect, it, vi } from 'vitest'
 // buildPersonListJsonLd only calls urlForImage when profile.image is
 // truthy, so a single fixed fake chain covers every test case that needs it.
 vi.mock('lib/sanity.image', () => ({
-  urlForImage: () => ({
-    width: () => ({
-      height: () => ({
-        fit: () => ({ url: () => 'https://cdn.sanity.io/mock-image.jpg' }),
-      }),
-    }),
-  }),
+  urlForImage: () => {
+    const chain = {
+      width: () => chain,
+      height: () => chain,
+      fit: () => chain,
+      url: () => 'https://cdn.sanity.io/mock-image.jpg',
+    }
+    return chain
+  },
 }))
 
+import type { Image } from 'sanity'
 import type { ProfilePayload, PublicationPayload } from 'types'
 
 import {
@@ -24,6 +27,7 @@ import {
   buildPersonJsonLd,
   buildPersonListJsonLd,
   buildScholarlyArticleListJsonLd,
+  resolveOrganizationLogoUrl,
   serializeJsonLd,
 } from './json-ld'
 import { siteUrl } from './site'
@@ -52,13 +56,15 @@ describe('buildOrganizationJsonLd', () => {
     const org = buildOrganizationJsonLd({
       name: 'Holsinger Lab',
       url: siteUrl,
-      logo: `${siteUrl}/logo.svg`,
+      logo: 'https://cdn.sanity.io/images/proj/ds/logo-abc123-600x200.png',
     })
     expect(org['@context']).toBe('https://schema.org')
     expect(org['@type']).toBe('Organization')
     expect(org.name).toBe('Holsinger Lab')
     expect(org.url).toBe(siteUrl)
-    expect(org.logo).toBe(`${siteUrl}/logo.svg`)
+    expect(org.logo).toBe(
+      'https://cdn.sanity.io/images/proj/ds/logo-abc123-600x200.png'
+    )
   })
 
   it('uses the supplied name rather than any built-in constant', () => {
@@ -78,15 +84,27 @@ describe('buildOrganizationJsonLd', () => {
     const org = buildOrganizationJsonLd({
       name: 'Holsinger Lab',
       url: siteUrl,
-      logo: `${siteUrl}/logo.svg`,
+      logo: 'https://cdn.sanity.io/images/proj/ds/logo-abc123-600x200.png',
     })
     expect(JSON.parse(JSON.stringify(org))).toEqual(org)
   })
 })
 
-function makeProfile(
-  overrides: Partial<ProfilePayload> = {}
-): ProfilePayload {
+describe('resolveOrganizationLogoUrl', () => {
+  it('returns undefined when no logo is uploaded', () => {
+    expect(resolveOrganizationLogoUrl(null)).toBeUndefined()
+    expect(resolveOrganizationLogoUrl(undefined)).toBeUndefined()
+  })
+
+  it('resolves a Sanity CDN URL when a logo is uploaded', () => {
+    const logo = { asset: { _ref: 'image-abc123-600x200-png' } } as Image
+    expect(resolveOrganizationLogoUrl(logo)).toBe(
+      'https://cdn.sanity.io/mock-image.jpg'
+    )
+  })
+})
+
+function makeProfile(overrides: Partial<ProfilePayload> = {}): ProfilePayload {
   return {
     _id: 'profile-1',
     image: null,

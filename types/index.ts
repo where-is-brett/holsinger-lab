@@ -72,4 +72,5 @@ export const fallbackSettings: SettingsPayload = {
   theme: null,
   logo: null,
   logoDark: null,
+  icon: null,
 }

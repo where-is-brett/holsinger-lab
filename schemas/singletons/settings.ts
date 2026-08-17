@@ -68,6 +68,17 @@ export default defineType({
         'Optional. Used instead of Logo when the visitor’s device is set to dark mode — useful if your logo is dark-coloured and would disappear. Leave empty to use the same logo in both.',
     }),
     defineField({
+      name: 'icon',
+      title: 'Icon',
+      type: 'image',
+      group: 'branding',
+      // No `hotspot`: rendered as a small square (browser tab, phone home
+      // screen) at several fixed sizes, the same reasoning as `logo` having
+      // none.
+      description:
+        'A square image for browser tabs and when the site is saved to a phone home screen. Leave empty to use the site’s built-in icon.',
+    }),
+    defineField({
       name: 'brandColor',
       title: 'Brand colour',
       type: 'color',
