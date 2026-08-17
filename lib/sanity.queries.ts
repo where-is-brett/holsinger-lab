@@ -96,6 +96,7 @@ export const settingsQuery = groq`
         metadata { dimensions { aspectRatio } }
       }
     },
+    icon,
     labHead->{
       _id,
       image,
