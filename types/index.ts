@@ -68,6 +68,8 @@ export const fallbackSettings: SettingsPayload = {
   labHead: null,
   footer: [],
   ogImage: null,
+  brandColor: null,
+  theme: null,
   logo: null,
   logoDark: null,
 }

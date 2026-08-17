@@ -66,3 +66,45 @@ they are harmless in visible UI and corrupting in machine-readable output. Produ
 - **Studio title** (`sanity.config.ts`) — Sanity config loads before any data fetch. Set via
   `NEXT_PUBLIC_SANITY_PROJECT_TITLE`.
 - **`siteUrl`** — deployment configuration, set via `NEXT_PUBLIC_SITE_URL`.
+
+## Colour
+
+Two settings in Studio → Settings → Branding control colour.
+
+**Brand colour** is one colour. The site derives two design tokens from it:
+`--sem-link` (links, which must clear 4.5:1 against the page) and `--sem-accent`
+(borders and edges, 3:1). Each is your colour, darkened in light mode or
+lightened in dark mode **only as far as its contrast requirement demands** — so
+a colour that is already readable is used exactly as you picked it, and one that
+is not is nudged until it is. There is no colour you can enter that produces an
+unreadable page: at the limit the derivation drains saturation until black or
+white satisfies the requirement.
+
+Because the two tokens have different requirements, they sometimes come out as
+the same colour (when your brand colour satisfies both) and sometimes as two
+shades (when it satisfies only the weaker one). Both are correct.
+
+Leaving Brand colour empty keeps the site's built-in blue and green.
+
+**Background tone** picks the greys — `default` (cool) or `warm` (cream and
+ink). It never affects your brand colour. Both tones are checked against the
+same contrast rules in `styles/tokens.test.ts`.
+
+### Adding another background tone
+
+1. Add `:root[data-theme='<name>']` and a matching
+   `@media (prefers-color-scheme: dark)` block to `styles/index.css`. Declare all
+   nine neutral tokens in **both** — a token left out of the dark block keeps its
+   light value, because the preset selector outranks the base dark override.
+2. Add `<name>` to `THEME_NAMES` and its two surface pairs to `PRESET_SURFACES`
+   in `lib/theme.ts`.
+3. Add it to the `theme` field's option list in `schemas/singletons/settings.ts`, then
+   re-run `npm run typegen` so the generated `theme` type stays in sync with the
+   schema. Nothing breaks immediately if you skip this — the runtime code accepts
+   any string and narrows it safely via `resolveThemeName` — but the generated
+   type quietly goes stale.
+4. Add it to `THEMES` in `styles/tokens.test.ts`.
+
+`npm test` then checks the new tone against every contrast rule automatically,
+in both colour schemes, and fails if the CSS and `PRESET_SURFACES` disagree.
+Never relax a contrast floor to make a palette pass.

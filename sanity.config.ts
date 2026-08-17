@@ -1,3 +1,4 @@
+import { colorInput } from '@sanity/color-input'
 import { apiVersion, dataset, previewSecretId, projectId } from 'lib/sanity.api'
 import { doiLookupPlugin } from 'plugins/doiLookupAction'
 import { previewDocumentNode } from 'plugins/previewPane'
@@ -53,6 +54,7 @@ export default defineConfig({
       defaultDocumentNode: previewDocumentNode({ apiVersion, previewSecretId }),
     }),
     media(),
+    colorInput(),
     singletonPlugin([home.name, settings.name]),
     doiLookupPlugin(),
     productionUrl({

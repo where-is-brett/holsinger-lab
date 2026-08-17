@@ -4,6 +4,7 @@ import { PreviewBanner } from 'components/preview/PreviewBanner'
 import { JsonLd } from 'components/shared/JsonLd'
 import { resolveBranding } from 'lib/branding'
 import { buildOrganizationJsonLd } from 'lib/json-ld'
+import { resolveBrandStyle } from 'lib/layout-branding'
 import { sanityFetch, SanityLive } from 'lib/sanity.live'
 import { settingsQuery } from 'lib/sanity.queries'
 import { fetchSettingsSafely } from 'lib/settings'
@@ -123,12 +124,23 @@ export default async function RootLayout({
 }) {
   const { isEnabled: isDraftMode } = await draftMode()
   const { siteName } = resolveBranding(await getSettings())
+  const { dataTheme, style: brandStyle } = resolveBrandStyle(await getSettings())
 
   return (
     <html
       lang="en"
+      data-theme={dataTheme}
       className={`${mono.variable} ${antarcticanMono.variable} ${serif.variable} ${arianaPro.variable}`}
     >
+      {brandStyle ? (
+        <style
+          // The value is built entirely from hex strings this codebase
+          // generated -- buildBrandStyle emits nothing but `#rrggbb` into a
+          // fixed template, and lib/theme.test.ts asserts it contains no
+          // angle brackets. No CMS text reaches this string.
+          dangerouslySetInnerHTML={{ __html: brandStyle }}
+        />
+      ) : null}
       <body className="bg-surface text-text">
         <JsonLd
           data={buildOrganizationJsonLd({

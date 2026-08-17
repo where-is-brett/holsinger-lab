@@ -16,6 +16,10 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05)
 }
 
+type Scheme = 'light' | 'dark'
+
+const DARK_MEDIA = '@media (prefers-color-scheme: dark)'
+
 interface CssBlock {
   /** The selector/at-rule text immediately preceding this block's `{`, trimmed. */
   selector: string
@@ -23,6 +27,8 @@ interface CssBlock {
   body: string
   /** Nesting depth: 0 for a block whose `{` sits outside every other block. */
   depth: number
+  /** Selector of the block this one is nested directly inside, or null. */
+  parent: string | null
 }
 
 /**
@@ -31,29 +37,43 @@ interface CssBlock {
  * (nested rules, `@media` wrappers, etc.) appear before or inside it. This
  * is what `String.indexOf('}')` cannot do: it always grabs the *next*
  * closing brace, which is wrong as soon as anything nests.
+ *
+ * Each block also records its immediate parent's selector, which is what
+ * lets a nested `:root` be told apart from a top-level one without relying
+ * on there being exactly one `@media` wrapper in the file.
  */
 function parseCssBlocks(css: string): CssBlock[] {
   const blocks: CssBlock[] = []
-  const stack: { selector: string; bodyStart: number; depth: number }[] = []
+  const stack: { selector: string; bodyStart: number; depth: number; parent: string | null }[] = []
   let depth = 0
   let selectorStart = 0
 
   for (let i = 0; i < css.length; i++) {
     const ch = css[i]
     if (ch === '{') {
-      stack.push({ selector: css.slice(selectorStart, i).trim(), bodyStart: i + 1, depth })
+      stack.push({
+        selector: css.slice(selectorStart, i).trim(),
+        bodyStart: i + 1,
+        depth,
+        parent: stack.length > 0 ? stack[stack.length - 1].selector : null,
+      })
       depth++
       selectorStart = i + 1
     } else if (ch === '}') {
       const frame = stack.pop()
-      if (!frame) throw new Error(`readTokens: unbalanced '}' while parsing CSS at index ${i}`)
+      if (!frame) throw new Error(`resolveTokens: unbalanced '}' while parsing CSS at index ${i}`)
       depth--
-      blocks.push({ selector: frame.selector, body: css.slice(frame.bodyStart, i), depth: frame.depth })
+      blocks.push({
+        selector: frame.selector,
+        body: css.slice(frame.bodyStart, i),
+        depth: frame.depth,
+        parent: frame.parent,
+      })
       selectorStart = i + 1
     }
   }
   if (stack.length > 0) {
-    throw new Error(`readTokens: unbalanced '{' while parsing CSS — ${stack.length} block(s) never closed`)
+    throw new Error(`resolveTokens: unbalanced '{' while parsing CSS — ${stack.length} block(s) never closed`)
   }
   return blocks
 }
@@ -66,58 +86,146 @@ function parseSemTokens(body: string): Record<string, string> {
 }
 
 /**
- * Resolves `marker` (e.g. `:root {`) to the single top-level block that
- * actually declares semantic tokens, then returns those tokens.
+ * Every `--sem-*` declaration for one selector in one scheme, in source order.
  *
- * Matching on "top-level selector AND declares --sem-* tokens" — rather
- * than "first block whose selector text appears in the file" — is what
- * keeps this from being fooled by:
- *  - a same-selector block nested inside `@media` (e.g. a dark-mode
- *    `:root` override): excluded by the depth === 0 check, regardless of
- *    source order
- *  - an unrelated same-selector block that carries no semantic tokens
- *    (e.g. `:root { --font-sans: ... }`): excluded by the --sem-* check
- *  - any rule appearing before the target block inside the same wrapper:
- *    irrelevant, because extents come from brace-depth counting, not
- *    `indexOf('}')`
- * Any marker that resolves to zero or more than one such block throws,
- * naming the reason, instead of silently returning an empty or wrong map.
+ * `light` means top-level blocks; `dark` means blocks nested directly inside a
+ * top-level `@media (prefers-color-scheme: dark)`. Returns an array because a
+ * selector may legitimately appear more than once; callers merge them in order.
  */
-function parseTokens(css: string, marker: string): Record<string, string> {
-  const selector = marker.replace(/\{\s*$/, '').trim()
-  if (!selector) throw new Error('readTokens: marker must name a selector (got an empty string)')
-
-  const topLevelMatches = parseCssBlocks(css).filter((b) => b.depth === 0 && b.selector === selector)
-  if (topLevelMatches.length === 0) {
-    throw new Error(`readTokens: no top-level block matching "${selector}" was found`)
-  }
-
-  const withTokens = topLevelMatches
-    .map((block) => parseSemTokens(block.body))
+function blocksFor(css: string, selector: string, scheme: Scheme): Record<string, string>[] {
+  return parseCssBlocks(css)
+    .filter((b) =>
+      scheme === 'light'
+        ? b.depth === 0 && b.selector === selector
+        : b.depth === 1 && b.selector === selector && b.parent === DARK_MEDIA
+    )
+    .map((b) => parseSemTokens(b.body))
     .filter((tokens) => Object.keys(tokens).length > 0)
-
-  if (withTokens.length === 0) {
-    throw new Error(
-      `readTokens: found ${topLevelMatches.length} top-level block(s) matching "${selector}", but none declare any --sem-* tokens`
-    )
-  }
-  if (withTokens.length > 1) {
-    throw new Error(
-      `readTokens: "${selector}" is ambiguous — ${withTokens.length} top-level blocks declare --sem-* tokens`
-    )
-  }
-
-  return withTokens[0]
 }
 
-/** Parses `--sem-*: #rrggbb;` declarations out of a named block of styles/index.css. */
-function readTokens(marker: string): Record<string, string> {
+/**
+ * The `--sem-*` tokens actually in effect for `selector` under `scheme`,
+ * resolved the way a browser cascades them.
+ *
+ * Preset blocks (`:root[data-theme="…"]`) declare only the neutrals, so reading
+ * one standalone would leave `--sem-link` and `--sem-accent` undefined and every
+ * assertion about them would silently pass. Layering over the base is what makes
+ * the guard mean anything for a preset (spec §1.1f).
+ *
+ * Layer order matches specificity, not source order: a preset's *light* block
+ * (0,2,0) outranks the base's *dark* block (0,1,0), so a preset that failed to
+ * redeclare a token in dark mode would show its light value -- which is exactly
+ * what a browser does, and what the completeness assertion in Task 3 forbids.
+ */
+function resolveTokens(css: string, selector: string, scheme: Scheme): Record<string, string> {
+  const layers = [...blocksFor(css, ':root', 'light')]
+  if (scheme === 'dark') layers.push(...blocksFor(css, ':root', 'dark'))
+
+  if (selector !== ':root') {
+    layers.push(...blocksFor(css, selector, 'light'))
+    if (scheme === 'dark') layers.push(...blocksFor(css, selector, 'dark'))
+  }
+
+  if (layers.length === 0) {
+    throw new Error(`resolveTokens: no block matching "${selector}" declares any --sem-* tokens`)
+  }
+  if (selector !== ':root' && blocksFor(css, selector, 'light').length === 0 && blocksFor(css, selector, 'dark').length === 0) {
+    throw new Error(`resolveTokens: no block matching "${selector}" was found in any scheme`)
+  }
+
+  return Object.assign({}, ...layers)
+}
+
+function readResolved(selector: string, scheme: Scheme): Record<string, string> {
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8')
-  return parseTokens(css, marker)
+  return resolveTokens(css, selector, scheme)
 }
+
+/** A selector's own declarations in one scheme, with no base layered under it. */
+function ownDeclarations(css: string, selector: string, scheme: Scheme): Record<string, string> {
+  const own: Record<string, string> = {}
+  for (const block of blocksFor(css, selector, scheme)) Object.assign(own, block)
+  return own
+}
+
+describe('resolveTokens', () => {
+  const CSS = `
+    :root {
+      --sem-surface: #ffffff;
+      --sem-text: #000000;
+      --sem-link: #0000ff;
+    }
+
+    :root[data-theme='warm'] {
+      --sem-surface: #faf8f4;
+      --sem-text: #1a1713;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --sem-surface: #000000;
+        --sem-text: #ffffff;
+        --sem-link: #9999ff;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root[data-theme='warm'] {
+        --sem-surface: #12100d;
+        --sem-text: #f4f1ea;
+      }
+    }
+  `
+
+  it('reads the base light tokens', () => {
+    expect(resolveTokens(CSS, ':root', 'light')).toEqual({
+      '--sem-surface': '#ffffff',
+      '--sem-text': '#000000',
+      '--sem-link': '#0000ff',
+    })
+  })
+
+  it('reads the base dark tokens', () => {
+    expect(resolveTokens(CSS, ':root', 'dark')).toEqual({
+      '--sem-surface': '#000000',
+      '--sem-text': '#ffffff',
+      '--sem-link': '#9999ff',
+    })
+  })
+
+  it('merges a preset over the base, so partial overrides inherit the rest', () => {
+    // --sem-link is declared only on :root. A preset that does not redeclare it
+    // must still resolve it, or every assertion about it silently compares
+    // undefined and passes.
+    expect(resolveTokens(CSS, ":root[data-theme='warm']", 'light')).toEqual({
+      '--sem-surface': '#faf8f4',
+      '--sem-text': '#1a1713',
+      '--sem-link': '#0000ff',
+    })
+  })
+
+  it("resolves a preset's dark scheme over the preset's own light values", () => {
+    expect(resolveTokens(CSS, ":root[data-theme='warm']", 'dark')).toEqual({
+      '--sem-surface': '#12100d',
+      '--sem-text': '#f4f1ea',
+      '--sem-link': '#9999ff',
+    })
+  })
+
+  it('tolerates two sibling dark @media blocks', () => {
+    // The exact shape that made the old parseTokens throw "is ambiguous".
+    expect(() => resolveTokens(CSS, ':root', 'dark')).not.toThrow()
+  })
+
+  it('throws when the selector exists in no scheme at all', () => {
+    expect(() => resolveTokens(CSS, ":root[data-theme='nope']", 'light')).toThrow(
+      /no block matching/
+    )
+  })
+})
 
 describe('light theme tokens', () => {
-  const t = readTokens(':root {')
+  const t = readResolved(':root', 'light')
 
   it('every text token meets WCAG AA on the page surface', () => {
     for (const name of ['--sem-text', '--sem-text-muted']) {
@@ -149,117 +257,11 @@ describe('light theme tokens', () => {
   })
 })
 
-describe('readTokens helper', () => {
-  it('resolves the top-level :root even when a same-selector @media block precedes it in the file', () => {
-    // Regression fixture for failure mode 1: if the dark block is ever
-    // moved above the light block, a naive indexOf(':root {') would find
-    // the *nested* :root first and silently hand back dark values labelled
-    // as light.
-    const css = `
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --sem-surface: #000000;
-          --sem-text: #ffffff;
-        }
-      }
-      :root {
-        --sem-surface: #ffffff;
-        --sem-text: #000000;
-      }
-    `
-    expect(parseTokens(css, ':root {')).toEqual({
-      '--sem-surface': '#ffffff',
-      '--sem-text': '#000000',
-    })
-  })
-
-  it('ignores an unrelated top-level :root block that declares no --sem-* tokens', () => {
-    // Regression fixture for failure mode 3: styles/index.css also has a
-    // `:root { --font-sans: ... }` block. Correctness must not depend on
-    // the semantic-token :root happening to appear first.
-    const css = `
-      :root {
-        --font-sans: sans-serif;
-      }
-      :root {
-        --sem-surface: #ffffff;
-      }
-    `
-    expect(parseTokens(css, ':root {')).toEqual({ '--sem-surface': '#ffffff' })
-  })
-
-  it('throws when the marker matches nothing', () => {
-    const css = `.foo { color: red; }`
-    expect(() => parseTokens(css, ':root {')).toThrow(/no top-level block matching ":root"/)
-  })
-
-  it('throws instead of returning an empty map when the only matching block has no --sem-* tokens', () => {
-    const css = `:root { --font-sans: sans-serif; }`
-    expect(() => parseTokens(css, ':root {')).toThrow(/none declare any --sem-\* tokens/)
-  })
-
-  it('throws when two top-level blocks both declare --sem-* tokens for the same marker', () => {
-    const css = `
-      :root {
-        --sem-surface: #ffffff;
-      }
-      :root {
-        --sem-surface: #000000;
-      }
-    `
-    expect(() => parseTokens(css, ':root {')).toThrow(/is ambiguous/)
-  })
-
-  it('does not match a :root nested inside @media when no top-level :root exists at all', () => {
-    const css = `
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --sem-surface: #000000;
-        }
-      }
-    `
-    expect(() => parseTokens(css, ':root {')).toThrow(/no top-level block matching ":root"/)
-  })
-
-  it('resolves an @media marker with no trailing brace distinctly from the nested :root marker', () => {
-    // Coverage for the marker shape the 'dark theme tokens' describe block
-    // below actually calls: readTokens('@media (prefers-color-scheme:
-    // dark)') — an at-rule selector with no trailing '{', matched against
-    // its own top-level block rather than the :root nested inside it.
-    // Fixture mirrors styles/index.css's real layout: a light :root
-    // followed by a dark override inside @media (prefers-color-scheme:
-    // dark). Asserts the two markers resolve to their own values and don't
-    // collide.
-    const css = `
-      :root {
-        color-scheme: light dark;
-        --sem-surface: #f8f8f8;
-        --sem-text: #0d0e12;
-      }
-
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --sem-surface: #0d0e12;
-          --sem-text: #f6f6f8;
-        }
-      }
-    `
-    expect(parseTokens(css, ':root {')).toEqual({
-      '--sem-surface': '#f8f8f8',
-      '--sem-text': '#0d0e12',
-    })
-    expect(parseTokens(css, '@media (prefers-color-scheme: dark)')).toEqual({
-      '--sem-surface': '#0d0e12',
-      '--sem-text': '#f6f6f8',
-    })
-  })
-})
-
 describe('dark theme tokens', () => {
-  const t = readTokens('@media (prefers-color-scheme: dark)')
+  const t = readResolved(':root', 'dark')
 
   it('defines every token the light theme defines', () => {
-    const light = Object.keys(readTokens(':root {')).sort()
+    const light = Object.keys(readResolved(':root', 'light')).sort()
     expect(Object.keys(t).sort()).toEqual(light)
   })
 
@@ -339,18 +341,16 @@ describe('cross-token contrast regression guard', () => {
     ['--sem-text-muted', '--sem-surface'],
     ['--sem-text-inverse', '--sem-surface-inverse'],
     ['--sem-text', '--sem-surface-raised'],
+    ['--sem-link', '--sem-surface-raised'],
   ]
 
-  const THEMES: [string, string][] = [
-    ['light', ':root {'],
-    ['dark', '@media (prefers-color-scheme: dark)'],
-  ]
+  const SCHEMES: Scheme[] = ['light', 'dark']
 
-  for (const [themeName, marker] of THEMES) {
-    it(`no known foreground/background pairing collapses below 3:1 in the ${themeName} theme`, () => {
-      const t = readTokens(marker)
+  for (const scheme of SCHEMES) {
+    it(`no known foreground/background pairing collapses below 3:1 in the ${scheme} theme`, () => {
+      const t = readResolved(':root', scheme)
       for (const [fg, bg] of USED_PAIRS) {
-        expect(contrast(t[fg], t[bg]), `${fg} on ${bg} (${themeName})`).toBeGreaterThanOrEqual(3)
+        expect(contrast(t[fg], t[bg]), `${fg} on ${bg} (${scheme})`).toBeGreaterThanOrEqual(3)
       }
     })
   }
@@ -436,4 +436,63 @@ describe('token-role misuse guard', () => {
 
     expect(offenders, offenders.join('\n')).toEqual([])
   })
+})
+
+const THEMES: { name: string; selector: string }[] = [
+  { name: 'default', selector: ':root' },
+  { name: 'warm', selector: ":root[data-theme='warm']" },
+]
+
+/** Tokens whose values come from brandColor at runtime, not from a preset. */
+const CHROMATIC = ['--sem-link', '--sem-accent']
+
+describe('every preset passes the contrast guards', () => {
+  for (const { name, selector } of THEMES) {
+    for (const scheme of ['light', 'dark'] as Scheme[]) {
+      it(`${name} / ${scheme}`, () => {
+        const t = readResolved(selector, scheme)
+
+        for (const token of ['--sem-text', '--sem-text-muted']) {
+          expect(contrast(t[token], t['--sem-surface']), `${token} on surface`).toBeGreaterThanOrEqual(4.5)
+          expect(contrast(t[token], t['--sem-surface-raised']), `${token} on raised`).toBeGreaterThanOrEqual(4.5)
+        }
+        expect(contrast(t['--sem-link'], t['--sem-surface']), 'link on surface').toBeGreaterThanOrEqual(4.5)
+        expect(contrast(t['--sem-accent'], t['--sem-surface']), 'accent on surface').toBeGreaterThanOrEqual(3)
+        expect(contrast(t['--sem-field'], t['--sem-surface']), 'field on surface').toBeGreaterThanOrEqual(3)
+        expect(
+          contrast(t['--sem-text-inverse'], t['--sem-surface-inverse']),
+          'inverse text on inverse surface'
+        ).toBeGreaterThanOrEqual(4.5)
+      })
+    }
+  }
+})
+
+describe('preset structure', () => {
+  const presets = THEMES.filter((t) => t.selector !== ':root')
+
+  for (const { name, selector } of presets) {
+    it(`${name} declares no chromatic token`, () => {
+      // Presets vary neutrals only -- chroma is brandColor's job (spec §2). This
+      // is read from the preset's own blocks, not the resolved merge, because
+      // the merge would always show the base's chromatic values.
+      const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8')
+      for (const scheme of ['light', 'dark'] as Scheme[]) {
+        const own = ownDeclarations(css, selector, scheme)
+        for (const token of CHROMATIC) {
+          expect(own[token], `${name}/${scheme} must not declare ${token}`).toBeUndefined()
+        }
+      }
+    })
+
+    it(`${name} redeclares in dark every token it declares in light`, () => {
+      // A preset's light block (0,2,0) outranks the base's dark block (0,1,0),
+      // so any token the preset declares in light but not in dark keeps its
+      // LIGHT value in dark mode. That is a silent, real rendering bug.
+      const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8')
+      expect(Object.keys(ownDeclarations(css, selector, 'dark')).sort()).toEqual(
+        Object.keys(ownDeclarations(css, selector, 'light')).sort()
+      )
+    })
+  }
 })

@@ -80,6 +80,8 @@ export const settingsQuery = groq`
       title
     },
     ogImage,
+    brandColor{hex},
+    theme,
     logo{
       ...,
       asset->{

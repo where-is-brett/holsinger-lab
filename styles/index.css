@@ -89,6 +89,45 @@
   }
 }
 
+:root[data-theme='warm'] {
+  /* Neutral preset. Selected by `settings.theme` in Sanity Studio; the root
+     layout puts `data-theme="warm"` on <html>. Presets vary the nine NEUTRAL
+     tokens only -- the two chromatic ones are derived from `settings.brandColor`
+     at request time and injected at higher specificity (see lib/theme.ts).
+     (Comment lives inside the ruleset, not above it: styles/tokens.test.ts's
+     block parser has no notion of CSS comments, so text placed directly above
+     a selector gets folded into the "selector" it matches on, and a preset
+     block would silently stop matching its own `:root[data-theme='warm']`
+     lookups.) */
+  --sem-surface: #faf8f4;
+  --sem-surface-raised: #f4f1ea;
+  --sem-surface-inverse: #24201b;
+  --sem-scrim: #12100d;
+  --sem-text: #1a1713;
+  --sem-text-muted: #5c544a;
+  --sem-text-inverse: #fffdf9;
+  --sem-field: #7a7168;
+  --sem-rule: #e7e2d8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='warm'] {
+    /* Must redeclare every token the light block above declares: this
+       selector is (0,2,0) and the base dark override is only (0,1,0), so
+       anything left out here would keep its LIGHT value in dark mode.
+       styles/tokens.test.ts asserts that completeness. */
+    --sem-surface: #12100d;
+    --sem-surface-raised: #24201b;
+    --sem-surface-inverse: #f4f1ea;
+    --sem-scrim: #12100d;
+    --sem-text: #f4f1ea;
+    --sem-text-muted: #bdb5a8;
+    --sem-text-inverse: #12100d;
+    --sem-field: #837a6f;
+    --sem-rule: #2c2721;
+  }
+}
+
 /* Stopgap for source images with baked-in white backgrounds.
 
    Measured across the live dataset: 4 of 5 project covers have 100% white
