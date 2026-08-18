@@ -230,7 +230,33 @@ first and investigate afterwards.
 
 ---
 
-## 7. If you ever need a developer
+## 7. Keeping it healthy
+
+The site is built on other people's code — hundreds of small components maintained by other
+people. Those get security updates, and this repository is set up to notice.
+
+**You will get GitHub notifications about dependency updates.** A robot called Renovate opens
+a request whenever something it watches has a new version, and GitHub separately emails about
+security advisories. This is normal and it never stops.
+
+**You don't need to act on these individually, and you shouldn't merge them yourself.** A
+dependency update can break the site, which is why the automated tests exist. Someone needs to
+read the result.
+
+**What to do instead:** once a year, ask a developer to do a dependency refresh — update
+everything, confirm all the tests still pass, fix whatever broke. It's roughly half a day's
+work and it keeps the accumulation from becoming a rewrite.
+
+**Where things stand today:** there are 15 known advisories in the site's dependencies (4 rated
+high, 11 moderate). None are in code written for this site; all are in components it depends
+on, and most are the kind that only matter for software handling untrusted input in ways this
+site does not. They are worth clearing at the first maintenance pass, not worth an emergency.
+Brett to confirm whether to clear them before handover — see the note at the end of this
+document. **[CONFIRM]**
+
+---
+
+## 8. If you ever need a developer
 
 The site is built so that ordinary work — content, people, publications, branding — never
 needs one. You'd need a developer for a new type of page, a different layout, or if
