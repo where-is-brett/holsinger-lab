@@ -22,6 +22,18 @@ test.skip('/people spotlights the lab head above the grid once settings.labHead 
   await page.goto('/people')
 })
 
+// Same live-data limitation as above. Hand-verify once settings.labHead is
+// set: with showLabHeadOnPeople on (the default), the spotlight renders and
+// the lab head is excluded from the regular grid; with it explicitly turned
+// off, the lab head disappears from /people entirely -- no spotlight, and
+// (unlike showLabHeadOnHome, which only ever affects the home page) they do
+// not reappear in the grid either.
+test.skip('/people has no spotlight and no grid entry when showLabHeadOnPeople is off', async ({
+  page,
+}) => {
+  await page.goto('/people')
+})
+
 test('an unknown person slug 404s', async ({ page }) => {
   const response = await page.goto('/people/not-a-real-person')
   expect(response?.status()).toBe(404)

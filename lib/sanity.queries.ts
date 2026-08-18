@@ -74,6 +74,7 @@ export const settingsQuery = groq`
     showPeople,
     showContactForm,
     showLabHeadOnHome,
+    showLabHeadOnPeople,
     menuItems[]->{
       _type,
       "slug": slug.current,

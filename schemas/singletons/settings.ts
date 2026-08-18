@@ -112,7 +112,16 @@ export default defineType({
       to: [{ type: 'profile' }],
       group: 'labHead',
       description:
-        'The lab head, shown in a spotlight at the top of the People page. Leave unset for no spotlight.',
+        'The lab head, shown in a spotlight at the top of the People page and optionally on the home page (toggles below). Leave unset for no spotlight anywhere.',
+    }),
+    defineField({
+      name: 'showLabHeadOnPeople',
+      title: 'Show lab head spotlight on the People page',
+      type: 'boolean',
+      group: 'labHead',
+      initialValue: true,
+      description:
+        'Toggle to show the lab head spotlight at the top of the People page. Turning this off removes them from the People page entirely -- they won\'t appear in the regular grid either. Affects only the People page -- the home page card and the lab head\'s own page (if enabled) are unaffected.',
     }),
     defineField({
       name: 'showLabHeadOnHome',

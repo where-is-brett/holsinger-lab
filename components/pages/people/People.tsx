@@ -4,6 +4,7 @@ import { ProfilePayload, RoleGroupPayload, SettingsPayload } from 'types'
 import { excludeLabHead } from './excludeLabHead'
 import { groupByRoleGroup } from './groupByRoleGroup'
 import Profile from './Profile'
+import { shouldShowLabHeadSpotlight } from './shouldShowLabHeadSpotlight'
 import { Spotlight } from './Spotlight'
 
 export default function People({
@@ -18,11 +19,12 @@ export default function People({
   const labHead = settings?.labHead
   const gridProfiles = excludeLabHead(profiles, labHead?._id)
   const sections = groupByRoleGroup(gridProfiles, roleGroups)
+  const showSpotlight = shouldShowLabHeadSpotlight(settings ?? {})
 
   return (
     <Layout settings={settings}>
       <h1 className="mb-6 text-3xl font-black md:text-5xl">People</h1>
-      {labHead && <Spotlight labHead={labHead} />}
+      {labHead && showSpotlight && <Spotlight labHead={labHead} />}
       <div className="mb-16 space-y-12">
         {sections.map((section) => (
           <section key={section.id}>
