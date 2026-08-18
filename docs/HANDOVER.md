@@ -253,11 +253,14 @@ read the result.
 everything, confirm all the tests still pass, fix whatever broke. It's roughly half a day's
 work and it keeps the accumulation from becoming a rewrite.
 
-**Where things stand today:** there are 15 known advisories in the site's dependencies (4 rated
-high, 11 moderate). None are in code written for this site; all are in components it depends
-on, and most are the kind that only matter for software handling untrusted input in ways this
-site does not. They are worth clearing at the first maintenance pass, not worth an emergency.
-**[CONFIRM]** whether Brett clears these before handover.
+**Where things stand today:** the dependencies were refreshed as part of this handover, which
+cleared the advisories that could be cleared safely — 16 down to 11, and the serious ones from
+5 to 2.
+
+The 11 that remain are all inside the tooling used to _build_ the site, not in the site
+visitors actually load. They can only be cleared by a change that would downgrade the CMS,
+which would be worse than leaving them. This is normal and it is not a security problem for
+the site. Ask a developer to look again at the yearly refresh.
 
 ---
 
