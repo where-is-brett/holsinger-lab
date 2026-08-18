@@ -74,6 +74,14 @@ The site's look is controlled from **Settings → Branding** and **Settings → 
 code changes needed for any of this. Everything below is optional; leaving a field empty
 keeps the site's built-in look.
 
+### The lab's name
+
+Under **Settings → Identity**, **Site name** is the full name of the lab — it appears in browser
+tabs, in search results and on social media share cards. **Short name** is used where there's less
+room, like the site header and the icon label on a phone home screen.
+
+Leave either empty and the site falls back to its built-in name.
+
 ### Logo
 
 Upload an image under **Logo** and it replaces the text mark in the site header. Any shape
