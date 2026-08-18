@@ -4,8 +4,8 @@ Everything needed to own and run the Holsinger Lab website.
 
 **From:** Brett Yang · **To:** R. M. Damian Holsinger · **Date:** 18 August 2026
 
-Items marked **[CONFIRM]** are ones Brett needs to fill in — they depend on account
-details not visible from the code.
+All five services are on free plans; there is no custom domain and nothing to renew.
+The only blank left is the repository's address, which changes when the transfer completes.
 
 ---
 
@@ -31,18 +31,24 @@ need a developer to change how the site _works_ — a new type of page, a differ
 
 Five services. Four are free at this size; one may not be.
 
-| Service       | What it does                                  | If the account lapses                         | Cost                       |
-| ------------- | --------------------------------------------- | --------------------------------------------- | -------------------------- |
-| **Sanity**    | Stores all content. The Studio you edit in.   | Site loses all its content. Most serious.     | Free tier **[CONFIRM]**    |
-| **Vercel**    | Publishes the site and serves it to visitors. | Site goes offline.                            | Free (Hobby) **[CONFIRM]** |
-| **GitHub**    | Stores the code.                              | Site keeps running, but no one can change it. | Free                       |
-| **Formspree** | Delivers contact-form messages to email.      | Contact form stops sending. Nothing else.     | Free tier **[CONFIRM]**    |
-| **Domain**    | The site's address.                           | Address stops working.                        | **[CONFIRM]** — see below  |
+| Service       | What it does                                  | If the account lapses                         | Cost         |
+| ------------- | --------------------------------------------- | --------------------------------------------- | ------------ |
+| **Sanity**    | Stores all content. The Studio you edit in.   | Site loses all its content. Most serious.     | Free         |
+| **Vercel**    | Publishes the site and serves it to visitors. | Site goes offline.                            | Free (Hobby) |
+| **GitHub**    | Stores the code.                              | Site keeps running, but no one can change it. | Free         |
+| **Formspree** | Delivers contact-form messages to email.      | Contact form stops sending. Nothing else.     | Free         |
+| **Domain**    | The site's address.                           | Nothing — see below.                          | Free         |
 
-**About the domain.** The site is currently at `holsingerlab.vercel.app`, an address Vercel
-provides free. **[CONFIRM]** whether a custom domain (e.g. `holsingerlab.org`) is also
-registered — if so, note the registrar, the renewal date and the annual cost, because a
-domain is the one thing here that expires silently and takes the site down when it does.
+**About the domain.** There is no custom domain. The site lives at
+`holsingerlab.vercel.app`, an address Vercel provides free — so nothing expires here and
+there is no renewal to miss. One less thing to own.
+
+**Worth considering, though.** That address belongs to Vercel, not to the lab. If the site
+ever moves to different hosting, it stops working, and every link pointing at it — in
+papers, on collaborators' pages, in Google's index — breaks with it. A domain of your own
+(`holsingerlab.org`, for instance) costs roughly $15 a year and is the one thing that would
+most improve the site's long-term survival. Not urgent. Easier to do now than after the
+current address has been cited in print.
 
 **Practical advice:** put the renewal dates in your calendar with a reminder a month ahead,
 and make sure the account email is one you'll still read in five years.
@@ -283,14 +289,14 @@ edit the live site directly.
 
 Details a developer will ask for.
 
-|                   |                                                                        |
-| ----------------- | ---------------------------------------------------------------------- |
-| Repository        | `github.com/where-is-brett/holsinger-lab` **[CONFIRM after transfer]** |
-| Live site         | `holsingerlab.vercel.app`                                              |
-| Studio            | `holsingerlab.vercel.app/studio`                                       |
-| Sanity project ID | `j3f9z8os`                                                             |
-| Sanity dataset    | `production`                                                           |
-| Custom domain     | **[CONFIRM]**                                                          |
+|                   |                                                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| Repository        | `github.com/where-is-brett/holsinger-lab` — becomes `github.com/<your-username>/holsinger-lab` after Step 6 |
+| Live site         | `holsingerlab.vercel.app`                                                                                   |
+| Studio            | `holsingerlab.vercel.app/studio`                                                                            |
+| Sanity project ID | `j3f9z8os`                                                                                                  |
+| Sanity dataset    | `production`                                                                                                |
+| Custom domain     | None — uses the free `holsingerlab.vercel.app`                                                              |
 
 **Environment variables** are set in Vercel → Settings → Environment Variables. Full list
 and explanation in `.env.local.example`. The secret ones are `SANITY_API_READ_TOKEN`,
