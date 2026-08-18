@@ -29,7 +29,7 @@ need a developer to change how the site _works_ — a new type of page, a differ
 
 ## 2. What you now own
 
-Five services. Four are free at this size; one may not be.
+Five services. All five are free at this size — there is nothing to pay and nothing to renew.
 
 | Service       | What it does                                  | If the account lapses                         | Cost         |
 | ------------- | --------------------------------------------- | --------------------------------------------- | ------------ |
@@ -50,8 +50,9 @@ papers, on collaborators' pages, in Google's index — breaks with it. A domain 
 most improve the site's long-term survival. Not urgent. Easier to do now than after the
 current address has been cited in print.
 
-**Practical advice:** put the renewal dates in your calendar with a reminder a month ahead,
-and make sure the account email is one you'll still read in five years.
+**Practical advice:** because nothing here expires, the one thing that can quietly break the
+lab's ownership is the account email. Make sure it is an address you will still read in five
+years, and that someone else in the lab knows where the passwords are kept.
 
 ---
 
