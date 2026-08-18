@@ -251,8 +251,7 @@ work and it keeps the accumulation from becoming a rewrite.
 high, 11 moderate). None are in code written for this site; all are in components it depends
 on, and most are the kind that only matter for software handling untrusted input in ways this
 site does not. They are worth clearing at the first maintenance pass, not worth an emergency.
-Brett to confirm whether to clear them before handover — see the note at the end of this
-document. **[CONFIRM]**
+**[CONFIRM]** whether Brett clears these before handover.
 
 ---
 
