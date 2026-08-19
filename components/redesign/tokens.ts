@@ -2,8 +2,15 @@
 // roles. Components import these instead of repeating utility strings, so a
 // token change is a one-file edit.
 
-/** Mono caps label: column heads, chip text, button text. */
-export const LABEL = 'font-mono text-label uppercase text-text-faint'
+/**
+ * Mono caps label geometry, no colour. Callers add their own text colour --
+ * split out because Tag, Button and CopyCitation each need a different,
+ * state-dependent colour (muted / link / faint), and LABEL below bakes in
+ * one fixed colour that only suits column heads and the footer.
+ */
+export const LABEL_BASE = 'font-mono text-label uppercase'
+/** Mono caps label: column heads, footer. Faint by default. */
+export const LABEL = `${LABEL_BASE} text-text-faint`
 /** Mono metadata: journal refs, counts, identifiers. */
 export const META = 'font-mono text-meta text-text-muted'
 /** The system's only border treatment: 1px, square corners, no shadow. */

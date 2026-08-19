@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import { HAIRLINE, PRESS } from './tokens'
+import { HAIRLINE, LABEL_BASE, PRESS } from './tokens'
 
 export interface CopyCitationProps {
   cite: string
@@ -10,12 +10,10 @@ export interface CopyCitationProps {
   copiedLabel?: string
 }
 
-// Mono caps label styling, matching LABEL's font/size/case but not its baked
-// -in colour -- see the matching comment in Button.tsx for why the colour
-// and border utilities are chosen per branch instead of layered on a fixed
-// class.
-const SHAPE =
-  'inline-flex min-h-11 min-w-11 items-center justify-center font-mono text-label uppercase leading-none'
+// LABEL_BASE gives the mono caps font/size/case with no colour baked in --
+// see the matching comment in Button.tsx for why the colour and border
+// utilities are chosen per branch instead of layered on a fixed class.
+const SHAPE = `inline-flex min-h-11 min-w-11 items-center justify-center ${LABEL_BASE} leading-none`
 
 export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitationProps) {
   const [copied, setCopied] = useState(false)
