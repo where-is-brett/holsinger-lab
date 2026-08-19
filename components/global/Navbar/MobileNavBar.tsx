@@ -126,11 +126,12 @@ const MobileNavBar = ({
             // that content box flush -- exactly what the old py-4 (16px)
             // did at the old 4rem --nav-height ((64px-2px-30px)/2 = 16px),
             // just expressed as a formula instead of a number frozen to one
-            // --nav-height value. Keeps this button's rendered height equal
-            // to the overlay button's explicit h-[var(--nav-height)] below
-            // (see the geometry-coupling comment above and on that overlay
-            // button) at every breakpoint, not just the one py-4 happened
-            // to fit.
+            // --nav-height value. Keeps this button's rendered box flush
+            // inside the bar (and therefore inside the overlay button's
+            // explicit h-[var(--nav-height)] below, which starts at the
+            // bar's outer edge and so is 2px taller -- see the
+            // geometry-coupling comment above and on that overlay button)
+            // at every breakpoint, not just the one py-4 happened to fit.
             className="absolute right-6 border-0 bg-transparent py-[calc((var(--nav-height)_-_2px_-_1.875rem)/2)]"
             onClick={handleMenuClick}
           >
