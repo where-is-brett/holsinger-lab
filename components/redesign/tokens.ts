@@ -43,5 +43,19 @@ export const RAIL_GRID = 'grid grid-cols-[var(--spacing-rail-sm)_1fr] md:grid-co
  * verbatim: Tailwind's content scanner reads plain text, comments included,
  * so writing the broken form as a literal class name here would make it
  * reappear in the built stylesheet even though nothing renders it.)
+ *
+ * `transition-transform duration-(...) ease-(...)` used to live directly in
+ * this constant. Moved out to a hand-written `.hl-press` class in
+ * styles/index.css (Task 8a review fix): any consumer that paired this
+ * constant with its own `transition-colors`/`transition-[...]` utility on
+ * the same element silently lost one of the two transitions, because each
+ * Tailwind transition utility overwrites the whole `transition-property`/
+ * `-duration`/`-timing-function` triad rather than merging into it, and
+ * only the utility generated later in the build's CSS wins. `.hl-press`
+ * declares every animatable property (scale, transform, background, color,
+ * border-color) in one `transition` shorthand, so it can never lose to a
+ * sibling utility -- see that class's comment for the full story,
+ * including why it lists `scale` (not just `transform`) for the press
+ * itself.
  */
-export const PRESS = 'active:scale-[0.97] transition-transform duration-(--sem-motion-press) ease-(--sem-ease-out)'
+export const PRESS = 'hl-press active:scale-[0.97]'

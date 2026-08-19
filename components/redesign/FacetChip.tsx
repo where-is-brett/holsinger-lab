@@ -23,16 +23,23 @@ const HIT_AREA =
 
 // ON is an ink fill (surface-inverse bg/border, text-inverse text) -- not
 // accent. OFF is transparent with a rule-strong border and muted text.
-// `hl-press`'s colour/border transitions (components.css) are reproduced as
-// Tailwind's own `transition-colors`; the press-scale half is `PRESS` from
-// tokens.ts (active:scale-[0.97], duration/easing from the motion tokens).
+// `PRESS` (tokens.ts) now carries the `.hl-press` class, which bundles the
+// scale/transform/background/color/border-color transition in one CSS
+// `transition` shorthand -- this element must NOT add its own
+// `transition-colors` (or any other `transition-*`) utility alongside it:
+// a second Tailwind transition utility on the same element would overwrite
+// `.hl-press`'s whole transition-property/-duration/-timing-function triad
+// (whichever rule the build emits later wins outright, silently dropping
+// the other), which is exactly the bug this component shipped with and had
+// fixed at the token source. See tokens.ts's PRESS comment and
+// styles/index.css's `.hl-press` comment for the full story.
 export function FacetChip({ label, count, on = false, onClick }: FacetChipProps) {
   return (
     <button
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`${HIT_AREA} ${PRESS} font-mono text-[11px] leading-none font-medium tracking-[0.08em] whitespace-nowrap border px-[13px] py-2 transition-colors duration-(--sem-motion-fast) ease-(--sem-ease) ${
+      className={`${HIT_AREA} ${PRESS} font-mono text-[11px] leading-none font-medium tracking-[0.08em] whitespace-nowrap border px-[13px] py-2 ${
         on
           ? 'border-surface-inverse bg-surface-inverse text-text-inverse'
           : 'border-rule-strong bg-transparent text-text-muted'

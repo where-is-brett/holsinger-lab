@@ -1,14 +1,11 @@
 'use client'
 
-import { FacetChip } from './FacetChip'
+import { FacetChip, type FacetChipProps } from './FacetChip'
 import { RAIL_GRID } from './tokens'
 
-export interface FacetChipSpec {
-  label: string
-  count?: number | string
-  on?: boolean
-  onClick?: () => void
-}
+// Field-for-field identical to FacetChipProps -- aliased rather than
+// redeclared so the two can't drift apart.
+export type FacetChipSpec = FacetChipProps
 
 export interface FacetBandProps {
   groups: { label: string; chips: FacetChipSpec[] }[]
@@ -27,7 +24,14 @@ export interface FacetBandProps {
 // placed under a sticky header, the offset MUST become var(--nav-height) --
 // never a hardcoded pixel value (app token contract; see SiteNav's
 // --nav-height usage).
+// Two variants, not one ROW plus an appended `items-center` override:
+// Tailwind utilities of equal specificity win by generation order in the
+// build's CSS, not by position in the className string, and `.items-center`
+// is generated before `.items-start` -- so `${ROW} items-center` silently
+// stayed top-aligned (Task 8a review finding). A second, fully-formed class
+// string sidesteps the collision instead of relying on override order.
 const ROW = 'grid grid-cols-[72px_1fr] gap-x-5 items-start'
+const ROW_CENTER = 'grid grid-cols-[72px_1fr] gap-x-5 items-center'
 const ROW_LABEL = 'font-mono text-[10px] leading-[2.6] tracking-[0.14em] text-text-faint uppercase'
 
 // Duplicates SectionRail's rail-header block (accent num + vertical mono-
@@ -54,7 +58,19 @@ export function FacetBand({
           {label}
         </span>
       </div>
-      <div className="flex flex-col gap-3.5 pt-8 pr-(--spacing-gutter-lg) pb-9 pl-(--spacing-gutter-md)">
+      {/* Groups gap is 20px (gap-5), not the source's 14px: the same hit-area
+          intrusion that forced gap-y-5 inside a group also applies across
+          groups -- a chip's 44px hit area still overhangs 7.5px per edge, so
+          the last chip row of one group and the first row of the next
+          intrude 15px combined into this gap. 14px left them overlapping by
+          ~1px, which is worse here than within a group: the ambiguous tap
+          sits between chips belonging to *different* facets (e.g. a Year
+          chip and a Type chip), so a mis-tap silently applies the wrong
+          filter. 20px matches the same 5px-clearance policy as the
+          intra-group gap (Task 8a review finding). The density row below
+          doesn't need this: its border-t + pt-3 already add ~18.5px of real
+          separation from the last group's chips. */}
+      <div className="flex flex-col gap-5 pt-8 pr-(--spacing-gutter-lg) pb-9 pl-(--spacing-gutter-md)">
         {groups.map((g) => (
           <div key={g.label} className={ROW}>
             <span className={ROW_LABEL}>{g.label}</span>
@@ -74,7 +90,7 @@ export function FacetBand({
           </div>
         ))}
         {density && (
-          <div className={`${ROW} items-center border-t border-rule pt-3`}>
+          <div className={`${ROW_CENTER} border-t border-rule pt-3`}>
             <span className={`${ROW_LABEL} leading-none`}>Density</span>
             <div className="flex gap-2">
               {density.options.map((d) => (

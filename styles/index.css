@@ -336,6 +336,39 @@ input {
   outline-offset: 3px;
 }
 
+/* Pressable-control transition primitive (Button, CopyCitation, FacetChip).
+   Declares every animatable property in ONE `transition` shorthand rather
+   than as separate Tailwind utility classes on the same element. Tailwind's
+   per-property utilities (`transition-transform`, `transition-colors`, ...)
+   each set the *whole* longhand `transition-property`/`-duration`/
+   `-timing-function` triad, not just their own slice of it -- stacking two
+   of them on one element means only the utility generated later in the
+   build's CSS wins outright, and the other's transition is silently
+   dropped. Caught in Task 8a review: `FacetChip` paired `PRESS` (which
+   used to carry `transition-transform`) with its own `transition-colors`,
+   and only the transform half ever animated -- the ON/OFF colour swap
+   snapped instantly despite the code and comments claiming otherwise. This
+   class exists so `PRESS` (tokens.ts) can bundle every property any
+   consumer needs in one place, immune to generation-order.
+   Mirrors docs/redesign-experiment/design-system/components/components.css's
+   `.hl-press`, with one addition: `scale` is listed alongside `transform`.
+   The vendored source presses via `transform: scale(0.97)` (one legacy
+   property), but this port's press feedback is Tailwind's
+   `active:scale-[0.97]` utility, which sets the standalone modern `scale`
+   CSS property -- a different property from `transform` as far as
+   `transition-property` matching is concerned. Copying the source's list
+   literally (`transform` only, no `scale`) would silently stop the press
+   scale itself from animating -- the same class of bug this class exists
+   to fix, reintroduced by the "fix". */
+.hl-press {
+  transition:
+    scale var(--sem-motion-press) var(--sem-ease-out),
+    transform var(--sem-motion-press) var(--sem-ease-out),
+    background var(--sem-motion-fast) var(--sem-ease),
+    color var(--sem-motion-fast) var(--sem-ease),
+    border-color var(--sem-motion-fast) var(--sem-ease);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
