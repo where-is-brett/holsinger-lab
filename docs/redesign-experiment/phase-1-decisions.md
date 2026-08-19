@@ -198,3 +198,111 @@ honour. Recreate it the same way.
   `--sem-link` and `--sem-accent` at request time. A lab setting a `brandColor` therefore
   desyncs the inverse-band link from the real link. Out of Phase 1 scope; commented in
   `styles/index.css`.
+
+---
+
+## Later departures (Tasks 7-9 and the final fix wave)
+
+**Task 8 was split into 8a and 8b.** As written it bundled a unit-tested logic module with nine
+independent component ports behind a single commit and a single review gate — far past the plan's
+own stated task granularity. 8a took `facets.ts` + tests + `FacetChip` + `FacetBand`; 8b took the
+six remaining components.
+
+**`PublicationRow`'s title is a `<button>`, never the source's `href="#paper"`.** `publication` has
+no `slug` in the current schema, so there is no per-publication URL to link to until Phase 2. A
+handler with no destination is a button. Same reasoning applied to `Tag` in Task 4.
+
+**`PublicationRow` has no `'use client'`, for a specific reason.** `onOpen` is a function prop, and
+functions are not serialisable across the RSC boundary — so a Server Component *cannot* pass it.
+Any caller that does is necessarily a client component, and a module without the directive takes
+on its importer's environment. A server-only caller reaches only the non-interactive `<span>`
+branch. (The gallery route is therefore a client component, split into `page.tsx` + `Gallery.tsx`
+because Next.js forbids exporting `metadata` from a `'use client'` file — the same split
+`app/studio/[[...tool]]/page.tsx` already uses.)
+
+**`FacetChip` gets the same hit-area treatment as `Tag`,** and `FacetBand`'s chip rows are spaced
+`gap-y-5` (20px). A 44px hit area on a 29px box overhangs 7.5px per edge, so two adjacent wrapped
+rows intrude 15px combined: the source's 8px gap *overlaps* by 7px and 16px leaves only 1px. The
+same arithmetic applies across facet *groups*, which is why that container is `gap-5` too — an
+ambiguous tap there would silently apply the wrong filter.
+
+**`FacetBand` uses the shared `RAIL_GRID`,** not the source's fixed 88px rail, or its rail would
+misalign against every `SectionRail` and `PageTitle` below the `md` breakpoint.
+
+**`MobileHeader` takes its height from `var(--nav-height)`** rather than the source's hardcoded
+`48`, and its MENU/CLOSE toggle gained a minimum width (the source's was ~43px).
+
+**`PersonCard` uses `next/image`.** `cdn.sanity.io` is already whitelisted and every image surface
+in this repo uses it; the source's `<img>` is a mockup artefact that would add a lint warning.
+
+**`SiteNav`'s desktop links are allowed to sit under the 44px floor.** They are desktop pointer
+targets in page chrome, paired with a touch-optimised `MobileHeader` whose targets do clear 44px,
+and the structure matches the already-shipped `DesktopNavBar`.
+
+### The transition collision — a systemic bug fixed at the source
+
+Two Tailwind utilities setting the same CSS property **never merge**; the later-generated one wins,
+and this repo deliberately has no `cn()`/`clsx`/`tailwind-merge` to dedupe. `PRESS` set
+`transition-transform`, so `FacetChip`'s added `transition-colors` was silently discarded and the
+ON/OFF colour swap did not animate at all — while the component's own comment claimed it did.
+
+Fixed at the source rather than per-component: `.hl-press` in `styles/index.css` now declares the
+whole transition in one shorthand (mirroring the vendored design system), and `PRESS` references
+it. A side effect is that `Button` and `CopyCitation` now animate their colour swaps too — which
+they were always meant to. The class sits *unlayered*, so it beats every Tailwind utility
+regardless of generation order.
+
+**This trap appeared three times.** Anywhere a shared constant is concatenated with a local
+override of the same property is suspect.
+
+## Final whole-branch review — two real defects, both fixed
+
+**The mobile hamburger was broken, not restyled.** `--nav-height` went 4rem → 3rem, but
+`MobileNavBar`'s visible hamburger was a hardcoded `py-4` stack measuring 62px, so its glyph sat
+16px down in a 48px bar and its click box overflowed by 14px — breaking the geometry contract
+documented in that very file. The e2e guard stayed green because it clicks the box centre. Fixed by
+deriving the padding from the token: `py-[calc((var(--nav-height) - 2px - 1.875rem)/2)]`, which
+reproduces the original relationship (at the old 4rem it yields exactly the old `py-4`).
+
+**`--sem-text-faint` failed WCAG AA on `--sem-surface-raised`** (4.13:1 light) — a real composition,
+since `PublicationRow` tints rows to `surface-raised` on hover while they carry faint text. The
+guard only ever checked faint against `--sem-surface`. Re-derived to `oklch(0.52 0.015 255)` →
+`#636a72` (4.66:1 on raised), and the guard extended to assert both surfaces in both schemes.
+
+Also fixed: the `narrow` row shape had no `group` ancestor so its title hover was inert; two
+*invalid* dead utilities were being emitted into the production stylesheet because Tailwind's
+content scanner reads class-like strings out of markdown prose in `docs/` (fixed with
+`@source not "../docs"`); and the triplicated hit-area string was hoisted into `tokens.ts`.
+
+## Carried into Phase 2/3 — deliberately not fixed here
+
+- **`--sem-text-faint` on `--sem-surface-raised` in the `warm` preset is 4.455:1** and untested. The
+  warm preset inherits the five new tokens from base and is scheduled for re-derivation in Phase 3;
+  start there.
+- **`--sem-rule-strong` is 1.62:1 (light) against `--sem-surface`**, below WCAG 1.4.11's 3:1 for UI
+  boundaries — and it is the sole visual boundary of `Button`, `Tag` and OFF-state `FacetChip`.
+  Inherited from the design system; axe does not evaluate 1.4.11, so the green e2e says nothing
+  about it. Contestable, but it is the one boundary token that escaped the repo's own convention.
+- **The type tokens are not a single source of truth.** The components hand-roll 16 distinct
+  arbitrary pixel sizes and 7 tracking values rather than using the seven declared type roles;
+  `--text-display` and `--text-lead` have no consumer. Each deviation was individually justified by
+  source fidelity, but `tokens.ts`'s promise that "a token change is a one-file edit" is not yet
+  true. Phase 3 rebuilds the screens and is the moment to settle it.
+- **`publicationRow.ts` and `PublicationRow.tsx` collide on a case-insensitive filesystem.**
+  `Gallery.tsx` already needs explicit `.ts`/`.tsx` extensions plus a comment to disambiguate.
+  Rename one while there is still a single consumer.
+- **Desktop nav wrap at `md` is unverified.** `DesktopNavBar` is `flex-wrap` at a fixed
+  `h-[var(--nav-height)]` with no `overflow-hidden`; a second row fitted at 76px but does not at
+  52px. Whether it wraps depends on how many menu items the CMS holds. Eyeball `/` at 768-1024px.
+- Smaller items: `splitAuthors`'s unreachable `.trimEnd()` would break string reconstruction if it
+  ever fired; `FormField`'s hover border lacks a `:not(:disabled)` guard; the striped-gradient value
+  is duplicated across two components; the `SiteFooter` density assertion only counts elements.
+
+## On merging
+
+Phase 1 re-points the palette and the scale globally while Phase 3 is what rebuilds the screens, so
+`/`, `/people` and `/publications` render restyled with their old markup. The plan's own Global
+Constraints say nothing merges to `main`, and the experiment's founding framing was explicitly
+"not straightaway replacing the production site". A green suite does not make shipping a
+half-migrated site to a live academic lab's domain the right call — that is a decision for the
+repository owner, not for the branch.
