@@ -1,7 +1,7 @@
 # Claude Design–driven redesign experiment — design
 
 **Date:** 2026-08-19
-**Status:** approved in brainstorming; Round 1 package next
+**Status:** Rounds 1 and 2 complete; direction chosen (Modern Instrument); 2C refinement, then Round 3
 **Owner:** Brett Yang (engineering side); Claude Design app (design side)
 
 ## 1. Purpose
@@ -174,9 +174,31 @@ These do not block the visual round; they are port-time work:
    and removes the `/projects/[slug]` route — needs a migration plus redirects for the
    five existing project URLs.
 
-## 8. Chosen direction & design-system decisions (filled after Round 2/3)
+## 8. Chosen direction (Round 2 outcome, 2026-08-19)
 
-_Pending._
+**Modern Instrument** wins. Built out in full as `03 Modern Instrument - Screens.dc.html`
+(refined to `… v2.dc.html` in session 2C); the rejected alternative `03 Editorial -
+Screens.dc.html` stays in the project for reference.
+
+Direction characteristics to preserve in the design system and the port:
+
+- Grid-forward composition with a numbered section rail (01 identity, 02 recent work,
+  03 resources, …) running down the left edge.
+- Archivo for display and headings (sentence case, not the caps of the first sketch),
+  IBM Plex Mono for all data — years, DOIs, roles, labels.
+- Publications as a true four-column row: year | title·authors·tags | journal |
+  link·cite. This anatomy is the reason the direction won; it is load-bearing.
+- Colour used structurally, ultramarine accent; light and dark palettes defined in oklch.
+- Identity block pairs the wordmark with the affiliation overline and a PI block, which
+  is what keeps it reading as a university lab rather than a product brand.
+
+Round 2 audit findings (both builds): no fabricated DOIs, all 19 people correctly
+grouped, portraits correctly matched, all publication metadata correct, no invented
+content, all six interaction-state strips present, block order conforming. Two defects
+in Modern Instrument fixed in 2C: an upper-cased DOI label on the Home resource block,
+and MAESTRO's "TUE · 10:00 GMT" presented as settled despite being open question §6 Q4.
+2C also adopts Editorial's scale solution (sticky facets, compact density, an explicit
+answer for 60 rows) and adds the open mobile-nav state.
 
 ## 9. Out of scope
 
