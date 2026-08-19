@@ -47,17 +47,28 @@ Task 7's implementer disclosed both; neither has been adjudicated.
    ellipsized. Verify both actually truncate. Fidelity to the vendored source is not a defence if
    the contract is broken.
 
-## Blocker for a cloud or fresh checkout
+## Setting up a cloud or fresh checkout
 
-`.env.local` is git-ignored and does **not** travel with the repo, but `npm run build` and
-`npm run test:e2e` need the Sanity keys. Without it, Tasks 8b and 9 cannot be verified — Task 9
-is entirely Playwright against a real production build.
+```bash
+cp .env.local.example .env.local
+```
 
-Recreate it from the values in `.env.local.example`, or copy the local one **minus
-`SANITY_API_WRITE_TOKEN`** (see the decisions file: omitting the write token is what makes "the
-live Sanity dataset is never written to" structural rather than an instruction).
+That is sufficient. `.env.local` is git-ignored and does not travel with the repo, and
+`lib/sanity.api.ts` throws if `NEXT_PUBLIC_SANITY_PROJECT_ID` or `NEXT_PUBLIC_SANITY_DATASET` is
+unset — so without this step `npm run build`, `npm run dev` and `npm run test:e2e` all fail, and
+Task 9 (entirely Playwright against a real production build) cannot be verified at all.
 
-`npm test`, `npm run type-check` and `npm run lint` all work without it.
+Those two variables are now **prefilled in the committed example file**, because neither is a
+secret: the project ID appears in every image URL the public site serves, and the dataset is
+publicly readable. They are also the only two the build actually requires.
+
+Deliberately left unset, and fine to leave unset:
+- `SANITY_API_READ_TOKEN` — only needed to read drafts; public reads work without it.
+- `SANITY_API_WRITE_TOKEN` — leaving it unset is what makes "the live Sanity dataset is never
+  written to" structural rather than an instruction. Do not add it.
+- `SANITY_WEBHOOK_SECRET` — no test touches `/api/revalidate`.
+
+`npm test`, `npm run type-check` and `npm run lint` need no environment at all.
 
 ## Baseline at handoff
 
