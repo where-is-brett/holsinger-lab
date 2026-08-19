@@ -36,6 +36,15 @@ const ROW = `group border-t border-rule transition-[background-color] duration-(
 const TITLE_HOVER =
   'group-hover:text-link transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease)'
 
+// 44px accessibility floor without growing the title's own visual box --
+// same technique as Tag.tsx's HIT_AREA (duplicated here rather than
+// imported: Tag.tsx keeps it private, and this task's scope doesn't extend
+// to modifying Task 4 files to export it). `inset-x-0` bounds the expanded
+// hit area to the title's own width, so it can't reach into the journal or
+// link/cite columns, which sit in separate grid cells.
+const HIT_AREA =
+  "relative before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']"
+
 // The identifier -- DOI or URL -- must print verbatim in every shape: never
 // uppercased, never re-typed. `normal-case!` is Tailwind 4's trailing-bang
 // form, emitting `text-transform: none !important` -- reproducing
@@ -52,6 +61,12 @@ const IDENTIFIER = 'text-link normal-case! break-all'
 // Tag. Styled to read as text, not a control: no border, no background,
 // zeroed padding, left-aligned, and the shared `:focus-visible` ring (never
 // `outline-none`) is left untouched so keyboard users still see it land.
+//
+// TITLE_HOVER and HIT_AREA are applied here, inside the `onOpen` branch
+// only, rather than folded into each call site's `className` -- that keeps
+// the row-hover colour coupling and the 44px hit area from ever landing on
+// the non-interactive `<span>` branch, where there is no control for either
+// to describe.
 function Title({
   pub,
   onOpen,
@@ -66,7 +81,7 @@ function Title({
       <button
         type="button"
         onClick={() => onOpen(pub)}
-        className={`${className} block border-0 bg-transparent p-0 text-left`}
+        className={`${TITLE_HOVER} ${HIT_AREA} ${className} block border-0 bg-transparent p-0 text-left`}
       >
         {pub.title}
       </button>
@@ -120,7 +135,18 @@ export function PublicationRow({
           onOpen={onOpen}
           className="mt-1.5 text-[14.5px] leading-[1.4] font-semibold text-pretty"
         />
-        <div className="mt-1.5 truncate font-mono text-[9.5px] leading-[1.4]">
+        {/* `relative` (not just tidiness) -- see the HIT_AREA comment above.
+            The title's expanded 44px hit area is centred on its own,
+            shorter line box, so for a single-line title it overshoots into
+            this element by a few px. A plain static sibling would sit
+            *below* that absolutely-positioned pseudo-element in paint
+            order regardless of DOM order, silently swallowing clicks meant
+            for the identifier link in the overlap band. `relative` (with
+            no offset, so no visual change) promotes this element into the
+            same paint tier as the title's pseudo -- and being later in
+            document order, it wins the overlap, so the real link stays
+            clickable. */}
+        <div className="relative mt-1.5 truncate font-mono text-[9.5px] leading-[1.4]">
           <span className="text-text-faint">{pub.linkKind} </span>
           <a className={IDENTIFIER} href={pub.linkHref}>
             {pub.linkLabel}
@@ -139,7 +165,7 @@ export function PublicationRow({
         <Title
           pub={pub}
           onOpen={onOpen}
-          className={`${TITLE_HOVER} pr-3 text-[17.5px] leading-[1.35] font-semibold tracking-[-0.005em] text-pretty`}
+          className="pr-3 text-[17.5px] leading-[1.35] font-semibold tracking-[-0.005em] text-pretty"
         />
         <span className="font-mono text-[12.5px] leading-[1.5] text-text-muted">
           {pub.journal} {pub.ref}
@@ -158,7 +184,7 @@ export function PublicationRow({
         <Title
           pub={pub}
           onOpen={onOpen}
-          className={`${TITLE_HOVER} truncate pr-3 text-[14.5px] leading-[1.5] font-semibold tracking-[-0.005em]`}
+          className="truncate pr-3 text-[14.5px] leading-[1.5] font-semibold tracking-[-0.005em]"
         />
         <span className="truncate font-mono text-[11.5px] leading-[1.6] text-text-muted">
           {pub.journal} · {pub.ref}
@@ -185,7 +211,7 @@ export function PublicationRow({
         <Title
           pub={pub}
           onOpen={onOpen}
-          className={`${TITLE_HOVER} text-[17.5px] leading-[1.35] font-semibold tracking-[-0.005em] text-pretty`}
+          className="text-[17.5px] leading-[1.35] font-semibold tracking-[-0.005em] text-pretty"
         />
         <div className="text-[13px] leading-[1.55] text-text-muted">
           {pub.authorsPre}
