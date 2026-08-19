@@ -28,8 +28,8 @@ export const PRESET_SURFACES: Record<
   Record<Scheme, readonly [string, string]>
 > = {
   default: {
-    light: ['#f8f8f8', '#f6f6f8'],
-    dark: ['#0d0e12', '#1b1d27'],
+    light: ['#f5f7f9', '#eaedf1'],
+    dark: ['#0d1014', '#1a1d23'],
   },
   warm: {
     light: ['#faf8f4', '#f4f1ea'],

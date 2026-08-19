@@ -5,16 +5,18 @@ import { describe, expect, it } from 'vitest'
 const css = readFileSync('styles/index.css', 'utf8')
 
 describe('--nav-height token', () => {
-  it('defines a mobile default of 4rem', () => {
-    expect(css).toMatch(/--nav-height:\s*4rem/)
+  it('defines a mobile default of 3rem', () => {
+    // Modern Instrument direction (Task 3): was 4rem.
+    expect(css).toMatch(/--nav-height:\s*3rem/)
   })
 
-  it('redefines to 4.75rem at the md breakpoint', () => {
+  it('redefines to 3.25rem at the md breakpoint', () => {
     // 48rem is Tailwind 4's default `md`. If these diverge, the sticky
     // Publications bar and the desktop nav stop agreeing about where the nav
-    // ends, which is exactly defect D8.
+    // ends, which is exactly defect D8. Modern Instrument direction: was
+    // 4.75rem.
     expect(css).toMatch(
-      /@media \(min-width:\s*48rem\)\s*\{[^@]*--nav-height:\s*4\.75rem/
+      /@media \(min-width:\s*48rem\)\s*\{[^@]*--nav-height:\s*3\.25rem/
     )
   })
 })

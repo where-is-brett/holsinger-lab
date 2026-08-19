@@ -40,7 +40,9 @@ describe('resolveBrandStyle', () => {
 
 describe('resolveViewportColors', () => {
   it('returns the default preset colours when theme is unset', () => {
-    expect(resolveViewportColors({})).toEqual({ light: '#f8f8f8', dark: '#0d0e12' })
+    // Modern Instrument direction (Task 3): PRESET_SURFACES.default was
+    // re-pointed to match styles/index.css's re-pointed palette.
+    expect(resolveViewportColors({})).toEqual({ light: '#f5f7f9', dark: '#0d1014' })
   })
 
   it('returns the warm preset colours when theme is warm', () => {
@@ -52,8 +54,8 @@ describe('resolveViewportColors', () => {
 
   it('falls back to default for an unknown theme value', () => {
     expect(resolveViewportColors({ theme: 'chartreuse' })).toEqual({
-      light: '#f8f8f8',
-      dark: '#0d0e12',
+      light: '#f5f7f9',
+      dark: '#0d1014',
     })
   })
 })

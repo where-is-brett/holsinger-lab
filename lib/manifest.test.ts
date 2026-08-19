@@ -58,8 +58,10 @@ describe('buildManifest', () => {
       icon192: null,
       icon512: null,
     })
-    expect(defaultManifest.theme_color).toBe('#f8f8f8')
-    expect(defaultManifest.background_color).toBe('#f8f8f8')
+    // Modern Instrument direction (Task 3): PRESET_SURFACES.default was
+    // re-pointed to match styles/index.css's re-pointed palette.
+    expect(defaultManifest.theme_color).toBe('#f5f7f9')
+    expect(defaultManifest.background_color).toBe('#f5f7f9')
 
     const warmManifest = buildManifest({
       siteName: 'x',

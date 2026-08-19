@@ -319,6 +319,40 @@ describe('dark theme tokens', () => {
   })
 })
 
+describe('redesign direction tokens', () => {
+  const ADDITIONS = [
+    '--sem-text-faint',
+    '--sem-text-inverse-muted',
+    '--sem-link-inverse',
+    '--sem-rule-strong',
+    '--sem-rule-inverse',
+  ]
+
+  it('declares every direction addition in both schemes', () => {
+    const light = readResolved(':root', 'light')
+    const dark = readResolved(':root', 'dark')
+    for (const name of ADDITIONS) {
+      expect(light[name], `${name} missing from light`).toBeTruthy()
+      expect(dark[name], `${name} missing from dark`).toBeTruthy()
+    }
+  })
+
+  it('faint text still meets WCAG AA on the page surface in both schemes', () => {
+    for (const scheme of ['light', 'dark'] as const) {
+      const t = readResolved(':root', scheme)
+      expect(contrast(t['--sem-text-faint'], t['--sem-surface'])).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('inverse-band text and links meet WCAG AA on the inverse surface', () => {
+    for (const scheme of ['light', 'dark'] as const) {
+      const t = readResolved(':root', scheme)
+      expect(contrast(t['--sem-text-inverse-muted'], t['--sem-surface-inverse'])).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(t['--sem-link-inverse'], t['--sem-surface-inverse'])).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+})
+
 describe('cross-token contrast regression guard', () => {
   // Generalizes past the specific bug above: every check up to this point
   // tests one named token against another named token, so a real
