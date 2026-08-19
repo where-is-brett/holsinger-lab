@@ -222,10 +222,7 @@ describe('resolveThemeName', () => {
 
 describe('themeColorFor', () => {
   it('returns the light and dark base surface for the default preset', () => {
-    expect(themeColorFor('default')).toEqual({
-      light: '#f8f8f8',
-      dark: '#0d0e12',
-    })
+    expect(themeColorFor('default')).toEqual({ light: '#f8f8f8', dark: '#0d0e12' })
   })
 
   it('returns the light and dark base surface for the warm preset', () => {

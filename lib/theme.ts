@@ -177,10 +177,7 @@ export function resolveThemeName(value: unknown): ThemeName {
  * paints before any content renders. Shared by `generateViewport` and
  * `app/manifest.ts` so the two never disagree about what one preset means.
  */
-export function themeColorFor(theme: ThemeName): {
-  light: string
-  dark: string
-} {
+export function themeColorFor(theme: ThemeName): { light: string; dark: string } {
   return {
     light: PRESET_SURFACES[theme].light[0],
     dark: PRESET_SURFACES[theme].dark[0],
