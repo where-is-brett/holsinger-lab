@@ -21,6 +21,43 @@ type ArrayOf<T> = Array<
 >
 
 // Source: schema.json
+export type PublicationReference = {
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'publication'
+}
+
+export type Resource = {
+  _id: string
+  _type: 'resource'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  title?: string
+  kind?: 'hardware' | 'protocol' | 'software' | 'dataset'
+  summary?: string
+  publication?: PublicationReference
+  howToObtain?: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+}
+
 export type Publication = {
   _id: string
   _type: 'publication'
@@ -29,6 +66,7 @@ export type Publication = {
   _rev: string
   author?: string
   title?: string
+  slug?: Slug
   volume?: number
   issue?: number
   pages?: string
@@ -37,6 +75,15 @@ export type Publication = {
   url?: string
   abstract?: string
   date?: string
+  type?: 'Article' | 'Review' | 'Case report'
+  topics?: Array<string>
+  featured?: boolean
+}
+
+export type Slug = {
+  _type: 'slug'
+  current?: string
+  source?: string
 }
 
 export type Timeline = {
@@ -165,12 +212,6 @@ export type Duration = {
   _type: 'duration'
   start?: string
   end?: string
-}
-
-export type Slug = {
-  _type: 'slug'
-  current?: string
-  source?: string
 }
 
 export type PageReference = {
@@ -579,7 +620,10 @@ export type Geopoint = {
 }
 
 export type AllSanitySchemaTypes =
+  | PublicationReference
+  | Resource
   | Publication
+  | Slug
   | Timeline
   | SanityImageAssetReference
   | Milestone
@@ -587,7 +631,6 @@ export type AllSanitySchemaTypes =
   | SanityImageCrop
   | SanityImageHotspot
   | Duration
-  | Slug
   | PageReference
   | Page
   | ProfileReference
@@ -995,7 +1038,7 @@ export type SettingsQueryResult = {
 
 // Source: lib/sanity.queries.ts
 // Variable: publicationsQuery
-// Query: *[_type == "publication"] | order(date desc) {    _id,    title,    author,    journal,    volume,    issue,    pages,    abstract,    url,    doi,    date,  }
+// Query: *[_type == "publication"] | order(date desc) {      _id,  title,  author,  journal,  volume,  issue,  pages,  abstract,  url,  doi,  date,  "slug": slug.current,  type,  topics,  featured,  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {    _id,    title,    kind,  },  }
 export type PublicationsQueryResult = Array<{
   _id: string
   title: string | null
@@ -1008,6 +1051,108 @@ export type PublicationsQueryResult = Array<{
   url: string | null
   doi: string | null
   date: string | null
+  slug: string | null
+  type: 'Article' | 'Case report' | 'Review' | null
+  topics: Array<string> | null
+  featured: boolean | null
+  resources: Array<{
+    _id: string
+    title: string | null
+    kind: 'dataset' | 'hardware' | 'protocol' | 'software' | null
+  }>
+}>
+
+// Source: lib/sanity.queries.ts
+// Variable: publicationBySlugQuery
+// Query: *[_type == "publication" && slug.current == $slug][0]{      _id,  title,  author,  journal,  volume,  issue,  pages,  abstract,  url,  doi,  date,  "slug": slug.current,  type,  topics,  featured,  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {    _id,    title,    kind,  },  }
+export type PublicationBySlugQueryResult = {
+  _id: string
+  title: string | null
+  author: string | null
+  journal: string | null
+  volume: number | null
+  issue: number | null
+  pages: string | null
+  abstract: string | null
+  url: string | null
+  doi: string | null
+  date: string | null
+  slug: string | null
+  type: 'Article' | 'Case report' | 'Review' | null
+  topics: Array<string> | null
+  featured: boolean | null
+  resources: Array<{
+    _id: string
+    title: string | null
+    kind: 'dataset' | 'hardware' | 'protocol' | 'software' | null
+  }>
+} | null
+
+// Source: lib/sanity.queries.ts
+// Variable: publicationPaths
+// Query: *[_type == "publication" && slug.current != null].slug.current
+export type PublicationPathsResult = Array<string | null>
+
+// Source: lib/sanity.queries.ts
+// Variable: featuredPublicationsQuery
+// Query: *[_type == "publication" && featured == true] | order(date desc) {      _id,  title,  author,  journal,  volume,  issue,  pages,  abstract,  url,  doi,  date,  "slug": slug.current,  type,  topics,  featured,  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {    _id,    title,    kind,  },  }
+export type FeaturedPublicationsQueryResult = Array<{
+  _id: string
+  title: string | null
+  author: string | null
+  journal: string | null
+  volume: number | null
+  issue: number | null
+  pages: string | null
+  abstract: string | null
+  url: string | null
+  doi: string | null
+  date: string | null
+  slug: string | null
+  type: 'Article' | 'Case report' | 'Review' | null
+  topics: Array<string> | null
+  featured: true
+  resources: Array<{
+    _id: string
+    title: string | null
+    kind: 'dataset' | 'hardware' | 'protocol' | 'software' | null
+  }>
+}>
+
+// Source: lib/sanity.queries.ts
+// Variable: resourcesQuery
+// Query: *[_type == "resource"] | order(title asc) {    _id,    title,    kind,    summary,    howToObtain,    publication->{      _id,      title,      date,      doi,      url,      "slug": slug.current,    },  }
+export type ResourcesQueryResult = Array<{
+  _id: string
+  title: string | null
+  kind: 'dataset' | 'hardware' | 'protocol' | 'software' | null
+  summary: string | null
+  howToObtain: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+  publication: {
+    _id: string
+    title: string | null
+    date: string | null
+    doi: string | null
+    url: string | null
+    slug: string | null
+  } | null
 }>
 
 // Source: lib/sanity.queries.ts
@@ -1117,7 +1262,11 @@ declare module '@sanity/client' {
     '\n  *[_type == "project" && slug.current != null].slug.current\n': ProjectPathsResult
     '\n  *[_type == "page" && slug.current != null].slug.current\n': PagePathsResult
     '\n  *[_type == "settings"][0]{\n    siteName,\n    shortName,\n    footer,\n    showPublications,\n    showPeople,\n    showContactForm,\n    showLabHeadOnHome,\n    showLabHeadOnPeople,\n    menuItems[]->{\n      _type,\n      "slug": slug.current,\n      title\n    },\n    ogImage,\n    brandColor{hex},\n    theme,\n    logo{\n      ...,\n      asset->{\n        ...,\n        metadata { dimensions { aspectRatio } }\n      }\n    },\n    logoDark{\n      ...,\n      asset->{\n        ...,\n        metadata { dimensions { aspectRatio } }\n      }\n    },\n    icon,\n    labHead->{\n      _id,\n      image,\n      name,\n      role,\n      email,\n      phone,\n      bio,\n      "slug": slug.current,\n      hasPage,\n      fullBio,\n    },\n  }\n': SettingsQueryResult
-    '\n  *[_type == "publication"] | order(date desc) {\n    _id,\n    title,\n    author,\n    journal,\n    volume,\n    issue,\n    pages,\n    abstract,\n    url,\n    doi,\n    date,\n  }\n': PublicationsQueryResult
+    '\n  *[_type == "publication"] | order(date desc) {\n    \n  _id,\n  title,\n  author,\n  journal,\n  volume,\n  issue,\n  pages,\n  abstract,\n  url,\n  doi,\n  date,\n  "slug": slug.current,\n  type,\n  topics,\n  featured,\n  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {\n    _id,\n    title,\n    kind,\n  },\n\n  }\n': PublicationsQueryResult
+    '\n  *[_type == "publication" && slug.current == $slug][0]{\n    \n  _id,\n  title,\n  author,\n  journal,\n  volume,\n  issue,\n  pages,\n  abstract,\n  url,\n  doi,\n  date,\n  "slug": slug.current,\n  type,\n  topics,\n  featured,\n  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {\n    _id,\n    title,\n    kind,\n  },\n\n  }\n': PublicationBySlugQueryResult
+    '\n  *[_type == "publication" && slug.current != null].slug.current\n': PublicationPathsResult
+    '\n  *[_type == "publication" && featured == true] | order(date desc) {\n    \n  _id,\n  title,\n  author,\n  journal,\n  volume,\n  issue,\n  pages,\n  abstract,\n  url,\n  doi,\n  date,\n  "slug": slug.current,\n  type,\n  topics,\n  featured,\n  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {\n    _id,\n    title,\n    kind,\n  },\n\n  }\n': FeaturedPublicationsQueryResult
+    '\n  *[_type == "resource"] | order(title asc) {\n    _id,\n    title,\n    kind,\n    summary,\n    howToObtain,\n    publication->{\n      _id,\n      title,\n      date,\n      doi,\n      url,\n      "slug": slug.current,\n    },\n  }\n': ResourcesQueryResult
     '\n  *[_type == "roleGroup"] | order(orderRank) {\n    _id,\n    title,\n  }\n': RoleGroupQueryResult
     '\n  *[_type == "profile"] | order(orderRank) {\n    _id,\n    image,\n    orderRank,\n    name,\n    role,\n    roleGroup->{\n      _id,\n      title,\n    },\n    email,\n    phone,\n    bio,\n    "slug": slug.current,\n    hasPage,\n    fullBio,\n  }\n': ProfileQueryResult
     '\n  *[_type == "profile" && slug.current == $slug && hasPage == true][0]{\n    _id,\n    image,\n    name,\n    role,\n    email,\n    phone,\n    bio,\n    "slug": slug.current,\n    hasPage,\n    fullBio,\n  }\n': ProfileBySlugQueryResult
