@@ -58,13 +58,15 @@ export function FacetBand({
         {groups.map((g) => (
           <div key={g.label} className={ROW}>
             <span className={ROW_LABEL}>{g.label}</span>
-            {/* Vertical gap is 16px (gap-y-4), not the source's 8px, because a
-                44px hit area on a ~29px-tall chip overhangs ~7.5px per edge --
-                against an 8px row gap that leaves almost no clearance between
-                wrapped rows before their hit areas would touch. Horizontal
-                gap stays the source's 8px (gap-x-2); only vertical needed
-                widening. See the task report for the exact clearance math. */}
-            <div className="flex flex-wrap gap-x-2 gap-y-4">
+            {/* Vertical gap is 20px (gap-y-5), not the source's 8px: a 44px hit
+                area on a ~29px-tall chip overhangs 7.5px per edge, so two
+                wrapped rows' hit areas intrude 15px combined into the gap
+                between them. A 16px gap would leave only ~1px -- a rounding
+                error, not a margin -- so this uses 20px for 5px of real
+                clearance. Horizontal gap stays the source's 8px (gap-x-2):
+                horizontal overhang is bounded by inset-x-0, so it was never
+                at risk. See the task report for the full clearance math. */}
+            <div className="flex flex-wrap gap-x-2 gap-y-5">
               {g.chips.map((c) => (
                 <FacetChip key={c.label} {...c} />
               ))}
