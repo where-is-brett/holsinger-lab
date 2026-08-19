@@ -106,7 +106,7 @@ function Identifier({
   return (
     <span className={`font-mono ${fontSize} leading-[1.5] break-all`}>
       <span className="text-text-faint">{pub.linkKind} </span>
-      <a className={IDENTIFIER} href={pub.linkHref}>
+      <a className={IDENTIFIER} href={pub.linkHref} data-identifier>
         {label}
       </a>
     </span>
@@ -148,7 +148,7 @@ export function PublicationRow({
             clickable. */}
         <div className="relative mt-1.5 truncate font-mono text-[9.5px] leading-[1.4]">
           <span className="text-text-faint">{pub.linkKind} </span>
-          <a className={IDENTIFIER} href={pub.linkHref}>
+          <a className={IDENTIFIER} href={pub.linkHref} data-identifier>
             {pub.linkLabel}
           </a>
         </div>
@@ -192,7 +192,7 @@ export function PublicationRow({
         <span className="flex items-baseline gap-2.5 whitespace-nowrap font-mono text-[11px] leading-[1.6]">
           <span className="overflow-hidden text-ellipsis">
             <span className="text-text-faint">{pub.linkKind} </span>
-            <a className={IDENTIFIER} href={pub.linkHref}>
+            <a className={IDENTIFIER} href={pub.linkHref} data-identifier>
               {pub.linkLabelShort || pub.linkLabel}
             </a>
           </span>

@@ -41,7 +41,7 @@ export function ResourceBlock({ title, meta = [], figureLabel }: ResourceBlockPr
             <div key={m.label}>
               <span className="inline-block min-w-16 uppercase text-text-faint">{m.label}</span>
               {m.href ? (
-                <a className={`text-link ${IDENTIFIER}`} href={m.href}>
+                <a className={`text-link ${IDENTIFIER}`} href={m.href} data-identifier>
                   {m.value}
                 </a>
               ) : (
