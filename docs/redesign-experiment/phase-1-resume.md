@@ -1,53 +1,51 @@
-# Phase 1 — resume here
+# Phase 1 — complete
 
-Handoff state for continuing Phase 1 in a new session (cloud or local). Written 2026-08-19.
+Status for anyone picking this branch up. Written 2026-08-19.
 
-## Read these three files first, in order
+## Read these first, in order
 
 1. `docs/superpowers/plans/2026-08-19-redesign-phase-1-foundations.md` — the plan, 9 tasks.
-2. `docs/redesign-experiment/phase-1-decisions.md` — **every departure from the plan and why.**
-   The plan's literal text is wrong in several places; this file says where. Do not skip it.
-3. This file — what is done and what is next.
+2. `docs/redesign-experiment/phase-1-decisions.md` — **every departure from the plan and why**,
+   the two defect classes no guard here can catch, and the list of things deliberately carried
+   into Phase 2/3. The plan's literal text is wrong in several places; this file says where.
+3. This file.
 
 ## Where the work is
 
-Branch `redesign/modern-instrument`, pushed to `origin`. Branched from `redesign/experiment-brief`
-at `7e9bba4`. Nothing merges to `main`.
+Branch `redesign/modern-instrument`, pushed to `origin`, branched from `redesign/experiment-brief`
+at `7e9bba4`. **Not merged to `main`** — see "On merging" in the decisions file.
 
-## Status: Tasks 1-7 implemented, 8a / 8b / 9 remain
+## All nine tasks are complete and reviewed
 
-| Task | Commits | State |
-|---|---|---|
-| 1. Vendor design system | `1c140fd`, `dcf3776` | complete, reviewed |
-| 2. Accent coincides with link | `ded2fe5`, `edcba01` | complete, reviewed |
-| 3. Re-point palette + tokens | `6d2c54f` | complete, reviewed |
-| 4. tokens.ts, Tag, Button, CopyCitation | `12a4588`, `90064b0` | complete, reviewed |
-| 5. SectionRail, PageTitle | `d9797ca`, `21b0d07` | complete, reviewed |
-| 6. publicationRow.ts + tests | `7423474` | complete, reviewed |
-| 7. PublicationRow.tsx | `0edb9d3` | implemented; **review was in flight when this session ended — re-review it** |
-| 8a. facets.ts + tests, FacetChip, FacetBand | — | not started |
-| 8b. PersonCard, ResourceBlock, FormField, SiteNav, MobileHeader, SiteFooter | — | not started |
-| 9. fixtures, `/preview/components` gallery, Playwright + axe | — | not started |
-| Final whole-branch review | — | not started |
+| Task | State |
+|---|---|
+| 1. Vendor the design system | complete |
+| 2. Accent coincides with link | complete |
+| 3. Re-point the palette and add the direction's tokens | complete |
+| 4. `tokens.ts`, Tag, Button, CopyCitation | complete |
+| 5. SectionRail, PageTitle | complete |
+| 6. `publicationRow.ts` derivation logic + tests | complete |
+| 7. PublicationRow | complete |
+| 8a. `facets.ts` + tests, FacetChip, FacetBand | complete |
+| 8b. PersonCard, ResourceBlock, FormField, SiteNav, MobileHeader, SiteFooter | complete |
+| 9. fixtures, `/preview/components` gallery, Playwright + axe | complete |
+| Final whole-branch review + fix wave | complete — verdict "ready to merge" |
 
-Task 8 was **split** into 8a and 8b — see the decisions file for why. Everything else follows the
-plan's numbering.
+Task 8 was split into 8a and 8b; the reason is in the decisions file. Every task passed a scoped
+spec-and-quality review, and the branch then passed a whole-branch review whose two blocking
+findings were fixed and independently re-verified.
 
-## Two open questions on Task 7 that a re-review must settle
+## Verification state
 
-Task 7's implementer disclosed both; neither has been adjudicated.
+| Command | Result |
+|---|---|
+| `npm test` | 323 passed, 38 files |
+| `npm run type-check` | clean |
+| `npm run lint` | 0 errors, 4 warnings — **all pre-existing** (`components/global/Logo.tsx`, `e2e/brand-colour.spec.ts`). Any new warning is a regression. |
+| `npm run build` | clean, 23 routes |
+| `npm run test:e2e` | 102 passed, 5 skipped (87 of those pre-existing) |
 
-1. **`group-hover:text-link` fires on the title even when `onOpen` is absent.** When the title is
-   non-interactive text, colouring it link-blue on hover may misrepresent it as clickable. Decide
-   whether the coupling should be conditional on `onOpen`.
-2. **`compact`'s link ellipsis has no `min-width: 0`.** Likely a real functional defect, not
-   cosmetic: `text-overflow: ellipsis` on a flex *item* does not truncate unless that item has
-   `min-width: 0`, because flex items default to `min-width: auto` and refuse to shrink below
-   their content. The contract requires compact's title to truncate and its link to be
-   ellipsized. Verify both actually truncate. Fidelity to the vendored source is not a defence if
-   the contract is broken.
-
-## Setting up a cloud or fresh checkout
+## Setting up a fresh or cloud checkout
 
 ```bash
 cp .env.local.example .env.local
@@ -55,67 +53,51 @@ cp .env.local.example .env.local
 
 That is sufficient. `.env.local` is git-ignored and does not travel with the repo, and
 `lib/sanity.api.ts` throws if `NEXT_PUBLIC_SANITY_PROJECT_ID` or `NEXT_PUBLIC_SANITY_DATASET` is
-unset — so without this step `npm run build`, `npm run dev` and `npm run test:e2e` all fail, and
-Task 9 (entirely Playwright against a real production build) cannot be verified at all.
+unset — so without this step `npm run build`, `npm run dev` and `npm run test:e2e` all fail.
 
-Those two variables are now **prefilled in the committed example file**, because neither is a
-secret: the project ID appears in every image URL the public site serves, and the dataset is
-publicly readable. They are also the only two the build actually requires.
+Those two are prefilled in the committed example because neither is a secret: the project ID
+appears in every image URL the public site serves, and the dataset is publicly readable. They are
+also the only two the build requires.
 
-Deliberately left unset, and fine to leave unset:
-- `SANITY_API_READ_TOKEN` — only needed to read drafts; public reads work without it.
-- `SANITY_API_WRITE_TOKEN` — leaving it unset is what makes "the live Sanity dataset is never
-  written to" structural rather than an instruction. Do not add it.
-- `SANITY_WEBHOOK_SECRET` — no test touches `/api/revalidate`.
+Leave unset: `SANITY_API_READ_TOKEN` (drafts only), `SANITY_API_WRITE_TOKEN` (**leaving it unset is
+what makes "the live Sanity dataset is never written to" structural rather than an instruction**),
+and `SANITY_WEBHOOK_SECRET` (no test touches `/api/revalidate`).
 
 `npm test`, `npm run type-check` and `npm run lint` need no environment at all.
 
-## Baseline at handoff
+## What to look at
 
-- `npm test` — 314 passed, 37 files
-- `npm run lint` — 0 errors, 4 warnings, all pre-existing (`components/global/Logo.tsx`,
-  `e2e/brand-colour.spec.ts`). **Any new warning is a regression.**
-- `npm run build` — clean, 22 routes
-- `npm run test:e2e` — 87 passed, 5 skipped (measured before Task 3 re-pointed the palette; it
-  still passed after)
+`/preview/components` renders all twelve primitives in every state, in light and dark. It is the
+only render-time verification they have, and it is what `e2e/redesign-components.spec.ts` asserts
+against.
 
-## Standing rules for the remaining work
+**One thing needs a human eyeball**, because it is pure geometry that axe and the token guards are
+structurally blind to: open `/` at 768-1024px and check the desktop nav does not wrap. It is
+`flex-wrap` at a fixed `h-[var(--nav-height)]` with no `overflow-hidden`, and `--nav-height`
+dropped from 4rem to 3rem, so a wrapped second row would spill over the content below. Whether it
+wraps depends on how many menu items the CMS holds.
 
-- **Implementation subagents use Sonnet.** Reviewers and verifiers may use any tier; the final
-  whole-branch review should use the most capable one available.
-- **The vendored tree under `docs/redesign-experiment/design-system/` is the authority for
-  visual detail** and is read-only, verbatim by contract. Where the plan's prose and the vendored
-  source disagree, the source wins on appearance — but check it against the contract, because the
-  source is a static mockup and has its own soft spots (see Task 7's second open question, and
-  `Tag`'s three fidelity gaps in the decisions file).
-- **Empirical CSS proof is mandatory for every component task.** Build and grep the generated
+## Standing rules if you continue
+
+- **Implementation subagents use Sonnet.** Reviewers may use any tier; a final whole-branch review
+  should use the most capable available.
+- **The vendored tree under `docs/redesign-experiment/design-system/` is the authority for visual
+  detail** and is read-only, verbatim by contract. But it is a static mockup with its own soft
+  spots — check it against the contract rather than porting it blindly.
+- **Empirical CSS proof is mandatory for any component work.** Build and grep the generated
   stylesheet. A class Tailwind never generates is a silent no-op that type-check and lint both
-  pass — this has already bitten twice.
-- **Tailwind 4 arbitrary values:** `duration-(--sem-motion-press)` when the custom property is
-  the whole value; `grid-cols-[var(--spacing-rail)_1fr]` with an explicit `var()` when it is part
-  of a composite value; a bare `[--custom-prop]` emits invalid CSS.
-- **No new runtime dependencies. No new testing stack** — `vitest.config.ts` matches
-  `**/*.test.ts` in Node's default environment only; rendering is asserted in Playwright.
-- **Identifiers (DOIs, URLs, citations) print verbatim** — never uppercased, never truncated in
-  an `href`.
-
-## Regenerating the working files
-
-The execution ledger lived in `.superpowers/sdd/2026-08-19-redesign-phase-1-foundations/`, which
-is git-ignored and did not travel. Its rulings are preserved in
-`docs/redesign-experiment/phase-1-decisions.md`; its per-task briefs and diffs are regenerable.
-
-If continuing with `superpowers:subagent-driven-development`, that skill's `scripts/task-brief`
-extracts a task's text to a file (`task-brief <plan-file> <N>`) and `scripts/review-package`
-builds a reviewer's diff package (`review-package <plan-file> <base> <head>`). Start a fresh
-ledger; note in it that Tasks 1-7 are already complete so they are never re-dispatched.
+  pass; this bit the branch twice.
+- **Two Tailwind utilities setting the same property never merge** — the later-generated one wins,
+  and there is no `cn()`/`clsx`/`tailwind-merge` here to dedupe. This bit three times.
+- **No new runtime dependencies. No new testing stack** — `vitest.config.ts` matches `**/*.test.ts`
+  in Node's default environment; rendering is asserted in Playwright.
+- **Identifiers (DOIs, URLs, citations) print verbatim** — never uppercased, never truncated in an
+  `href`.
 
 ## After Phase 1
 
-Phases 2 and 3 are scoped at the end of the plan file. Phase 2 is the additive content model
-(`publication.slug`, `publication.featured`, a `resource` type, topic tags, GROQ + typegen,
-dry-run-by-default migrations). Phase 3 rebuilds the screens, retires the `project` type, adds
-`redirects()` to `next.config.mjs`, and updates `app/api/revalidate/route.ts`.
+Phases 2 and 3 are scoped at the end of the plan file, and the decisions file lists what Phase 1
+deliberately left for them.
 
 Four engineering gaps between the agreed IA and the real schema are recorded in the spec
 (`docs/superpowers/specs/2026-08-19-claude-design-redesign-experiment-design.md`): `publication`
