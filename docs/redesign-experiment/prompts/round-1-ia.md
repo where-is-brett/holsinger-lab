@@ -9,6 +9,10 @@ Apple HIG skill to the chat.
 
 Read `brief/00-brief.md` and `brief/content.json` in this project before doing anything.
 
+**Ignore any design system bound to this project.** An unrelated corporate design system
+may be attached by default — do not load it, do not use its tokens, colours, fonts or
+components, and do not let it influence anything. This round is deliberately un-styled.
+
 I want to rethink what this academic lab site *is* before we touch visuals. Produce
 **one canvas** (`01 IA Options.dc.html`, canvas mode) with **three information-architecture
 options side by side**, deliberately un-styled: grey boxes, one typeface, no colour, no
@@ -23,7 +27,7 @@ Each option is one column containing, top to bottom:
    publication, project, page, roleGroup, home, settings). For every *new* or
    *changed* type: one line on its fields and one line on which audience question it
    answers. Prefer fewer, stronger types; do not propose more than **two** new types
-   per option. Candidate new types you may draw from — but must justify — are: research
+   per option, and state the count explicitly. Candidate new types you may draw from — but must justify — are: research
    `theme`; a per-publication page; `news`/update; `opportunity` (open positions /
    how to join); `resource` (dataset, software, protocol). Say what to *retire* too.
 4. **Wireframes** for four screens at 1440 wide, stacked: **Home**, **People**,
@@ -35,9 +39,29 @@ Each option is one column containing, top to bottom:
    (peers, prospective students, funders/public).
 6. **What this option fixes** from the current-state observations in the brief
    (messy roles, non-projects in Projects, generic pages, flat publications), and
-   **what it costs** (content the lab must write or maintain).
+   **what it costs**.
 
-The three options must genuinely differ in stance, not just in ordering:
+### Two rules that a previous attempt failed — apply them strictly
+
+**Taxonomy coverage.** If an option proposes research themes, topics or any other
+classification, it must account for **all 19 publications** in `content.json`. Check
+them one by one. State the paper count per category, and name the papers that fall
+outside it with an explicit rule for them (an "Other work" bucket, or more categories).
+A taxonomy that silently covers only part of the record is a failed option — note that
+the lab's output includes glioblastoma/neuro-oncology, bioinformatics/biomarker,
+metabolic-receptor and case-report papers alongside the gut–brain, glia and
+electrical-stimulation work.
+
+**Honest content burden.** Today: all 19 profiles have empty `bio` and `hasPage: false`;
+the alumni page is a bare list; no open positions are recorded anywhere; only one
+plausible reusable "resource" exists (the electrical-stimulation cell-culture chamber).
+If an option's value depends on content that does not exist yet, its **Costs** box must
+say how many new items the lab must write, who maintains them, and at what cadence —
+remembering the site is run by one non-technical PI and that student membership turns
+over annually. Do not describe a maintenance burden as a minor cost when it is the
+option's main risk.
+
+### The three stances (must genuinely differ, not just reorder)
 
 - **Option 1 — Research-led.** The lab is its questions. Home is organised around a
   small number of research themes; people, projects and publications hang off themes.
