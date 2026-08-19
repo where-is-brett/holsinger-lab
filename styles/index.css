@@ -1,4 +1,12 @@
 @import 'tailwindcss';
+/* Tailwind 4's content scanner reads class-like strings out of any file
+   under the project root, markdown prose included -- docs/redesign-experiment
+   code fences have been generating invalid dead utilities
+   (.duration-[--sem-motion-press], .ease-[--sem-ease-out], the bracket trap
+   this codebase documents elsewhere) into the production stylesheet.
+   docs/** is already excluded from lint and type-check; this excludes it
+   from the Tailwind scan too. */
+@source not "../docs";
 
 /* Semantic tokens. Components reference these, never a raw palette.
    `@theme inline` makes utilities resolve to the `--sem-*` custom property
@@ -97,8 +105,11 @@
   --sem-field: #767b81;
   /* oklch(0.88 0.005 250) */
   --sem-rule: #d5d8db;
-  /* oklch(0.55 0.015 255) */
-  --sem-text-faint: #6c727a;
+  /* oklch(0.52 0.015 255). Darkened from 0.55 -- the previous value cleared
+     AA (4.5:1) against --sem-surface but not --sem-surface-raised (4.13:1),
+     a real composition: PublicationRow's row hover sets bg-surface-raised
+     under three text-faint runs. Same hue/chroma, lightness only. */
+  --sem-text-faint: #636a72;
   /* oklch(0.72 0.015 255) */
   --sem-text-inverse-muted: #9ea5ae;
   /* oklch(0.66 0.15 264). Chromatic but given a STATIC value here, unlike

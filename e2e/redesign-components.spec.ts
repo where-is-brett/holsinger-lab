@@ -139,7 +139,7 @@ test.describe('redesign component gallery', () => {
     await expect(section.getByText('Ungergraduate student - Diagnostic Radiography')).toBeVisible()
   })
 
-  test('interactive Tag hit area clears the 44px accessibility floor', async ({ page }) => {
+  test('interactive Tag hit area clears the 44px accessibility floor', async ({ page }, testInfo) => {
     // Task 4 debt: the 44px hit area on an interactive Tag was verified only
     // by CSS-spec arithmetic (h-11 = 2.75rem = 44px), never against a real
     // layout. This settles it with a live measurement. The hit area is an
@@ -163,10 +163,18 @@ test.describe('redesign component gallery', () => {
       }
     })
 
-    // Surfaced in the task report, not left as debug noise.
-    console.log('Tag hit-area measurement:', {
-      visual: { width: visualBox!.width, height: visualBox!.height },
-      hitArea: { width: measured.beforeWidth, height: measured.beforeHeight },
+    // Surfaced as a test attachment (visible in the HTML report), not a
+    // console.log that reruns on every pass with nothing reading it.
+    await testInfo.attach('tag-hit-area-measurement', {
+      body: JSON.stringify(
+        {
+          visual: { width: visualBox!.width, height: visualBox!.height },
+          hitArea: { width: measured.beforeWidth, height: measured.beforeHeight },
+        },
+        null,
+        2
+      ),
+      contentType: 'application/json',
     })
 
     expect(measured.beforePosition).toBe('absolute')

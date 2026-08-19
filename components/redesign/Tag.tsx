@@ -1,6 +1,6 @@
 import type { MouseEvent, ReactNode } from 'react'
 
-import { HAIRLINE, LABEL_BASE } from './tokens'
+import { HAIRLINE, HIT_AREA, LABEL_BASE } from './tokens'
 
 export interface TagProps {
   children: ReactNode
@@ -15,16 +15,11 @@ export interface TagProps {
 // port's authority, even where it differs from LABEL's baked-in faint.
 const BASE = `${LABEL_BASE} text-text-muted ${HAIRLINE} inline-block whitespace-nowrap px-[13px] py-2 leading-none`
 
-// Interactive-only: expand the hit area to the 44px accessibility floor
-// without growing the visual box itself -- a 44px-tall chip would wreck the
-// density of the publication ledger row these tags sit in, and would make
-// interactive and informational tags of the same visual class render at
-// different sizes. `inset-x-0` keeps the expansion within the tag's own
-// width so adjacent tags can't steal each other's clicks. `-translate-y-1/2`
-// is static centring of the pseudo-element against the tag's midline, not
-// animation -- nothing here transitions.
-const HIT_AREA =
-  "relative before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']"
+// Interactive-only: HIT_AREA (tokens.ts) expands the hit area to the 44px
+// accessibility floor without growing the visual box itself -- a 44px-tall
+// chip would wreck the density of the publication ledger row these tags sit
+// in, and would make interactive and informational tags of the same visual
+// class render at different sizes.
 
 export function Tag({ children, href, onClick }: TagProps) {
   if (href) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { PRESS } from './tokens'
+import { HIT_AREA, PRESS } from './tokens'
 
 export interface FacetChipProps {
   label: string
@@ -13,13 +13,7 @@ export interface FacetChipProps {
 // `500 11px/1` mono, a ~29px-tall control. Unlike Tag, a FacetChip is
 // unambiguously interactive (a real <button aria-pressed>) and these are
 // the primary controls on the publications page, so the 44px accessibility
-// floor is expanded via hit area rather than skipped -- same technique as
-// Tag.tsx's HIT_AREA and PublicationRow.tsx's Title HIT_AREA: a pseudo-
-// element grows the tap target without growing the visual box, which would
-// wreck the band's density. `inset-x-0` bounds the expansion to the chip's
-// own width so adjacent chips can't steal each other's taps.
-const HIT_AREA =
-  "relative before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']"
+// floor is expanded via HIT_AREA (tokens.ts) rather than skipped.
 
 // ON is an ink fill (surface-inverse bg/border, text-inverse text) -- not
 // accent. OFF is transparent with a rule-strong border and muted text.

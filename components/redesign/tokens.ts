@@ -59,3 +59,23 @@ export const RAIL_GRID = 'grid grid-cols-[var(--spacing-rail-sm)_1fr] md:grid-co
  * itself.
  */
 export const PRESS = 'hl-press active:scale-[0.97]'
+/**
+ * 44px accessibility floor without growing the element's own visual box.
+ * `before:absolute before:inset-x-0 before:top-1/2 before:h-11
+ * before:-translate-y-1/2` grows a pseudo-element to the 44px tap-target
+ * minimum, centred on the element's own midline, while the element itself
+ * keeps its small visual size -- a chip, tag, or ledger-row title rendered
+ * at 44px tall would wreck the density these compact components exist for,
+ * and would make interactive and informational variants of the same
+ * visual class render at different sizes. `inset-x-0` bounds the expanded
+ * hit area to the element's own width, so adjacent elements (tags in a
+ * row, chips in a band) can't steal each other's taps. `relative` puts the
+ * element in the right paint tier for the pseudo to attach to; nothing
+ * here animates.
+ *
+ * Was defined identically in Tag.tsx, FacetChip.tsx, and
+ * PublicationRow.tsx (final-review fix wave); hoisted here as the one
+ * place that knows the mechanism, per this file's own header comment.
+ */
+export const HIT_AREA =
+  "relative before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']"

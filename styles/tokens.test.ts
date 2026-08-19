@@ -337,10 +337,16 @@ describe('redesign direction tokens', () => {
     }
   })
 
-  it('faint text still meets WCAG AA on the page surface in both schemes', () => {
+  it('faint text still meets WCAG AA on both surfaces in both schemes', () => {
+    // Matches the convention used for --sem-text/--sem-text-muted elsewhere
+    // in this file (see the dark-theme block above): checking only
+    // --sem-surface left --sem-surface-raised unguarded, and that's exactly
+    // the composition PublicationRow's row hover produces (bg-surface-raised
+    // under text-faint runs).
     for (const scheme of ['light', 'dark'] as const) {
       const t = readResolved(':root', scheme)
-      expect(contrast(t['--sem-text-faint'], t['--sem-surface'])).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(t['--sem-text-faint'], t['--sem-surface']), `surface (${scheme})`).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(t['--sem-text-faint'], t['--sem-surface-raised']), `raised (${scheme})`).toBeGreaterThanOrEqual(4.5)
     }
   })
 

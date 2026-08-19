@@ -1,6 +1,6 @@
 import { CopyCitation } from './CopyCitation'
 import type { Publication } from './publicationRow'
-import { META } from './tokens'
+import { HIT_AREA, META } from './tokens'
 
 export interface PublicationRowProps {
   pub: Publication
@@ -35,15 +35,6 @@ const GRID = 'grid grid-cols-[64px_1fr_230px_250px] gap-x-[28px]'
 const ROW = `group border-t border-rule transition-[background-color] duration-(--sem-motion-fast) ease-(--sem-ease) hover:bg-surface-raised ${GRID}`
 const TITLE_HOVER =
   'group-hover:text-link transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease)'
-
-// 44px accessibility floor without growing the title's own visual box --
-// same technique as Tag.tsx's HIT_AREA (duplicated here rather than
-// imported: Tag.tsx keeps it private, and this task's scope doesn't extend
-// to modifying Task 4 files to export it). `inset-x-0` bounds the expanded
-// hit area to the title's own width, so it can't reach into the journal or
-// link/cite columns, which sit in separate grid cells.
-const HIT_AREA =
-  "relative before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']"
 
 // The identifier -- DOI or URL -- must print verbatim in every shape: never
 // uppercased, never re-typed. `normal-case!` is Tailwind 4's trailing-bang
@@ -122,7 +113,7 @@ export function PublicationRow({
 }: PublicationRowProps) {
   if (narrow) {
     return (
-      <div className="border-t border-rule py-[13px]">
+      <div className="group border-t border-rule py-[13px]">
         <div className="font-mono text-[10px] leading-[1.4] font-medium tracking-[0.06em] uppercase">
           <span className="text-accent">{pub.year}</span>
           <span className="text-text-faint">
@@ -135,7 +126,7 @@ export function PublicationRow({
           onOpen={onOpen}
           className="mt-1.5 text-[14.5px] leading-[1.4] font-semibold text-pretty"
         />
-        {/* `relative` (not just tidiness) -- see the HIT_AREA comment above.
+        {/* `relative` (not just tidiness) -- see the HIT_AREA comment in tokens.ts.
             The title's expanded 44px hit area is centred on its own,
             shorter line box, so for a single-line title it overshoots into
             this element by a few px. A plain static sibling would sit
