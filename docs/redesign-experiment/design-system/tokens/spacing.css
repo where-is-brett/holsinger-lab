@@ -1,0 +1,28 @@
+/* ============================================================
+   Spacing — contract gutter tokens revalued for this direction,
+   plus the rhythm the ledger layout actually uses (flagged
+   additions). One owner: the Layout component owns horizontal
+   gutters; page components must not add their own.
+   ============================================================ */
+:root {
+  --spacing-gutter: 1.125rem;      /* 18px — mobile page gutter */
+  --spacing-gutter-md: 3rem;       /* 48px — content inset left of copy (right of the rail) */
+  --spacing-gutter-lg: 3.5rem;     /* 56px — desktop right-hand content gutter */
+
+  /* Header height authority. NOTE: in this direction the header is
+     NOT sticky — it scrolls away, and the publications facet band
+     pins at top: 0. If the app keeps a sticky header, the band's
+     offset must be top: var(--nav-height), never a hardcoded px. */
+  --nav-height: 3rem;              /* 48px */
+
+  /* — additions — */
+  --spacing-rail: 5.5rem;          /* ADDITION: 88px numbered section rail (desktop) */
+  --spacing-rail-sm: 2.375rem;     /* ADDITION: 38px rail at 390 */
+  --spacing-row: 1.125rem;         /* ADDITION: 18px vertical padding of a ledger row */
+  --spacing-stack: 2.75rem;        /* ADDITION: 44px block top padding */
+  --spacing-stack-lg: 3.5rem;      /* ADDITION: 56px block bottom padding */
+}
+
+@media (min-width: 48rem) {
+  :root { --nav-height: 3.25rem; } /* 52px */
+}

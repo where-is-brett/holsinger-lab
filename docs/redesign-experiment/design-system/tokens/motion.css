@@ -1,0 +1,14 @@
+/* ============================================================
+   Motion — ALL ADDITIONS (the app has no motion tokens yet).
+   The direction animates only colour/background/border/filter
+   and press-scale; nothing moves, nothing bounces. Durations
+   stay under 200ms; easing is plain `ease` for colour and a
+   strong ease-out for press feedback.
+   ============================================================ */
+:root {
+  --sem-motion-fast: 120ms;   /* colour, background, border */
+  --sem-motion-press: 140ms;  /* press scale on controls */
+  --sem-motion-reveal: 160ms; /* portrait grayscale -> colour */
+  --sem-ease: ease;
+  --sem-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
