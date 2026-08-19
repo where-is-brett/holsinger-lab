@@ -117,7 +117,22 @@ const MobileNavBar = ({
             aria-expanded={isMenuOpen}
             aria-controls="mobile-menu-panel"
             aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-            className="absolute right-6 border-0 bg-transparent py-4"
+            // Vertical padding derives from --nav-height rather than a fixed
+            // py-4. The three hamburgerLine bars stack (with collapsed
+            // margins) to a fixed 1.875rem/30px, and the bar around this
+            // button has a 1px top+bottom border (border-y, border-box
+            // sizing), so its inner content box is (nav-height - 2px) tall.
+            // padding-top/bottom of ((nav-height - 2px) - 1.875rem)/2 fills
+            // that content box flush -- exactly what the old py-4 (16px)
+            // did at the old 4rem --nav-height ((64px-2px-30px)/2 = 16px),
+            // just expressed as a formula instead of a number frozen to one
+            // --nav-height value. Keeps this button's rendered box flush
+            // inside the bar (and therefore inside the overlay button's
+            // explicit h-[var(--nav-height)] below, which starts at the
+            // bar's outer edge and so is 2px taller -- see the
+            // geometry-coupling comment above and on that overlay button)
+            // at every breakpoint, not just the one py-4 happened to fit.
+            className="absolute right-6 border-0 bg-transparent py-[calc((var(--nav-height)_-_2px_-_1.875rem)/2)]"
             onClick={handleMenuClick}
           >
             <div

@@ -1,0 +1,62 @@
+/* ============================================================
+   Type roles — contract names --text-display/title/lead/body/meta
+   plus two flagged additions the direction genuinely uses.
+   Companion properties follow the Tailwind 4 convention
+   (--text-x--line-height etc.), so utilities pick them up.
+   Archivo maps to --font-sans; IBM Plex Mono to --font-mono.
+   The legacy serif/display faces are dropped by this direction.
+   ============================================================ */
+:root {
+  --font-sans: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* display — the wordmark / Home identity only. Archivo 600. */
+  --text-display: 4rem;                    /* 64px; 27px at 390 */
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 600;
+
+  /* title — page h1 (People, Publications, Research).
+     Long scientific titles (publication pages) render this role
+     at 2.3125rem/1.22 — a documented multi-line exception. */
+  --text-title: 2.75rem;                   /* 44px */
+  --text-title--line-height: 1.08;
+  --text-title--letter-spacing: -0.015em;
+  --text-title--font-weight: 600;
+
+  /* heading — ADDITION: block/section headings (resource title,
+     research narratives, lab-head name). 33px. */
+  --text-heading: 2.0625rem;
+  --text-heading--line-height: 1.15;
+  --text-heading--letter-spacing: -0.01em;
+  --text-heading--font-weight: 600;
+
+  /* lead — long-form reading copy: abstracts, research overviews,
+     the tagline. Colour is by usage: ink for abstracts,
+     muted for taglines. */
+  --text-lead: 1.0625rem;                  /* 17px */
+  --text-lead--line-height: 1.65;
+  --text-lead--letter-spacing: 0em;
+  --text-lead--font-weight: 400;
+
+  /* body — supporting paragraphs (bios), usually muted. */
+  --text-body: 0.96875rem;                 /* 15.5px */
+  --text-body--line-height: 1.65;
+  --text-body--letter-spacing: 0em;
+  --text-body--font-weight: 400;
+
+  /* meta — mono data lines: journal refs, DOIs, dates. NEVER
+     uppercase a meta value that is an identifier (DOI, URL). */
+  --text-meta: 0.78125rem;                 /* 12.5px, --font-mono */
+  --text-meta--line-height: 1.6;
+  --text-meta--letter-spacing: 0em;
+  --text-meta--font-weight: 400;
+
+  /* label — ADDITION: the mono-caps label voice (kickers, column
+     heads, rail labels, control text). Always uppercase via
+     text-transform, never by retyping content. */
+  --text-label: 0.6875rem;                 /* 11px, --font-mono */
+  --text-label--line-height: 1;
+  --text-label--letter-spacing: 0.12em;
+  --text-label--font-weight: 500;
+}

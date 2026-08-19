@@ -1,0 +1,63 @@
+/* Interactive-state classes shared by the components. Structural
+   styling lives inline in the components; only states that need
+   real pseudo-classes live here. */
+
+/* Nav item */
+.hl-navlink { color: inherit; transition: color var(--sem-motion-fast) var(--sem-ease); }
+.hl-navlink[aria-current="page"] { color: var(--sem-link); }
+@media (hover: hover) and (pointer: fine) {
+  .hl-navlink:hover { color: var(--sem-link); text-decoration: underline; text-underline-offset: 5px; }
+  .hl-navlink[aria-current="page"]:hover { text-decoration: none; }
+}
+
+/* Data link (DOI, email, register) — permanently chromatic */
+.hl-link { color: var(--sem-link); }
+.hl-link-inverse { color: var(--sem-link-inverse); }
+
+/* Pressable control (chips, buttons) */
+.hl-press {
+  transition:
+    transform var(--sem-motion-press) var(--sem-ease-out),
+    background var(--sem-motion-fast) var(--sem-ease),
+    color var(--sem-motion-fast) var(--sem-ease),
+    border-color var(--sem-motion-fast) var(--sem-ease);
+}
+.hl-press:active:not(:disabled) { transform: scale(0.97); }
+.hl-press:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Ledger row — whole row is the target; rules never move */
+.hl-row { transition: background var(--sem-motion-fast) var(--sem-ease); }
+@media (hover: hover) and (pointer: fine) {
+  .hl-row:hover { background: var(--sem-surface-raised); }
+  .hl-row:hover .hl-row-title { color: var(--sem-link); }
+}
+.hl-row-title { transition: color var(--sem-motion-fast) var(--sem-ease); }
+
+/* Person card — portrait grayscale -> colour, name -> chroma */
+.hl-portrait { filter: grayscale(1) contrast(1.04); transition: filter var(--sem-motion-reveal) var(--sem-ease); }
+.hl-person-name { transition: color var(--sem-motion-fast) var(--sem-ease); }
+@media (hover: hover) and (pointer: fine) {
+  .hl-person:hover .hl-portrait { filter: none; }
+  .hl-person:hover .hl-person-name { color: var(--sem-link); }
+}
+
+/* Form field */
+.hl-field-input {
+  transition: border-color var(--sem-motion-fast) var(--sem-ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .hl-field-input:hover:not(:disabled) {
+    border-color: color-mix(in oklab, var(--sem-field) 60%, var(--sem-text));
+  }
+}
+.hl-field-input:disabled {
+  background: var(--sem-surface-raised);
+  color: var(--sem-text-faint);
+  cursor: not-allowed;
+}
+.hl-field-input::placeholder { color: var(--sem-text-faint); }
+
+/* Identifier protection: DOIs and URLs are case-sensitive — this
+   class must never carry text-transform. Guard against ambient
+   uppercasing contexts. */
+.hl-identifier { text-transform: none !important; }

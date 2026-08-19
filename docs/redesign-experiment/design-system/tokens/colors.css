@@ -1,0 +1,66 @@
+/* ============================================================
+   Holsinger Lab — colour tokens ("Modern instrument" direction)
+   Names match the app token contract (--sem-*). Dark mode is
+   automatic via prefers-color-scheme; EVERY token declared light
+   is redeclared dark — a token missing from the dark block keeps
+   its light value and breaks the theme.
+
+   BRAND-COLOUR ASSUMPTION: --sem-link and --sem-accent are derived
+   at request time from the CMS brand colour. This direction assumes
+   the lab sets brand = ultramarine oklch(0.45 0.19 264). In this
+   direction link and accent are intentionally THE SAME COLOUR —
+   one chromatic instrument accent (rail numbers, year stamps,
+   links, current-nav, focus ring). If the lab picks a different
+   brand colour, keep the hue but derive to these targets:
+   light ≈ L 0.45 C 0.15–0.19 (≥4.5:1 on --sem-surface),
+   dark  ≈ L 0.66 C 0.12–0.15 (≥4.5:1 on dark --sem-surface).
+   The direction degrades safely under any hue that meets those
+   lightness/contrast targets, because colour is used sparingly;
+   it degrades badly if link and accent are split into two hues —
+   don't.
+   ============================================================ */
+:root {
+  color-scheme: light dark;
+
+  /* — contract tokens — */
+  --sem-surface: oklch(0.975 0.003 250);          /* page background */
+  --sem-surface-raised: oklch(0.945 0.006 250);   /* row-hover tint, fills; this direction has no cards */
+  --sem-surface-inverse: oklch(0.21 0.01 260);    /* inverse bands (MAESTRO, enquiries) */
+  --sem-scrim: oklch(0.13 0.01 260);              /* overlays behind dialogs (unused by these screens; kept for the port) */
+  --sem-text: oklch(0.21 0.01 260);               /* ink: headings, row titles, reading copy */
+  --sem-text-muted: oklch(0.42 0.015 255);        /* secondary: taglines, authors, journals, control labels */
+  --sem-text-inverse: oklch(0.93 0.005 250);      /* text on inverse bands */
+  --sem-link: oklch(0.45 0.19 264);               /* CMS-derived — see assumption above */
+  --sem-accent: oklch(0.45 0.19 264);             /* CMS-derived — equals link in this direction */
+  --sem-field: oklch(0.58 0.012 255);             /* form-field borders (3.98:1 on surface) */
+  --sem-rule: oklch(0.88 0.005 250);              /* hairlines, table rules, the rail */
+
+  /* — additions (not in the app yet; flagged) — */
+  --sem-text-faint: oklch(0.55 0.015 255);        /* ADDITION: mono labels, column heads, footer (4.51:1) */
+  --sem-text-inverse-muted: oklch(0.72 0.015 255);/* ADDITION: secondary text on inverse bands */
+  --sem-link-inverse: oklch(0.66 0.15 264);       /* ADDITION: link/accent ON inverse bands (5.6:1 on band) */
+  --sem-rule-strong: oklch(0.82 0.008 250);       /* ADDITION: chip/button/tag borders */
+  --sem-rule-inverse: oklch(0.34 0.01 260);       /* ADDITION: hairlines inside inverse bands */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sem-surface: oklch(0.17 0.01 260);
+    --sem-surface-raised: oklch(0.23 0.012 260);
+    --sem-surface-inverse: oklch(0.93 0.005 250);
+    --sem-scrim: oklch(0.13 0.01 260);
+    --sem-text: oklch(0.93 0.005 250);
+    --sem-text-muted: oklch(0.72 0.015 255);
+    --sem-text-inverse: oklch(0.21 0.01 260);
+    --sem-link: oklch(0.66 0.15 264);
+    --sem-accent: oklch(0.66 0.15 264);
+    --sem-field: oklch(0.55 0.012 255);
+    --sem-rule: oklch(0.30 0.012 260);
+
+    --sem-text-faint: oklch(0.62 0.015 255);
+    --sem-text-inverse-muted: oklch(0.42 0.015 255);
+    --sem-link-inverse: oklch(0.45 0.19 264);
+    --sem-rule-strong: oklch(0.42 0.012 258);
+    --sem-rule-inverse: oklch(0.88 0.005 250);
+  }
+}

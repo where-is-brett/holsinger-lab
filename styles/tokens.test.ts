@@ -319,6 +319,46 @@ describe('dark theme tokens', () => {
   })
 })
 
+describe('redesign direction tokens', () => {
+  const ADDITIONS = [
+    '--sem-text-faint',
+    '--sem-text-inverse-muted',
+    '--sem-link-inverse',
+    '--sem-rule-strong',
+    '--sem-rule-inverse',
+  ]
+
+  it('declares every direction addition in both schemes', () => {
+    const light = readResolved(':root', 'light')
+    const dark = readResolved(':root', 'dark')
+    for (const name of ADDITIONS) {
+      expect(light[name], `${name} missing from light`).toBeTruthy()
+      expect(dark[name], `${name} missing from dark`).toBeTruthy()
+    }
+  })
+
+  it('faint text still meets WCAG AA on both surfaces in both schemes', () => {
+    // Matches the convention used for --sem-text/--sem-text-muted elsewhere
+    // in this file (see the dark-theme block above): checking only
+    // --sem-surface left --sem-surface-raised unguarded, and that's exactly
+    // the composition PublicationRow's row hover produces (bg-surface-raised
+    // under text-faint runs).
+    for (const scheme of ['light', 'dark'] as const) {
+      const t = readResolved(':root', scheme)
+      expect(contrast(t['--sem-text-faint'], t['--sem-surface']), `surface (${scheme})`).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(t['--sem-text-faint'], t['--sem-surface-raised']), `raised (${scheme})`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('inverse-band text and links meet WCAG AA on the inverse surface', () => {
+    for (const scheme of ['light', 'dark'] as const) {
+      const t = readResolved(':root', scheme)
+      expect(contrast(t['--sem-text-inverse-muted'], t['--sem-surface-inverse'])).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(t['--sem-link-inverse'], t['--sem-surface-inverse'])).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+})
+
 describe('cross-token contrast regression guard', () => {
   // Generalizes past the specific bug above: every check up to this point
   // tests one named token against another named token, so a real

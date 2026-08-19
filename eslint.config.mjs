@@ -14,7 +14,8 @@ const config = [
     },
   },
   {
-    ignores: ['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'playwright-report/**', 'test-results/**'],
+    // docs/**: vendored reference material, kept verbatim by contract, never compiled or imported — don't lint it.
+    ignores: ['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'playwright-report/**', 'test-results/**', 'docs/**'],
   },
 ]
 

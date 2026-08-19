@@ -1,4 +1,12 @@
 @import 'tailwindcss';
+/* Tailwind 4's content scanner reads class-like strings out of any file
+   under the project root, markdown prose included -- docs/redesign-experiment
+   code fences have been generating invalid dead utilities
+   (.duration-[--sem-motion-press], .ease-[--sem-ease-out], the bracket trap
+   this codebase documents elsewhere) into the production stylesheet.
+   docs/** is already excluded from lint and type-check; this excludes it
+   from the Tailwind scan too. */
+@source not "../docs";
 
 /* Semantic tokens. Components reference these, never a raw palette.
    `@theme inline` makes utilities resolve to the `--sem-*` custom property
@@ -16,6 +24,11 @@
   --color-accent: var(--sem-accent);
   --color-field: var(--sem-field);
   --color-rule: var(--sem-rule);
+  --color-text-faint: var(--sem-text-faint);
+  --color-text-inverse-muted: var(--sem-text-inverse-muted);
+  --color-link-inverse: var(--sem-link-inverse);
+  --color-rule-strong: var(--sem-rule-strong);
+  --color-rule-inverse: var(--sem-rule-inverse);
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
@@ -23,36 +36,98 @@
   --font-antarctican: var(--font-antarctican-mono);
   --font-ariana: var(--font-ariana-pro);
 
-  /* Type roles. Values are Tailwind's existing steps -- this names the scale
-     the site already uses so components stop picking raw steps ad hoc. It
-     deliberately does not change any rendered size. */
-  --text-display: var(--text-3xl);
-  --text-title: var(--text-xl);
-  --text-lead: var(--text-lg);
-  --text-body: var(--text-base);
-  --text-meta: var(--text-sm);
+  /* Type roles. Modern Instrument direction: named steps with their own
+     line-height/tracking/weight companions (Tailwind 4's convention for
+     attaching those to a named text step), replacing the old aliases onto
+     Tailwind's default scale. */
+  --text-display: 4rem;
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 600;
+  --text-title: 2.75rem;
+  --text-title--line-height: 1.08;
+  --text-title--letter-spacing: -0.015em;
+  --text-title--font-weight: 600;
+  --text-heading: 2.0625rem;
+  --text-heading--line-height: 1.15;
+  --text-heading--letter-spacing: -0.01em;
+  --text-heading--font-weight: 600;
+  --text-lead: 1.0625rem;
+  --text-lead--line-height: 1.65;
+  --text-body: 0.96875rem;
+  --text-body--line-height: 1.65;
+  --text-meta: 0.78125rem;
+  --text-meta--line-height: 1.6;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1;
+  --text-label--letter-spacing: 0.12em;
+  --text-label--font-weight: 500;
 
   /* Page gutters. One owner: Layout. Page components must not re-add
      horizontal padding -- People and Publications previously did, producing
-     doubled gutters at some breakpoints. */
-  --spacing-gutter: 1.5rem;
-  --spacing-gutter-md: 4rem;
-  --spacing-gutter-lg: 8rem;
+     doubled gutters at some breakpoints. Modern Instrument direction. */
+  --spacing-gutter: 1.125rem;
+  --spacing-gutter-md: 3rem;
+  --spacing-gutter-lg: 3.5rem;
 }
 
 :root {
+  /* Palette: "Modern Instrument" direction (Round 2 winner). Source values
+     are oklch -- see docs/redesign-experiment/design-system/tokens/colors.css
+     -- converted here to hex with lib/color.ts's oklchToHex, because
+     styles/tokens.test.ts parses hex to check WCAG contrast.
+     --sem-link and --sem-accent are the same colour by design; they are also
+     overridden at request time from settings.brandColor (lib/theme.ts).
+     (Comment lives inside the ruleset, not above it -- see the warm preset's
+     own note below on why: styles/tokens.test.ts's block parser has no
+     notion of CSS comments, so text placed directly above a selector gets
+     folded into the "selector" it matches on.) */
   color-scheme: light dark;
-  --sem-surface: #f8f8f8;
-  --sem-surface-raised: #f6f6f8;
-  --sem-surface-inverse: #1b1d27;
-  --sem-scrim: #0d0e12;
-  --sem-text: #0d0e12;
-  --sem-text-muted: #515870;
-  --sem-text-inverse: #ffffff;
-  --sem-link: #4043e7;
-  --sem-accent: #2d6a4f;
-  --sem-field: #787d89;
-  --sem-rule: #e3e4e8;
+  /* oklch(0.975 0.003 250) */
+  --sem-surface: #f5f7f9;
+  /* oklch(0.945 0.006 250) */
+  --sem-surface-raised: #eaedf1;
+  /* oklch(0.21 0.01 260) */
+  --sem-surface-inverse: #16181d;
+  /* oklch(0.13 0.01 260) */
+  --sem-scrim: #05070b;
+  /* oklch(0.21 0.01 260) */
+  --sem-text: #16181d;
+  /* oklch(0.42 0.015 255) */
+  --sem-text-muted: #484e55;
+  /* oklch(0.93 0.005 250) */
+  --sem-text-inverse: #e5e8eb;
+  /* oklch(0.45 0.19 264) */
+  --sem-link: #1a48bc;
+  /* oklch(0.45 0.19 264) */
+  --sem-accent: #1a48bc;
+  /* oklch(0.58 0.012 255) */
+  --sem-field: #767b81;
+  /* oklch(0.88 0.005 250) */
+  --sem-rule: #d5d8db;
+  /* oklch(0.52 0.015 255). Darkened from 0.55 -- the previous value cleared
+     AA (4.5:1) against --sem-surface but not --sem-surface-raised (4.13:1),
+     a real composition: PublicationRow's row hover sets bg-surface-raised
+     under three text-faint runs. Same hue/chroma, lightness only. */
+  --sem-text-faint: #636a72;
+  /* oklch(0.72 0.015 255) */
+  --sem-text-inverse-muted: #9ea5ae;
+  /* oklch(0.66 0.15 264). Chromatic but given a STATIC value here, unlike
+     --sem-link/--sem-accent above: buildBrandStyle (lib/theme.ts) only
+     overrides --sem-link and --sem-accent at request time, so a lab that
+     sets a brandColor will desync this inverse-band link from the real
+     link. Out of scope for Phase 1 -- see plan Task 3 carried observation. */
+  --sem-link-inverse: #628eed;
+  /* oklch(0.82 0.008 250) */
+  --sem-rule-strong: #c0c5c9;
+  /* oklch(0.34 0.01 260) */
+  --sem-rule-inverse: #35383d;
+
+  --sem-motion-fast: 120ms;
+  --sem-motion-press: 140ms;
+  --sem-motion-reveal: 160ms;
+  --sem-ease: ease;
+  --sem-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   /* Single authority for the height of the site header, at both breakpoints.
      Both navbars set their own height FROM this, and the Publications sticky
@@ -60,32 +135,59 @@
      grow (as it does in Phase 4B, when the desktop nav gains a logo) without
      silently sliding content under it. That desync is defect D8: the bar was
      pinned at a literal 64px while the desktop nav measured 70px.
-     4.75rem = a 32px logo + the nav's 20px vertical padding + 1px borders,
-     rounded up to a round value for a little optical breathing room. */
-  --nav-height: 4rem;
+     Modern Instrument direction: 3rem / 3.25rem (was 4rem / 4.75rem). */
+  --nav-height: 3rem;
+
+  --spacing-rail: 5.5rem;
+  --spacing-rail-sm: 2.375rem;
+  --spacing-row: 1.125rem;
+  --spacing-stack: 2.75rem;
+  --spacing-stack-lg: 3.5rem;
 }
 
 @media (min-width: 48rem) {
   :root {
     /* Must match Tailwind's `md` breakpoint, which is where both navbars
        swap over. */
-    --nav-height: 4.75rem;
+    --nav-height: 3.25rem;
   }
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --sem-surface: #0d0e12;
-    --sem-surface-raised: #1b1d27;
-    --sem-surface-inverse: #f6f6f8;
-    --sem-scrim: #0d0e12;
-    --sem-text: #f6f6f8;
-    --sem-text-muted: #bbbdc9;
-    --sem-text-inverse: #0d0e12;
-    --sem-link: #9da2f2;
-    --sem-accent: #4e9a79;
-    --sem-field: #787d89;
-    --sem-rule: #252837;
+    /* oklch(0.17 0.01 260) */
+    --sem-surface: #0d1014;
+    /* oklch(0.23 0.012 260) */
+    --sem-surface-raised: #1a1d23;
+    /* oklch(0.93 0.005 250) */
+    --sem-surface-inverse: #e5e8eb;
+    /* oklch(0.13 0.01 260) */
+    --sem-scrim: #05070b;
+    /* oklch(0.93 0.005 250) */
+    --sem-text: #e5e8eb;
+    /* oklch(0.72 0.015 255) */
+    --sem-text-muted: #9ea5ae;
+    /* oklch(0.21 0.01 260) */
+    --sem-text-inverse: #16181d;
+    /* oklch(0.66 0.15 264) */
+    --sem-link: #628eed;
+    /* oklch(0.66 0.15 264) */
+    --sem-accent: #628eed;
+    /* oklch(0.55 0.012 255) */
+    --sem-field: #6d7279;
+    /* oklch(0.3 0.012 260) */
+    --sem-rule: #2a2e34;
+    /* oklch(0.62 0.015 255) */
+    --sem-text-faint: #80878f;
+    /* oklch(0.42 0.015 255) */
+    --sem-text-inverse-muted: #484e55;
+    /* oklch(0.45 0.19 264). See the static-value note on the light block's
+       --sem-link-inverse above -- same desync-with-brandColor caveat. */
+    --sem-link-inverse: #1a48bc;
+    /* oklch(0.42 0.012 258) */
+    --sem-rule-strong: #494d54;
+    /* oklch(0.88 0.005 250) */
+    --sem-rule-inverse: #d5d8db;
   }
 }
 
@@ -237,4 +339,52 @@ input {
   appearance: none;
   -webkit-appearance: none;
   border-radius: 0;
+}
+
+/* Shared site-wide focus ring (spec accessibility floor). Never removed. */
+:focus-visible {
+  outline: 2px solid var(--sem-link);
+  outline-offset: 3px;
+}
+
+/* Pressable-control transition primitive (Button, CopyCitation, FacetChip).
+   Declares every animatable property in ONE `transition` shorthand rather
+   than as separate Tailwind utility classes on the same element. Tailwind's
+   per-property utilities (`transition-transform`, `transition-colors`, ...)
+   each set the *whole* longhand `transition-property`/`-duration`/
+   `-timing-function` triad, not just their own slice of it -- stacking two
+   of them on one element means only the utility generated later in the
+   build's CSS wins outright, and the other's transition is silently
+   dropped. Caught in Task 8a review: `FacetChip` paired `PRESS` (which
+   used to carry `transition-transform`) with its own `transition-colors`,
+   and only the transform half ever animated -- the ON/OFF colour swap
+   snapped instantly despite the code and comments claiming otherwise. This
+   class exists so `PRESS` (tokens.ts) can bundle every property any
+   consumer needs in one place, immune to generation-order.
+   Mirrors docs/redesign-experiment/design-system/components/components.css's
+   `.hl-press`, with one addition: `scale` is listed alongside `transform`.
+   The vendored source presses via `transform: scale(0.97)` (one legacy
+   property), but this port's press feedback is Tailwind's
+   `active:scale-[0.97]` utility, which sets the standalone modern `scale`
+   CSS property -- a different property from `transform` as far as
+   `transition-property` matching is concerned. Copying the source's list
+   literally (`transform` only, no `scale`) would silently stop the press
+   scale itself from animating -- the same class of bug this class exists
+   to fix, reintroduced by the "fix". */
+.hl-press {
+  transition:
+    scale var(--sem-motion-press) var(--sem-ease-out),
+    transform var(--sem-motion-press) var(--sem-ease-out),
+    background var(--sem-motion-fast) var(--sem-ease),
+    color var(--sem-motion-fast) var(--sem-ease),
+    border-color var(--sem-motion-fast) var(--sem-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
