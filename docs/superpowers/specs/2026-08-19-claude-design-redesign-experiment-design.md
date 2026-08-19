@@ -139,9 +139,40 @@ site; no filler sections; every element earns its place; dark mode considered.
 - Round 3: design system exists in Claude Design; branch renders the four
   screens against live content with tests green; `main` untouched.
 
-## 7. Agreed IA (filled after Round 1)
+## 7. Agreed IA (Round 1 outcome, 2026-08-19)
 
-_Pending._
+Full contract: `brief/agreed-ia.md` in the Claude Design project. Summary:
+
+Merge of option 1c (output-led spine) + 1a's taxonomy demoted to flat tags + one light
+Research page. **Net: one new type (`resource`), one type retired (`project`), no
+profile bios required, no content that rots if the PI is busy.**
+
+- **Home** — auto-generated from publication dates + latest resource + next MAESTRO
+  talk; zero editorial fields.
+- **Publications** — faceted index (year / type / topic) plus one page per paper:
+  abstract, authors, journal metadata, DOI canonical link, formatted citation with copy.
+- **Research** — single light page carrying the two real project narratives + an
+  enquiry line. No `opportunity` type.
+- **People** — six populated roleGroups, alumni merged in, no student profile pages.
+- **Resources** — `resource` type, launching with one honest item (ES cell-culture
+  chamber).
+- **Topic tags** — five flat tags covering all 19 papers (3/4/3/4/5); untagged papers
+  still surface under year and type facets.
+
+### Engineering gaps found when checking the contract against the real schema
+
+These do not block the visual round; they are port-time work:
+
+1. `publication` has **no `slug` field** — required for `/publications/[slug]`. Add,
+   with a generated slug from title + year.
+2. `publication` has **no `featured` field** — the agreed IA relies on one to absorb the
+   retired "Publication highlights" entry. Add.
+3. **The PI has no `profile` document.** All 19 profiles are lab members; none is
+   Damian Holsinger. Setting `settings.labHead` requires creating that profile first,
+   seeded with the bio text stranded in the "About Dr Damian Holsinger" pseudo-project.
+4. Retiring `project` breaks `home.showcaseProjects` (an array of project references)
+   and removes the `/projects/[slug]` route — needs a migration plus redirects for the
+   five existing project URLs.
 
 ## 8. Chosen direction & design-system decisions (filled after Round 2/3)
 
