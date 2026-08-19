@@ -16,6 +16,19 @@ export const META = 'font-mono text-meta text-text-muted'
 /** The system's only border treatment: 1px, square corners, no shadow. */
 export const HAIRLINE = 'border border-rule-strong'
 /**
+ * The `[rail | content]` grid every page block shares. SectionRail and
+ * PageTitle MUST use the same value or their rails misalign at the seam
+ * between them -- the rail's right-edge rule is meant to read as one
+ * continuous vertical line running down the page.
+ *
+ * Narrows to --spacing-rail-sm below `md`, widens to --spacing-rail from
+ * `md` up. The vendored sources (SectionRail.jsx, PageTitle.jsx) both
+ * hardcode `var(--spacing-rail) 1fr` at every viewport -- 88px is 23% of a
+ * 390px mobile viewport, so neither source is mobile-aware. This
+ * responsive narrowing is an addition on top of the port.
+ */
+export const RAIL_GRID = 'grid grid-cols-[var(--spacing-rail-sm)_1fr] md:grid-cols-[var(--spacing-rail)_1fr]'
+/**
  * Press feedback. Paired with the motion tokens; reduced-motion neutralises it.
  *
  * Uses Tailwind 4's parenthesised custom-property shorthand, not the

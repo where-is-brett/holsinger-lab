@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 
+import { RAIL_GRID } from './tokens'
+
 export interface SectionRailProps {
   num?: string
   label?: string
@@ -29,15 +31,8 @@ export function SectionRail({
   const rule = !inverse && borderTop ? 'border-t border-rule' : ''
   const surface = inverse ? 'bg-surface-inverse text-text-inverse' : ''
 
-  // The vendored source hardcodes `--spacing-rail` (88px) as the rail width
-  // at every viewport. 88px is 23% of a 390px mobile viewport, so that is
-  // not mobile-aware -- this narrowing to --spacing-rail-sm (38px) below
-  // `md`, widening to --spacing-rail from `md` up, is an addition on top of
-  // the port, per the brief's prose.
-  const grid = 'grid grid-cols-[var(--spacing-rail-sm)_1fr] md:grid-cols-[var(--spacing-rail)_1fr]'
-
   return (
-    <section className={`${grid} ${surface} ${rule}`}>
+    <section className={`${RAIL_GRID} ${surface} ${rule}`}>
       <div
         className={`flex flex-col items-center gap-[18px] border-r ${
           inverse ? 'border-rule-inverse' : 'border-rule'
@@ -55,7 +50,7 @@ export function SectionRail({
         )}
         {label && (
           <span
-            className={`[writing-mode:vertical-rl] rotate-180 font-mono text-[10px] leading-none tracking-[0.22em] uppercase ${
+            className={`[writing-mode:vertical-rl] rotate-180 font-mono text-[10px] leading-none font-normal tracking-[0.22em] uppercase ${
               inverse ? 'text-text-inverse-muted' : 'text-text-faint'
             }`}
           >
