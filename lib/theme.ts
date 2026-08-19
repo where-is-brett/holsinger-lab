@@ -37,10 +37,13 @@ export const PRESET_SURFACES: Record<
   },
 }
 
-/** WCAG AA for body text -- `--sem-link` is text. */
+/**
+ * WCAG AA for body text -- `--sem-link` is text. `--sem-accent` (borders and
+ * edges) only has to clear the WCAG AA non-text floor of 3:1, but the Modern
+ * Instrument direction uses ONE chromatic colour for both, so accent is
+ * derived at this same 4.5:1 floor -- which clears 3:1 with room to spare.
+ */
 const LINK_MIN_CONTRAST = 4.5
-/** WCAG AA for non-text -- `--sem-accent` is borders and edges. */
-const ACCENT_MIN_CONTRAST = 3
 
 /** One step per 8-bit level, so the scan cannot skip a representable colour. */
 const LIGHTNESS_STEPS = 256
@@ -109,29 +112,28 @@ export function deriveTheme(
   if (!THEME_NAMES.includes(theme)) return null
   const surfaces = PRESET_SURFACES[theme]
 
-  const light = {
-    link: deriveToken(brandHex, surfaces.light, LINK_MIN_CONTRAST, 'darken'),
-    accent: deriveToken(
-      brandHex,
-      surfaces.light,
-      ACCENT_MIN_CONTRAST,
-      'darken'
-    ),
-  }
-  const dark = {
-    link: deriveToken(brandHex, surfaces.dark, LINK_MIN_CONTRAST, 'lighten'),
-    accent: deriveToken(
-      brandHex,
-      surfaces.dark,
-      ACCENT_MIN_CONTRAST,
-      'lighten'
-    ),
-  }
+  const lightLink = deriveToken(
+    brandHex,
+    surfaces.light,
+    LINK_MIN_CONTRAST,
+    'darken'
+  )
+  const darkLink = deriveToken(
+    brandHex,
+    surfaces.dark,
+    LINK_MIN_CONTRAST,
+    'lighten'
+  )
+  if (!lightLink || !darkLink) return null
 
-  if (!light.link || !light.accent || !dark.link || !dark.accent) return null
+  // The Modern Instrument direction uses ONE chromatic colour: rail numbers,
+  // year stamps, links, current-nav and the focus ring are all the same value.
+  // Accent therefore reuses the link derivation rather than deriving to its own
+  // looser 3:1 non-text floor -- 4.5:1 clears 3:1, so nothing regresses, and the
+  // two tokens can never drift apart.
   return {
-    light: { link: light.link, accent: light.accent },
-    dark: { link: dark.link, accent: dark.accent },
+    light: { link: lightLink, accent: lightLink },
+    dark: { link: darkLink, accent: darkLink },
   }
 }
 
@@ -175,7 +177,10 @@ export function resolveThemeName(value: unknown): ThemeName {
  * paints before any content renders. Shared by `generateViewport` and
  * `app/manifest.ts` so the two never disagree about what one preset means.
  */
-export function themeColorFor(theme: ThemeName): { light: string; dark: string } {
+export function themeColorFor(theme: ThemeName): {
+  light: string
+  dark: string
+} {
   return {
     light: PRESET_SURFACES[theme].light[0],
     dark: PRESET_SURFACES[theme].dark[0],

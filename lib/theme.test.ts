@@ -109,6 +109,18 @@ describe('deriveTheme — accessible by construction', () => {
     }
   })
 
+  it.each(THEME_NAMES)(
+    'derives accent to the same value as link in the %s theme',
+    (theme) => {
+      // The Modern Instrument direction uses ONE chromatic colour, so these two
+      // tokens must never drift apart for any brand colour or preset.
+      const derived = deriveTheme('#4043e7', theme)
+      expect(derived).not.toBeNull()
+      expect(derived!.light.accent).toBe(derived!.light.link)
+      expect(derived!.dark.accent).toBe(derived!.dark.link)
+    }
+  )
+
   it('returns null rather than throwing for an Object.prototype member name as theme', () => {
     // PRESET_SURFACES[theme] is a bare property lookup, so a `theme` value
     // that names an inherited Object.prototype member (e.g. 'toString') would
@@ -210,7 +222,10 @@ describe('resolveThemeName', () => {
 
 describe('themeColorFor', () => {
   it('returns the light and dark base surface for the default preset', () => {
-    expect(themeColorFor('default')).toEqual({ light: '#f8f8f8', dark: '#0d0e12' })
+    expect(themeColorFor('default')).toEqual({
+      light: '#f8f8f8',
+      dark: '#0d0e12',
+    })
   })
 
   it('returns the light and dark base surface for the warm preset', () => {
