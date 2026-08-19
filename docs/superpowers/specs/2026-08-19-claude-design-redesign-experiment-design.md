@@ -1,7 +1,7 @@
 # Claude Design–driven redesign experiment — design
 
 **Date:** 2026-08-19
-**Status:** Rounds 1 and 2 complete; direction chosen (Modern Instrument); 2C refinement, then Round 3
+**Status:** Design rounds 1-3 complete; design system built; next is the code port
 **Owner:** Brett Yang (engineering side); Claude Design app (design side)
 
 ## 1. Purpose
@@ -206,3 +206,35 @@ answer for 60 rows) and adds the open mobile-nav state.
 - Redesigning Studio itself.
 - Contact and generic Page templates in Round 1–2 (they follow the system in
   Round 3).
+
+
+## 9. Design system (Round 3 outcome, 2026-08-19)
+
+Built into the **same** Claude Design project rather than a separate design-system
+project, so it is not registered as a bindable design system (`list_design_systems`
+still returns only the three ALDI ones). This does not affect the code port — the files
+are readable either way — but binding it to future lab deliverables would require moving
+it into its own project.
+
+Contents, all in the redesign project:
+
+- `tokens/` — colors, typography, spacing, motion, fonts, base. **Adopts the app's
+  `--sem-*` names verbatim**, values in oklch, every light token redeclared under
+  `prefers-color-scheme: dark`. Five additions flagged as additions
+  (`--sem-text-faint`, `--sem-text-inverse-muted`, `--sem-link-inverse`,
+  `--sem-rule-strong`, `--sem-rule-inverse`).
+- `components/` — navigation (SiteNav, MobileHeader, SiteFooter), publications
+  (PublicationRow, FacetBand, FacetChip, CopyCitation, Tag), people (PersonCard),
+  structure (SectionRail, PageTitle), content (Button, FormField, ResourceBlock). Each
+  as `.jsx` + `.d.ts` + `.prompt.md`, plus per-group `.card.html` galleries.
+- `guidelines/` — tokens, colours (light / dark / chromatic), type (display / reading /
+  mono), spacing, motion-focus, usage.
+- `ui_kits/site/` — the five screens rebuilt from the components (Home, PublicationsIndex,
+  PublicationPage, People, Research) with `LabData.jsx` carrying the real content.
+- `readme.md` + `SKILL.md` — the stance, content fundamentals, visual foundations.
+
+Decisions recorded there that bind the port: square corners (no radius tokens, deliberate),
+no shadows, no icons of any kind, motion limited to 120-160ms colour/press/grayscale with
+`prefers-reduced-motion` zeroing durations, focus ring 2px accent at 3px offset site-wide,
+`--sem-link` and `--sem-accent` deliberately the same ultramarine (splitting them into two
+hues breaks the direction), and DOIs/URLs never rendered through an uppercasing style.
