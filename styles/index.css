@@ -16,6 +16,11 @@
   --color-accent: var(--sem-accent);
   --color-field: var(--sem-field);
   --color-rule: var(--sem-rule);
+  --color-text-faint: var(--sem-text-faint);
+  --color-text-inverse-muted: var(--sem-text-inverse-muted);
+  --color-link-inverse: var(--sem-link-inverse);
+  --color-rule-strong: var(--sem-rule-strong);
+  --color-rule-inverse: var(--sem-rule-inverse);
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
