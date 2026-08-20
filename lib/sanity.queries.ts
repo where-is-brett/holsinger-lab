@@ -113,19 +113,75 @@ export const settingsQuery = groq`
   }
 `
 
-export const publicationsQuery = groq`
-  *[_type == "publication"] | order(date desc) {
+// The projection shared by every publication query, so the list, the single
+// page and the home-page highlights cannot drift apart.
+//
+// `resources` is read back from `resource.publication` rather than stored on
+// the publication: the link lives in exactly one place (see
+// schemas/documents/resource.ts), and this is the reverse half of it.
+const publicationFields = `
+  _id,
+  title,
+  author,
+  journal,
+  volume,
+  issue,
+  pages,
+  abstract,
+  url,
+  doi,
+  date,
+  "slug": slug.current,
+  type,
+  topics,
+  featured,
+  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {
     _id,
     title,
-    author,
-    journal,
-    volume,
-    issue,
-    pages,
-    abstract,
-    url,
-    doi,
-    date,
+    kind,
+  },
+`
+
+export const publicationsQuery = groq`
+  *[_type == "publication"] | order(date desc) {
+    ${publicationFields}
+  }
+`
+
+export const publicationBySlugQuery = groq`
+  *[_type == "publication" && slug.current == $slug][0]{
+    ${publicationFields}
+  }
+`
+
+// Only publications that have a slug get a page. The 19 live records have none
+// until the backfill runs, so this returns nothing rather than breaking -- the
+// same shape as `projectPaths` and `profilePaths`.
+export const publicationPaths = groq`
+  *[_type == "publication" && slug.current != null].slug.current
+`
+
+export const featuredPublicationsQuery = groq`
+  *[_type == "publication" && featured == true] | order(date desc) {
+    ${publicationFields}
+  }
+`
+
+export const resourcesQuery = groq`
+  *[_type == "resource"] | order(title asc) {
+    _id,
+    title,
+    kind,
+    summary,
+    howToObtain,
+    publication->{
+      _id,
+      title,
+      date,
+      doi,
+      url,
+      "slug": slug.current,
+    },
   }
 `
 

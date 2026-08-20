@@ -12,6 +12,7 @@ import page from 'schemas/documents/page'
 import profile from 'schemas/documents/profile'
 import project from 'schemas/documents/project'
 import publication from 'schemas/documents/publication'
+import resource from 'schemas/documents/resource'
 import roleGroup from 'schemas/documents/roleGroup'
 import duration from 'schemas/objects/duration'
 import milestone from 'schemas/objects/milestone'
@@ -44,6 +45,7 @@ export default defineConfig({
       milestone,
       timeline,
       publication,
+      resource,
       profile,
       roleGroup,
     ],

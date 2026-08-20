@@ -7,6 +7,9 @@
   "scripts": {
     "backfill:profile-role-groups": "node scripts/backfill-profile-role-groups.ts",
     "backfill:publication-dois": "node scripts/backfill-publication-dois.ts",
+    "backfill:publication-slugs": "node scripts/backfill-publication-slugs.ts",
+    "backfill:publication-topics": "node scripts/backfill-publication-topics.ts",
+    "create:pi-profile": "node scripts/create-pi-profile.ts",
     "build": "next build",
     "dev": "next dev",
     "format": "npx prettier --write . --ignore-path .gitignore",

@@ -238,6 +238,13 @@ function makePublication(
     url: 'https://doi.org/10.1000/example',
     doi: null,
     date: '2024-05-01',
+    // Phase 2 content-model fields. Explicit nulls rather than a loosened type,
+    // matching how `fallbackSettings` handles the same situation in types/.
+    slug: null,
+    type: null,
+    topics: null,
+    featured: null,
+    resources: [],
     ...overrides,
   }
 }
