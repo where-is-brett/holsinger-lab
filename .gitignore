@@ -34,6 +34,10 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# Sanity dataset exports (e.g. production backups taken before a --commit
+# import run) -- never commit these
+/backups/
+
 #Intellij
 .idea
 *.iml
