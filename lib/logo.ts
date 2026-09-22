@@ -62,8 +62,9 @@ export function getAspectRatio(
  * underivable, which is precisely the D5 bug this phase fixes: a hardcoded
  * `w-[120px]` overlay sitting under a ~140px *wordmark*.
  *
- * Both `Logo` and MobileNavBar's transparent tap-overlay size themselves from
- * this. They cannot drift, in either mode, because there is one function.
+ * `Logo` sizes itself from this. (Phase 3 retired the old MobileNavBar tap
+ * overlay that used to call it too -- the mobile dialog now draws its own
+ * copy of the header band instead of overlaying one.)
  */
 export function resolveLogo({
   aspectRatio,

@@ -1,4 +1,34 @@
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
+
 import { defineConfig, devices } from '@playwright/test'
+
+// e2e/support/sanity.ts reads live dataset facts (via lib/sanity.api.ts) so
+// assertions can be derived from the actual dataset instead of hardcoded.
+// Those env vars are public (see .github/workflows/ci.yml), and CI sets them
+// directly at the job level -- but locally, unlike `next build`/`next start`
+// (which load `.env.local` themselves), the Playwright test process itself
+// never reads `.env.local`. This loads it here, once, before any spec file
+// is required, without a `dotenv` dependency. Existing env vars (CI's, or
+// anything the shell already set) always win.
+const envLocalPath = path.resolve(__dirname, '.env.local')
+if (existsSync(envLocalPath)) {
+  for (const line of readFileSync(envLocalPath, 'utf-8').split('\n')) {
+    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/)
+    if (!match) continue
+    const key = match[1]
+    let value = (match[2] ?? '').trim()
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1)
+    }
+    if (process.env[key] === undefined) {
+      process.env[key] = value
+    }
+  }
+}
 
 export default defineConfig({
   testDir: './e2e',

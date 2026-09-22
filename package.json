@@ -12,6 +12,7 @@
     "create:pi-profile": "node scripts/create-pi-profile.ts",
     "import:wix": "node scripts/import-wix.ts",
     "build": "next build",
+    "css:proof": "node scripts/css-proof.mjs",
     "dev": "next dev",
     "format": "npx prettier --write . --ignore-path .gitignore",
     "lint": "eslint .",
