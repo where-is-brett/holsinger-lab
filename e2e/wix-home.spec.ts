@@ -25,6 +25,13 @@ for (const [w, h1, body] of [
       await expect(page.getByRole('heading', { name: 'CONTACT US' })).toBeVisible()
       const mail = page.locator('[data-wix-block="contact"] a[href^="mailto:"]')
       await expect(mail).toHaveAttribute('href', 'mailto:damian.holsinger@sydney.edu.au')
+
+      // The hero image is the LCP element -- next/image's `priority` must
+      // actually take effect (no lazy-loading, fetch prioritised), or the
+      // browser defers it behind everything else on the page.
+      const heroImg = page.locator('[data-wix-block="hero"] img')
+      await expect(heroImg).not.toHaveAttribute('loading', 'lazy')
+      await expect(heroImg).toHaveAttribute('fetchpriority', 'high')
     })
   })
 }
