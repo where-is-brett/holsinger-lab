@@ -5,9 +5,9 @@ export function ContactBlock({ contact }: { contact: ContactDetails | null }) {
   const mail = mailtoHref(contact?.email)
   const tel = telHref(contact?.phone)
   return (
-    <section data-wix-block="contact" className="wix-col pt-[60px] pb-[40px] text-center md:pt-[65px]">
+    <section data-wix-block="contact" className="wix-col pt-[60px] pb-[40px] text-center md:pt-[62px]">
       <h2 className="font-playfair text-[28px]/[37.8px] md:text-[40px]/[54px]">CONTACT US</h2>
-      <div className="mt-[20px] space-y-[20px] font-raleway text-[15px]/[28.1px]">
+      <div className="mt-[20px] space-y-[20px] font-raleway text-[15px]/[28.1px] md:mt-[25px]">
         {contact?.address ? <p>{contact.address}</p> : null}
         {mail ? (
           <p>

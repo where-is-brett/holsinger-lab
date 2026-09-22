@@ -4,11 +4,15 @@ import { stegaClean } from 'next-sanity'
 const components: PortableTextComponents = {
   block: { normal: ({ children }) => <p>{children}</p> },
   marks: {
-    link: ({ children, value }) => (
-      <a href={stegaClean(value?.href) ?? '#'} className="underline" target="_blank" rel="noreferrer">
-        {children}
-      </a>
-    ),
+    link: ({ children, value }) => {
+      const href = stegaClean(value?.href) || null
+      if (!href) return <span>{children}</span>
+      return (
+        <a href={href} className="underline" target="_blank" rel="noreferrer">
+          {children}
+        </a>
+      )
+    },
   },
 }
 

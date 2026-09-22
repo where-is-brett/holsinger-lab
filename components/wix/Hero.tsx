@@ -6,7 +6,7 @@ import { stegaClean } from 'next-sanity'
 export function Hero({ hero }: { hero: NonNullable<HomeData['copy']>['hero'] }) {
   const src = hero?.image ? urlForImage(hero.image)?.width(2560).url() : undefined
   return (
-    <section data-wix-block="hero" className="relative h-[410px] overflow-hidden bg-black md:h-[429px]">
+    <section data-wix-block="hero" className="relative h-[410px] overflow-hidden bg-black md:mt-[20px] md:h-[429px]">
       {src ? (
         <Image src={src} alt={stegaClean(hero?.image?.alt) ?? ''} fill priority sizes="100vw" className="object-cover" />
       ) : null}
