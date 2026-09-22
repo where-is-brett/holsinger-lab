@@ -54,6 +54,7 @@ export function formatApaCitation(pub: CitationFields): string {
   return `${author} (${year}). ${title}.${journalPart}${link ? ` ${link}` : ''}`
 }
 
+// removed in Task 4
 /** Base cite key: first "word" of the author string (through the first space/comma), ASCII-only, lowercased, plus the year. Not unique across a list on its own -- see assignBibtexCiteKeys. */
 function bibtexCiteKeyBase(author: string | null, date: string | null): string {
   const year = citationYear(date)
@@ -71,6 +72,7 @@ function bibtexCiteKeyBase(author: string | null, date: string | null): string {
  * a/b/c/... suffix, matching the convention reference managers like
  * Zotero/Mendeley use to disambiguate.
  */
+// removed in Task 4
 export function assignBibtexCiteKeys<
   T extends { _id: string; author: string | null; date: string | null },
 >(publications: T[]): Map<string, string> {
@@ -88,6 +90,7 @@ export function assignBibtexCiteKeys<
   return keys
 }
 
+// removed in Task 4
 /** Strips BibTeX's field-terminating braces so free-text values don't break the entry. */
 function escapeBibtexField(value: string): string {
   return value.replace(/[{}]/g, '')
@@ -100,6 +103,7 @@ function escapeBibtexField(value: string): string {
  * a non-journal-article record is ever added (the publication schema has no
  * type field to check).
  */
+// removed in Task 4
 export function formatBibtexCitation(pub: CitationFields, citeKey: string): string {
   const year = citationYear(pub.date)
   const fields: [string, string | null][] = [

@@ -3,7 +3,7 @@ import { LaunchIcon } from '@sanity/icons/Launch'
 import { useState } from 'react'
 import type { PublicationPayload } from 'types'
 
-import { formatApaCitation, formatBibtexCitation } from './citation'
+import { formatApaCitation, formatBibtexCitation } from 'lib/citation'
 import { CopyButton } from './CopyButton'
 import { Toggle, ToggleContent } from './Toggle'
 
