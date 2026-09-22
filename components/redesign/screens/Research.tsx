@@ -76,8 +76,15 @@ function Narrative({ project }: { project: ResearchProjectView }) {
         {/* IMPORTANT 1 (fix round 1): the overview is lead-size body colour
             (`variant="lead"`), per the brief and the ui_kit's own `Narrative`
             body paragraph (`fontSize: "var(--text-lead)"`, no muted colour
-            override) -- not the bio's smaller, muted default. */}
-        <PortableBody blocks={project.overview} variant="lead" />
+            override) -- not the bio's smaller, muted default.
+
+            `project.body` is `overview`, falling back to `description` when
+            there's no overview (researchModel.ts's `resolveBody`) -- the
+            two Wix-imported projects only carry `description`. This screen
+            never reads either raw field itself; `PortableBody` already
+            renders nothing when `blocks` is null, so the paragraph is
+            omitted entirely for a project with neither. */}
+        <PortableBody blocks={project.body} variant="lead" />
       </div>
       {cover && (
         <Image

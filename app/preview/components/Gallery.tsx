@@ -12,6 +12,7 @@ import {
   HOME_RESOURCE_FIXTURE,
   HOME_SETTINGS_FIXTURE,
   HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE,
+  HOME_SETTINGS_PORTRAIT_FIXTURE,
   HOME_SUPPORT_PAGE_FIXTURE,
   LINKED_PUB,
   NO_LINK_PUB,
@@ -423,9 +424,11 @@ export default function Gallery() {
         <Heading>Research screen</Heading>
         {/* Task 2: production has zero `defined(researchOrder)` projects
             today (spec §2), so this fixture is the only place the
-            populated Research screen -- five projects, four covers at
-            varying aspect ratios plus one with none, a long unbreakable
-            overview token, one with no tags and one with no start date --
+            populated Research screen -- six projects, four covers at
+            varying aspect ratios plus two with none, a long unbreakable
+            overview token, one with no tags, one with no start date, and
+            one description-only project (fix round 3's overview/
+            description fallback, researchModel.ts's `resolveBody`) --
             actually renders. */}
         <div className="border border-rule">
           <Research
@@ -510,10 +513,36 @@ export default function Gallery() {
             PI herself) instead of being silently subtracted while
             appearing nowhere on the page. */}
         <SubHeading>(b) labHead set, showLabHeadOnHome false -- no PI panel, PI included in the count</SubHeading>
-        <div className="border border-rule" data-testid="gallery-home-b">
+        <div className="mb-8 border border-rule" data-testid="gallery-home-b">
           <Home
             home={HOME_PAGE_FIXTURE}
             settings={HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE}
+            siteName="Holsinger Lab"
+            publications={HOME_PUBLICATIONS_FIXTURE}
+            publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+            resource={HOME_RESOURCE_FIXTURE}
+            maestro={HOME_MAESTRO_FIXTURE}
+            profiles={PEOPLE_PROFILES_FIXTURE}
+            roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+            supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+            headingLevel="h2"
+          />
+        </div>
+
+        {/* Fix round 4 (axe regression): instance (a) deliberately keeps
+            `labHead.image: null` (proves PiPortrait64's initials fallback),
+            so this third instance is what actually renders a real portrait
+            through Home's own 64px `<Image>` branch -- the case
+            `image-redundant-alt` needs to see exercised (Home.tsx's
+            `PiPortrait64` own comment: `alt=""`, decorative, since the PI's
+            name is visible text right beside it inside the same `Link`).
+            Covered by this file's own whole-page axe checks (light and
+            dark, below) same as every other gallery section. */}
+        <SubHeading>(c) labHead set with a portrait -- PiPortrait64&apos;s image branch, decorative alt</SubHeading>
+        <div className="border border-rule" data-testid="gallery-home-c">
+          <Home
+            home={HOME_PAGE_FIXTURE}
+            settings={HOME_SETTINGS_PORTRAIT_FIXTURE}
             siteName="Holsinger Lab"
             publications={HOME_PUBLICATIONS_FIXTURE}
             publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}

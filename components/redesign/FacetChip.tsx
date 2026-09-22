@@ -52,7 +52,22 @@ export function FacetChip({ label, count, on = false, onClick }: FacetChipProps)
       }`}
     >
       {label}
-      {count != null && <span className="opacity-55"> {count}</span>}
+      {/* Deliberate deviation from the vendored source's `opacity: 0.55`
+          (WCAG AA): applying that opacity to the ON chip's `text-text-inverse`
+          or the OFF chip's `text-text-muted` composites down to about
+          #5d6269 on the dark surface -- 3.1:1 at 11px, failing the 4.5:1
+          AA minimum for text (surfaced by axe's `color-contrast` rule once
+          the publications type backfill added a whole new Type chip
+          group). A real token colour instead of opacity: `text-text-faint`
+          on an OFF chip (sits on `--sem-surface`/`--sem-surface-raised`),
+          `text-text-inverse-muted` on an ON chip (sits on
+          `--sem-surface-inverse`) -- both contrast-guarded to >=4.5:1
+          against exactly those surfaces in styles/tokens.test.ts. One
+          whole class per state (this ternary), same "never a same-property
+          pair" rule as the ON/OFF border/bg/text classes above. */}
+      {count != null && (
+        <span className={on ? 'text-text-inverse-muted' : 'text-text-faint'}> {count}</span>
+      )}
     </button>
   )
 }

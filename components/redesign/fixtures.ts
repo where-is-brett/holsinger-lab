@@ -588,7 +588,7 @@ function researchCoverView(width: number, height: number, alt: string): Research
 function researchProjectView(overrides: {
   id: string
   title: string
-  overview: ReturnType<typeof overviewParagraph>[]
+  body: ReturnType<typeof overviewParagraph>[]
   start: string | null
   tags: string[]
   category: string | null
@@ -601,7 +601,7 @@ function researchProjectView(overrides: {
     label: tags[0] || 'Project',
     kicker: researchKicker({ start: overrides.start, category: overrides.category }),
     tagLine: tags.join(' · '),
-    overview: overrides.overview,
+    body: overrides.body,
     cover: overrides.cover,
   }
 }
@@ -610,7 +610,7 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
   researchProjectView({
     id: 'fixture-research-1',
     title: 'Involvement of gut microbiota in Alzheimer’s disease',
-    overview: [
+    body: [
       overviewParagraph(
         'research-1-p1',
         'The gut microbiome has been implicated in numerous neurodegenerative diseases. We were the ' +
@@ -631,7 +631,7 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
   researchProjectView({
     id: 'fixture-research-2',
     title: 'Glial activity as a marker of disease',
-    overview: [
+    body: [
       overviewParagraph(
         'research-2-p1',
         'Astrocytes and microglia play an important role in maintaining a homeostatic brain environment. ' +
@@ -653,7 +653,7 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
   researchProjectView({
     id: 'fixture-research-3',
     title: 'MAESTRO: multi-site cohort infrastructure',
-    overview: [
+    body: [
       overviewParagraph(
         'research-3-p1',
         'A shared infrastructure project coordinating cohort recruitment and data harmonisation across ' +
@@ -672,7 +672,7 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
   researchProjectView({
     id: 'fixture-research-4',
     title: 'Metabolic stress signalling in ageing glia',
-    overview: [
+    body: [
       overviewParagraph(
         'research-4-p1',
         'Investigating how chronic metabolic stress alters glial support of neuronal circuits over the ' +
@@ -690,7 +690,7 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
   researchProjectView({
     id: 'fixture-research-5',
     title: 'Novel biomarkers of early cognitive decline',
-    overview: [
+    body: [
       overviewParagraph(
         'research-5-p1',
         'Identifying candidate blood-based biomarkers that track cognitive decline before clinical ' +
@@ -700,6 +700,30 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
     start: '2024-09-01T00:00:00.000Z',
     tags: ['Biomarkers'],
     category: 'Neuro-oncology & biomarkers',
+    cover: null,
+  }),
+  // Description-only, no overview -- the fix round 3 fallback case
+  // (researchModel.ts's `resolveBody`): the two Wix-imported projects on
+  // the real `wix-preview` dataset carry their copy in `description`, with
+  // no `overview` at all. `toResearchView` resolves `overview`/`description`
+  // into one `body` before this view model ever exists in production; here
+  // the fixture builds the already-resolved `ResearchProjectView` directly
+  // (same as every other entry in this array), so "no overview" is simply
+  // "this is the only text in `body`" -- proving the screen still renders
+  // a paragraph when a project's only source of copy is `description`.
+  researchProjectView({
+    id: 'fixture-research-6',
+    title: 'Neurotrophic factors in synaptic repair',
+    body: [
+      overviewParagraph(
+        'research-6-p1',
+        'Imported from the previous site as a project description rather than an overview -- this ' +
+          'paragraph is the fallback text a Wix-imported project carries when it has no overview at all.'
+      ),
+    ],
+    start: '2017-01-01T00:00:00.000Z',
+    tags: ['Synaptic repair'],
+    category: null,
     cover: null,
   }),
 ]
@@ -726,6 +750,28 @@ export const HOME_SETTINGS_FIXTURE: SettingsPayload = {
   ...fallbackSettings,
   labHead: HOME_LAB_HEAD_FIXTURE,
   showLabHeadOnHome: true,
+}
+
+// Fix round 4 (axe regression): a third instance, `labHead` set *with* a
+// portrait -- the same real Sanity asset every other portrait fixture in
+// this file reuses (`PEOPLE_IMAGE`). Exists so the gallery (and the
+// whole-page axe checks that already run over it in both colour schemes,
+// `e2e/redesign-components.spec.ts`) actually renders a real `<Image>`
+// inside `PiPortrait64`'s image branch -- instance (a) above deliberately
+// keeps `image: null` to keep proving the initials fallback, so this is a
+// second fixture, not a change to that one. Home.tsx's `PiPortrait64` now
+// gives this image `alt=""` (decorative, fix round 4) since the PI's name
+// renders as visible text inside the same `Link` -- this fixture is what
+// makes axe's `image-redundant-alt` rule actually exercise that branch
+// instead of only ever seeing the no-image fallback.
+export const HOME_LAB_HEAD_PORTRAIT_FIXTURE: NonNullable<SettingsPayload['labHead']> = {
+  ...HOME_LAB_HEAD_FIXTURE,
+  image: PEOPLE_IMAGE,
+}
+
+export const HOME_SETTINGS_PORTRAIT_FIXTURE: SettingsPayload = {
+  ...HOME_SETTINGS_FIXTURE,
+  labHead: HOME_LAB_HEAD_PORTRAIT_FIXTURE,
 }
 
 export const HOME_PAGE_FIXTURE: HomePagePayload = {

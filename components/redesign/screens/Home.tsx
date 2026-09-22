@@ -239,9 +239,20 @@ const LAB_GRID = 'grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-start lg:gap-x-
 
 function PiPortrait64({ name, img }: { name: string; img?: string }) {
   if (img) {
+    // `alt=""` (decorative), not `alt={name}` -- axe's `image-redundant-alt`
+    // rule: this portrait sits right inside the same `Link` as the PI's
+    // name text (`TheLabBlock` above), so a non-empty alt would duplicate
+    // the visible name right beside it in the link's accessible name,
+    // announced twice to screen-reader users. Same call PersonCard.tsx's
+    // own `href` branch already makes for its linked variant (its own
+    // comment: "the portrait <img>'s alt={name} would otherwise duplicate
+    // the name text rendered right below it inside the same link"). The
+    // People spotlight's portrait (People.tsx's `SpotlightBlock`) keeps
+    // `alt={name}` unchanged -- its image and name (an `h2`) are not
+    // inside a shared link there, so there's no duplication to fix.
     return (
       <div className="relative h-16 w-16 shrink-0 overflow-hidden bg-surface-raised">
-        <Image src={img} alt={name} fill sizes="64px" className={IMAGE_FILTER} />
+        <Image src={img} alt="" fill sizes="64px" className={IMAGE_FILTER} />
       </div>
     )
   }

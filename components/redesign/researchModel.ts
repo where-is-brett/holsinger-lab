@@ -55,7 +55,12 @@ export interface ResearchProjectView {
   kicker: string
   /** Tags joined with " · ", rendered in link colour. "" when there are none. */
   tagLine: string
-  overview: ResearchProjectPayload['overview']
+  /**
+   * The one portable-text field the screen renders, resolved once here --
+   * see `toResearchView`'s own comment for why. `Research.tsx` never reads
+   * `overview`/`description` itself.
+   */
+  body: ResearchProjectPayload['overview'] | ResearchProjectPayload['description']
   cover: ResearchProjectCover | null
 }
 
@@ -121,6 +126,23 @@ function coverView(p: ResearchProjectPayload): ResearchProjectCover | null {
   return { src, width, height, alt: p.title ?? '' }
 }
 
+/**
+ * `overview` when it has at least one block, else `description`, else
+ * `null`. Both fields come back from a `groq` fetch as `undefined`,
+ * `null`, or `[]` when unset -- all three count as "no overview" here, not
+ * just `null`/`undefined` (a Studio editor clearing a portable-text field
+ * to empty leaves `[]`, not `null`). Exists because the two Wix-imported
+ * projects (researchOrder 3/4) carry their copy in `description`, not
+ * `overview` -- the field the original two projects (researchOrder 1/2)
+ * both have, with identical text. Without this fallback the imported
+ * projects render title-only.
+ */
+function resolveBody(p: ResearchProjectPayload): ResearchProjectView['body'] {
+  if (p.overview && p.overview.length > 0) return p.overview
+  if (p.description && p.description.length > 0) return p.description
+  return null
+}
+
 /** The one function `Research` (the screen) renders from -- see its own comment. */
 export function toResearchView(p: ResearchProjectPayload): ResearchProjectView {
   const tags = (p.tags ?? []).filter((t): t is string => Boolean(t))
@@ -130,7 +152,7 @@ export function toResearchView(p: ResearchProjectPayload): ResearchProjectView {
     label: tags[0] || 'Project',
     kicker: researchKicker({ start: p.start, category: p.category }),
     tagLine: tags.join(' · '),
-    overview: p.overview,
+    body: resolveBody(p),
     cover: coverView(p),
   }
 }

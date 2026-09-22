@@ -190,7 +190,7 @@ test.describe('/preview/components gallery: research', () => {
     await expect(section).toBeVisible()
 
     const titles = await section.getByTestId('research-project-title').allTextContents()
-    expect(titles.length).toBe(5)
+    expect(titles.length).toBe(6)
 
     const covers = section.getByTestId('research-cover')
     await expect(covers).toHaveCount(GALLERY_COVER_RATIOS.length)
@@ -210,6 +210,27 @@ test.describe('/preview/components gallery: research', () => {
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
     )
     expect(fits).toBe(true)
+  })
+
+  // Fix round 3: `fixture-research-6` (fixtures.ts) has no `overview` at
+  // all -- its only copy is what a project with just `description` (the
+  // two Wix-imported projects on `wix-preview`) would resolve to through
+  // `researchModel.ts`'s `resolveBody`. Proves the fallback path actually
+  // renders a paragraph, not just that `toResearchView` returns the right
+  // value in isolation (researchModel.test.ts already covers that).
+  test('a project with no overview still renders its (description-only) paragraph text', async ({
+    page,
+  }) => {
+    await page.goto('/preview/components')
+
+    const section = page.getByTestId('gallery-research')
+    await expect(section).toBeVisible()
+    await expect(
+      section.getByText(
+        'Imported from the previous site as a project description rather than an overview',
+        { exact: false }
+      )
+    ).toBeVisible()
   })
 })
 

@@ -25,6 +25,7 @@ function basePayload(overrides: Partial<ResearchProjectPayload> = {}): ResearchP
     title: 'A project',
     slug: 'a-project',
     overview: [],
+    description: [],
     coverImage: null,
     start: null,
     tags: [],
@@ -120,7 +121,7 @@ describe('enquiryEmail', () => {
 })
 
 describe('toResearchView', () => {
-  it('carries id/title/label/kicker/tagLine/overview through, with cover null when there is no coverImage', () => {
+  it('carries id/title/label/kicker/tagLine/body through, with cover null when there is no coverImage', () => {
     const view = toResearchView(
       basePayload({
         title: 'Glial activity as a marker of disease',
@@ -136,7 +137,7 @@ describe('toResearchView', () => {
     expect(view.label).toBe('Astrocytes')
     expect(view.kicker).toBe('Since 2018')
     expect(view.tagLine).toBe('Astrocytes · Microglia')
-    expect(view.overview).toEqual([{ _type: 'block', _key: 'b1', children: [] }])
+    expect(view.body).toEqual([{ _type: 'block', _key: 'b1', children: [] }])
     expect(view.cover).toBeNull()
   })
 
@@ -211,5 +212,58 @@ describe('toResearchView', () => {
     expect(view.cover?.src).toMatch(/[?&]w=800\b/)
     expect(view.cover?.src).toMatch(/[?&]h=720\b/)
     expect(view.cover?.src).toMatch(/[?&]fit=crop\b/)
+  })
+})
+
+// `body` fallback (fix round 3): the two Wix-imported projects on
+// `wix-preview` (researchOrder 3/4) carry their text in `description`, with
+// no `overview` at all -- the original two projects (researchOrder 1/2)
+// have both fields, with identical text. Without this fallback the imported
+// projects render title-only.
+describe('toResearchView body fallback (overview vs description)', () => {
+  const overviewBlock = { _type: 'block' as const, _key: 'ov1', children: [] }
+  const descriptionBlock = { _type: 'block' as const, _key: 'de1', children: [] }
+
+  it('uses overview when it has at least one block, even if description is also set', () => {
+    const view = toResearchView(
+      basePayload({
+        overview: [overviewBlock],
+        description: [descriptionBlock],
+      })
+    )
+    expect(view.body).toEqual([overviewBlock])
+  })
+
+  it('falls back to description when overview is an empty array', () => {
+    const view = toResearchView(
+      basePayload({
+        overview: [],
+        description: [descriptionBlock],
+      })
+    )
+    expect(view.body).toEqual([descriptionBlock])
+  })
+
+  it('falls back to description when overview is missing (null/undefined)', () => {
+    const view = toResearchView(
+      basePayload({
+        overview: null,
+        description: [descriptionBlock],
+      })
+    )
+    expect(view.body).toEqual([descriptionBlock])
+  })
+
+  it('is null when both overview and description are missing or empty', () => {
+    expect(toResearchView(basePayload({ overview: [], description: [] })).body).toBeNull()
+    expect(toResearchView(basePayload({ overview: null, description: null })).body).toBeNull()
+    expect(
+      toResearchView(basePayload({ overview: undefined, description: undefined })).body
+    ).toBeNull()
+  })
+
+  it('is null when description is also an empty array and overview is missing', () => {
+    const view = toResearchView(basePayload({ overview: null, description: [] }))
+    expect(view.body).toBeNull()
   })
 })
