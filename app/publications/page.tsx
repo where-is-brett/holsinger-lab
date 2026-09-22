@@ -35,7 +35,13 @@ const getData = cache(async () => {
   ] = await Promise.all([
     sanityFetch({ query: settingsQuery, stega: false }),
     sanityFetch({ query: homePageTitleQuery, stega: false }),
-    sanityFetch({ query: publicationsQuery }),
+    // `stega: false`, matching the paper page (app/publications/[slug]/page.tsx):
+    // this data feeds the topic facet's chip labels (Presentation-mode stega
+    // characters embedded in a topic title break the string equality this
+    // page filters by, so a filtered topic facet vanishes), the row and
+    // identifier hrefs, and the clipboard citation string -- none of which
+    // should carry invisible stega encoding.
+    sanityFetch({ query: publicationsQuery, stega: false }),
   ])
   const settings = (settingsData as SettingsPayload | null) ?? fallbackSettings
   const publications = publicationsData as PublicationPayload[] | null

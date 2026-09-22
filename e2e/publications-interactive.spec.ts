@@ -167,21 +167,58 @@ test.describe('publications index', () => {
     expect(clipboardText).toContain(title)
   })
 
-  test('every DOI/URL identifier is mutually exclusive and the two counts cover every row', async ({
+  test("every row is partitioned by link kind, and each kind's identifier matches its data", async ({
     page,
   }) => {
+    // DOI and URL are both optional on a publication (publicationModel.ts:
+    // `linkKind: 'DOI' | 'URL' | ''`), so a row with neither is valid
+    // content, not an omission. This no longer assumes every row has a
+    // link -- it partitions rows into the three possible kinds and checks
+    // each partition's own invariant, instead of comparing a page-wide href
+    // count against a row count that silently assumed DOI + URL == total.
+    const records = await e2eClient.fetch<{ slug: string | null; url: string | null }[]>(
+      `*[_type == "publication" && defined(slug.current)]{ "slug": slug.current, url }`
+    )
+    const urlBySlug = new Map(records.map((r) => [r.slug, r.url]))
+
     await page.goto('/publications')
     const main = page.locator('main')
     const rows = main.locator('[data-testid="pub-row"]')
     const total = await rows.count()
-    const doiCount = await main.locator('[data-testid="pub-row"][data-link-kind="DOI"]').count()
-    const urlCount = await main.locator('[data-testid="pub-row"][data-link-kind="URL"]').count()
-    expect(doiCount + urlCount).toBe(total)
+    const doiRows = main.locator('[data-testid="pub-row"][data-link-kind="DOI"]')
+    const urlRows = main.locator('[data-testid="pub-row"][data-link-kind="URL"]')
+    const noneRows = main.locator('[data-testid="pub-row"][data-link-kind=""]')
+    const doiCount = await doiRows.count()
+    const urlCount = await urlRows.count()
+    const noneCount = await noneRows.count()
+    expect(doiCount + urlCount + noneCount).toBe(total)
 
-    const doiHrefLinks = await page
-      .locator('[data-identifier][href^="https://doi.org/"]')
-      .count()
-    expect(doiCount).toBe(doiHrefLinks)
+    const doiHrefs = await doiRows.locator('[data-identifier]').evaluateAll((els) =>
+      els.map((el) => el.getAttribute('href'))
+    )
+    for (const href of doiHrefs) {
+      expect(href).toMatch(/^https:\/\/doi\.org\//)
+    }
+
+    // A URL identifier's href must equal the row's own recorded URL -- it
+    // must not be assumed to *not* start with doi.org, since a paper's URL
+    // field can itself point at a doi.org address.
+    const urlHrefBySlug = await urlRows.evaluateAll((els) =>
+      els.map((el) => {
+        const titleHref = el.querySelector('a[href^="/publications/"]')?.getAttribute('href') ?? ''
+        const slug = titleHref.replace(/^\/publications\//, '')
+        const identifierHref = el.querySelector('[data-identifier]')?.getAttribute('href') ?? null
+        return { slug, identifierHref }
+      })
+    )
+    expect(urlHrefBySlug.length).toBe(urlCount)
+    for (const { slug, identifierHref } of urlHrefBySlug) {
+      expect(identifierHref).toBe(urlBySlug.get(slug))
+    }
+
+    // A row with neither DOI nor URL has no identifier link at all.
+    const noneIdentifierCount = await noneRows.locator('[data-identifier]').count()
+    expect(noneIdentifierCount).toBe(0)
   })
 
   test('a row title navigates to its detail page', async ({ page }) => {
@@ -198,7 +235,7 @@ test.describe('publications index', () => {
     // page genuinely overflowed at real phone widths (measured 621px
     // scrollWidth vs a 375px viewport before the fix) -- previously
     // uncaught because this describe block only ever checked >=768px.
-    for (const width of [375, 390, 768, 1023, 1024, 1280]) {
+    for (const width of [320, 375, 390, 768, 1023, 1024, 1280]) {
       test(`at ${width}px`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 })
         await page.goto('/publications')

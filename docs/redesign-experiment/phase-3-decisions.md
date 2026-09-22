@@ -272,16 +272,21 @@ changes; recorded here so it isn't missed when step 4 is scoped.
   intact instead of trading one defect for another.
 - **`PageTitle` / `FacetBand`:** gained mobile gutters. `/publications` overflowed at 375px
   (`scrollWidth` 621 against a 375 viewport) because these two didn't have the responsive
-  padding the rest of the page did. Width checks now run at 375 / 390 / 768 / 1023 / 1024 /
-  1280px, not just 768 and up.
+  padding the rest of the page did. Width checks now run at 320 / 375 / 390 / 768 / 1023 /
+  1024 / 1280px, not just 768 and up.
 - **`SectionRail`:** gained `min-w-0`, so a long unbreakable child (an identifier, a DOI)
   can't force the rail wider than its column.
 - **`e2e/interactive-controls.spec.ts`** was rewritten to target `CopyCitation`, since
   `Toggle.tsx` was deleted in this PR and the spec exercised it.
 - **The dataset-pinned "10 DOIs" e2e test was dropped.** It asserted exactly 10 rows show a
   DOI identifier and 9 a URL — true of today's 19 records, but not a fact any future dataset
-  has to hold. Kept instead: a self-consistent DOI/URL split check. This is PR #30's lesson
-  (every e2e assertion must hold for any dataset) applied a second time.
+  has to hold. Kept instead: a check that partitions rows into DOI / URL / no-link and
+  verifies each partition against the row's own data (a DOI href starts with
+  `https://doi.org/`, a URL href equals the row's recorded URL, a no-link row has no
+  identifier). The dropped replacement's first pass still silently assumed every row had a
+  link — DOI and URL are both optional, so "no link" is valid content the check has to
+  allow for, not a case it can rule out by construction. This is PR #30's lesson (every e2e
+  assertion must hold for any dataset) applied a second time.
 
 ### Two local-testing traps
 

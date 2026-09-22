@@ -78,10 +78,18 @@ function PaperBlock({ pub }: { pub: Publication }) {
 function AbstractBlock({ pub }: { pub: Publication }) {
   return (
     <>
+      {/* Fix round 3: the same defect as PaperBlock's `<h1>` above (see its
+          round-1 comment), just not caught there because the overflow
+          check only ran at 375px, not 320px, until this round. A real
+          abstract's long unbreakable token -- here, a genotype string like
+          "C57BL/6-Tspotm1GuMu(GuwiyangWurra))" -- is wider than the ~246px
+          this column narrows to at 320px, and `text-pretty` alone
+          (`text-wrap`) doesn't stop that; `break-words` (`overflow-wrap`)
+          is a different property, so it's additive here too. */}
       {pub.abstract.map((paragraph, index) => (
         <p
           key={index}
-          className={`max-w-[840px] text-[1.0625rem] leading-[1.7] text-pretty ${index === 0 ? '' : 'mt-4'}`}
+          className={`max-w-[840px] text-[1.0625rem] leading-[1.7] text-pretty break-words ${index === 0 ? '' : 'mt-4'}`}
         >
           {paragraph}
         </p>

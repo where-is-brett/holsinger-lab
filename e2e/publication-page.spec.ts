@@ -133,19 +133,23 @@ test.describe('/publications/[slug]', () => {
   // page at a narrow width) is content-dependent, and the only way to catch
   // it for "any valid CMS content" (constraints.md) is to check every real
   // record rather than pick one.
-  test('no publication detail page overflows horizontally at 375px', async ({ page }) => {
+  test('no publication detail page overflows horizontally at 320/375px', async ({ page }) => {
     const slugs = await e2eClient.fetch<string[]>(
       `*[_type == "publication" && defined(slug.current)].slug.current`
     )
     test.skip(slugs.length === 0, 'no publication has a slug in this dataset')
 
-    await page.setViewportSize({ width: 375, height: 800 })
-    for (const slug of slugs) {
-      await page.goto(`/publications/${slug}`)
-      const fits = await page.evaluate(
-        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
-      )
-      expect(fits, `/publications/${slug} overflows at 375px`).toBe(true)
+    // 320px added alongside 375px (fix round 3), matching the /publications
+    // width loop -- the narrowest viewport this site claims to support.
+    for (const width of [320, 375]) {
+      await page.setViewportSize({ width, height: 800 })
+      for (const slug of slugs) {
+        await page.goto(`/publications/${slug}`)
+        const fits = await page.evaluate(
+          () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+        )
+        expect(fits, `/publications/${slug} overflows at ${width}px`).toBe(true)
+      }
     }
   })
 })

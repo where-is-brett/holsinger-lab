@@ -30,15 +30,21 @@ const COLUMN_HEADS = 'hidden lg:grid lg:grid-cols-[64px_1fr_230px_250px] lg:gap-
 
 // ui_kit: `padding: "32px var(--spacing-gutter-lg) var(--spacing-stack-lg) var(--spacing-gutter-md)"`.
 // `pt`/`pb` don't vary by breakpoint in the source, so they're set once,
-// unprefixed. `pr`/`pl` do -- `px-(--spacing-gutter)` below `lg` (a single
+// unprefixed. `pr`/`pl` do -- `px-(--spacing-gutter)` below `md` (a single
 // token for both sides, the same shorthand SiteFooter/MobileHeader already
-// use), overridden at `lg` by the ui_kit's asymmetric `pr`/`pl` tokens. Each
-// of `padding-right` and `padding-left` therefore gets exactly one
-// unprefixed declaration and one `lg:` declaration -- a responsive pair per
-// property, never two utilities fighting for the same property at the same
-// breakpoint (constraints.md).
+// use), overridden from `md` by the ui_kit's asymmetric `pr`/`pl` tokens.
+// Fix round 3: this switched at `lg`, while PageTitle and FacetBand switch
+// their matching gutters at `md` -- RAIL_GRID's own rail-width breakpoint
+// (38px rail below `md`, 88px from `md`) -- so from 768-1023px this list's
+// left edge sat at a different gutter than the page title and facet band
+// above it. Now `md`, so all three align through that range; COLUMN_HEADS
+// and the row grid itself still switch at `lg` (unchanged -- that's a
+// layout breakpoint, not a gutter one). Each of `padding-right` and
+// `padding-left` still gets exactly one unprefixed declaration and one
+// `md:` declaration -- a responsive pair per property, never two utilities
+// fighting for the same property at the same breakpoint (constraints.md).
 const RECORD_LIST_PADDING =
-  'pt-8 pb-(--spacing-stack-lg) px-(--spacing-gutter) lg:pr-(--spacing-gutter-lg) lg:pl-(--spacing-gutter-md)'
+  'pt-8 pb-(--spacing-stack-lg) px-(--spacing-gutter) md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)'
 
 function formatMeta(pubs: Publication[]): string {
   const years = pubs.map((p) => p.year).filter(Boolean)
