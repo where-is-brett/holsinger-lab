@@ -23,7 +23,7 @@ export default async function Team() {
 
       {g.current.length ? (
         <div data-wix="current" className="mt-[48px]">
-          <PersonGrid people={g.current} />
+          <PersonGrid people={g.current} headingLevel="h2" />
         </div>
       ) : null}
 

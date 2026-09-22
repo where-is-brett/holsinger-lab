@@ -7,7 +7,10 @@ test('team structure', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Our Team')
   const current = page.locator('[data-wix="current"] [data-wix="person"]')
   expect(await current.count()).toBeGreaterThanOrEqual(12)
-  await expect(current.first().locator('h3')).toHaveText('Haochen Wu')
+  // Current members' names are h2 (no heading sits between the page's h1 and
+  // this grid); alumni/intern cards nest under a visible h2 section heading
+  // and so stay h3 -- see PersonCard's headingLevel prop (axe heading-order).
+  await expect(current.first().locator('h2')).toHaveText('Haochen Wu')
   await expect(page.locator('[data-wix="current"]')).not.toContainText('Damian Holsinger') // Review Focus 1
   await expect(page.getByRole('heading', { name: 'Lab Alumni' })).toBeVisible()
   await expect(page.locator('[data-wix="alumni-cards"] [data-wix="person"]')).toHaveCount(6)

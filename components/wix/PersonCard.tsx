@@ -12,7 +12,21 @@ import { stegaClean } from 'next-sanity'
 // aspect ratio.
 const BOX_DESKTOP_H = 235
 
-export function PersonCard({ person, className }: { person: TeamProfile; className?: string }) {
+export function PersonCard({
+  person,
+  className,
+  headingLevel: Heading = 'h3',
+}: {
+  person: TeamProfile
+  className?: string
+  /** The DOM heading level for the person's name. Defaults to `h3` (a card
+   *  nested under a visible section heading, e.g. "Lab Alumni"). The team
+   *  page's leading "current members" grid has no such heading above it, so
+   *  it passes `h2` there to avoid skipping a level (axe `heading-order`) --
+   *  visual size is set entirely by the class list below, so the tag change
+   *  doesn't alter appearance. */
+  headingLevel?: 'h2' | 'h3'
+}) {
   const img = person.image
   const src = img ? urlForImage(img)?.width(392).url() : undefined
   const dims = img?.asset?._ref?.match(/-(\d+)x(\d+)-/)
@@ -40,7 +54,7 @@ export function PersonCard({ person, className }: { person: TeamProfile; classNa
           />
         ) : null}
       </div>
-      <h3 className="mt-[24px] font-playfair text-[20px]/[27.5px]">{person.name}</h3>
+      <Heading className="mt-[24px] font-playfair text-[20px]/[27.5px]">{person.name}</Heading>
       {person.role ? <p className="mt-[12px] font-didot text-[16px]/[28px] italic">{person.role}</p> : null}
       {person.roleDetail ? <p className="font-didot text-[16px]/[28px] italic">{person.roleDetail}</p> : null}
     </li>

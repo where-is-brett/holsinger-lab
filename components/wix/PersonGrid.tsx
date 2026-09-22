@@ -45,6 +45,7 @@ export function PersonGrid({
   people,
   partialFirst = false,
   bigGap = false,
+  headingLevel,
 }: {
   people: TeamProfile[]
   partialFirst?: boolean
@@ -52,6 +53,8 @@ export function PersonGrid({
    *  card) needs a bigger row-to-row gap than current members' rows to
    *  reach the measured Wix row 2 position -- see the C7 report. */
   bigGap?: boolean
+  /** Forwarded to each PersonCard -- see its doc comment. */
+  headingLevel?: 'h2' | 'h3'
 }) {
   const rows = chunkRows(people, partialFirst)
   return (
@@ -62,7 +65,12 @@ export function PersonGrid({
           className="mx-auto flex w-full max-w-[1220px] flex-col items-center gap-y-[40px] md:grid md:grid-cols-[196fr_60fr_196fr_60fr_196fr_60fr_196fr_60fr_196fr] md:items-start md:gap-y-[60px]"
         >
           {row.map((p, i) => (
-            <PersonCard key={p._id} person={p} className={COL_START[placeRow(row.length, i)]} />
+            <PersonCard
+              key={p._id}
+              person={p}
+              className={COL_START[placeRow(row.length, i)]}
+              headingLevel={headingLevel}
+            />
           ))}
         </ul>
       ))}
