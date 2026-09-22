@@ -100,13 +100,21 @@ From the plan, in the order the plan gives:
 
 1. **Done.** Rebuild `Layout` and the navbars on `SiteNav` / `MobileHeader` /
    `SiteFooter`. See `docs/redesign-experiment/phase-3-decisions.md`.
-2. Build Publications index, `/publications/[slug]`, People, Research, Resources
-   and Home from the primitives.
+2. **Complete, pending review of PR C.** Build Publications index, `/publications/[slug]`,
+   People, Research, Resources and Home from the primitives. Delivered as three PRs — see
+   `docs/superpowers/specs/2026-09-22-redesign-phase-3-screens-design.md`. **PR A
+   (Publications) is done**, on branch `redesign/phase-3-publications`; see
+   `docs/redesign-experiment/phase-3-decisions.md`, "Step 2 — PR A (Publications)". **PR B
+   (People) is done, pending review**, on branch `redesign/phase-3-people`; see
+   `docs/redesign-experiment/phase-3-decisions.md`, "Step 2 — PR B (People)". **PR C
+   (Research, Resources, Home) is done, pending review**, on branch `redesign/phase-3-home`;
+   see `docs/redesign-experiment/phase-3-decisions.md`, "Step 2 — PR C (Research, Resources,
+   Home)".
 3. **Done early**, cherry-picked alongside step 1. Re-derive the
    `:root[data-theme='warm']` presets against the new palette. See
    `docs/redesign-experiment/phase-3-decisions.md`.
-4. Retire `project`: remove the type, migrate `home.showcaseProjects`, delete
-   `/projects/[slug]`, add `redirects()` to `next.config.mjs` (it has none today)
+4. **Not started.** Retire `project`: remove the type, migrate `home.showcaseProjects`,
+   delete `/projects/[slug]`, add `redirects()` to `next.config.mjs` (it has none today)
    for the five existing project URLs, and update the `body.type` switch in
    `app/api/revalidate/route.ts`.
 
@@ -115,7 +123,11 @@ reason. The five `project` documents redistribute per `agreed-ia.md` §2: the tw
 real projects become sections on Research, the PI bio goes to About and the PI
 profile, MAESTRO becomes a Lab section, and "Publication highlights" is already
 replaced by `publication.featured`. Nothing should be deleted until its
-destination exists and the redirects are in place.
+destination exists and the redirects are in place. **PR C's Home block reads the
+`maestro` project document directly (verbatim title, `site` link) — step 4 must move
+that content to its new Lab-section home before the `maestro` document is deleted, or
+Home's Outreach block loses its only source. See "Step 2 — PR C", "MAESTRO", in
+`phase-3-decisions.md`.**
 
 ## What you already have
 

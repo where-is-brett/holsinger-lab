@@ -172,7 +172,7 @@ export default defineType({
       type: 'boolean',
       group: 'navigation',
       description:
-        'Toggle to enable the Team page in your site. Turning this OFF makes /people return a 404 — the page disappears from the site entirely, it does not just hide from navigation.',
+        'Toggle to enable the Team page on the redesigned site. Turning this OFF makes /people return a 404 there — the page disappears from the site entirely, it does not just hide from navigation. The classic site\'s Team page (/team) is unaffected by this toggle.',
       initialValue: true,
     }),
     defineField({

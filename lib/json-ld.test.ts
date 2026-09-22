@@ -26,6 +26,7 @@ import {
   buildOrganizationJsonLd,
   buildPersonJsonLd,
   buildPersonListJsonLd,
+  buildScholarlyArticleJsonLd,
   buildScholarlyArticleListJsonLd,
   resolveOrganizationLogoUrl,
   serializeJsonLd,
@@ -111,6 +112,7 @@ function makeProfile(overrides: Partial<ProfilePayload> = {}): ProfilePayload {
     orderRank: null,
     name: 'Ada Lovelace',
     role: 'Postdoctoral Fellow',
+    roleDetail: null,
     roleGroup: null,
     email: null,
     phone: null,
@@ -292,5 +294,57 @@ describe('buildScholarlyArticleListJsonLd', () => {
 
   it('returns an empty list for no publications', () => {
     expect(buildScholarlyArticleListJsonLd([]).itemListElement).toEqual([])
+  })
+})
+
+describe('buildScholarlyArticleJsonLd', () => {
+  it('uses the DOI URL as the canonical url when a DOI is on file', () => {
+    const result = buildScholarlyArticleJsonLd(
+      makePublication({ doi: '10.1000/example', url: 'https://publisher.example/paper' })
+    )
+    expect(result).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'ScholarlyArticle',
+      headline: 'A Study of Molecular Neuroscience',
+      author: { '@type': 'Person', name: 'Holsinger K, Smith J' },
+      isPartOf: { '@type': 'Periodical', name: 'Journal of Neuroscience' },
+      datePublished: '2024-05-01',
+      url: 'https://doi.org/10.1000/example',
+    })
+  })
+
+  it('falls back to the recorded publisher url when there is no DOI', () => {
+    const result = buildScholarlyArticleJsonLd(
+      makePublication({ doi: null, url: 'https://publisher.example/paper' })
+    )
+    expect(result.url).toBe('https://publisher.example/paper')
+  })
+
+  it('omits url entirely when there is neither a DOI nor a recorded url', () => {
+    const result = buildScholarlyArticleJsonLd(makePublication({ doi: null, url: null }))
+    expect(result).not.toHaveProperty('url')
+  })
+
+  it('omits author, isPartOf and datePublished when their source fields are null', () => {
+    const result = buildScholarlyArticleJsonLd(
+      makePublication({ author: null, journal: null, date: null, doi: null, url: null })
+    )
+    expect(result).not.toHaveProperty('author')
+    expect(result).not.toHaveProperty('isPartOf')
+    expect(result).not.toHaveProperty('datePublished')
+    expect(result.headline).toBe('A Study of Molecular Neuroscience')
+  })
+
+  it('always carries @context and @type', () => {
+    const result = buildScholarlyArticleJsonLd(makePublication())
+    expect(result['@context']).toBe('https://schema.org')
+    expect(result['@type']).toBe('ScholarlyArticle')
+  })
+
+  it('trims the headline, matching the rendered h1', () => {
+    const result = buildScholarlyArticleJsonLd(
+      makePublication({ title: ' A Study of Molecular Neuroscience ' })
+    )
+    expect(result.headline).toBe('A Study of Molecular Neuroscience')
   })
 })

@@ -1,13 +1,18 @@
 import type { Image } from 'sanity'
 import type {
   HomePageQueryResult,
+  HomeResourceQueryResult,
+  MaestroProjectQueryResult,
   PagesBySlugQueryResult,
   ProfileBySlugQueryResult,
   ProfileQueryResult,
   ProjectBySlugQueryResult,
   PublicationsQueryResult,
+  ResearchProjectsQueryResult,
+  ResourcesQueryResult,
   RoleGroupQueryResult,
   SettingsQueryResult,
+  SupportPageQueryResult,
 } from 'sanity.types'
 
 export interface MilestoneItem {
@@ -39,11 +44,27 @@ export type MenuItem = NonNullable<SettingsPayload['menuItems']>[number]
 
 export type PublicationPayload = PublicationsQueryResult[number]
 
+export type ResourcePayload = ResourcesQueryResult[number]
+
+export type ResearchProjectPayload = ResearchProjectsQueryResult[number]
+
 export type ProfilePayload = ProfileQueryResult[number]
 export type ProfileBySlugPayload = NonNullable<ProfileBySlugQueryResult>
 export type LabHeadPayload = NonNullable<SettingsPayload['labHead']>
 
 export type RoleGroupPayload = RoleGroupQueryResult[number]
+
+// Home's own queries (Task 3 brief). `homeRecentPublicationsQuery` shares
+// `publicationFields` with `publicationsQuery`, so its rows are typed as
+// `PublicationPayload` directly rather than a second generated type --
+// TypeGen still emits `HomeRecentPublicationsQueryResult` for it (same
+// shape, different query string), but there's no reason to carry two
+// structurally identical payload types through the app. Likewise
+// `publicationCountQuery` is just `number` (TypeGen's own
+// `PublicationCountQueryResult`), used directly at the one call site.
+export type HomeResourcePayload = NonNullable<HomeResourceQueryResult>
+export type MaestroProjectPayload = NonNullable<MaestroProjectQueryResult>
+export type SupportPagePayload = NonNullable<SupportPageQueryResult>
 
 // `SettingsPayload` now requires every key (nullable values are fine, but the keys themselves
 // must be present) — the seven call sites that used to fall back to a bare `?? {}` need a real
@@ -66,6 +87,7 @@ export const fallbackSettings: SettingsPayload = {
   showContactForm: null,
   showLabHeadOnHome: null,
   showLabHeadOnPeople: null,
+  contact: null,
   labHead: null,
   footer: [],
   ogImage: null,

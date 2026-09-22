@@ -1,0 +1,69 @@
+<!-- @dsCard group="Screens" viewport="1440x940" name="Holsinger Lab site" subtitle="All five screens, interactive — nav switches pages; facets, density and copy-citation are live" -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Holsinger Lab — templates</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="../../ds-preview.js"></script>
+</head>
+<body>
+<div id="root"><div style="padding:48px; font:500 11px/1 var(--font-mono, monospace); letter-spacing:0.14em; text-transform:uppercase; color:var(--sem-text-faint, #6c727a)">Loading the record…</div></div>
+<script type="text/plain" id="app">
+const { SiteNav, SiteFooter, HomeScreen, PublicationsIndex, PublicationPage, PeopleScreen, ResearchScreen } = DS;
+function App() {
+  const [route, setRoute] = React.useState((location.hash || "#home").slice(1));
+  const navigate = (id) => {
+    const r = ["home", "pubs", "paper", "people", "research"].indexOf(id) >= 0 ? id : "home";
+    setRoute(r);
+    try { history.replaceState(null, "", "#" + r); } catch (e) {}
+    window.scrollTo(0, 0);
+  };
+  const current = route === "paper" ? "pubs" : route;
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <SiteNav current={current} onNavigate={navigate} />
+      <main style={{ flex: 1 }} data-screen-label={route}>
+        {route === "home" && <HomeScreen navigate={navigate} />}
+        {route === "pubs" && <PublicationsIndex navigate={navigate} />}
+        {route === "paper" && <PublicationPage navigate={navigate} />}
+        {route === "people" && <PeopleScreen />}
+        {route === "research" && <ResearchScreen />}
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+<script>
+DSLoad([
+  "../../components/structure/SectionRail.jsx",
+  "../../components/structure/PageTitle.jsx",
+  "../../components/navigation/SiteNav.jsx",
+  "../../components/navigation/MobileHeader.jsx",
+  "../../components/navigation/SiteFooter.jsx",
+  "../../components/publications/Tag.jsx",
+  "../../components/publications/FacetChip.jsx",
+  "../../components/publications/CopyCitation.jsx",
+  "../../components/publications/PublicationRow.jsx",
+  "../../components/publications/FacetBand.jsx",
+  "../../components/people/PersonCard.jsx",
+  "../../components/content/ResourceBlock.jsx",
+  "../../components/content/Button.jsx",
+  "../../components/content/FormField.jsx",
+  "./LabData.jsx",
+  "./Home.jsx",
+  "./PublicationsIndex.jsx",
+  "./PublicationPage.jsx",
+  "./People.jsx",
+  "./Research.jsx",
+]).then(function () { DSRun("app"); })
+  .catch(function (e) { document.getElementById("root").textContent = String(e); });
+</script>
+</body>
+</html>

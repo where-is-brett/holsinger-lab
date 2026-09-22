@@ -281,10 +281,14 @@
    portrait to a black silhouette, invert renders a photo negative.
 
    Dimming the wrapper is the honest compromise: it cuts the glare without
-   touching hue. It is applied to the frame rather than the <img> because
-   Profile.tsx sets `grayscale` on the <img> itself, and `filter` is a
-   single property -- a second <img> rule would replace that grayscale.
-   Filters compose down the element tree, so the wrapper stacks with it.
+   touching hue. It is applied to the frame rather than the <img> so any
+   future <img>-level `filter` (there is none today -- Profile.tsx, which
+   used to set `grayscale` on the <img> itself, was deleted in Phase 3, and
+   portraits render in full colour at rest everywhere per Brett's review on
+   fix/research-description-fallback) never collides with this rule on the
+   same element: `filter` is a single property, so two rules on the same
+   <img> would replace, not compose. Filters compose down the element tree,
+   so the wrapper stacks with whatever the <img> itself carries.
 
    REMOVE THIS RULE once the 9 affected assets are re-exported with
    transparent backgrounds; the wrapper's own `bg-surface-raised` will then
