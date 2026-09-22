@@ -25,6 +25,13 @@ describe('data/wix/snapshot.json', () => {
     // Rene Buxton appears twice on Wix; the snapshot corrects it to once.
     expect(s.people.filter((p) => p.name === 'Rene Buxton')).toHaveLength(1)
   })
+  it('imports the Channel 7 video-blocked item without a video (every mp4 rendition 403s outside the Wix player)', () => {
+    const s = load()
+    const item = s.media.find((m) => m.key === 'creatine-for-the-brain')
+    expect(item?.videoUrl).toBeNull()
+    expect(item?.posterUrl).toBeNull()
+    expect(item?.url).toBeNull()
+  })
 })
 
 describe('validateSnapshot', () => {
@@ -64,6 +71,13 @@ describe('validateSnapshot', () => {
     const s = minimal()
     s.siteCopy.hero.imageUrl = 'https://example.com/a.png'
     expect(validateSnapshot(s)).toContain('siteCopy.hero.imageUrl: not a wixstatic original')
+  })
+  it('accepts a media item with neither url nor videoUrl', () => {
+    const s = minimal()
+    s.media = [
+      { key: 'no-link', title: 't', outlet: 'o', date: null, url: null, videoUrl: null, posterUrl: null },
+    ]
+    expect(validateSnapshot(s)).toEqual([])
   })
   it('requires date and journal on publications that are new', () => {
     const s = minimal()

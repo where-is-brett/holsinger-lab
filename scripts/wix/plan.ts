@@ -122,12 +122,14 @@ export function planImport(input: PlanInput): Plan {
     })
   )
 
-  s.media.forEach((m, i) =>
+  s.media.forEach((m, i) => {
+    if (!m.url && !m.videoUrl)
+      reports.push(`media ${m.key}: no link or video — imported as a text row; add the video in Studio`)
     upsert(`wix-media-${m.key}`, 'mediaAppearance', {
       orderRank: rankAt(i), title: m.title, outlet: m.outlet, date: m.date, url: m.url,
       video: file(m.videoUrl), poster: image(m.posterUrl),
     })
-  )
+  })
 
   for (const p of s.projects) {
     if (p.sanityId && !existing[p.sanityId]) {
