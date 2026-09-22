@@ -7,7 +7,7 @@
 // a parallel track on the same dataset may still read it.
 //
 // Named navModel, not siteNav: `siteNav.ts` beside `SiteNav.tsx` collides on
-// a case-insensitive filesystem (see publicationRow.ts / PublicationRow.tsx).
+// a case-insensitive filesystem (see publicationModel.ts / PublicationRow.tsx).
 
 export type NavId =
   | 'home'
@@ -32,8 +32,8 @@ export interface NavItem {
 export const SITE_NAV: readonly (NavItem & { live: boolean })[] = [
   { id: 'home', label: 'Home', href: '/', live: true },
   { id: 'pubs', label: 'Publications', href: '/publications', live: true },
-  { id: 'research', label: 'Research', href: '/research', live: false },
-  { id: 'resources', label: 'Resources', href: '/resources', live: false },
+  { id: 'research', label: 'Research', href: '/research', live: true },
+  { id: 'resources', label: 'Resources', href: '/resources', live: true },
   { id: 'people', label: 'People', href: '/people', live: true },
   { id: 'lab', label: 'Lab', href: '/lab', live: false },
   { id: 'contact', label: 'Contact', href: '/contact', live: true },

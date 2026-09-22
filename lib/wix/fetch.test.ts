@@ -91,7 +91,7 @@ describe('wixFetch: preview deployments (VERCEL_ENV=preview) refresh on a short 
     }
   })
 
-  it('VERCEL_ENV=preview, draft mode off: the fetch goes through the plain client with a 30s time-based revalidate, sanityFetch is never called', async () => {
+  it('VERCEL_ENV=preview, draft mode off: the fetch goes through the plain client with a 30s time-based revalidate and empty tags by default, sanityFetch is never called', async () => {
     setUp()
     vi.stubEnv('VERCEL_ENV', 'preview')
     try {
@@ -100,10 +100,27 @@ describe('wixFetch: preview deployments (VERCEL_ENV=preview) refresh on a short 
       expect(previewFetchMock).toHaveBeenCalledWith(
         '*[_type == "x"]',
         { a: 1 },
-        { next: { revalidate: 30 }, stega: false }
+        { next: { revalidate: 30, tags: [] }, stega: false }
       )
       expect(sanityFetchMock).not.toHaveBeenCalled()
       expect(result).toMatchObject({ via: 'previewClient' })
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
+  it('VERCEL_ENV=preview, draft mode off: caller-supplied tags reach the CONTENT request, matching lib/sanity.live.ts\'s previewSanityFetch shape', async () => {
+    setUp()
+    vi.stubEnv('VERCEL_ENV', 'preview')
+    try {
+      const { wixFetch } = await import('./fetch')
+      await wixFetch<{ via: string }>('*[_type == "x"]', { params: { a: 1 }, tags: ['sanity:x'] })
+      expect(previewFetchMock).toHaveBeenCalledWith(
+        '*[_type == "x"]',
+        { a: 1 },
+        { next: { revalidate: 30, tags: ['sanity:x'] }, stega: false }
+      )
+      expect(sanityFetchMock).not.toHaveBeenCalled()
     } finally {
       vi.unstubAllEnvs()
     }

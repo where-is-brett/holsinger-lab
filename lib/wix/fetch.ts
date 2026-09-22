@@ -41,6 +41,28 @@ async function loadFixtureDocs(): Promise<Record<string, unknown>[]> {
  * self-refreshing fallback. Production keeps `sanityFetch`'s tag-based
  * invalidation (plus the page-level `revalidate = 60`) untouched.
  *
+ * This is the same trap `lib/sanity.live.ts`'s `previewSanityFetch` and
+ * `lib/preview-revalidate.ts` document for the redesign's own preview reads
+ * (merged from `redesign/integration`, PR #43 "portrait colour + preview
+ * freshness"): a per-call `next.revalidate` genuinely reaches the request
+ * layer (`@sanity/client`'s `requestOptions()`, node_modules/@sanity/client/
+ * dist/index.js ~694, merges `{ ...config.fetch, ...overrides.fetch }` with
+ * the per-call object last), but `defineLive`'s own content request
+ * hardcodes `next: { revalidate: false, tags }` on itself -- so a
+ * *client-level* `createClient({ fetch: { next: { revalidate } } } })`
+ * default would be replaced wholesale on the one request whose data actually
+ * reaches the page, and would only ever reach `defineLive`'s throwaway
+ * sync-tags request instead. This file's `client.fetch(query, params, {
+ * next: { revalidate: PREVIEW_REVALIDATE_SECONDS, tags }, ... })` call below
+ * avoids that trap by construction: `next` is passed as a *per-call*
+ * override directly on the one `.fetch()` call this file issues, never
+ * through a client-level `fetch` default, so there is no second request for
+ * `defineLive` (or anything else) to clobber it on. Confirmed by tracing
+ * `@sanity/client`'s `_fetch()` (dist/index.js ~717): it destructures
+ * `next`/`cache` off the per-call `options` argument and rebuilds
+ * `reqOpts.fetch = { cache, next }`, which `requestOptions()` then merges
+ * as `overrides.fetch` -- i.e. our value, landing last.
+ *
  * Only taken outside draft mode (Fix round 2, High): `sanityFetch` resolves
  * BOTH `perspective` and `stega` from `draftMode()` when neither is passed
  * explicitly (see `DefinedFetchOptions`'s own docs), so a preview deployment
@@ -57,11 +79,17 @@ async function loadFixtureDocs(): Promise<Record<string, unknown>[]> {
  * a fetch-level revalidate only takes effect on an ISR regeneration, which
  * only happens after the page-level `revalidate = 60` (RootLayout /
  * app/(site)/*) has elapsed -- so the real bound on preview staleness is "at
- * most about 60s", not this constant. `<SanityLive />` (rendered in
- * RootLayout) is also inert on this path: it revalidates by `sanity:*` cache
- * tag, and a plain client's own `.fetch()` registers none, so it never
- * refreshes a preview page early -- the timed revalidate is preview's only
- * refresh mechanism, tag-based or otherwise.
+ * most about 60s", not this constant. See Step 3 of the freshness-reconcile
+ * task for the manifest numbers that actually verified that bound. Passing
+ * `tags` here (defaulted to `[]` when the caller doesn't supply any, same
+ * shape as `lib/sanity.live.ts`'s `previewSanityFetch`) doesn't make
+ * `<SanityLive />` (rendered in RootLayout) live on this path -- it still
+ * revalidates by `sanity:*` cache tag via its own tag-sync mechanism, which
+ * this plain client's `.fetch()` never participates in -- but it does mean a
+ * caller that eventually passes real tags gets on-demand invalidation
+ * working *when* the webhook does fire (e.g. if production's webhook is ever
+ * pointed at this dataset too), instead of silently discarding them. The
+ * timed revalidate remains preview's only *guaranteed* refresh mechanism.
  *
  * `lib/sanity.api` and `next-sanity`'s `createClient` are imported
  * dynamically, inside `getPreviewClient()`, rather than at module scope.
@@ -93,7 +121,7 @@ async function getPreviewClient() {
 
 export async function wixFetch<T>(
   query: string,
-  opts?: { params?: Record<string, unknown>; stega?: boolean }
+  opts?: { params?: Record<string, unknown>; stega?: boolean; tags?: string[] }
 ): Promise<T | null> {
   if (process.env.WIX_FIXTURE === '1') {
     const { parse, evaluate } = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ 'groq-js')
@@ -105,11 +133,11 @@ export async function wixFetch<T>(
   if (process.env.VERCEL_ENV === 'preview' && !(await draftMode()).isEnabled) {
     const client = await getPreviewClient()
     return client.fetch<T>(query, opts?.params ?? {}, {
-      next: { revalidate: PREVIEW_REVALIDATE_SECONDS },
+      next: { revalidate: PREVIEW_REVALIDATE_SECONDS, tags: opts?.tags ?? [] },
       stega: opts?.stega ?? false,
     })
   }
   return (
-    await sanityFetch({ query, params: opts?.params, stega: opts?.stega })
+    await sanityFetch({ query, params: opts?.params, stega: opts?.stega, tags: opts?.tags })
   ).data as T
 }

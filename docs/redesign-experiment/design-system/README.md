@@ -11,6 +11,7 @@ reviewable without design-tool access.
   stores hex (see the plan's Global Constraints).
 - `components/` — reference JSX plus `.d.ts` prop contracts. The `.d.ts` doc
   comments carry behavioural rules that the ported components must honour.
+- `ui_kits/site/` — the five screen compositions (Home, PublicationsIndex, PublicationPage, People, Research) and their content derivations, vendored 2026-09-22 for Phase 3 step 2. Composition authority for the screens; hardcoded counts and example wording in them are mockup text.
 - `agreed-ia.md` — the information-architecture contract the screens implement.
 
 If a ported component and its vendored source disagree, the source wins unless
