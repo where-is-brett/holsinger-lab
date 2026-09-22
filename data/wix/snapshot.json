@@ -1,0 +1,719 @@
+{
+  "capturedAt": "2026-09-22",
+  "siteCopy": {
+    "hero": {
+      "imageUrl": "https://static.wixstatic.com/media/48c693_51aabad61ae54626ae1749b61d7fba37~mv2.png",
+      "imageAlt": "",
+      "heading": "Understanding Alzheimer's Disease",
+      "subheading": "Advancing molecular neuroscience to develop new therapies for neurodegenerative disorders"
+    },
+    "about": {
+      "heading": "About the Laboratory",
+      "paragraphs": [
+        "The Holsinger Laboratory investigates the molecular and cellular mechanisms underlying Alzheimer's disease and related neurodegenerative disorders. Our research combines molecular neuroscience, neuroinflammation, and translational biology to identify novel therapeutic strategies that slow disease progression and improve brain health."
+      ],
+      "themesIntro": "Our research focus rests on the following broad themes:",
+      "themes": [
+        {
+          "key": "alzheimers-disease",
+          "title": "Alzheimer's disease",
+          "summary": "- Understanding the molecular pathways driving neurodegeneration"
+        },
+        {
+          "key": "neuroinflammation",
+          "title": "Neuroinflammation",
+          "summary": "- Investigating astrocytes, microglia and inflammatory signalling"
+        },
+        {
+          "key": "therapeutic-development",
+          "title": "Therapeutic development",
+          "summary": "- Developing novel treatments to improve neuronal survival and function"
+        }
+      ]
+    },
+    "teamIntro": "Our team members are at the core of what makes the Holsinger Lab such a unique, fun and fulfilling place to work. We take pride in the talents of our team, with each member contributing their unique skills to our projects.",
+    "alumniSubtitle": "2020 - present",
+    "contactIntro": "If you wish to support our research efforts"
+  },
+  "contact": {
+    "address": "Laboratory of Molecular Neuroscience and Dementia, The University of Sydney, Sydney, NSW, 2006 Australia",
+    "email": "damian.holsinger@sydney.edu.au",
+    "phone": "+61 2 9351 0876"
+  },
+  "news": [
+    {
+      "key": "biomedical-engineering-graduates",
+      "title": "Congratulations to Our Recent Biomedical Engineering Graduates",
+      "paragraphs": [
+        "Bede Taylor, Isaac Clark, Shane Ting and Sophia Moon completed their Honours theses"
+      ],
+      "summary": "Congratulations to our recent Biomedical Engineering graduates Bede Taylor, Isaac Clark, Shane Ting and Sophia Moon",
+      "showOnHome": true,
+      "showOnNewsPage": true
+    },
+    {
+      "key": "honours-thesis-submitted",
+      "title": "Honours Thesis Submitted",
+      "paragraphs": [
+        "Congratulations to Lizzie Michel on the successful submission of her Honours thesis."
+      ],
+      "summary": "Congratulations to Lizzie Michel on submitting her Honours thesis in Biomedical Engineering",
+      "showOnHome": true,
+      "showOnNewsPage": true
+    },
+    {
+      "key": "welcome-johnny-chan",
+      "title": "Welcome to the Laboratory",
+      "paragraphs": [
+        "We are delighted to welcome Dr Johnny Chan. We look forward to his contributions to our research program and wish him every success."
+      ],
+      "summary": "We welcome Dr Johnny Chan to our lab",
+      "showOnHome": true,
+      "showOnNewsPage": true
+    },
+    {
+      "key": "highly-cited-article",
+      "title": "Highly Cited Article",
+      "paragraphs": [
+        "Congratulations to Dr Edward Olufunmilayo whose review article, 'Oxidative Stress and Antioxidants in Neurodegenerative Disorders', published in *Pharmaceuticals* (2023), has now been cited more than 750 times. This milestone reflects the significant impact of the work within the neurodegeneration research community."
+      ],
+      "summary": null,
+      "showOnHome": true,
+      "showOnNewsPage": false
+    }
+  ],
+  "media": [
+    {
+      "key": "creatine-for-the-brain",
+      "title": "Creatine for the brain",
+      "outlet": "Channel 7",
+      "date": null,
+      "url": null,
+      "videoUrl": "https://video.wixstatic.com/video/48c693_cfa2ab93ee034322b36c84361d9711fc/1080p/mp4/file.mp4",
+      "posterUrl": "https://static.wixstatic.com/media/48c693_cfa2ab93ee034322b36c84361d9711fcf000.jpg"
+    },
+    {
+      "key": "biden-slip-ups",
+      "title": "Slip-ups like Joe Biden's misnaming of Trump and Harris are common, and usually caused by lack of sleep or stress, experts say",
+      "outlet": "ABC News",
+      "date": "2024-07-14",
+      "url": "https://www.abc.net.au/news/2024-07-14/us-president-joe-biden-slip-ups-trump-misnaming-are-common/104092304",
+      "videoUrl": null,
+      "posterUrl": null
+    },
+    {
+      "key": "pandemic-stress",
+      "title": "The part of your body that will help most with pandemic stress",
+      "outlet": "Sydney Morning Herald",
+      "date": "2021-08-22",
+      "url": "https://www.smh.com.au/lifestyle/health-and-wellness/the-part-of-your-body-that-will-help-most-with-pandemic-stress-20210819-p58k42.html",
+      "videoUrl": null,
+      "posterUrl": null
+    }
+  ],
+  "projects": [
+    {
+      "key": "fecal-microbiota-transplantation",
+      "sanityId": "8b33e77a-524f-4b80-9dfa-3ed6e4994f2f",
+      "researchOrder": 1,
+      "title": "Fecal microbiota transplantation as a treatment for Alzheimer's disease",
+      "paragraphs": [
+        "The gut microbiome has been implicated in numerous neurodegenerative diseases. We were the first to demonstrate that modulation of the gut microbiome of Alzheimer's disease (AD) mice results in improved cognition and pathology (Left - non-treated; Right - treated for 7 days). We are now investigating mechanisms driving these changes in the brain as they will highlight therapeutic avenues for disease modification."
+      ],
+      "imageUrl": "https://static.wixstatic.com/media/48c693_1a8d3760efaa4c669b6b1bcca9623b7e~mv2.png",
+      "imageAlt": "Brain tissue from an Alzheimer's disease mouse: left non-treated, right treated for 7 days"
+    },
+    {
+      "key": "glial-activity",
+      "sanityId": "639c1dd4-f4db-439b-85f6-18062558d6df",
+      "researchOrder": 2,
+      "title": "Glial activity as a marker of disease",
+      "paragraphs": [
+        "Astrocytes and microglia play an important role in the maintenance of a homestatic environment in the brain. They aid in the clearance of dead and dying cells, preventing inflammatory reactions in the brain. During Alzheimer's disease, these two classes of cells turn rogue and contribute to disease pathology."
+      ],
+      "imageUrl": "https://static.wixstatic.com/media/48c693_6a80376bafcb4e6c902f061083ade1cf~mv2.png",
+      "imageAlt": "Fluorescence microscopy of astrocytes and microglia"
+    },
+    {
+      "key": "functionalization-of-biological-scaffolds",
+      "sanityId": null,
+      "researchOrder": 3,
+      "title": "Functionalization of biological scaffolds employing trophic factors released from mammalian cells",
+      "paragraphs": [
+        "Trophic factors released from mammalian cells enhance their ability to support tissue repair and regeneration. These naturally derived signalling molecules promote cell survival, proliferation and differentiation, creating a bioactive microenvironment that encourages healing while improving the scaffold's capacity to integrate with surrounding tissue."
+      ],
+      "imageUrl": null,
+      "imageAlt": ""
+    },
+    {
+      "key": "neurotrophic-factors-nervous-system",
+      "sanityId": null,
+      "researchOrder": 4,
+      "title": "Neurotrophic factors for the differentiation and regeneration of the nervous system",
+      "paragraphs": [
+        "Neurotrophic factors are essential signalling molecules that support the growth, survival and differentiation of neurons. By incorporating these bioactive molecules into regenerative therapies, we aim to enhance nerve repair, promote functional recovery and create favourable environments for nervous system regeneration following injury or disease."
+      ],
+      "imageUrl": null,
+      "imageAlt": ""
+    }
+  ],
+  "people": [
+    {
+      "key": "haochen-wu",
+      "sanityId": "e8b1fa37-fddd-45ea-b593-9d235d25ca47",
+      "name": "Haochen Wu",
+      "role": "PhD Candidate",
+      "roleDetail": null,
+      "group": "PhD Candidate",
+      "imageUrl": null
+    },
+    {
+      "key": "johnny-chan",
+      "sanityId": "c2175c4e-bc1d-41cd-aba0-5fb2383e6377",
+      "name": "Dr Johnny Chan",
+      "role": "Research Scientist",
+      "roleDetail": null,
+      "group": "Research Scientist",
+      "imageUrl": null
+    },
+    {
+      "key": "john-ng",
+      "sanityId": "e3099355-82f8-4268-83c4-e8cc4d06950d",
+      "name": "Dr John Ng",
+      "role": "Research Scientist",
+      "roleDetail": null,
+      "group": "Research Scientist",
+      "imageUrl": null
+    },
+    {
+      "key": "alan-yan",
+      "sanityId": "539ba1a6-ff07-4ef1-88c9-b49fa541915b",
+      "name": "Alan Yan",
+      "role": "Honours Student",
+      "roleDetail": "(Diagnostic Radiography)",
+      "group": "Honours Student",
+      "imageUrl": null
+    },
+    {
+      "key": "eden-kim",
+      "sanityId": "fce0a761-323b-4c06-b885-12adffd50bf0",
+      "name": "Eden Kim",
+      "role": "Honours Student",
+      "roleDetail": "(Biomedical Engineering)",
+      "group": "Honours Student",
+      "imageUrl": null
+    },
+    {
+      "key": "zara-broinowski",
+      "sanityId": "9211c79d-3a92-4598-8def-feff4a4b5c99",
+      "name": "Zara Broinowski",
+      "role": "Honours Student",
+      "roleDetail": "(Biomedical Engineering)",
+      "group": "Honours Student",
+      "imageUrl": null
+    },
+    {
+      "key": "faith-ng",
+      "sanityId": "1909e0d3-fe72-4985-b6a7-f2eadd5d65fc",
+      "name": "Faith Ng",
+      "role": "Research Student",
+      "roleDetail": "(Speech Pathology)",
+      "group": "Research Student",
+      "imageUrl": null
+    },
+    {
+      "key": "noah-vassallo",
+      "sanityId": "747e00a0-6176-4fa8-8a8a-07ac4298b8fe",
+      "name": "Noah Vassallo",
+      "role": "Research Student",
+      "roleDetail": "(Diagnostic Radiography)",
+      "group": "Research Student",
+      "imageUrl": null
+    },
+    {
+      "key": "sreevadana-venkitachalam",
+      "sanityId": "bcf086b7-4fc4-4094-be97-faba3941cc88",
+      "name": "Sreevadana (Sree) Venkitachalam",
+      "role": "Research Student",
+      "roleDetail": "(Medical Sciences)",
+      "group": "Research Student",
+      "imageUrl": null
+    },
+    {
+      "key": "tina-ouyang",
+      "sanityId": "8193094c-6fec-4907-b723-8371c21aa1a6",
+      "name": "Tina Ouyang",
+      "role": "Research Student",
+      "roleDetail": "(Medical Sciences)",
+      "group": "Research Student",
+      "imageUrl": null
+    },
+    {
+      "key": "chelsea-lu",
+      "sanityId": "0e03bf07-22d5-4d0c-b509-ef5a92c1256d",
+      "name": "Chelsea Lu",
+      "role": "Research Student",
+      "roleDetail": "(UNSW Medicine)",
+      "group": "Research Student",
+      "imageUrl": null
+    },
+    {
+      "key": "christabella-winata",
+      "sanityId": "33239880-e951-4e11-9083-265c03a9d0d9",
+      "name": "Christabella Winata",
+      "role": "Research Student",
+      "roleDetail": "(Diagnostic Radiography)",
+      "group": "Research Student",
+      "imageUrl": null
+    },
+    {
+      "key": "quy-susan-huynh",
+      "sanityId": null,
+      "name": "Dr Quy-Susan Huynh",
+      "role": "PhD",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": "https://static.wixstatic.com/media/48c693_c3fe6d9c71c243ce916ba13c80d7d058~mv2.jpeg"
+    },
+    {
+      "key": "bede-taylor",
+      "sanityId": "8054d6f9-9ce7-4622-847f-a80c2a549d90",
+      "name": "Bede Taylor",
+      "role": "Biomedical Engineering",
+      "roleDetail": "Honours Class I",
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "isaac-clark",
+      "sanityId": "b5cb7f00-813f-4270-8f28-7d9401ebe9d9",
+      "name": "Isaac Clark",
+      "role": "Biomedical Engineering",
+      "roleDetail": "Honours",
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "shane-ting",
+      "sanityId": "668769b4-fdf2-4a58-8fff-26cb45cc7f85",
+      "name": "Shane Ting",
+      "role": "Biomedical Engineering",
+      "roleDetail": "Honours Class I",
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "sophia-moon",
+      "sanityId": "0713c095-109d-4467-a16c-7adf77dbe3de",
+      "name": "Sophia Moon",
+      "role": "Biomedical Engineering",
+      "roleDetail": "Honours Class I",
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "elizabeth-michel",
+      "sanityId": "90f00743-b79e-4741-a29d-ad3a4f55e62d",
+      "name": "Elizabeth (Lizzie) Michel",
+      "role": "Biomedical Engineering",
+      "roleDetail": "Honours Student",
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "aria-kyriakou",
+      "sanityId": null,
+      "name": "Aria Kyriakou",
+      "role": "Biomed Eng - Honours Class I",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "emma-cox",
+      "sanityId": null,
+      "name": "Emma Cox",
+      "role": "Biomed Eng - Honours Class I",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "georgie-ridge",
+      "sanityId": null,
+      "name": "Georgie Ridge",
+      "role": "Biomed Eng - Honours",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "sophie-breznik",
+      "sanityId": null,
+      "name": "Sophie Breznik",
+      "role": "Biomed Eng - Honours",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "stirling-fogarty",
+      "sanityId": null,
+      "name": "Stirling Fogarty",
+      "role": "Biomed Eng - Honours Class I",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "prija-ranjit",
+      "sanityId": null,
+      "name": "Prija Ranjit",
+      "role": "MProfEng",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "ellena-constantinou",
+      "sanityId": null,
+      "name": "Ellena Constantinou",
+      "role": "Biomed Eng - Honours Class I",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "zeyi-yang",
+      "sanityId": null,
+      "name": "Zeyi (Brett) Yang",
+      "role": "MMedPhys",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "anishchal-pratap",
+      "sanityId": null,
+      "name": "Anishchal Pratap",
+      "role": "MSc",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "darcy-ryan",
+      "sanityId": null,
+      "name": "Darcy Ryan",
+      "role": "Anatomy - Honours",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "huanyu-zhang",
+      "sanityId": null,
+      "name": "Huanyu Zhang",
+      "role": "MProfEng",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "deepikaa-sandanababu",
+      "sanityId": null,
+      "name": "Deepikaa V. G. Sandanababu",
+      "role": "MHIT",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "rene-buxton",
+      "sanityId": null,
+      "name": "Rene Buxton",
+      "role": "MMedPhys",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "rossana-porto",
+      "sanityId": null,
+      "name": "Dr Rossana R Porto",
+      "role": "PhD",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "lauren-fairley",
+      "sanityId": null,
+      "name": "Lauren Fairley",
+      "role": "MBMSc",
+      "roleDetail": null,
+      "group": "Lab Alumni",
+      "imageUrl": null
+    },
+    {
+      "key": "mia-helveston",
+      "sanityId": null,
+      "name": "Mia Helveston",
+      "role": "USA",
+      "roleDetail": null,
+      "group": "International Interns",
+      "imageUrl": null
+    },
+    {
+      "key": "emma-schindhelm",
+      "sanityId": null,
+      "name": "Emma Schindhelm",
+      "role": "USA",
+      "roleDetail": null,
+      "group": "International Interns",
+      "imageUrl": null
+    },
+    {
+      "key": "constance-beaufils",
+      "sanityId": null,
+      "name": "Constance Beaufils",
+      "role": "France",
+      "roleDetail": null,
+      "group": "International Interns",
+      "imageUrl": null
+    },
+    {
+      "key": "nikolai-gaukas",
+      "sanityId": null,
+      "name": "Dr Nikolai Gaukås",
+      "role": "Norway",
+      "roleDetail": null,
+      "group": "International Interns",
+      "imageUrl": null
+    },
+    {
+      "key": "fatima-mirza",
+      "sanityId": null,
+      "name": "Dr Fatima Mirza",
+      "role": "Pakistan",
+      "roleDetail": null,
+      "group": "International Interns",
+      "imageUrl": null
+    },
+    {
+      "key": "franziska-pfau",
+      "sanityId": null,
+      "name": "Franziska Pfau",
+      "role": "The Netherlands",
+      "roleDetail": null,
+      "group": "International Interns",
+      "imageUrl": null
+    }
+  ],
+  "publications": [
+    {
+      "key": "bdnf-mrna-therapy",
+      "sanityId": null,
+      "title": "Non-invasive Bdnf mRNA therapy improves cognition in ageing and Alzheimer’s mouse models",
+      "authors": "Bergamasco M., Clark T., Loo L., Fujikake K., Carr R., Scarborough H., Ponta A., Holsinger R.M.D. and Neely G.",
+      "journal": "bioRxiv",
+      "date": "2026-04-20",
+      "volume": null,
+      "issue": null,
+      "pages": "04.19.719519",
+      "doi": "10.64898/2026.04.19.719519"
+    },
+    {
+      "key": "chromobox-protein-homolog-7",
+      "sanityId": "06604d2e-fc21-47d5-9f4c-a95f9e50e22a",
+      "title": "Chromobox protein homolog 7 suppresses the stem-like phenotype of glioblastoma cells by regulating the myosin heavy chain 9-NF-κB signaling pathway",
+      "authors": "Liu Y., DI P., Wang L., Huang H., Holsinger R.M.D., Kiang K.M. and Jiao J.",
+      "journal": "Cell Death Discovery",
+      "date": null,
+      "volume": 11,
+      "issue": 1,
+      "pages": "74",
+      "doi": "10.1038/s41420-025-02362-7"
+    },
+    {
+      "key": "cell-culture-chamber",
+      "sanityId": "5b8e7a98-7f12-4057-9b5a-314c084bb063",
+      "title": "Development of a Cell Culture Chamber for Investigating the Therapeutic Effects of Electrical Stimulation on Neural Growth",
+      "authors": "Huynh Q-S and Holsinger RMD.",
+      "journal": "Biomedicines",
+      "date": null,
+      "volume": 12,
+      "issue": 2,
+      "pages": "289",
+      "doi": "10.3390/biomedicines12020289"
+    },
+    {
+      "key": "fmt-review",
+      "sanityId": "5a874b3d-5914-40b3-a4e8-c7fdcc703acc",
+      "title": "The Role of Fecal Microbiota Transplantation in the Treatment of Neurodegenerative Diseases: A Review",
+      "authors": "Matheson J-A and Holsinger RMD",
+      "journal": "Int J Mol Sci",
+      "date": null,
+      "volume": 24,
+      "issue": 2,
+      "pages": "1001",
+      "doi": "10.3390/ijms24021001"
+    },
+    {
+      "key": "fmt-mouse-model",
+      "sanityId": "522456b0-74fc-4cf7-abdb-c7f46bc973c8",
+      "title": "Fecal Microbiota Transplantation Reduces Pathology and Improves Cognition in a Mouse Model of Alzheimer's Disease",
+      "authors": "Elangovan S, Borody TJ and Holsinger RMD",
+      "journal": "Cells",
+      "date": null,
+      "volume": 12,
+      "issue": 1,
+      "pages": "119",
+      "doi": "10.3390/cells12010119"
+    },
+    {
+      "key": "fiber-electrical-field-alignment",
+      "sanityId": "7b5efebe-25e6-4c3b-96ff-39bf61215bcf",
+      "title": "Fiber and Electrical Field Alignment Increases BDNF Expression in SH-SY5Y Cells following Electrical Stimulation",
+      "authors": "Huynh Q-S and Holsinger RMD",
+      "journal": "Pharmaceuticals",
+      "date": null,
+      "volume": 16,
+      "issue": 2,
+      "pages": "138",
+      "doi": "10.3390/ph16020138"
+    },
+    {
+      "key": "inpp5d-ship1",
+      "sanityId": "3c638bbb-7650-4435-8698-090317170579",
+      "title": "INPP5D/SHIP1: Expression, Regulation and Roles in Alzheimer’s Disease Pathophysiology",
+      "authors": "Olufunmilayo, E. and Holsinger, R.M.D.",
+      "journal": "Genes",
+      "date": null,
+      "volume": 14,
+      "issue": 10,
+      "pages": "1845",
+      "doi": "10.3390/genes14101845"
+    },
+    {
+      "key": "non-coding-rna",
+      "sanityId": null,
+      "title": "Roles of Non-Coding RNA in Alzheimer’s Disease Pathophysiology",
+      "authors": "Olufunmilayo, E. and Holsinger, R.M.D.",
+      "journal": "International Journal of Molecular Sciences",
+      "date": "2023-08-06",
+      "volume": 24,
+      "issue": 15,
+      "pages": "12498",
+      "doi": "10.3390/ijms241512498"
+    },
+    {
+      "key": "carnosic-acid",
+      "sanityId": "ddfce950-edb4-478e-b825-5a5649cd4dd6",
+      "title": "Neuroprotective Effects of Carnosic Acid: Insight into Its Mechanisms of Action",
+      "authors": "Mirza F.J., Zahid S. and Holsinger R.M.D.",
+      "journal": "Molecules",
+      "date": null,
+      "volume": 28,
+      "issue": 5,
+      "pages": "2306",
+      "doi": "10.3390/molecules28052306"
+    },
+    {
+      "key": "oxidative-stress-antioxidants",
+      "sanityId": "4b59b5be-2da6-440f-86c9-a45e8fd50811",
+      "title": "Oxidative Stress and Antioxidants in Neurodegenerative Disorders",
+      "authors": "Olufunmilayo, E., Gerke-Duncan M.B. and Holsinger, R.M.D.",
+      "journal": "Antioxidants",
+      "date": null,
+      "volume": 12,
+      "issue": 2,
+      "pages": "517",
+      "doi": "10.3390/antiox12020517"
+    },
+    {
+      "key": "non-pharmacological-options",
+      "sanityId": "acd42941-65c3-4b96-875e-a732b9ea1d36",
+      "title": "Non-Pharmacological Therapeutic Options for the Treatment of Alzheimer’s Disease",
+      "authors": "Huynh Q-S., Elangovan S. and Holsinger R.M.D.",
+      "journal": "International Journal of Molecular Sciences",
+      "date": null,
+      "volume": 23,
+      "issue": 19,
+      "pages": "11037",
+      "doi": "10.3390/ijms231911037"
+    },
+    {
+      "key": "variant-trem2",
+      "sanityId": "92b268e5-5659-4b99-8bc0-95583a08707c",
+      "title": "Variant TREM2 Signaling in Alzheimer's Disease",
+      "authors": "Olufunmilayo, E. and Holsinger, R.M.D.",
+      "journal": "Journal of Molecular Biology",
+      "date": null,
+      "volume": 434,
+      "issue": 7,
+      "pages": "167470",
+      "doi": "10.1016/j.jmb.2022.167470"
+    },
+    {
+      "key": "ground-state-depletion-microscopy",
+      "sanityId": "60132cd6-f48e-4c28-84e2-f03f2ad5242b",
+      "title": "Ground state depletion microscopy as a tool for studying microglia–synapse interactions",
+      "authors": "Paasila PJ, Fok SYY, Flores‐Rodriguez N, Sajjan S, Svahn AJ, Dennis CV, Holsinger RMD, Kril JJ, Becker TS, Banati RB, Sutherland GT and Graeber MB",
+      "journal": "Journal of Neuroscience Research",
+      "date": null,
+      "volume": 99,
+      "issue": 6,
+      "pages": "1515-1532",
+      "doi": "10.1002/jnr.24819"
+    },
+    {
+      "key": "cerebellar-cryptic-avm",
+      "sanityId": "b046a0fc-0477-4927-bbd6-114dc54d07c7",
+      "title": "Diagnostic Conundrums in Cerebellar Cryptic Arteriovenous Malformations",
+      "authors": "Kwasi V, Niwa R, Hara T and Holsinger, R.M.D.",
+      "journal": "Journal of Neurology and Neuroscience",
+      "date": null,
+      "volume": 12,
+      "issue": 5,
+      "pages": "368",
+      "doi": null
+    },
+    {
+      "key": "piezoelectric-knn-thin-films",
+      "sanityId": "7d765cee-2f0d-4ef9-98b9-3b2a205eff21",
+      "title": "In Vitro Biocompatibility of Piezoelectric K0.5Na0.5NbO3 Thin Films on Platinized Silicon Substrates",
+      "authors": "Gaukås N.H., Huynh Q-S., Pratap A.A., Einarsrud M-A., Grande T., Holsinger R.M.D. and Glaum J.",
+      "journal": "ACS Applied Bio Materials",
+      "date": null,
+      "volume": 3,
+      "issue": 12,
+      "pages": "8714-8721",
+      "doi": "10.1021/acsabm.0c01111"
+    },
+    {
+      "key": "leptin-receptor-5xfad",
+      "sanityId": "ef75a6a7-3455-427b-abb1-491b327231b9",
+      "title": "Altered Brain Leptin and Leptin Receptor Expression in the 5xFAD Mouse Model of Alzheimer’s Disease",
+      "authors": "Pratap, A.A. and Holsinger, R.M.D.",
+      "journal": "Pharmaceuticals",
+      "date": null,
+      "volume": 13,
+      "issue": 11,
+      "pages": "401",
+      "doi": "10.3390/ph13110401"
+    },
+    {
+      "key": "genome-wide-integrative-analysis",
+      "sanityId": "c67dc80d-2571-4f7c-a554-503385cf0350",
+      "title": "Genome-Wide Integrative Analysis Reveals Common Molecular Signatures in Blood and Brain of Alzheimer’s Disease",
+      "authors": "Olufunmilayo, E. and Holsinger, R.M.D.",
+      "journal": "Biointerface Research in Applied Chemistry",
+      "date": null,
+      "volume": 11,
+      "issue": 2,
+      "pages": "8686-8701",
+      "doi": "10.33263/briac112.86868701"
+    }
+  ]
+}
