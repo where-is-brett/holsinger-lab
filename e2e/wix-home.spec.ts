@@ -17,7 +17,11 @@ for (const [w, h1, body] of [
       expect(await css(page, '[data-wix="hero-heading"]', 'color')).toBe('rgb(255, 255, 255)')
       expect(await css(page, '[data-wix="about-body"] p', 'font-size')).toBe(body)
       expect(await css(page, '[data-wix="about-body"] p', 'font-weight')).toBe('300')
-      await expect(page.locator('[data-wix="news-item"]')).toHaveCount(4)
+      if (process.env.WIX_FIXTURE === '1') {
+        // The home page shows up to 4 news items -- an exact count is a
+        // snapshot fact of the fixture dataset, not true of every dataset.
+        await expect(page.locator('[data-wix="news-item"]')).toHaveCount(4)
+      }
       await expect(page.getByRole('heading', { name: 'CONTACT US' })).toBeVisible()
       const mail = page.locator('[data-wix-block="contact"] a[href^="mailto:"]')
       await expect(mail).toHaveAttribute('href', 'mailto:damian.holsinger@sydney.edu.au')

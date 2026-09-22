@@ -1,7 +1,6 @@
 import { urlForImage } from 'lib/sanity.image'
 import type { TeamProfile } from 'lib/wix/types'
 import Image from 'next/image'
-import { stegaClean } from 'next-sanity'
 
 // Wix's rows bottom-align portraits of different natural heights so every
 // name in a row sits on the same baseline (Controller ruling #1). Each
@@ -41,12 +40,19 @@ export function PersonCard({
           determine the rendered width -- it lands on exactly 196px once the
           row is >=1220px wide, but must be free to shrink below that so a
           768-1279px viewport scales the whole grid instead of overflowing
-          (Controller ruling #2). */}
+          (Controller ruling #2). No visible frame here -- `overflow-hidden`
+          with no background or border -- so an image-less current member
+          (e.g. Jiyoo Choi in the real dataset) gets the same box height as
+          everyone else in the row, with nothing drawn inside it (I2). That
+          keeps every name's baseline in a row aligned without ever showing
+          an empty portrait box. */}
       <div className="flex h-[168px] w-[140px] items-end justify-center overflow-hidden md:h-[235px] md:w-full">
         {src ? (
           <Image
             src={src}
-            alt={stegaClean(person.name) ?? ''}
+            // Decorative: the name renders as a heading directly below the
+            // portrait (M11), so screen readers would announce it twice.
+            alt=""
             width={196}
             height={h}
             sizes="(min-width: 768px) 196px, 140px"

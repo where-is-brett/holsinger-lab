@@ -7,6 +7,7 @@ test.use({ viewport: { width: 1280, height: 900 } })
 // a plain text row (Ruling R14). MediaRow still supports a video item; that
 // branch is exercised once a real video exists in the dataset.
 test('media', async ({ page }) => {
+  test.skip(process.env.WIX_FIXTURE !== '1', 'exact count, titles and outlets are snapshot facts')
   await page.goto('/media')
   await expect(page.locator('[data-wix="media"]')).toHaveCount(3)
   await expect(page.locator('video')).toHaveCount(0)

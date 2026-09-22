@@ -14,6 +14,19 @@ jobs:
       # token is needed to build. Not secrets.
       NEXT_PUBLIC_SANITY_PROJECT_ID: j3f9z8os
       NEXT_PUBLIC_SANITY_DATASET: production
+      # This branch (redesign/wix-site) replaces the page layer with a
+      # Wix-styled site whose content (team, publications, media, etc.) does
+      # not exist in the `production` dataset above -- only in `wix-preview`,
+      # once the import has run there. WIX_FIXTURE=1 makes lib/wix/fetch.ts
+      # run the site's real GROQ queries through groq-js over the committed
+      # data/wix/fixture.ndjson snapshot instead, so both the Build step and
+      # Playwright's webServer (which inherits this job env) build and serve
+      # in fixture mode. This CI run verifies the site against that committed
+      # Wix snapshot, not against real data -- it is a stable substitute, not
+      # full acceptance. Acceptance against real content is a manual run of
+      # `test:e2e` (with WIX_FIXTURE unset) against the wix-preview dataset,
+      # done by hand before merging changes that affect imported content.
+      WIX_FIXTURE: '1'
     steps:
       - uses: actions/checkout@v4
 

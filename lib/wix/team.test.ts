@@ -35,4 +35,34 @@ describe('groupTeam', () => {
   })
   it('interns are rows', () => expect(g.interns.map((x) => x._id)).toEqual(['mia']))
   it('no lab head set', () => expect(groupTeam(profiles, null).current[1]._id).toBe('pi'))
+
+  it('excludes a "Lab Head" role by role when labHeadId is null (defensive fallback, I1)', () => {
+    const withRole: TeamProfile[] = [
+      p('haochen', 'PhD Candidate'),
+      { ...p('pi2', null), role: 'Lab Head' },
+      p('johnny', 'Research Scientist'),
+    ]
+    const g = groupTeam(withRole, null)
+    expect(g.current.map((x) => x._id)).toEqual(['haochen', 'johnny'])
+  })
+
+  it('the labHeadId path still wins when both an id and a "Lab Head" role are present', () => {
+    const withRole: TeamProfile[] = [
+      p('haochen', 'PhD Candidate'),
+      { ...p('pi2', null), role: 'Lab Head' },
+    ]
+    const g = groupTeam(withRole, 'pi2')
+    expect(g.current.map((x) => x._id)).toEqual(['haochen'])
+  })
+
+  it('a "Lab Head" role is not excluded once labHeadId is set to someone else', () => {
+    // The fallback only fires when labHeadId is null -- once Brett sets
+    // labHead in Studio, only that exact document is excluded.
+    const withRole: TeamProfile[] = [
+      { ...p('pi2', null), role: 'Lab Head' },
+      p('johnny', 'Research Scientist'),
+    ]
+    const g = groupTeam(withRole, 'johnny')
+    expect(g.current.map((x) => x._id)).toEqual(['pi2'])
+  })
 })

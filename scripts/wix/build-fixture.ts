@@ -88,7 +88,27 @@ export function buildFixtureDocs(
     }
   )
 
-  const settings: CurrentDoc = { _id: 'settings', _type: 'settings' }
+  // A profile for the PI, Damian Holsinger, with `settings.labHead` pointing
+  // at it. Neither exists on Wix -- the PI has no roleGroup and no portrait
+  // in the real dataset either (see scripts/create-pi-profile.ts) -- but the
+  // fixture must include them so groupTeam's PI-exclusion logic (both the
+  // labHeadId path and its "role === Lab Head" defensive fallback) has
+  // something real to exercise; without this the fixture silently hid the
+  // bug I1 in the whole-branch review found (an empty portrait box for the
+  // PI in the current-members grid when labHead is unset).
+  const PI_ID = 'fixture-pi'
+  const piProfile: Record<string, unknown> = {
+    _id: PI_ID,
+    _type: 'profile',
+    name: 'Damian Holsinger',
+    role: 'Lab Head',
+  }
+
+  const settings: CurrentDoc & { labHead?: unknown } = {
+    _id: 'settings',
+    _type: 'settings',
+    labHead: ref(PI_ID),
+  }
   const home: CurrentDoc = {
     _id: 'home',
     _type: 'home',
@@ -138,6 +158,7 @@ export function buildFixtureDocs(
   const docsById = new Map<string, Record<string, unknown>>()
   docsById.set(settings._id, { ...settings })
   docsById.set(home._id, { ...home })
+  docsById.set(PI_ID, piProfile)
   for (const doc of roleGroupDocs) docsById.set(doc._id as string, doc)
 
   for (const op of plan.ops) {
