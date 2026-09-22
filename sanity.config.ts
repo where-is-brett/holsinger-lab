@@ -8,6 +8,8 @@ import { defineConfig } from 'sanity'
 import { structureTool } from 'sanity/structure'
 import { unsplashImageAsset } from 'sanity-plugin-asset-source-unsplash'
 import { media } from 'sanity-plugin-media'
+import mediaAppearance from 'schemas/documents/mediaAppearance'
+import newsItem from 'schemas/documents/newsItem'
 import page from 'schemas/documents/page'
 import profile from 'schemas/documents/profile'
 import project from 'schemas/documents/project'
@@ -48,6 +50,8 @@ export default defineConfig({
       resource,
       profile,
       roleGroup,
+      newsItem,
+      mediaAppearance,
     ],
   },
   plugins: [
