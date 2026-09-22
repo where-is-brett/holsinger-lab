@@ -1,3 +1,5 @@
+import { permanentRedirects } from './lib/redirects.mjs'
+
 /** @type {import('next').NextConfig} */
 const config = {
   images: {
@@ -8,6 +10,12 @@ const config = {
   },
   typescript: {
     ignoreBuildErrors: false,
+  },
+  async redirects() {
+    return permanentRedirects.map((redirect) => ({
+      ...redirect,
+      permanent: true,
+    }))
   },
 }
 
