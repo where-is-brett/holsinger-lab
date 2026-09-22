@@ -100,8 +100,12 @@ From the plan, in the order the plan gives:
 
 1. **Done.** Rebuild `Layout` and the navbars on `SiteNav` / `MobileHeader` /
    `SiteFooter`. See `docs/redesign-experiment/phase-3-decisions.md`.
-2. Build Publications index, `/publications/[slug]`, People, Research, Resources
-   and Home from the primitives.
+2. **In progress.** Build Publications index, `/publications/[slug]`, People, Research,
+   Resources and Home from the primitives. Delivered as three PRs — see
+   `docs/superpowers/specs/2026-09-22-redesign-phase-3-screens-design.md`. **PR A
+   (Publications) is done**, on branch `redesign/phase-3-publications`; see
+   `docs/redesign-experiment/phase-3-decisions.md`, "Step 2 — PR A (Publications)".
+   PRs B (People) and C (Research, Resources, Home) are open.
 3. **Done early**, cherry-picked alongside step 1. Re-derive the
    `:root[data-theme='warm']` presets against the new palette. See
    `docs/redesign-experiment/phase-3-decisions.md`.
