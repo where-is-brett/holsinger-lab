@@ -21,6 +21,7 @@ import milestone from 'schemas/objects/milestone'
 import timeline from 'schemas/objects/timeline'
 import home from 'schemas/singletons/home'
 import settings from 'schemas/singletons/settings'
+import siteCopy from 'schemas/singletons/siteCopy'
 
 const title = process.env.NEXT_PUBLIC_SANITY_PROJECT_TITLE || 'HOLSINGER LAB'
 
@@ -41,6 +42,7 @@ export default defineConfig({
     types: [
       home,
       settings,
+      siteCopy,
       duration,
       page,
       project,
@@ -56,12 +58,12 @@ export default defineConfig({
   },
   plugins: [
     structureTool({
-      structure: pageStructure([home, settings]),
+      structure: pageStructure([home, settings, siteCopy]),
       defaultDocumentNode: previewDocumentNode({ apiVersion, previewSecretId }),
     }),
     media(),
     colorInput(),
-    singletonPlugin([home.name, settings.name]),
+    singletonPlugin([home.name, settings.name, siteCopy.name]),
     doiLookupPlugin(),
     productionUrl({
       apiVersion,
