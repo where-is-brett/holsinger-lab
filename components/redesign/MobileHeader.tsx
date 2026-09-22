@@ -2,13 +2,13 @@
 
 import type { MouseEvent } from 'react'
 
-import { NAV_ITEMS } from './SiteNav'
+import { SITE_NAV as NAV_ITEMS } from './navModel'
 
 export interface MobileHeaderProps {
   open?: boolean
   onToggle?: () => void
   current?: string
-  items?: { id: string; label: string }[]
+  items?: readonly { id: string; label: string }[]
   onNavigate?: (id: string) => void
 }
 

@@ -18,6 +18,7 @@ const GALLERY_SECTIONS = [
   'facet-band',
   'person-card',
   'site-nav',
+  'site-nav-long',
   'mobile-header',
   'site-footer',
   'form-field',
@@ -115,15 +116,17 @@ test.describe('redesign component gallery', () => {
     await expect(narrowRow).toHaveCSS('display', 'block')
   })
 
-  test('SiteNav marks exactly the current item aria-current', async ({ page }) => {
+  test('SiteNav marks exactly the current item aria-current, with real hrefs', async ({ page }) => {
     const nav = page.getByTestId('gallery-site-nav')
     await expect(nav.locator('a[aria-current="page"]')).toHaveText('Publications')
     await expect(nav.locator('a[aria-current="page"]')).toHaveCount(1)
+    await expect(nav.getByRole('link', { name: 'Publications' })).toHaveAttribute('href', '/publications')
   })
 
-  test('SiteFooter renders both the default and compact density', async ({ page }) => {
-    const footer = page.getByTestId('gallery-site-footer')
-    await expect(footer.locator('footer')).toHaveCount(2)
+  test('SiteFooter renders one span per line', async ({ page }) => {
+    const footer = page.getByTestId('gallery-site-footer').locator('footer')
+    await expect(footer).toHaveCount(1)
+    await expect(footer.locator('span')).toHaveText(['Designed by Brett Yang', 'Copyright 2026 © Holsinger Lab'])
   })
 
   test('PersonCard renders both the portrait and no-portrait fallback state', async ({

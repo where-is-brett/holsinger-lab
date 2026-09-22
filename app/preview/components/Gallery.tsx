@@ -7,6 +7,7 @@ import { applyFacets, countBy, toggleFacet } from 'components/redesign/facets'
 import { SAMPLE_PEOPLE, SAMPLE_PUBLICATIONS } from 'components/redesign/fixtures'
 import { FormField } from 'components/redesign/FormField'
 import { MobileHeader } from 'components/redesign/MobileHeader'
+import { FOOTER_FALLBACK, SITE_NAV } from 'components/redesign/navModel'
 import { PageTitle } from 'components/redesign/PageTitle'
 import { PersonCard } from 'components/redesign/PersonCard'
 // Explicit extensions on these two -- 'PublicationRow.tsx' (the component)
@@ -22,7 +23,7 @@ import { PublicationRow } from 'components/redesign/PublicationRow.tsx'
 import { ResourceBlock } from 'components/redesign/ResourceBlock'
 import { SectionRail } from 'components/redesign/SectionRail'
 import { SiteFooter } from 'components/redesign/SiteFooter'
-import { NAV_ITEMS, SiteNav } from 'components/redesign/SiteNav'
+import { SiteNav } from 'components/redesign/SiteNav'
 import { Tag } from 'components/redesign/Tag'
 import { LABEL, META } from 'components/redesign/tokens'
 import type { ReactNode } from 'react'
@@ -90,8 +91,7 @@ export default function Gallery() {
   const [tagClicks, setTagClicks] = useState(0)
   const [buttonClicks, setButtonClicks] = useState(0)
 
-  // -- SiteNav / MobileHeader: onNavigate / onToggle wiring ----------------
-  const [lastNavigated, setLastNavigated] = useState('none')
+  // -- MobileHeader: onToggle wiring ----------------------------------------
   const [mobileOpen, setMobileOpen] = useState(true)
 
   // -- FormField: onChange wiring -------------------------------------------
@@ -250,20 +250,35 @@ export default function Gallery() {
             additions), and this gallery also renders MobileHeader's <nav>
             in the section below -- two simultaneously-visible, unlabelled
             navigation landmarks on one page trip axe's landmark-unique
-            check. The production Navbar (components/global/Navbar/
-            Desktop|MobileNavBar.tsx) avoids the same collision with a
-            `hidden md:flex` / `md:hidden` breakpoint split -- axe treats a
-            `display: none` subtree as absent, so only one <nav> is ever
-            "seen" at a given viewport. Reproduced here rather than inventing
-            a different fix, and for the same reason: it's the real-world
-            shape (SiteNav for desktop widths, MobileHeader for narrow
-            ones), not a test-only workaround. */}
+            check. The production SiteChrome mirrors the same `hidden
+            md:block` / `md:hidden` breakpoint split as the old
+            Desktop|MobileNavBar.tsx -- axe treats a `display: none` subtree
+            as absent, so only one <nav> is ever "seen" at a given viewport.
+            Each instance below also gets its own distinct `label`, since
+            several navs are visible on this page at once. */}
         <div className="hidden border border-rule md:block">
-          <SiteNav current="pubs" items={NAV_ITEMS} onNavigate={setLastNavigated} />
+          <SiteNav
+            current="pubs"
+            items={SITE_NAV}
+            wordmark={{ long: 'Holsinger Lab — The University of Sydney', short: 'Holsinger Lab' }}
+            label="Gallery: site nav"
+          />
         </div>
-        <p className={`${META} mt-2`}>
-          last navigated: <span data-testid="nav-last-navigated">{lastNavigated}</span>
-        </p>
+      </section>
+
+      {/* Width fixture for e2e/nav-wrap.spec.ts: the longest realistic
+          siteName with all six IA items. Its test measures intrinsic widths
+          against the viewport, so this container's own padding does not
+          matter. */}
+      <section data-testid="gallery-site-nav-long">
+        <Heading>Site nav — long site name</Heading>
+        <div className="hidden border border-rule md:block">
+          <SiteNav
+            items={SITE_NAV.filter((i) => i.id !== 'contact')}
+            wordmark={{ long: 'Laboratory of Molecular Neuroscience and Dementia', short: 'Holsinger Lab' }}
+            label="Gallery: site nav, long name"
+          />
+        </div>
       </section>
 
       <section data-testid="gallery-mobile-header">
@@ -271,7 +286,7 @@ export default function Gallery() {
 
         <SubHeading>Closed</SubHeading>
         <div className="mb-6 max-w-sm border border-rule">
-          <MobileHeader open={false} current="pubs" items={NAV_ITEMS} />
+          <MobileHeader open={false} current="pubs" items={SITE_NAV} />
         </div>
 
         <SubHeading>Open (interactive -- onToggle flips this instance&apos;s state)</SubHeading>
@@ -281,21 +296,15 @@ export default function Gallery() {
             open={mobileOpen}
             onToggle={() => setMobileOpen((o) => !o)}
             current="pubs"
-            items={NAV_ITEMS}
-            onNavigate={setLastNavigated}
+            items={SITE_NAV}
           />
         </div>
       </section>
 
       <section data-testid="gallery-site-footer">
         <Heading>Site footer</Heading>
-        <SubHeading>Default</SubHeading>
-        <div className="mb-6 border border-rule">
-          <SiteFooter />
-        </div>
-        <SubHeading>Compact</SubHeading>
-        <div className="max-w-sm border border-rule">
-          <SiteFooter compact />
+        <div className="border border-rule">
+          <SiteFooter lines={FOOTER_FALLBACK} />
         </div>
       </section>
 
