@@ -21,6 +21,93 @@ type ArrayOf<T> = Array<
 >
 
 // Source: schema.json
+export type SanityFileAssetReference = {
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'sanity.fileAsset'
+}
+
+export type SanityImageAssetReference = {
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'sanity.imageAsset'
+}
+
+export type MediaAppearance = {
+  _id: string
+  _type: 'mediaAppearance'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  orderRank?: string
+  title?: string
+  outlet?: string
+  date?: string
+  url?: string
+  video?: {
+    asset?: SanityFileAssetReference
+    media?: unknown
+    _type: 'file'
+  }
+  poster?: {
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    _type: 'image'
+  }
+}
+
+export type SanityImageCrop = {
+  _type: 'sanity.imageCrop'
+  top?: number
+  bottom?: number
+  left?: number
+  right?: number
+}
+
+export type SanityImageHotspot = {
+  _type: 'sanity.imageHotspot'
+  x?: number
+  y?: number
+  height?: number
+  width?: number
+}
+
+export type NewsItem = {
+  _id: string
+  _type: 'newsItem'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  orderRank?: string
+  title?: string
+  body?: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+  summary?: string
+  date?: string
+  showOnHome?: boolean
+  showOnNewsPage?: boolean
+}
+
 export type PublicationReference = {
   _ref: string
   _type: 'reference'
@@ -99,13 +186,6 @@ export type Timeline = {
     _type: 'item'
     _key: string
   }>
-}
-
-export type SanityImageAssetReference = {
-  _ref: string
-  _type: 'reference'
-  _weak?: boolean
-  [internalGroqTypeReferenceTo]?: 'sanity.imageAsset'
 }
 
 export type Milestone = {
@@ -190,22 +270,7 @@ export type Project = {
         _key: string
       }
   >
-}
-
-export type SanityImageCrop = {
-  _type: 'sanity.imageCrop'
-  top?: number
-  bottom?: number
-  left?: number
-  right?: number
-}
-
-export type SanityImageHotspot = {
-  _type: 'sanity.imageHotspot'
-  x?: number
-  y?: number
-  height?: number
-  width?: number
+  researchOrder?: number
 }
 
 export type Duration = {
@@ -284,6 +349,57 @@ export type Page = {
         _key: string
       }
   >
+}
+
+export type SiteCopy = {
+  _id: string
+  _type: 'siteCopy'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  hero?: {
+    image?: {
+      asset?: SanityImageAssetReference
+      media?: unknown
+      hotspot?: SanityImageHotspot
+      crop?: SanityImageCrop
+      alt?: string
+      _type: 'image'
+    }
+    heading?: string
+    subheading?: string
+  }
+  about?: {
+    heading?: string
+    body?: Array<{
+      children?: Array<{
+        marks?: Array<string>
+        text?: string
+        _type: 'span'
+        _key: string
+      }>
+      style?: 'normal'
+      listItem?: never
+      markDefs?: Array<{
+        href?: string
+        _type: 'link'
+        _key: string
+      }>
+      level?: number
+      _type: 'block'
+      _key: string
+    }>
+    themesIntro?: string
+    themes?: Array<{
+      title?: string
+      summary?: string
+      _type: 'theme'
+      _key: string
+    }>
+  }
+  teamIntro?: string
+  alumniSubtitle?: string
+  contactIntro?: string
 }
 
 export type ProfileReference = {
@@ -370,6 +486,11 @@ export type Settings = {
     _type: 'block'
     _key: string
   }>
+  contact?: {
+    address?: string
+    email?: string
+    phone?: string
+  }
 }
 
 export type RoleGroupReference = {
@@ -395,6 +516,7 @@ export type Profile = {
   }
   name?: string
   role?: string
+  roleDetail?: string
   roleGroup?: RoleGroupReference
   email?: string
   phone?: string
@@ -620,19 +742,23 @@ export type Geopoint = {
 }
 
 export type AllSanitySchemaTypes =
+  | SanityFileAssetReference
+  | SanityImageAssetReference
+  | MediaAppearance
+  | SanityImageCrop
+  | SanityImageHotspot
+  | NewsItem
   | PublicationReference
   | Resource
   | Publication
   | Slug
   | Timeline
-  | SanityImageAssetReference
   | Milestone
   | Project
-  | SanityImageCrop
-  | SanityImageHotspot
   | Duration
   | PageReference
   | Page
+  | SiteCopy
   | ProfileReference
   | HomeReference
   | ProjectReference

@@ -8,6 +8,8 @@ import { defineConfig } from 'sanity'
 import { structureTool } from 'sanity/structure'
 import { unsplashImageAsset } from 'sanity-plugin-asset-source-unsplash'
 import { media } from 'sanity-plugin-media'
+import mediaAppearance from 'schemas/documents/mediaAppearance'
+import newsItem from 'schemas/documents/newsItem'
 import page from 'schemas/documents/page'
 import profile from 'schemas/documents/profile'
 import project from 'schemas/documents/project'
@@ -19,6 +21,7 @@ import milestone from 'schemas/objects/milestone'
 import timeline from 'schemas/objects/timeline'
 import home from 'schemas/singletons/home'
 import settings from 'schemas/singletons/settings'
+import siteCopy from 'schemas/singletons/siteCopy'
 
 const title = process.env.NEXT_PUBLIC_SANITY_PROJECT_TITLE || 'HOLSINGER LAB'
 
@@ -39,6 +42,7 @@ export default defineConfig({
     types: [
       home,
       settings,
+      siteCopy,
       duration,
       page,
       project,
@@ -48,16 +52,18 @@ export default defineConfig({
       resource,
       profile,
       roleGroup,
+      newsItem,
+      mediaAppearance,
     ],
   },
   plugins: [
     structureTool({
-      structure: pageStructure([home, settings]),
+      structure: pageStructure([home, settings, siteCopy]),
       defaultDocumentNode: previewDocumentNode({ apiVersion, previewSecretId }),
     }),
     media(),
     colorInput(),
-    singletonPlugin([home.name, settings.name]),
+    singletonPlugin([home.name, settings.name, siteCopy.name]),
     doiLookupPlugin(),
     productionUrl({
       apiVersion,

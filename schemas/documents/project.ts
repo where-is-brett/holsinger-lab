@@ -184,5 +184,13 @@ export default defineType({
         }),
       ],
     }),
+    defineField({
+      name: 'researchOrder',
+      title: 'Position on the Research page',
+      type: 'number',
+      description:
+        'Set a number to list this project on the Research page (1 = first). Leave empty to leave it off.',
+      validation: (Rule) => Rule.integer().min(1),
+    }),
   ],
 })
