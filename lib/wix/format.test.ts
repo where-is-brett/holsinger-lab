@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { doiHref, formatCitationLine, formatMediaDate, mailtoHref, telHref } from './format'
+import { doiHref, formatCitationLine, formatMediaDate, mailtoHref, telHref, youtubeEmbedUrl } from './format'
 
 describe('formatCitationLine (Wix: "Journal Year; vol(issue):pages.")', () => {
   it('full record', () => {
@@ -41,4 +41,47 @@ describe('hrefs are stega-clean and null-safe (Review Focus 5)', () => {
 describe('formatMediaDate', () => {
   it('Wix style "14 Jul 2024"', () => expect(formatMediaDate('2024-07-14')).toBe('14 Jul 2024'))
   it('null', () => expect(formatMediaDate(null)).toBeNull())
+})
+
+describe('youtubeEmbedUrl', () => {
+  const EXPECTED = 'https://www.youtube-nocookie.com/embed/xKqAJ2sNEBk'
+  it('accepts a watch URL', () => {
+    expect(youtubeEmbedUrl('https://www.youtube.com/watch?v=xKqAJ2sNEBk')).toBe(EXPECTED)
+  })
+  it('accepts a watch URL with extra query params', () => {
+    expect(youtubeEmbedUrl('https://www.youtube.com/watch?v=xKqAJ2sNEBk&t=19s&feature=share')).toBe(EXPECTED)
+  })
+  it('accepts a watch URL with no "www."', () => {
+    expect(youtubeEmbedUrl('https://youtube.com/watch?v=xKqAJ2sNEBk')).toBe(EXPECTED)
+  })
+  it('accepts a youtu.be short link', () => {
+    expect(youtubeEmbedUrl('https://youtu.be/xKqAJ2sNEBk')).toBe(EXPECTED)
+  })
+  it('accepts a youtu.be short link with extra query params', () => {
+    expect(youtubeEmbedUrl('https://youtu.be/xKqAJ2sNEBk?t=19')).toBe(EXPECTED)
+  })
+  it('accepts an existing embed URL', () => {
+    expect(youtubeEmbedUrl('https://www.youtube.com/embed/xKqAJ2sNEBk')).toBe(EXPECTED)
+  })
+  it('rejects a non-YouTube URL', () => {
+    expect(youtubeEmbedUrl('https://vimeo.com/xKqAJ2sNEBk')).toBeNull()
+  })
+  it('rejects a YouTube URL with no video id', () => {
+    expect(youtubeEmbedUrl('https://www.youtube.com/')).toBeNull()
+  })
+  it('rejects a malformed id', () => {
+    expect(youtubeEmbedUrl('https://www.youtube.com/watch?v=short')).toBeNull()
+  })
+  it('rejects null/undefined/empty', () => {
+    expect(youtubeEmbedUrl(null)).toBeNull()
+    expect(youtubeEmbedUrl(undefined)).toBeNull()
+    expect(youtubeEmbedUrl('')).toBeNull()
+  })
+  it('rejects a value that is not a URL at all', () => {
+    expect(youtubeEmbedUrl('not a url')).toBeNull()
+  })
+  it('cleans a stega-encoded input first', () => {
+    const stega = '​‌‍⁠' // zero-width chars as stega encodes
+    expect(youtubeEmbedUrl(`https://www.youtube.com/watch?v=xKqAJ2sNEBk${stega}`)).toBe(EXPECTED)
+  })
 })

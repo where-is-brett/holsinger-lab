@@ -305,20 +305,24 @@ describe('planImport: singleton drafts kept in step (Fix round 3)', () => {
   })
 })
 
-describe('planImport: media with no link or video (Channel 7 fixup)', () => {
+describe('planImport: media with no link or video', () => {
+  // Synthetic -- the real "creatine-for-the-brain" (Channel 7) item now has a
+  // YouTube url in the committed snapshot, so this report no longer fires for
+  // it. The report itself stays in plan.ts for a future item that genuinely
+  // has neither a link nor a video.
   it('creates a media item with no video, poster, or url field and reports the gap', () => {
     const snap = snapshot()
     snap.media = [
-      { key: 'creatine-for-the-brain', title: 'Creatine for the brain', outlet: 'Channel 7', date: null, url: null, videoUrl: null, posterUrl: null },
+      { key: 'no-link-no-video', title: 'Some segment', outlet: 'Some Outlet', date: null, url: null, videoUrl: null, posterUrl: null },
     ]
     const plan = planImport(input({ snapshot: snap }))
-    const doc = createFor(plan, 'wix-media-creatine-for-the-brain')?.doc
+    const doc = createFor(plan, 'wix-media-no-link-no-video')?.doc
     expect(doc).toBeDefined()
     expect(doc).not.toHaveProperty('video')
     expect(doc).not.toHaveProperty('poster')
     expect(doc).not.toHaveProperty('url')
     expect(plan.reports).toContain(
-      'media creatine-for-the-brain: no link or video — imported as a text row; add the video in Studio'
+      'media no-link-no-video: no link or video — imported as a text row; add the video in Studio'
     )
   })
 })

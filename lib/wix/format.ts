@@ -38,3 +38,33 @@ export function formatMediaDate(date: string | null | undefined): string | null 
   const [y, m, d] = date.split('-').map(Number)
   return `${d} ${MONTHS[m - 1]} ${y}`
 }
+
+const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/
+
+/**
+ * Recognises a YouTube watch/short/embed URL and returns a privacy-mode
+ * (youtube-nocookie.com) embed URL, or null for anything else -- including a
+ * non-YouTube URL, a YouTube URL with no (or a malformed) video id, or a
+ * value that isn't a URL at all. Accepts "watch?v=", "youtu.be/" and
+ * "/embed/" forms, with or without extra query parameters.
+ */
+export function youtubeEmbedUrl(url: string | null | undefined): string | null {
+  const cleaned = clean(url)
+  if (!cleaned) return null
+  let parsed: URL
+  try {
+    parsed = new URL(cleaned)
+  } catch {
+    return null
+  }
+  const host = parsed.hostname.replace(/^www\./, '').toLowerCase()
+  let id: string | null = null
+  if (host === 'youtu.be') {
+    id = parsed.pathname.slice(1).split('/')[0]
+  } else if (host === 'youtube.com' || host === 'm.youtube.com') {
+    if (parsed.pathname === '/watch') id = parsed.searchParams.get('v')
+    else if (parsed.pathname.startsWith('/embed/')) id = parsed.pathname.slice('/embed/'.length).split('/')[0]
+  }
+  if (!id || !YOUTUBE_ID.test(id)) return null
+  return `https://www.youtube-nocookie.com/embed/${id}`
+}

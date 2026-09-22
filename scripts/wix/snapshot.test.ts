@@ -26,12 +26,13 @@ describe('data/wix/snapshot.json', () => {
     // Rene Buxton appears twice on Wix; the snapshot corrects it to once.
     expect(s.people.filter((p) => p.name === 'Rene Buxton')).toHaveLength(1)
   })
-  it('imports the Channel 7 video-blocked item without a video (every mp4 rendition 403s outside the Wix player)', () => {
+  it('imports the Channel 7 item with no self-hosted video (every mp4 rendition 403s outside the Wix player), identified as a YouTube segment', () => {
     const s = load()
     const item = s.media.find((m) => m.key === 'creatine-for-the-brain')
     expect(item?.videoUrl).toBeNull()
     expect(item?.posterUrl).toBeNull()
-    expect(item?.url).toBeNull()
+    expect(item?.url).toBe('https://www.youtube.com/watch?v=xKqAJ2sNEBk')
+    expect(item?.date).toBe('2025-08-25')
   })
 })
 

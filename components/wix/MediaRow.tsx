@@ -1,5 +1,5 @@
 import { urlForImage } from 'lib/sanity.image'
-import { formatMediaDate } from 'lib/wix/format'
+import { formatMediaDate, youtubeEmbedUrl } from 'lib/wix/format'
 import type { MediaItem } from 'lib/wix/types'
 import { stegaClean } from 'next-sanity'
 
@@ -30,6 +30,26 @@ export function MediaRow({ item, isFirst }: { item: MediaItem; isFirst?: boolean
           controls
           preload="metadata"
           className="mx-auto mt-[20px] aspect-[640/365] w-full md:w-[640px]"
+        />
+        {date ? <p className="mt-0 font-playfair text-[18px]/[24px] md:text-[22px]/[30px]">{date}</p> : null}
+      </li>
+    )
+  }
+
+  const embedUrl = youtubeEmbedUrl(item.url)
+  if (embedUrl) {
+    return (
+      <li data-wix="media" className="mt-[40px] first:mt-0">
+        <h2 className={titleClass}>
+          {item.title} - <em>{item.outlet}</em>
+        </h2>
+        <iframe
+          src={embedUrl}
+          title={`${item.title} – ${item.outlet}`}
+          loading="lazy"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+          className="mx-auto mt-[20px] aspect-[640/365] w-full border-0 md:w-[640px]"
         />
         {date ? <p className="mt-0 font-playfair text-[18px]/[24px] md:text-[22px]/[30px]">{date}</p> : null}
       </li>
