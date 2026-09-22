@@ -5,6 +5,7 @@
 // task-C0-brief.md. Never set WIX_FIXTURE on Vercel.
 
 import { sanityFetch } from 'lib/sanity.live'
+import { draftMode } from 'next/headers'
 import type { createClient } from 'next-sanity'
 
 // Read once, cached at module level -- every call in fixture mode reuses it.
@@ -40,12 +41,36 @@ async function loadFixtureDocs(): Promise<Record<string, unknown>[]> {
  * self-refreshing fallback. Production keeps `sanityFetch`'s tag-based
  * invalidation (plus the page-level `revalidate = 60`) untouched.
  *
+ * Only taken outside draft mode (Fix round 2, High): `sanityFetch` resolves
+ * BOTH `perspective` and `stega` from `draftMode()` when neither is passed
+ * explicitly (see `DefinedFetchOptions`'s own docs), so a preview deployment
+ * in draft mode -- reached from ITS OWN Studio, `/api/draft` having already
+ * flipped the cookie, `RootLayout` already rendering `PreviewBanner` and
+ * `VisualEditing` -- must keep going through `sanityFetch`. This branch's
+ * `perspective: 'published'` and `stega: false` are hardcoded and would
+ * otherwise show Damian a "preview" banner over published-only content with
+ * no source map for the visual-editing overlays to bind to. Draft mode also
+ * already forces dynamic rendering, so a time-based fetch revalidate would be
+ * meaningless there regardless.
+ *
+ * Note this doesn't fully close the staleness gap outside draft mode either:
+ * a fetch-level revalidate only takes effect on an ISR regeneration, which
+ * only happens after the page-level `revalidate = 60` (RootLayout /
+ * app/(site)/*) has elapsed -- so the real bound on preview staleness is "at
+ * most about 60s", not this constant. `<SanityLive />` (rendered in
+ * RootLayout) is also inert on this path: it revalidates by `sanity:*` cache
+ * tag, and a plain client's own `.fetch()` registers none, so it never
+ * refreshes a preview page early -- the timed revalidate is preview's only
+ * refresh mechanism, tag-based or otherwise.
+ *
  * `lib/sanity.api` and `next-sanity`'s `createClient` are imported
- * dynamically, inside `getPreviewClient()`, rather than at module scope --
- * `lib/sanity.api`'s module-scope `assertValue()` throws if the
- * NEXT_PUBLIC_SANITY_* env vars are unset, which fixture mode (WIX_FIXTURE=1,
- * used for tests and pre-dataset builds -- see the module comment above)
- * never sets and must not require.
+ * dynamically, inside `getPreviewClient()`, rather than at module scope.
+ * This does NOT let a fixture build skip `lib/sanity.api`'s env-var check --
+ * this file already statically imports `lib/sanity.live`, which statically
+ * imports `lib/sanity.api`, so `assertValue()` runs either way once this
+ * module loads. The dynamic import only matters under Vitest, where
+ * `lib/sanity.live` (and therefore its `lib/sanity.api` import) is mocked
+ * out entirely -- a static import here would bypass that mock and throw.
  */
 const PREVIEW_REVALIDATE_SECONDS = 30
 let previewClient: ReturnType<typeof createClient> | null = null
@@ -77,7 +102,7 @@ export async function wixFetch<T>(
     const result = await evaluate(tree, { dataset, params: opts?.params })
     return (await result.get()) as T
   }
-  if (process.env.VERCEL_ENV === 'preview') {
+  if (process.env.VERCEL_ENV === 'preview' && !(await draftMode()).isEnabled) {
     const client = await getPreviewClient()
     return client.fetch<T>(query, opts?.params ?? {}, {
       next: { revalidate: PREVIEW_REVALIDATE_SECONDS },

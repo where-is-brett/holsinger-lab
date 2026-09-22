@@ -35,10 +35,41 @@ vi.mock('next-sanity', () => ({
   createClient: () => ({ fetch: previewFetchMock }),
 }))
 
+// draftMode() is async in the App Router; mutable so each test can toggle it
+// without re-mocking. Defaults to disabled, matching a normal (non-Studio,
+// non-Presentation) page load.
+let draftModeEnabled = false
+vi.mock('next/headers', () => ({
+  draftMode: async () => ({ isEnabled: draftModeEnabled }),
+}))
+
 describe('wixFetch: preview deployments (VERCEL_ENV=preview) refresh on a short interval', () => {
-  it('production/local (no VERCEL_ENV, or VERCEL_ENV=production): options reach sanityFetch untouched, the preview client is never built', async () => {
+  const setUp = () => {
     sanityFetchMock.mockClear()
     previewFetchMock.mockClear()
+    draftModeEnabled = false
+  }
+
+  it('no VERCEL_ENV at all: options reach sanityFetch untouched, the preview client is never built', async () => {
+    setUp()
+    // vi.stubEnv() takes a string, not a way to unset -- delete/restore by hand
+    // to actually exercise "the var isn't set", not "it's the string 'undefined'".
+    const had = 'VERCEL_ENV' in process.env
+    const original = process.env.VERCEL_ENV
+    delete process.env.VERCEL_ENV
+    try {
+      const { wixFetch } = await import('./fetch')
+      const result = await wixFetch<{ via: string }>('*[_type == "x"]', { params: { a: 1 }, stega: false })
+      expect(sanityFetchMock).toHaveBeenCalledWith({ query: '*[_type == "x"]', params: { a: 1 }, stega: false })
+      expect(previewFetchMock).not.toHaveBeenCalled()
+      expect(result).toMatchObject({ via: 'sanityFetch' })
+    } finally {
+      if (had) process.env.VERCEL_ENV = original
+    }
+  })
+
+  it('VERCEL_ENV=production: options reach sanityFetch untouched, the preview client is never built', async () => {
+    setUp()
     vi.stubEnv('VERCEL_ENV', 'production')
     try {
       const { wixFetch } = await import('./fetch')
@@ -51,9 +82,8 @@ describe('wixFetch: preview deployments (VERCEL_ENV=preview) refresh on a short 
     }
   })
 
-  it('VERCEL_ENV=preview: the fetch goes through the plain client with a 30s time-based revalidate, sanityFetch is never called', async () => {
-    sanityFetchMock.mockClear()
-    previewFetchMock.mockClear()
+  it('VERCEL_ENV=preview, draft mode off: the fetch goes through the plain client with a 30s time-based revalidate, sanityFetch is never called', async () => {
+    setUp()
     vi.stubEnv('VERCEL_ENV', 'preview')
     try {
       const { wixFetch } = await import('./fetch')
@@ -65,6 +95,21 @@ describe('wixFetch: preview deployments (VERCEL_ENV=preview) refresh on a short 
       )
       expect(sanityFetchMock).not.toHaveBeenCalled()
       expect(result).toMatchObject({ via: 'previewClient' })
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
+  it('VERCEL_ENV=preview, draft mode ON (Fix round 2, High): sanityFetch is used -- the preview client must never be built, or Studio preview and visual editing break', async () => {
+    setUp()
+    draftModeEnabled = true
+    vi.stubEnv('VERCEL_ENV', 'preview')
+    try {
+      const { wixFetch } = await import('./fetch')
+      const result = await wixFetch<{ via: string }>('*[_type == "x"]', { params: { a: 1 }, stega: true })
+      expect(sanityFetchMock).toHaveBeenCalledWith({ query: '*[_type == "x"]', params: { a: 1 }, stega: true })
+      expect(previewFetchMock).not.toHaveBeenCalled()
+      expect(result).toMatchObject({ via: 'sanityFetch' })
     } finally {
       vi.unstubAllEnvs()
     }
