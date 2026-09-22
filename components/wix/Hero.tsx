@@ -5,10 +5,14 @@ import { stegaClean } from 'next-sanity'
 
 // The largest width worth ever requesting for a full-bleed hero, for
 // genuinely large sources. `.fit('max')` (in urlForImage) already refuses to
-// upscale past the source's real size, but capping the request at the
-// source's own intrinsic width too avoids generating srcSet entries (and
-// cache entries) larger than the source could ever fill -- see
-// lib/sanity.image.ts's intrinsicImageWidth.
+// upscale past the source's real size, so this is defense in depth, not a
+// fix for an observed bug: it caps only the ORIGIN (Sanity CDN) url's own
+// `w=` parameter via lib/sanity.image.ts's intrinsicImageWidth. It does NOT
+// reduce next/image's srcSet -- that list of widths comes from next.config's
+// `deviceSizes`, unrelated to this value -- and for the current hero asset
+// (2394px wide) it's a no-op: capping at 2394 instead of MAX_HERO_WIDTH
+// produces a byte-identical response, since `fit=max` already refused to
+// upscale to the larger, uncapped width.
 const MAX_HERO_WIDTH = 2560
 
 export function Hero({ hero }: { hero: NonNullable<HomeData['copy']>['hero'] }) {

@@ -12,7 +12,7 @@ vi.mock('lib/sanity.api', () => ({
   projectId: 'test-project',
 }))
 
-import { urlForImage } from './sanity.image'
+import { intrinsicImageWidth, urlForImage } from './sanity.image'
 
 describe('urlForImage', () => {
   it('resolves a plain reference-shaped asset (the common case: every image field except settings.logo/logoDark)', () => {
@@ -72,5 +72,20 @@ describe('urlForImage', () => {
     const result = urlForImage({ _type: 'image' } as never)
 
     expect(result).toBeUndefined()
+  })
+})
+
+describe('intrinsicImageWidth', () => {
+  it('parses the width out of a plain reference-shaped ref', () => {
+    expect(intrinsicImageWidth('image-abc123-2394x1769-png')).toBe(2394)
+  })
+  it('parses the width out of a dereferenced-shape id', () => {
+    expect(intrinsicImageWidth('image-abc123-800x600-png')).toBe(800)
+  })
+  it('falls back to null for null, undefined, and a malformed id/ref', () => {
+    expect(intrinsicImageWidth(null)).toBeNull()
+    expect(intrinsicImageWidth(undefined)).toBeNull()
+    expect(intrinsicImageWidth('not-a-real-asset-id')).toBeNull()
+    expect(intrinsicImageWidth('')).toBeNull()
   })
 })

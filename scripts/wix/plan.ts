@@ -143,30 +143,55 @@ export function planImport(input: PlanInput): Plan {
    */
   function fieldRuleSet(id: string, current: CurrentDoc, desired: Record<string, unknown>): Record<string, unknown> {
     const set: Record<string, unknown> = {}
-    for (const [f, v] of Object.entries(desired)) {
+    for (const [f, rawV] of Object.entries(desired)) {
       const cur = current[f]
       const lk = `${id}#${f}`
 
       // Dry run: this field's desired value has an unresolved (placeholder)
       // asset ref somewhere in it. The asset itself can never be compared
-      // until --commit uploads it, so never turn that alone into an op --
-      // just note it. If something else in the field *is* comparable (e.g.
-      // alt text) and differs, say so too, rather than silently staying
-      // quiet about it; the actual patch (asset included) still lands on
-      // --commit, same as always.
+      // until --commit uploads it -- but `hero` is the one imported field
+      // that bundles an image together with other data (heading,
+      // subheading), so treating the whole field as "not comparable" would
+      // silently swallow a genuine heading change: the dry run would print
+      // nothing, and --commit would then write a field the operator never
+      // saw. Instead, substitute the CURRENT real asset ref for the
+      // placeholder (comparison only, via maskPendingAssets) and run that
+      // masked value through the exact same equal/untouched logic as every
+      // other field below -- it reports or sets everything comparable, and
+      // can never actually apply the substituted ref, because a dry run
+      // never reaches the transaction. Genuine limitation: this can't
+      // detect a changed SOURCE url on an already-imported field, because
+      // the placeholder is only ever compared against the last-imported
+      // hash of the *whole field* (which doesn't encode the url), not
+      // against the url itself. Separate residual, on --commit: every commit
+      // re-downloads and re-uploads every asset and relies on Sanity's
+      // content-hash dedupe handing back the SAME asset id for unchanged
+      // bytes -- if that ever returned a new id instead, this field would be
+      // re-patched (not blanked, just needlessly rewritten) on every commit.
+      let v = rawV
+      let assetLabel: string | null = null
       if (!input.assetsResolved) {
-        const pendingPaths = findPendingAssetPaths(v)
+        const pendingPaths = findPendingAssetPaths(rawV)
         if (pendingPaths.length) {
           const label = pendingPaths[0] ? `${id}.${f}.${pendingPaths[0]}` : `${id}.${f}`
-          reports.push(`${label}: asset not comparable in a dry run (upload happens on --commit)`)
-          const masked = maskPendingAssets(v, cur)
-          if (masked.ok && !equal(cur, masked.value))
-            reports.push(`${id}.${f}: differs beyond the placeholder asset — resolved together with it on --commit`)
-          continue
+          const masked = maskPendingAssets(rawV, cur)
+          if (!masked.ok) {
+            // No real asset at this path yet (field never imported) -- there is
+            // nothing to substitute, so nothing here is comparable this run.
+            reports.push(`${label}: asset not comparable in a dry run (upload happens on --commit)`)
+            continue
+          }
+          v = masked.value
+          assetLabel = label
         }
       }
 
-      if (equal(cur, v)) { ledger[lk] = stableHash(v); continue }
+      if (equal(cur, v)) {
+        ledger[lk] = stableHash(v)
+        if (assetLabel)
+          reports.push(`${assetLabel}: asset not comparable in a dry run (upload happens on --commit); nothing else in this field changed either`)
+        continue
+      }
       const hasLedgerEntry = lk in input.ledger
       // A field cleared (or never touched) after our last import is "untouched" and Wix
       // wins on first import. But once we have a ledger entry, null/undefined counts as
@@ -176,6 +201,12 @@ export function planImport(input: PlanInput): Plan {
         : cur === null || cur === undefined
           ? false
           : input.ledger[lk] === stableHash(cur)
+      if (assetLabel) {
+        const verdict = untouched
+          ? 'the rest of this field differs and will be applied on --commit'
+          : 'this field differs from what was last imported, so it will be skipped as edited-since-import'
+        reports.push(`${assetLabel}: asset not comparable in a dry run (upload happens on --commit); ${verdict}`)
+      }
       if (untouched) { set[f] = v; ledger[lk] = stableHash(v) }
       else skipped.push({ id, field: f, reason: 'edited-since-import' })
     }
@@ -299,6 +330,7 @@ export function planImport(input: PlanInput): Plan {
       ['volume', p.volume, cur.volume],
       ['issue', p.issue, cur.issue],
       ['pages', p.pages, cur.pages],
+      ['type', p.type, cur.type],
     ]
     for (const [field, wixVal, sanityVal] of diffs) {
       if (wixVal === null || wixVal === undefined) continue

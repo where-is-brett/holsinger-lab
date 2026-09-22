@@ -45,10 +45,13 @@ export function MediaRow({ item, isFirst }: { item: MediaItem; isFirst?: boolean
         </h2>
         <iframe
           src={embedUrl}
-          title={`${item.title} – ${item.outlet}`}
+          title={`${stegaClean(item.title)} – ${stegaClean(item.outlet)}`}
           loading="lazy"
           allowFullScreen
           referrerPolicy="strict-origin-when-cross-origin"
+          // 640x365 (not the requested 640x360) to match the self-hosted
+          // <video> branch above exactly, rather than introduce a second,
+          // very-slightly-different aspect ratio for the same row shape.
           className="mx-auto mt-[20px] aspect-[640/365] w-full border-0 md:w-[640px]"
         />
         {date ? <p className="mt-0 font-playfair text-[18px]/[24px] md:text-[22px]/[30px]">{date}</p> : null}

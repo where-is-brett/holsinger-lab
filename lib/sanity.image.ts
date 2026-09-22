@@ -25,9 +25,11 @@ export const urlForImage = (source: Image) => {
 /**
  * A Sanity asset id/ref encodes its intrinsic pixel dimensions, e.g.
  * "image-<hash>-2394x1769-png". `.fit('max')` already refuses to upscale
- * past this, but requesting a width far beyond it is still wasted work
- * (redundant srcSet entries, cache churn) -- callers that build their own
- * `.width()` should cap it against this first. Returns null if the id/ref
+ * past this, so a caller capping its own `.width()` against this is defense
+ * in depth rather than a fix for an observed bug -- it only affects the
+ * `w=` parameter on the origin (Sanity CDN) request; it does not change
+ * next/image's own srcSet (that list of widths comes from next.config's
+ * `deviceSizes`, unrelated to this value). Returns null if the id/ref
  * doesn't match the expected shape (defensive -- should not happen for a
  * real Sanity image asset).
  */
