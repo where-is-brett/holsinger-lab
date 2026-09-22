@@ -229,6 +229,24 @@ test.describe('redesign component gallery', () => {
     await expect(jiyooCard.locator('img')).toHaveCount(0)
   })
 
+  test('PersonCard: the portrait renders in full colour at rest, not greyscale', async ({
+    page,
+  }) => {
+    // Brett's review (fix/research-description-fallback): portraits must
+    // never render in black-and-white anywhere, not even briefly before a
+    // hover/focus reveal -- PersonCard.tsx's `IMAGE_FILTER` (which carried
+    // `grayscale contrast-[1.04]` lifted only on `group-hover:`/
+    // `group-focus-visible:`) was replaced with a plain `PORTRAIT_IMAGE_CLASS`
+    // of `object-cover` alone. This asserts the *unhovered, unfocused*
+    // portrait's computed `filter` is the CSS default `none` -- the direct
+    // negative of the old grayscale-at-rest treatment this test replaces.
+    const section = page.getByTestId('gallery-person-card')
+    const img = section.getByRole('img', { name: 'Haochen Wu' })
+    await expect(img).toBeVisible()
+    const filter = await img.evaluate((el) => getComputedStyle(el).filter)
+    expect(filter).toBe('none')
+  })
+
   test('PersonCard: detail renders as a second mono line under role, only when present', async ({
     page,
   }) => {

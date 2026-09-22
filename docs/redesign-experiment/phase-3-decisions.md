@@ -406,10 +406,20 @@ working directory for the full ledger.
   grid/flex item that holds unpredictable CMS text.
 - **`PersonCard`:** a linked card's portrait image gets `alt=""` (decorative), since the name
   text rendered right below it inside the same link already carries the content. Unlinked
-  cards keep `alt={name}` on the image, since there's no link to collide with. The colour
-  reveal (grayscale portrait → full colour, name → link colour) also triggers on keyboard
-  focus (`group-focus-visible:` pairs mirroring every `group-hover:` one), not just mouse
-  hover. `sizes` gained an `lg` step (`(min-width: 1024px) 15vw, (min-width: 768px) 30vw,
+  cards keep `alt={name}` on the image, since there's no link to collide with. The name's
+  colour reveal (name → link colour) triggers on keyboard focus (`group-focus-visible:`
+  pairs mirroring every `group-hover:` one), not just mouse hover. **Deviation from the
+  vendored design system (fix/research-description-fallback, Brett's review):** the design
+  system at `docs/redesign-experiment/design-system/components/people/PersonCard.jsx`
+  specifies portraits as greyscale at rest, lifting to full colour only on hover/focus.
+  Brett's instruction overrides that: portraits render in full colour at rest everywhere,
+  with no greyscale state at all. `PersonCard.tsx`'s exported class was renamed
+  `IMAGE_FILTER` → `PORTRAIT_IMAGE_CLASS` and reduced to a bare `object-cover` (no
+  `grayscale`/`contrast-[1.04]`, no `transition-[filter]`, no `group-hover:`/
+  `group-focus-visible:` filter reveal). The vendored design-system file itself is read-only
+  and was not edited — this note is the record of the deviation. Research-project covers are
+  unaffected: they render via plain `next/image` with no filter and no shared helper.
+  `sizes` gained an `lg` step (`(min-width: 1024px) 15vw, (min-width: 768px) 30vw,
   50vw`) matching `CARD_GRID`'s actual `grid-cols-2`/`md:grid-cols-3`/`lg:grid-cols-6`
   breakpoints — the previous two-step value was carried over from the old `Profile.tsx`'s
   3-up desktop grid and under/over-declared the served image width against the new 6-up

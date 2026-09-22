@@ -154,12 +154,13 @@ test('image frames are dimmed in dark mode only', async ({ browser }) => {
 })
 
 // "the People grayscale treatment survives the dark-mode dim" (a regression
-// guard for Profile.tsx's ImageBox `classesWrapper="... [&_img]:grayscale
-// ..."` combined with ImageBox's own `.media-frame` dark-mode dim) is
-// removed, not repointed: Phase 3 PR B deleted Profile.tsx, and PersonCard's
-// replacement grayscale-on-hover treatment (PersonCard.tsx's IMAGE_FILTER)
-// is a Tailwind utility on the `next/image` element itself, never combined
-// with `.media-frame`/ImageBox at all -- the specific two-styles-on-one-
-// `filter`-property collision this test guarded against can no longer
-// happen anywhere in the codebase (grep confirms `grayscale` now only
-// appears in PersonCard.tsx, and never alongside `media-frame`).
+// guard for Profile.tsx's ImageBox, whose wrapper class list combined an
+// img-descendant grey-scale variant with ImageBox's own `.media-frame`
+// dark-mode dim) is removed, not repointed: Phase 3 PR B deleted Profile.tsx,
+// and portraits no longer carry any grey-scale treatment at all -- Brett's
+// review (fix/research-description-fallback) removed PersonCard.tsx's
+// grey-scale-on-hover treatment outright (portraits render in full colour at
+// rest everywhere), so the specific two-styles-on-one-`filter`-property
+// collision this test guarded against can no longer happen anywhere in the
+// codebase (grep confirms no portrait component's class list carries a
+// grey-scale utility, and none appears alongside `media-frame`).

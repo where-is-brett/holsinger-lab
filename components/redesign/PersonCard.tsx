@@ -42,21 +42,25 @@ const FOOTPRINT_FALLBACK =
 // Home.tsx's `PiPortrait64` fallback use the identical value, and it was a
 // verbatim triplicate before this hoist.
 
-// Carried Task 1 review minor (c): a linked card's colour reveal (grayscale
-// portrait, name colour) is mouse-only without these -- `group-focus-visible:`
-// pairs mirror each `group-hover:` one exactly, so keyboard focus (Tab onto
-// the wrapping Link, PersonCard's `href` branch below) gets the identical
-// reveal a mouse hover does. Each pair targets a distinct pseudo-class
-// selector (`.group:hover &`, `.group:focus-visible &`), never the same
-// selector twice, so this is additive, not a same-property collision.
+// Brett's review (fix/research-description-fallback): portraits must never
+// render in black-and-white -- not even briefly, at rest, before a
+// hover/focus reveal. This used to carry a `grayscale`/`contrast-[1.04]`
+// treatment that only lifted on `group-hover:`/`group-focus-visible:`; that
+// treatment is gone. The docs/redesign-experiment design system still
+// specifies greyscale-at-rest portraits -- that vendored doc is read-only,
+// so the deviation is recorded in
+// docs/redesign-experiment/phase-3-decisions.md instead of edited there.
+// The linked card's *name* still gets a colour reveal on hover/focus (see
+// the `group-hover:text-link`/`group-focus-visible:text-link` classes on
+// the name `div` in `PersonCard` below) -- that's a separate utility on the
+// text, not this image, and Brett's instruction only covers the photo.
 // Exported (PR C Task 3 fix round 1) so Home.tsx's `PiPortrait64` can give
 // the PI's Home portrait the exact same treatment every other portrait in
 // this direction gets, rather than a bare `object-cover`. Safe to compose
-// onto a differently-sized image element: every declaration here targets
-// `object-fit`/filter/transition, never `width`/`height`/`aspect-ratio`, so
-// it never collides with a call site's own sizing classes.
-export const IMAGE_FILTER =
-  'object-cover grayscale contrast-[1.04] transition-[filter] duration-(--sem-motion-reveal) ease-(--sem-ease) group-hover:grayscale-0 group-hover:contrast-100 group-focus-visible:grayscale-0 group-focus-visible:contrast-100'
+// onto a differently-sized image element: the one declaration here targets
+// `object-fit`, never `width`/`height`/`aspect-ratio`, so it never collides
+// with a call site's own sizing classes.
+export const PORTRAIT_IMAGE_CLASS = 'object-cover'
 
 /**
  * The image / initials-fallback footprint, extracted verbatim from
@@ -83,7 +87,7 @@ export function PortraitFrame({
 }) {
   return img ? (
     <div className={`${FOOTPRINT_IMAGE} ${className ?? ''}`}>
-      <Image src={img} alt={name} fill sizes={sizes} className={IMAGE_FILTER} />
+      <Image src={img} alt={name} fill sizes={sizes} className={PORTRAIT_IMAGE_CLASS} />
     </div>
   ) : (
     <div className={`${FOOTPRINT_FALLBACK} ${className ?? ''}`} style={{ backgroundImage: STRIPE_BG }}>
