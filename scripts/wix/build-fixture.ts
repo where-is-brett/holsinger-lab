@@ -131,6 +131,8 @@ export function buildFixtureDocs(
     roleGroupIds,
     assetIds,
     ledger: {},
+    // The fixture has no unpublished drafts of settings/siteCopy.
+    drafts: {},
   })
 
   const docsById = new Map<string, Record<string, unknown>>()
