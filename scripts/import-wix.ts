@@ -25,7 +25,8 @@ import { readFileSync, statSync } from 'node:fs'
 import { createClient } from '@sanity/client'
 
 import { apiVersion, projectId } from '../lib/sanity.api.ts'
-import { type CurrentDoc, type Ledger, LEDGER_ID, planImport } from './wix/plan.ts'
+import { deserializeLedger, serializeLedger } from './wix/ledger.ts'
+import { type CurrentDoc, LEDGER_ID, planImport } from './wix/plan.ts'
 import { ROLE_GROUP_TITLES, type RoleGroupTitle, validateSnapshot, type WixSnapshot } from './wix/snapshot.ts'
 
 const args = process.argv.slice(2)
@@ -101,7 +102,7 @@ async function main() {
   const docs = await client.fetch<CurrentDoc[]>(`*[_id in $ids]`, { ids })
   const existing = Object.fromEntries(docs.map((d) => [d._id, d]))
   const draftIds = await client.fetch<string[]>(`*[_id in $ids]._id`, { ids: ids.map((i) => `drafts.${i}`) })
-  const ledgerDoc = await client.fetch<{ _rev?: string; entries?: Ledger } | null>(`*[_id == $id][0]`, { id: LEDGER_ID })
+  const ledgerDoc = await client.fetch<{ _rev?: string; entries?: unknown } | null>(`*[_id == $id][0]`, { id: LEDGER_ID })
 
   // Only the singleton docs' drafts are kept in step (Fix round 3) -- a draft
   // publish there would otherwise silently drop the imported fields. Other
@@ -127,7 +128,7 @@ async function main() {
     assetIds[url] = asset._id
   }
 
-  const plan = planImport({ snapshot, existing, settingsId, roleGroupIds, assetIds, ledger: ledgerDoc?.entries ?? {}, drafts })
+  const plan = planImport({ snapshot, existing, settingsId, roleGroupIds, assetIds, ledger: deserializeLedger(ledgerDoc?.entries), drafts })
 
   for (const op of plan.ops) {
     if (op.kind === 'create') console.log(`CREATE ${op.doc._type} ${op.doc._id}  ${String(op.doc.title ?? op.doc.name ?? '')}`)
@@ -169,12 +170,16 @@ async function main() {
     if (op.kind === 'create') tx.createIfNotExists(op.doc)
     else tx.patch(op.id, (p) => p.ifRevisionId(revLookup[op.id]._rev as string).set(op.set))
   }
+  // Stored as an array of {_key, docId, field, hash} -- Sanity attribute names must match
+  // ^\$?[a-zA-Z0-9_-]+$, and the in-memory ledger's "<docId>#<field>" keys don't (see
+  // scripts/wix/ledger.ts).
+  const storedEntries = serializeLedger(plan.ledger)
   if (ledgerDoc) {
-    tx.patch(LEDGER_ID, (p) => p.ifRevisionId(ledgerDoc._rev as string).set({ entries: plan.ledger, updatedAt: new Date().toISOString() }))
+    tx.patch(LEDGER_ID, (p) => p.ifRevisionId(ledgerDoc._rev as string).set({ entries: storedEntries, updatedAt: new Date().toISOString() }))
   } else {
     // A concurrent first run creating the same ledger doc should fail loudly,
     // not silently clobber -- createOrReplace would clobber, create won't.
-    tx.create({ _id: LEDGER_ID, _type: 'wixImportLedger', entries: plan.ledger, updatedAt: new Date().toISOString() })
+    tx.create({ _id: LEDGER_ID, _type: 'wixImportLedger', entries: storedEntries, updatedAt: new Date().toISOString() })
   }
 
   try {
