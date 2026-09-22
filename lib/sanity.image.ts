@@ -21,3 +21,19 @@ export const urlForImage = (source: Image) => {
 
   return imageBuilder?.image(source).auto('format').fit('max')
 }
+
+/**
+ * A Sanity asset id/ref encodes its intrinsic pixel dimensions, e.g.
+ * "image-<hash>-2394x1769-png". `.fit('max')` already refuses to upscale
+ * past this, so a caller capping its own `.width()` against this is defense
+ * in depth rather than a fix for an observed bug -- it only affects the
+ * `w=` parameter on the origin (Sanity CDN) request; it does not change
+ * next/image's own srcSet (that list of widths comes from next.config's
+ * `deviceSizes`, unrelated to this value). Returns null if the id/ref
+ * doesn't match the expected shape (defensive -- should not happen for a
+ * real Sanity image asset).
+ */
+export function intrinsicImageWidth(assetIdOrRef: string | null | undefined): number | null {
+  const match = assetIdOrRef?.match(/-(\d+)x(\d+)-/)
+  return match ? Number(match[1]) : null
+}

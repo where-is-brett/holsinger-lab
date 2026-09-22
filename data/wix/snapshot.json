@@ -87,8 +87,8 @@
       "key": "creatine-for-the-brain",
       "title": "Creatine for the brain",
       "outlet": "Channel 7",
-      "date": null,
-      "url": null,
+      "date": "2025-08-25",
+      "url": "https://www.youtube.com/watch?v=xKqAJ2sNEBk",
       "videoUrl": null,
       "posterUrl": null
     },
@@ -521,7 +521,8 @@
       "volume": null,
       "issue": null,
       "pages": "04.19.719519",
-      "doi": "10.64898/2026.04.19.719519"
+      "doi": "10.64898/2026.04.19.719519",
+      "type": "Article"
     },
     {
       "key": "chromobox-protein-homolog-7",
@@ -533,7 +534,8 @@
       "volume": 11,
       "issue": 1,
       "pages": "74",
-      "doi": "10.1038/s41420-025-02362-7"
+      "doi": "10.1038/s41420-025-02362-7",
+      "type": null
     },
     {
       "key": "cell-culture-chamber",
@@ -545,7 +547,8 @@
       "volume": 12,
       "issue": 2,
       "pages": "289",
-      "doi": "10.3390/biomedicines12020289"
+      "doi": "10.3390/biomedicines12020289",
+      "type": null
     },
     {
       "key": "fmt-review",
@@ -557,7 +560,8 @@
       "volume": 24,
       "issue": 2,
       "pages": "1001",
-      "doi": "10.3390/ijms24021001"
+      "doi": "10.3390/ijms24021001",
+      "type": null
     },
     {
       "key": "fmt-mouse-model",
@@ -569,7 +573,8 @@
       "volume": 12,
       "issue": 1,
       "pages": "119",
-      "doi": "10.3390/cells12010119"
+      "doi": "10.3390/cells12010119",
+      "type": null
     },
     {
       "key": "fiber-electrical-field-alignment",
@@ -581,7 +586,8 @@
       "volume": 16,
       "issue": 2,
       "pages": "138",
-      "doi": "10.3390/ph16020138"
+      "doi": "10.3390/ph16020138",
+      "type": null
     },
     {
       "key": "inpp5d-ship1",
@@ -593,7 +599,8 @@
       "volume": 14,
       "issue": 10,
       "pages": "1845",
-      "doi": "10.3390/genes14101845"
+      "doi": "10.3390/genes14101845",
+      "type": null
     },
     {
       "key": "non-coding-rna",
@@ -605,7 +612,8 @@
       "volume": 24,
       "issue": 15,
       "pages": "12498",
-      "doi": "10.3390/ijms241512498"
+      "doi": "10.3390/ijms241512498",
+      "type": "Review"
     },
     {
       "key": "carnosic-acid",
@@ -617,7 +625,8 @@
       "volume": 28,
       "issue": 5,
       "pages": "2306",
-      "doi": "10.3390/molecules28052306"
+      "doi": "10.3390/molecules28052306",
+      "type": null
     },
     {
       "key": "oxidative-stress-antioxidants",
@@ -629,7 +638,8 @@
       "volume": 12,
       "issue": 2,
       "pages": "517",
-      "doi": "10.3390/antiox12020517"
+      "doi": "10.3390/antiox12020517",
+      "type": null
     },
     {
       "key": "non-pharmacological-options",
@@ -641,7 +651,8 @@
       "volume": 23,
       "issue": 19,
       "pages": "11037",
-      "doi": "10.3390/ijms231911037"
+      "doi": "10.3390/ijms231911037",
+      "type": null
     },
     {
       "key": "variant-trem2",
@@ -653,7 +664,8 @@
       "volume": 434,
       "issue": 7,
       "pages": "167470",
-      "doi": "10.1016/j.jmb.2022.167470"
+      "doi": "10.1016/j.jmb.2022.167470",
+      "type": null
     },
     {
       "key": "ground-state-depletion-microscopy",
@@ -665,7 +677,8 @@
       "volume": 99,
       "issue": 6,
       "pages": "1515-1532",
-      "doi": "10.1002/jnr.24819"
+      "doi": "10.1002/jnr.24819",
+      "type": null
     },
     {
       "key": "cerebellar-cryptic-avm",
@@ -677,7 +690,8 @@
       "volume": 12,
       "issue": 5,
       "pages": "368",
-      "doi": null
+      "doi": null,
+      "type": null
     },
     {
       "key": "piezoelectric-knn-thin-films",
@@ -689,7 +703,8 @@
       "volume": 3,
       "issue": 12,
       "pages": "8714-8721",
-      "doi": "10.1021/acsabm.0c01111"
+      "doi": "10.1021/acsabm.0c01111",
+      "type": null
     },
     {
       "key": "leptin-receptor-5xfad",
@@ -701,7 +716,8 @@
       "volume": 13,
       "issue": 11,
       "pages": "401",
-      "doi": "10.3390/ph13110401"
+      "doi": "10.3390/ph13110401",
+      "type": null
     },
     {
       "key": "genome-wide-integrative-analysis",
@@ -713,7 +729,8 @@
       "volume": 11,
       "issue": 2,
       "pages": "8686-8701",
-      "doi": "10.33263/briac112.86868701"
+      "doi": "10.33263/briac112.86868701",
+      "type": null
     }
   ]
 }

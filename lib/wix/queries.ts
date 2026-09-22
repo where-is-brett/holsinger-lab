@@ -3,7 +3,16 @@ import { groq } from 'next-sanity'
 export const siteNameQuery = groq`coalesce(*[_type == "settings"][0].siteName, *[_type == "home"][0].title)`
 
 export const homeQuery = groq`{
-  "copy": *[_type == "siteCopy"][0]{ hero, about },
+  "copy": *[_type == "siteCopy"][0]{
+    // "heroImageLqip" is a sibling scalar, not a dereference of "image"
+    // itself -- an "asset->" projection on the image field would replace its
+    // reference object wholesale (stripping "_ref"), which is exactly the
+    // derived-asset trap urlForImage's own comment documents. Hero.tsx still
+    // reads a plain "image.asset._ref" for both the CDN URL and the
+    // intrinsic-width cap.
+    hero{ ..., "heroImageLqip": image.asset->metadata.lqip },
+    about
+  },
   "news": *[_type == "newsItem" && showOnHome != false] | order(orderRank) { _id, title, body },
   "contact": *[_type == "settings"][0].contact
 }`

@@ -153,6 +153,9 @@ export function buildFixtureDocs(
     ledger: {},
     // The fixture has no unpublished drafts of settings/siteCopy.
     drafts: {},
+    // The fixture always uses real (fake but resolved) asset ids -- never a
+    // dry-run placeholder -- so the planner should compare/write them as usual.
+    assetsResolved: true,
   })
 
   const docsById = new Map<string, Record<string, unknown>>()

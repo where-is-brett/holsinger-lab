@@ -54,9 +54,15 @@ describe('fixture dataset', () => {
       expect(team?.labHeadId).toBe('fixture-pi')
       const pubs = await wixFetch<{ title: string }[]>(publicationsQuery)
       expect(pubs?.[0].title).toMatch(/^Non-invasive Bdnf mRNA/)
-      // Channel 7 is a text row (its Wix mp4 is 403-blocked; Ruling R14); the other two link out.
+      // Channel 7 has no self-hosted video (its Wix mp4 is 403-blocked; Ruling
+      // R14) but is identified as a YouTube segment, so it embeds; the other
+      // two link out.
       const media = await wixFetch<{ title: string; videoUrl: string | null; url: string | null }[]>(mediaQuery)
-      expect(media?.[0]).toMatchObject({ title: 'Creatine for the brain', videoUrl: null, url: null })
+      expect(media?.[0]).toMatchObject({
+        title: 'Creatine for the brain',
+        videoUrl: null,
+        url: 'https://www.youtube.com/watch?v=xKqAJ2sNEBk',
+      })
       expect(media?.[1].url).toMatch(/^https:\/\/www\.abc\.net\.au\//)
     } finally {
       vi.unstubAllEnvs()

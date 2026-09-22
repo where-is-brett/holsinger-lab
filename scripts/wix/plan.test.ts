@@ -33,8 +33,8 @@ function snapshot(): WixSnapshot {
       { key: 'mh', sanityId: null, name: 'Mia Helveston', role: 'USA', roleDetail: null, group: 'International Interns', imageUrl: null },
     ],
     publications: [
-      { key: 'old', sanityId: 'pub-old', title: 'Old', authors: 'A', journal: 'J', date: '2020-01-01', volume: 1, issue: 2, pages: '3', doi: '10.1/x' },
-      { key: 'new', sanityId: null, title: 'New', authors: 'B', journal: 'bioRxiv', date: '2026-04-19', volume: null, issue: null, pages: '04.19.719519', doi: '10.64898/2026.04.19.719519' },
+      { key: 'old', sanityId: 'pub-old', title: 'Old', authors: 'A', journal: 'J', date: '2020-01-01', volume: 1, issue: 2, pages: '3', doi: '10.1/x', type: null },
+      { key: 'new', sanityId: null, title: 'New', authors: 'B', journal: 'bioRxiv', date: '2026-04-19', volume: null, issue: null, pages: '04.19.719519', doi: '10.64898/2026.04.19.719519', type: 'Article' },
     ],
   }
 }
@@ -45,7 +45,7 @@ function input(over: Partial<PlanInput> = {}): PlanInput {
     'pub-old': { _id: 'pub-old', _type: 'publication', title: 'Old (Sanity wording)', doi: null },
     settings: { _id: 'settings', _type: 'settings' },
   }
-  return { snapshot: snapshot(), existing, settingsId: 'settings', roleGroupIds: { ...GROUPS }, assetIds: {}, ledger: {}, drafts: {}, ...over }
+  return { snapshot: snapshot(), existing, settingsId: 'settings', roleGroupIds: { ...GROUPS }, assetIds: {}, ledger: {}, drafts: {}, assetsResolved: true, ...over }
 }
 
 const patchFor = (plan: ReturnType<typeof planImport>, id: string) =>
@@ -81,7 +81,7 @@ describe('planImport: first run', () => {
   })
   it('creates new publications', () => {
     expect(createFor(plan, 'wix-publication-new')?.doc).toMatchObject({
-      _type: 'publication', title: 'New', author: 'B', journal: 'bioRxiv', date: '2026-04-19', pages: '04.19.719519',
+      _type: 'publication', title: 'New', author: 'B', journal: 'bioRxiv', date: '2026-04-19', pages: '04.19.719519', type: 'Article',
     })
   })
   it('never deletes and never blanks a field', () => {
@@ -257,6 +257,21 @@ describe('planImport: guards (fix round 1)', () => {
     // Title matches here, so it must not be reported.
     expect(plan.reports.some((r) => r.startsWith('publication pub-old: title differs'))).toBe(false)
   })
+
+  it('reports (never writes) a matched publication whose type differs -- report-only like every other matched-publication field (Important 2)', () => {
+    const snap = snapshot()
+    snap.publications[0] = { ...snap.publications[0], type: 'Article' }
+    const withType = input({
+      snapshot: snap,
+      existing: {
+        ...input().existing,
+        'pub-old': { _id: 'pub-old', _type: 'publication', title: 'Old', type: 'Review' },
+      },
+    })
+    const plan = planImport(withType)
+    expect(plan.reports).toContain('publication pub-old: type differs (Sanity "Review" vs Wix "Article") — not written')
+    expect(patchFor(plan, 'pub-old')?.set?.type).toBeUndefined()
+  })
 })
 
 describe('planImport: singleton drafts kept in step (Fix round 3)', () => {
@@ -305,20 +320,173 @@ describe('planImport: singleton drafts kept in step (Fix round 3)', () => {
   })
 })
 
-describe('planImport: media with no link or video (Channel 7 fixup)', () => {
+describe('planImport: media with no link or video', () => {
+  // Synthetic -- the real "creatine-for-the-brain" (Channel 7) item now has a
+  // YouTube url in the committed snapshot, so this report no longer fires for
+  // it. The report itself stays in plan.ts for a future item that genuinely
+  // has neither a link nor a video.
   it('creates a media item with no video, poster, or url field and reports the gap', () => {
     const snap = snapshot()
     snap.media = [
-      { key: 'creatine-for-the-brain', title: 'Creatine for the brain', outlet: 'Channel 7', date: null, url: null, videoUrl: null, posterUrl: null },
+      { key: 'no-link-no-video', title: 'Some segment', outlet: 'Some Outlet', date: null, url: null, videoUrl: null, posterUrl: null },
     ]
     const plan = planImport(input({ snapshot: snap }))
-    const doc = createFor(plan, 'wix-media-creatine-for-the-brain')?.doc
+    const doc = createFor(plan, 'wix-media-no-link-no-video')?.doc
     expect(doc).toBeDefined()
     expect(doc).not.toHaveProperty('video')
     expect(doc).not.toHaveProperty('poster')
     expect(doc).not.toHaveProperty('url')
     expect(plan.reports).toContain(
-      'media creatine-for-the-brain: no link or video — imported as a text row; add the video in Studio'
+      'media no-link-no-video: no link or video — imported as a text row; add the video in Studio'
     )
+  })
+})
+
+describe('planImport: dry-run asset idempotency', () => {
+  const url = 'https://static.wixstatic.com/media/pic1'
+
+  function projectSnapshot() {
+    const snap = snapshot()
+    snap.projects = [
+      { key: 'proj', sanityId: 'proj-1', researchOrder: 1, title: 'T', paragraphs: [], imageUrl: url, imageAlt: 'Alt' },
+    ]
+    return snap
+  }
+  function projectExisting(coverImage: unknown): Record<string, CurrentDoc> {
+    return {
+      ...input().existing,
+      'proj-1': { _id: 'proj-1', _type: 'project', title: 'T', researchOrder: 1, description: [], coverImage },
+    }
+  }
+  const realImage = { _type: 'image', asset: { _type: 'reference', _ref: 'image-real-1' }, alt: 'Alt' }
+
+  it('a placeholder-ref image produces no op and one report in dry-run mode (nothing else changed either)', () => {
+    const plan = planImport(input({
+      snapshot: projectSnapshot(),
+      existing: projectExisting(realImage),
+      assetIds: { [url]: 'pending:pic1' },
+      assetsResolved: false,
+    }))
+    expect(patchFor(plan, 'proj-1')).toBeUndefined()
+    const notes = plan.reports.filter((r) => r.includes('proj-1.coverImage'))
+    expect(notes).toEqual([
+      'proj-1.coverImage: asset not comparable in a dry run (upload happens on --commit); nothing else in this field changed either',
+    ])
+  })
+
+  it('emits a patch for the non-asset part of a field with a placeholder ref (Important 1), using the CURRENT real ref, not the placeholder', () => {
+    const plan = planImport(input({
+      snapshot: projectSnapshot(),
+      existing: projectExisting({ ...realImage, alt: 'Old alt' }),
+      assetIds: { [url]: 'pending:pic1' },
+      assetsResolved: false,
+    }))
+    // The dry run can never apply this op (it exits before the transaction),
+    // but it must be visible to a human reading the dry run before --commit.
+    expect(patchFor(plan, 'proj-1')?.set?.coverImage).toEqual(realImage)
+    expect((patchFor(plan, 'proj-1')?.set?.coverImage as { asset: { _ref: string } }).asset._ref).toBe('image-real-1')
+    expect(plan.reports).toContain(
+      'proj-1.coverImage: asset not comparable in a dry run (upload happens on --commit); the rest of this field differs and will be applied on --commit'
+    )
+  })
+
+  it('the nested siteCopy.hero.image case: only the heading changes -- still emits a PATCH with the CURRENT asset ref, not a pending one (Important 1)', () => {
+    const snap = snapshot()
+    snap.siteCopy.hero.imageUrl = url
+    snap.siteCopy.hero.heading = 'New heading'
+    const heroImage = { _type: 'image', asset: { _type: 'reference', _ref: 'image-real-1' } }
+    const existing = {
+      ...input().existing,
+      siteCopy: {
+        _id: 'siteCopy', _type: 'siteCopy',
+        hero: { image: heroImage, heading: 'Old heading', subheading: 'S' },
+        about: { heading: 'About', body: toBlocks(['One *two*'], 'siteCopy.about'), themesIntro: 'T', themes: [] },
+        teamIntro: 'Team', alumniSubtitle: '2020 - present', contactIntro: 'Support',
+      },
+    }
+    const plan = planImport(input({
+      snapshot: snap, existing,
+      assetIds: { [url]: 'pending:pic1' },
+      assetsResolved: false,
+    }))
+    const hero = patchFor(plan, 'siteCopy')?.set?.hero as { image: { asset: { _ref: string } }; heading: string } | undefined
+    expect(hero?.heading).toBe('New heading')
+    expect(hero?.image.asset._ref).toBe('image-real-1')
+    expect(plan.reports).toContain(
+      'siteCopy.hero.image: asset not comparable in a dry run (upload happens on --commit); the rest of this field differs and will be applied on --commit'
+    )
+  })
+
+  it('a field with a placeholder ref that was edited in Studio since the last import is skipped, not applied, and the note says so (Minor 3)', () => {
+    const first = planImport(input({
+      snapshot: projectSnapshot(),
+      existing: projectExisting(realImage),
+      assetIds: { [url]: 'image-real-1' },
+      assetsResolved: true,
+    }))
+    const editedExisting = projectExisting({ ...realImage, alt: 'Edited in Studio' })
+    const plan = planImport(input({
+      snapshot: projectSnapshot(),
+      existing: editedExisting,
+      assetIds: { [url]: 'pending:pic1' },
+      assetsResolved: false,
+      ledger: first.ledger,
+    }))
+    expect(patchFor(plan, 'proj-1')).toBeUndefined()
+    expect(plan.skipped).toContainEqual({ id: 'proj-1', field: 'coverImage', reason: 'edited-since-import' })
+    expect(plan.reports).toContain(
+      'proj-1.coverImage: asset not comparable in a dry run (upload happens on --commit); this field differs from what was last imported, so it will be skipped as edited-since-import'
+    )
+  })
+
+  it('a field that has never held an image is not comparable at all -- no op, no crash (masked.ok === false)', () => {
+    const plan = planImport(input({
+      snapshot: projectSnapshot(),
+      // No coverImage property at all on the existing doc.
+      existing: { ...input().existing, 'proj-1': { _id: 'proj-1', _type: 'project', title: 'T', researchOrder: 1, description: [] } },
+      assetIds: { [url]: 'pending:pic1' },
+      assetsResolved: false,
+    }))
+    expect(patchFor(plan, 'proj-1')?.set?.coverImage).toBeUndefined()
+    expect(plan.reports).toEqual(
+      expect.arrayContaining(['proj-1.coverImage: asset not comparable in a dry run (upload happens on --commit)'])
+    )
+    // Not the "nothing else changed"/"will be applied"/"will be skipped" variants --
+    // there is nothing to compare against at all.
+    expect(plan.reports.filter((r) => r.includes('proj-1.coverImage'))).toHaveLength(1)
+  })
+
+  it('a real ref that differs from the current value still produces a patch', () => {
+    const plan = planImport(input({
+      snapshot: projectSnapshot(),
+      existing: projectExisting({ ...realImage, asset: { _type: 'reference', _ref: 'image-old' } }),
+      assetIds: { [url]: 'image-real-1' },
+      assetsResolved: true,
+    }))
+    expect(patchFor(plan, 'proj-1')?.set?.coverImage).toEqual(realImage)
+  })
+
+  it('a commit-mode plan SKIPS an image field edited in Studio since the last import, exactly like any other field', () => {
+    const editedRef = { ...realImage, asset: { _type: 'reference', _ref: 'image-edited-in-studio' } }
+    const ledger = { 'proj-1#coverImage': stableHash({ ...realImage, asset: { _type: 'reference', _ref: 'image-old' } }) }
+    const plan = planImport(input({
+      snapshot: projectSnapshot(),
+      existing: projectExisting(editedRef),
+      assetIds: { [url]: 'image-real-1' },
+      assetsResolved: true,
+      ledger,
+    }))
+    expect(patchFor(plan, 'proj-1')?.set?.coverImage).toBeUndefined()
+    expect(plan.skipped).toContainEqual({ id: 'proj-1', field: 'coverImage', reason: 'edited-since-import' })
+  })
+
+  it('a commit run throws if it ever sees a placeholder ref (defence in depth)', () => {
+    const snap = projectSnapshot()
+    expect(() => planImport(input({
+      snapshot: snap,
+      existing: projectExisting(realImage),
+      assetIds: { [url]: 'pending:pic1' },
+      assetsResolved: true,
+    }))).toThrow('refusing to write a placeholder asset ref')
   })
 })

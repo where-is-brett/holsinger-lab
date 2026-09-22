@@ -26,7 +26,7 @@ import { createClient } from '@sanity/client'
 
 import { apiVersion, projectId } from '../lib/sanity.api.ts'
 import { deserializeLedger, serializeLedger } from './wix/ledger.ts'
-import { type CurrentDoc, LEDGER_ID, planImport } from './wix/plan.ts'
+import { type CurrentDoc, LEDGER_ID, PENDING_ASSET_PREFIX, planImport } from './wix/plan.ts'
 import { ROLE_GROUP_TITLES, type RoleGroupTitle, validateSnapshot, type WixSnapshot } from './wix/snapshot.ts'
 
 const args = process.argv.slice(2)
@@ -120,7 +120,7 @@ async function main() {
   ].filter((u): u is string => Boolean(u))
   const assetIds: Record<string, string> = {}
   for (const url of urls) {
-    if (!commit) { assetIds[url] = `pending:${url.split('/').pop()}`; continue }
+    if (!commit) { assetIds[url] = `${PENDING_ASSET_PREFIX}${url.split('/').pop()}`; continue }
     const res = await fetch(url)
     if (!res.ok) throw new Error(`Download failed ${res.status}: ${url}`)
     const kind = url.endsWith('.mp4') ? 'file' : 'image'
@@ -128,7 +128,7 @@ async function main() {
     assetIds[url] = asset._id
   }
 
-  const plan = planImport({ snapshot, existing, settingsId, roleGroupIds, assetIds, ledger: deserializeLedger(ledgerDoc?.entries), drafts })
+  const plan = planImport({ snapshot, existing, settingsId, roleGroupIds, assetIds, ledger: deserializeLedger(ledgerDoc?.entries), drafts, assetsResolved: commit })
 
   for (const op of plan.ops) {
     if (op.kind === 'create') console.log(`CREATE ${op.doc._type} ${op.doc._id}  ${String(op.doc.title ?? op.doc.name ?? '')}`)

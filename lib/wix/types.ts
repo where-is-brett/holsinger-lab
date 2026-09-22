@@ -7,7 +7,14 @@ export interface ContactDetails { address?: string | null; email?: string | null
 
 export interface HomeData {
   copy: {
-    hero?: { image?: AltImage | null; heading?: string | null; subheading?: string | null } | null
+    hero?: {
+      image?: AltImage | null
+      heading?: string | null
+      subheading?: string | null
+      // A sibling projection (homeQuery), not part of `image` -- see the
+      // query's own comment on why it isn't a dereference of `image.asset`.
+      heroImageLqip?: string | null
+    } | null
     about?: {
       heading?: string | null
       body?: PortableTextBlock[] | null

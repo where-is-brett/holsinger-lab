@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+
 import { describe, expect, it } from 'vitest'
 
 import { validateSnapshot, type WixSnapshot } from './snapshot.ts'
@@ -25,12 +26,13 @@ describe('data/wix/snapshot.json', () => {
     // Rene Buxton appears twice on Wix; the snapshot corrects it to once.
     expect(s.people.filter((p) => p.name === 'Rene Buxton')).toHaveLength(1)
   })
-  it('imports the Channel 7 video-blocked item without a video (every mp4 rendition 403s outside the Wix player)', () => {
+  it('imports the Channel 7 item with no self-hosted video (every mp4 rendition 403s outside the Wix player), identified as a YouTube segment', () => {
     const s = load()
     const item = s.media.find((m) => m.key === 'creatine-for-the-brain')
     expect(item?.videoUrl).toBeNull()
     expect(item?.posterUrl).toBeNull()
-    expect(item?.url).toBeNull()
+    expect(item?.url).toBe('https://www.youtube.com/watch?v=xKqAJ2sNEBk')
+    expect(item?.date).toBe('2025-08-25')
   })
 })
 
@@ -79,13 +81,31 @@ describe('validateSnapshot', () => {
     ]
     expect(validateSnapshot(s)).toEqual([])
   })
-  it('requires date and journal on publications that are new', () => {
+  it('requires date, journal and type on publications that are new', () => {
     const s = minimal()
     s.publications = [
-      { key: 'p', sanityId: null, title: 't', authors: 'a', journal: null, date: null, volume: null, issue: null, pages: null, doi: null },
+      { key: 'p', sanityId: null, title: 't', authors: 'a', journal: null, date: null, volume: null, issue: null, pages: null, doi: null, type: null },
     ]
     expect(validateSnapshot(s)).toEqual(
-      expect.arrayContaining(['publications.p: new publication needs date', 'publications.p: new publication needs journal'])
+      expect.arrayContaining([
+        'publications.p: new publication needs date',
+        'publications.p: new publication needs journal',
+        'publications.p: new publication needs type',
+      ])
     )
+  })
+  it('rejects an unknown type on a new publication', () => {
+    const s = minimal()
+    s.publications = [
+      { key: 'p', sanityId: null, title: 't', authors: 'a', journal: 'J', date: '2020-01-01', volume: null, issue: null, pages: null, doi: null, type: 'Preprint' as never },
+    ]
+    expect(validateSnapshot(s)).toContain('publications.p: unknown type "Preprint"')
+  })
+  it('does not require a type on a matched (already-Sanity) publication', () => {
+    const s = minimal()
+    s.publications = [
+      { key: 'p', sanityId: 'sanity-id', title: 't', authors: 'a', journal: 'J', date: '2020-01-01', volume: null, issue: null, pages: null, doi: null, type: null },
+    ]
+    expect(validateSnapshot(s)).toEqual([])
   })
 })

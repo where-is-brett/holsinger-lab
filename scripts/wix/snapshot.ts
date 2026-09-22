@@ -4,6 +4,8 @@
 //
 // Paragraph strings use one inline markup: *text* is italic. Nothing else.
 
+import { PUBLICATION_TYPES, type PublicationType } from '../../schemas/lib/publicationTypes.ts'
+
 export const ROLE_GROUP_TITLES = [
   'Research Scientist',
   'PhD Candidate',
@@ -75,6 +77,11 @@ export interface WixSnapshot {
     issue: number | null
     pages: string | null
     doi: string | null
+    // Required (and validated against PUBLICATION_TYPES) when sanityId is
+    // null: a new publication needs it set on creation. null for a matched
+    // publication -- its type is already set in Sanity, and the import must
+    // never touch it (like every other matched-publication field).
+    type: PublicationType | null
   }[]
 }
 
@@ -121,6 +128,9 @@ export function validateSnapshot(input: unknown): string[] {
     if (p.sanityId === null) {
       if (!p.date) errors.push(`publications.${p.key}: new publication needs date`)
       if (!p.journal) errors.push(`publications.${p.key}: new publication needs journal`)
+      if (!p.type) errors.push(`publications.${p.key}: new publication needs type`)
+      else if (!(PUBLICATION_TYPES as readonly string[]).includes(p.type))
+        errors.push(`publications.${p.key}: unknown type "${p.type}"`)
     }
   }
   return errors
