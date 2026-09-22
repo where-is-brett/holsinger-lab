@@ -11,7 +11,7 @@ export function PublicationEntry({ pub }: { pub: P }) {
   return (
     <li data-wix="publication" className="mt-[46px] first:mt-[60px] md:mt-[34px] md:first:mt-[76px]">
       <h2 data-wix="pub-title" className="font-playfair text-[17px]/[26px] md:text-[20px]/[31px]">
-        {pub.title.trim()}
+        {pub.title?.trim()}
       </h2>
       {pub.author ? (
         <p className="mt-[5px] font-playfair text-[14px]/[22px] md:mt-[3px] md:text-[16px]/[31px]">

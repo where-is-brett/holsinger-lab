@@ -14,7 +14,12 @@ export const researchQuery = groq`*[_type == "project" && defined(researchOrder)
 
 export const newsQuery = groq`*[_type == "newsItem" && showOnNewsPage != false] | order(orderRank) { _id, title, summary }`
 
-export const publicationsQuery = groq`*[_type == "publication"] | order(date desc) {
+// defined(title): a brand-new draft document (created via "+ New" in Studio,
+// before the editor has typed a title) has no `title` field at all -- Sanity
+// never invents a default for a required string. Without this filter, that
+// row survives to PublicationEntry with `pub.title` undefined, and
+// `pub.title.trim()` throws (I4).
+export const publicationsQuery = groq`*[_type == "publication" && defined(title)] | order(date desc) {
   _id, title, author, journal, volume, issue, pages, date, doi, url
 }`
 
