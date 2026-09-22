@@ -10,7 +10,7 @@ Every departure from the plan, and why. Companion to `phase-1-decisions.md` and
 | ----------------------------------------------------------------- | ----------------------------------- |
 | 1. Rebuild `Layout` / navbars on `SiteNav` / `MobileHeader` / `SiteFooter` | done — this document |
 | 2. Build the five screens (Publications, People, Research, Resources, Home) | open |
-| 3. Re-derive the `:root[data-theme='warm']` presets                | **done early** — cherry-picked, see §1 |
+| 3. Re-derive the `:root[data-theme='warm']` presets                | **done early** — cherry-picked, see "Step 3, done early" below |
 | 4. Retire `project`, migrate `home.showcaseProjects`, redirects   | open |
 
 ## The wrap check — measured
@@ -36,6 +36,35 @@ fixture ("Laboratory of Molecular Neuroscience and Dementia", with the IA six):
 - the margin at 1024px is only 41px. A `siteName` much longer than the fixture
   clips with an ellipsis instead of wrapping — the `truncate` safety net in
   decision 2 is what catches it, not extra width.
+
+## Step 3, done early
+
+Two commits were cherry-picked from `origin/claude/adoring-ride-si6e4o` onto this
+branch: `39ada6b` (`build: emit the generated stylesheet without a data-connected
+build`) and `48d091a` (`feat: re-derive the warm preset against the Modern
+Instrument palette`). Together they are Phase 3 step 3 done early, ahead of the
+screens step.
+
+- **`npm run css:proof`** (`scripts/css-proof.mjs`) runs the same Tailwind
+  pipeline `postcss.config.js` gives Next — same plugin, same entry stylesheet,
+  same source scan — with no data fetching, and writes the generated stylesheet
+  to `node_modules/.cache/css-proof/index.css`. `--grep TEXT` prints only the
+  matching lines and exits non-zero when there are none. `npm run build` proves
+  the same fact but also statically renders every route, so it needs network
+  reach to the Sanity dataset; `css:proof` keeps the "grep what Tailwind
+  actually emitted" rule enforceable in an environment (like this worktree) that
+  cannot reach the API.
+- **The warm preset re-derivation** extends the same guard the tokens already
+  had: Phase 1 added five tokens to base and left the presets declaring only the
+  original nine, so `warm` inherited cool blue-grey neutrals onto a warm
+  surface, including a contrast defect (`--sem-text-faint` at 4.455:1 on
+  `--sem-surface-raised` in dark mode, under AA). Four neutrals are now declared
+  per scheme, re-derived into the preset's own hue family, keeping each base
+  token's tuned lightness and chroma; only warm's dark `--sem-text-faint` needed
+  its lightness moved (by 0.010), which takes it to 4.61:1 on raised and 5.41:1
+  on surface. `--sem-link-inverse` is deliberately not redeclared — it is
+  chromatic, and presets vary neutrals only. This is the preset contrast guard
+  from `phase-1-decisions.md` extended to the tokens step 3 originally covered.
 
 ## Decisions
 
@@ -93,6 +122,11 @@ fixture ("Laboratory of Molecular Neuroscience and Dementia", with the IA six):
 - **Task 4:** the toggle became a fixed `w-16`, so "Menu" and "Close ✕" occupy
   identical boxes and the in-panel Close sits exactly over the outer Menu. The
   in-panel Close takes initial focus (`data-autofocus`).
+- **Task 4:** the in-panel toggle's accessible name is "Close", with the ✕ glyph
+  `aria-hidden`, where the spec says "Close ✕". Deliberate: this is
+  label-in-name (the accessible name is a prefix of the visible text), and the
+  ✕ is decorative — it repeats what "Close" already says, so hiding it from the
+  accessibility tree does not lose information.
 
 ## Deletions and the Wix-track caution
 
@@ -119,6 +153,18 @@ at merge time, but only if that branch has also edited those specific files.
 
 ## Known limits, carried forward
 
+- **The nav ignores `showPublications` / `showPeople` / `showContactForm`.**
+  Those flags still make `/publications`, `/people` and `/contact` return 404
+  when set to false, but the new chrome keeps linking to them regardless, and
+  their Studio descriptions promise the page "disappears from the site
+  entirely" — a promise the redesign chrome no longer keeps. The command
+  centre's amendment (decision 1) kept these fields unread by the redesign
+  because the `redesign/wix` track may still read them. This is an open
+  decision for Brett: either wire the three flags into `liveNavItems` (about 5
+  lines plus unit tests, no schema change), or accept the current behaviour.
+  Relatedly, the `menuItems` Studio description is now inert, since the nav no
+  longer reads `menuItems` at all — noted here as a handover follow-up, not
+  fixed in this branch.
 - In draft mode, the `PreviewBanner` sits above the sticky header, so the outer
   band and the panel band misalign by about 45px. Editors only.
 - Scroll lock adds scrollbar-width padding, so the in-panel Close shifts on desktop
