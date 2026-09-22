@@ -343,6 +343,29 @@ describe('planImport: created publications get a slug (Wix-freshness FU6)', () =
     expect(patch?.set).toEqual({ title: 'Corrected Title' })
     expect(patch?.set).not.toHaveProperty('slug')
   })
+
+  it('does not refill a slug cleared in Studio on a document with a #slug ledger entry (documented, not a gap)', () => {
+    // A slug already imported once, then deliberately removed in Studio, is
+    // treated the same as clearing any other imported field: skipped as
+    // "edited since import", never silently reinstated. `slug` being
+    // required() in the schema means Studio already surfaces this as a
+    // validation error on that document -- a safer signal than this
+    // importer quietly regenerating a slug someone chose to remove.
+    const first = planImport(input())
+    const created = createFor(first, 'wix-publication-new')?.doc as CurrentDoc
+    expect(created.slug).toBeDefined()
+
+    const cleared = { ...created }
+    delete (cleared as { slug?: unknown }).slug
+
+    const second = planImport(input({
+      existing: { ...input().existing, 'wix-publication-new': cleared },
+      ledger: first.ledger,
+    }))
+
+    expect(patchFor(second, 'wix-publication-new')).toBeUndefined()
+    expect(second.skipped).toContainEqual({ id: 'wix-publication-new', field: 'slug', reason: 'edited-since-import' })
+  })
 })
 
 describe('publicationSlug output satisfies the real field validation (slug is required() as of PR #33)', () => {

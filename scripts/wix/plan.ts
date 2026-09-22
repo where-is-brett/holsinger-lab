@@ -362,6 +362,23 @@ export function planImport(input: PlanInput): Plan {
     if (p.sanityId === null) {
       const id = `wix-publication-${p.key}`
       let slugField: Record<string, unknown> = {}
+      // (a) A slug is generated at most once per document and never
+      // regenerated after that -- see the fix-round-1 note above `hasSlug`.
+      // (b) A document this importer created before this fix, with no slug
+      // and no ledger entry for `#slug`, gets exactly one catch-up fill here
+      // (the `!hasSlug` branch below), through the normal untouched-field
+      // path in `fieldRuleSet`.
+      // (c) A slug CLEARED in Studio on a document that already has a
+      // `#slug` ledger entry is deliberately NOT refilled: `hasSlug` sees no
+      // current slug and lets a new one through `upsert`, but `fieldRuleSet`
+      // then finds a ledger entry with `cur` null/undefined and treats that
+      // as "edited since import" -- same as clearing any other imported
+      // field -- so the slug op is skipped, not patched. This is
+      // intentional, not a gap: `slug` is `required()` in the schema, so a
+      // cleared slug already surfaces as a validation error in Studio on
+      // that exact document, which is a safer signal than this importer
+      // silently reinstating a slug someone deliberately removed (possibly
+      // to retire a document's URL, or because it was wrong).
       if (!hasSlug(existing[id])) {
         const slug = publicationSlug(p.title, p.date)
         if (slug) {
