@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { enquiryEmail } from 'components/redesign/researchModel'
 
 import { e2eClient } from './support/sanity'
 
@@ -13,27 +14,54 @@ import { e2eClient } from './support/sanity'
 // constraints.md's "states the live data can't show go on gallery
 // fixtures".
 
+type LiveCrop = { left?: number | null; right?: number | null; top?: number | null; bottom?: number | null }
+
 type LiveProject = {
   _id: string
   title: string | null
+  coverWidth: number | null
+  coverHeight: number | null
+  crop: LiveCrop | null
 }
 
 async function fetchLiveResearchProjects(): Promise<LiveProject[]> {
   return e2eClient.fetch<LiveProject[]>(
-    `*[_type == "project" && defined(researchOrder)] | order(researchOrder asc) { _id, title }`
+    `*[_type == "project" && defined(researchOrder)] | order(researchOrder asc) {
+      _id,
+      title,
+      "coverWidth": coverImage.asset->metadata.dimensions.width,
+      "coverHeight": coverImage.asset->metadata.dimensions.height,
+      "crop": coverImage.crop
+    }`
   )
 }
 
-async function fetchLiveEnquiryEmail(): Promise<string | null> {
-  const settings = await e2eClient.fetch<{
-    contactEmail: string | null
-    labHeadEmail: string | null
-  } | null>(`*[_type == "settings"][0]{ "contactEmail": contact.email, "labHeadEmail": labHead->email }`)
-  const contactEmail = settings?.contactEmail?.trim()
-  if (contactEmail) return contactEmail
-  const labHeadEmail = settings?.labHeadEmail?.trim()
-  if (labHeadEmail) return labHeadEmail
-  return null
+// Same crop-scaling math as researchModel.ts's own `coverView` -- the
+// expected aspect ratio a rendered cover's box should have, honouring
+// whatever editorial crop the project's `coverImage` carries. `null` when
+// the project has no cover (no `metadata.dimensions`) at all.
+function expectedCoverAspectRatio(p: LiveProject): number | null {
+  if (!p.coverWidth || !p.coverHeight) return null
+  const scaleW = p.crop ? 1 - (p.crop.left ?? 0) - (p.crop.right ?? 0) : 1
+  const scaleH = p.crop ? 1 - (p.crop.top ?? 0) - (p.crop.bottom ?? 0) : 1
+  return (p.coverWidth * scaleW) / (p.coverHeight * scaleH)
+}
+
+type LiveSettings = {
+  contactEmail: string | null
+  labHeadEmail: string | null
+  showContactForm: boolean | null
+}
+
+async function fetchLiveSettings(): Promise<LiveSettings> {
+  const settings = await e2eClient.fetch<LiveSettings | null>(
+    `*[_type == "settings"][0]{
+      "contactEmail": contact.email,
+      "labHeadEmail": labHead->email,
+      showContactForm
+    }`
+  )
+  return settings ?? { contactEmail: null, labHeadEmail: null, showContactForm: null }
 }
 
 test.describe('/research', () => {
@@ -69,37 +97,69 @@ test.describe('/research', () => {
     expect(meta).toBe(`${n} ACTIVE PROJECT${n === 1 ? '' : 'S'}`)
   })
 
-  test('every rendered cover keeps its natural aspect ratio (never cropped)', async ({ page }) => {
+  // Fix round 1 ruling 3: compares the rendered `<img>` box's own aspect
+  // ratio against `metadata.dimensions.aspectRatio` fetched straight from
+  // `e2eClient` (crop-adjusted when the project's cover carries an
+  // editorial crop) -- not against the decoded bitmap's `naturalWidth`/
+  // `naturalHeight`, which depends on the image actually finishing loading
+  // over the network. A box mismatch here means the component requested a
+  // shape that doesn't match what the CMS record (and the editor's own
+  // crop choice, if any) actually describes -- "cropped" in the sense this
+  // repo cares about, regardless of whether the bytes ever arrive.
+  test('every rendered cover matches its metadata aspect ratio, crop-adjusted (never cropped by the page itself)', async ({
+    page,
+  }) => {
+    const projects = await fetchLiveResearchProjects()
+    const expectedRatios = projects
+      .map(expectedCoverAspectRatio)
+      .filter((r): r is number => r !== null)
+
     await page.goto('/research')
     const covers = page.getByTestId('research-cover')
-    const count = await covers.count()
+    await expect(covers).toHaveCount(expectedRatios.length)
 
-    for (let i = 0; i < count; i++) {
-      const cover = covers.nth(i)
-      await cover.scrollIntoViewIfNeeded()
-      const box = await cover.evaluate(async (img: HTMLImageElement) => {
-        if (!img.complete) {
-          await new Promise((resolve) => img.addEventListener('load', resolve, { once: true }))
-        }
-        await img.decode()
+    for (let i = 0; i < expectedRatios.length; i++) {
+      const boxAR = await covers.nth(i).evaluate((img: HTMLImageElement) => {
         const rect = img.getBoundingClientRect()
-        return { boxAR: rect.width / rect.height, natAR: img.naturalWidth / img.naturalHeight }
+        return rect.width / rect.height
       })
-      expect(box.natAR, `cover ${i} box/natural aspect ratio`).toBeGreaterThan(box.boxAR * 0.98)
-      expect(box.natAR, `cover ${i} box/natural aspect ratio`).toBeLessThan(box.boxAR * 1.02)
+      expect(boxAR, `cover ${i} box aspect ratio vs metadata (crop-adjusted)`).toBeGreaterThan(
+        expectedRatios[i] * 0.98
+      )
+      expect(boxAR, `cover ${i} box aspect ratio vs metadata (crop-adjusted)`).toBeLessThan(
+        expectedRatios[i] * 1.02
+      )
     }
   })
 
-  test('the enquiry line links to the resolved email or /contact', async ({ page }) => {
-    const email = await fetchLiveEnquiryEmail()
+  // IMPORTANT 2 (fix round 1): the previous version of this test assumed a
+  // "get in touch" link always exists when there's no resolved email --
+  // false on a valid dataset where `showContactForm === false` too, where
+  // the sentence has no link at all. `enquiryEmail` is the real function
+  // (components/redesign/researchModel), not reimplemented here, so this
+  // test can never drift from what the page itself computes.
+  test('the enquiry line links to the resolved email, links to /contact, or ends with no link', async ({
+    page,
+  }) => {
+    const settings = await fetchLiveSettings()
+    const email = enquiryEmail({
+      contact: { email: settings.contactEmail },
+      labHead: { email: settings.labHeadEmail },
+    })
 
     await page.goto('/research')
+    const enquiries = page.getByTestId('research-enquiries')
+
     if (email) {
       const mailLink = page.locator(`a[href="mailto:${email}"]`)
       await expect(mailLink).toBeVisible()
-    } else {
+    } else if (settings.showContactForm !== false) {
       const contactLink = page.getByRole('link', { name: 'get in touch' })
       await expect(contactLink).toHaveAttribute('href', '/contact')
+    } else {
+      await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0)
+      await expect(page.getByRole('link', { name: 'get in touch' })).toHaveCount(0)
+      await expect(enquiries).toContainText('Student and collaboration enquiries are welcome.')
     }
   })
 
@@ -118,6 +178,10 @@ test.describe('/research', () => {
 })
 
 test.describe('/preview/components gallery: research', () => {
+  // The fixture's four covers, in fixture order (fixtures.ts's
+  // RESEARCH_PROJECTS_FIXTURE) -- task brief: "0.90, 1.05, 1.40 and 2.05".
+  const GALLERY_COVER_RATIOS = [0.9, 1.05, 1.4, 2.05]
+
   test('renders all fixture projects, no cover cropped, no overflow at 320px', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 900 })
     await page.goto('/preview/components')
@@ -129,29 +193,17 @@ test.describe('/preview/components gallery: research', () => {
     expect(titles.length).toBe(5)
 
     const covers = section.getByTestId('research-cover')
-    const coverCount = await covers.count()
-    // 4 of the 5 fixture projects carry a cover.
-    expect(coverCount).toBe(4)
+    await expect(covers).toHaveCount(GALLERY_COVER_RATIOS.length)
 
-    for (let i = 0; i < coverCount; i++) {
-      const cover = covers.nth(i)
-      await cover.scrollIntoViewIfNeeded()
-      // next/image lazy-loads (image-geometry.spec.ts's own established
-      // pattern) -- scrolling it into view triggers the fetch, but
-      // `naturalWidth`/`naturalHeight` only populate once it has actually
-      // decoded, so wait for that explicitly rather than racing it.
-      const box = await cover.evaluate(async (img: HTMLImageElement) => {
-        if (!img.complete) {
-          await new Promise((resolve) => img.addEventListener('load', resolve, { once: true }))
-        }
-        await img.decode()
+    for (let i = 0; i < GALLERY_COVER_RATIOS.length; i++) {
+      const boxAR = await covers.nth(i).evaluate((img: HTMLImageElement) => {
         const rect = img.getBoundingClientRect()
-        return { boxAR: rect.width / rect.height, natAR: img.naturalWidth / img.naturalHeight }
+        return rect.width / rect.height
       })
-      // Not cropped: the rendered box keeps the image's real aspect ratio,
-      // never squeezed or clipped into a different-shaped placeholder box.
-      expect(box.natAR, `cover ${i} box/natural aspect ratio`).toBeGreaterThan(box.boxAR * 0.98)
-      expect(box.natAR, `cover ${i} box/natural aspect ratio`).toBeLessThan(box.boxAR * 1.02)
+      // Not cropped: the rendered box keeps the fixture's own known aspect
+      // ratio, never squeezed or clipped into a different-shaped box.
+      expect(boxAR, `cover ${i} box aspect ratio`).toBeGreaterThan(GALLERY_COVER_RATIOS[i] * 0.98)
+      expect(boxAR, `cover ${i} box aspect ratio`).toBeLessThan(GALLERY_COVER_RATIOS[i] * 1.02)
     }
 
     const fits = await page.evaluate(

@@ -1,4 +1,4 @@
-import { enquiryEmail } from 'components/redesign/researchModel'
+import { enquiryEmail, toResearchView } from 'components/redesign/researchModel'
 import { Research } from 'components/redesign/screens/Research'
 import Layout from 'components/shared/Layout'
 import { resolveBranding } from 'lib/branding'
@@ -68,7 +68,11 @@ export default async function ResearchPage() {
 
   return (
     <Layout settings={settings} childrenStyles="px-0">
-      <Research projects={projects} email={email} showContactForm={settings.showContactForm} />
+      <Research
+        projects={projects.map(toResearchView)}
+        email={email}
+        showContactForm={settings.showContactForm}
+      />
     </Layout>
   )
 }

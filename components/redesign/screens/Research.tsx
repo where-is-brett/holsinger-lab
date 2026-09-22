@@ -1,12 +1,9 @@
-import { urlForImage } from 'lib/sanity.image'
 import Image from 'next/image'
 import Link from 'next/link'
-import type { Image as SanityImage } from 'sanity'
-import type { ResearchProjectPayload } from 'types'
 
 import { PageTitle } from '../PageTitle'
 import { PortableBody } from '../PortableBody'
-import { researchKicker } from '../researchModel'
+import type { ResearchProjectView } from '../researchModel'
 import { SectionRail } from '../SectionRail'
 
 // Composition follows
@@ -18,6 +15,14 @@ import { SectionRail } from '../SectionRail'
 // `gallery-research` fixture (app/preview/components/Gallery.tsx), same
 // situation Task 1's Resources screen documented for its own empty
 // dataset.
+//
+// Fix round 1 ruling 1: this screen renders `ResearchProjectView`s only --
+// `researchModel.ts`'s `toResearchView` is the one place a raw
+// `ResearchProjectPayload` (whatever `researchProjectsQuery` returns) turns
+// into what's actually rendered, cover URL included. The page maps real
+// query results through it; the gallery fixture builds view models
+// directly (fixtures.ts), so this component never has to know the
+// difference between a live Sanity asset and a fixture one.
 
 // The [text | 380px cover] grid, stacked below `lg` (task brief point 2:
 // "sits in a 380px right column from lg, stacked ... before that"). Same
@@ -43,60 +48,20 @@ const NARRATIVE_GRID =
   'grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px] lg:items-start lg:gap-x-(--spacing-gutter-lg)'
 const NARRATIVE_GRID_SOLO = 'grid grid-cols-1'
 
-function ProjectKicker({ project }: { project: ResearchProjectPayload }) {
-  const kicker = researchKicker({ start: project.start, category: project.category })
-  const tagLine = (project.tags ?? []).filter((t): t is string => Boolean(t)).join(' · ')
-
-  if (!kicker && !tagLine) return null
+function ProjectKicker({ project }: { project: ResearchProjectView }) {
+  if (!project.kicker && !project.tagLine) return null
 
   return (
     <div className="font-mono text-[11px] leading-[1.6] font-medium tracking-[0.1em] text-text-faint uppercase">
-      {kicker}
-      {kicker && tagLine ? ' — ' : ''}
-      {tagLine && <span className="text-link">{tagLine}</span>}
+      {project.kicker}
+      {project.kicker && project.tagLine ? ' — ' : ''}
+      {project.tagLine && <span className="text-link">{project.tagLine}</span>}
     </div>
   )
 }
 
-// Covers are never cropped (constraints.md): `width`/`height` come straight
-// from the asset's own `metadata.dimensions`, not a fixed box, so `next/image`
-// renders it at its intrinsic ratio and `h-auto w-full` lets the box follow.
-//
-// Production has zero `defined(researchOrder)` projects today (spec §2), so
-// the varied-aspect-ratio case is only exercised by the `gallery-research`
-// fixture (app/preview/components/Gallery.tsx / fixtures.ts). That fixture
-// needs real, differently-shaped images -- `urlForImage` always requests a
-// Sanity asset's own native upload size (no width/height transform is
-// applied in this component, deliberately, so real covers are never
-// resized off their native ratio), so the same real Sanity photo can't be
-// reused to fabricate four different aspect ratios. A `/`-prefixed asset id
-// is this fixture's own escape hatch -- a plain placeholder PNG served from
-// `/public/fixtures` (task brief: "a plain placeholder served from
-// /public"), at genuinely those pixel dimensions -- and is served directly;
-// a real Sanity asset id never starts with '/', so every live project still
-// goes through `urlForImage`.
-function coverAsset(project: ResearchProjectPayload) {
-  const cover = project.coverImage
-  const width = cover?.asset?.metadata?.dimensions?.width
-  const height = cover?.asset?.metadata?.dimensions?.height
-  if (!cover || !width || !height) return null
-  const assetId = cover.asset?._id
-  // `coverImage` is queried with a dereferencing `asset->{...}` (needed to
-  // reach `metadata.dimensions`), which -- same as settingsQuery's logo/
-  // logoDark (sanity.image.ts's own comment) -- replaces `asset._ref` with
-  // `asset._id`, leaving no structural overlap with `Image`'s `Reference`
-  // shape for a direct cast. `urlForImage` itself already accepts this
-  // shape (checks `_ref` OR `_id`); only the TypeScript cast needs the
-  // `unknown` detour.
-  const src = assetId?.startsWith('/')
-    ? assetId
-    : urlForImage(cover as unknown as SanityImage)?.url()
-  if (!src) return null
-  return { src, width, height }
-}
-
-function Narrative({ project }: { project: ResearchProjectPayload }) {
-  const cover = coverAsset(project)
+function Narrative({ project }: { project: ResearchProjectView }) {
+  const cover = project.cover
 
   return (
     <div className={cover ? NARRATIVE_GRID : NARRATIVE_GRID_SOLO}>
@@ -108,15 +73,17 @@ function Narrative({ project }: { project: ResearchProjectPayload }) {
         >
           {project.title}
         </h2>
-        <div className="mt-[22px] max-w-[680px]">
-          <PortableBody blocks={project.overview} />
-        </div>
+        {/* IMPORTANT 1 (fix round 1): the overview is lead-size body colour
+            (`size="lead"`), per the brief and the ui_kit's own `Narrative`
+            body paragraph (`fontSize: "var(--text-lead)"`, no muted colour
+            override) -- not the bio's smaller, muted default. */}
+        <PortableBody blocks={project.overview} size="lead" />
       </div>
       {cover && (
         <Image
           data-testid="research-cover"
           src={cover.src}
-          alt={project.title ?? ''}
+          alt={cover.alt}
           width={cover.width}
           height={cover.height}
           sizes="(min-width: 1024px) 380px, 100vw"
@@ -129,12 +96,16 @@ function Narrative({ project }: { project: ResearchProjectPayload }) {
 
 // The IA's single enquiry line (spec §6): "Student and collaboration
 // enquiries are welcome —", then the email as a `mailto:` identifier when
-// `enquiryEmail` returns one, else a "get in touch" link to /contact when
-// `showContactForm !== false`, else the sentence just ends. No "example
-// wording" footnote -- that's mockup text (task brief point 3).
+// `enquiryEmail` returns one. Otherwise, when `showContactForm !== false`,
+// a link "get in touch" → /contact. Otherwise the sentence ends at
+// "welcome.". No "example wording" footnote -- that's mockup text (task
+// brief point 3).
 function Enquiries({ email, showContactForm }: { email: string | null; showContactForm?: boolean | null }) {
   return (
-    <div className="max-w-[880px] text-pretty text-[23px] leading-[1.45] font-medium break-words">
+    <div
+      data-testid="research-enquiries"
+      className="max-w-[880px] text-pretty text-[23px] leading-[1.45] font-medium break-words"
+    >
       Student and collaboration enquiries are welcome
       {email ? (
         <>
@@ -166,7 +137,7 @@ export function Research({
   email,
   showContactForm,
 }: {
-  projects: ResearchProjectPayload[]
+  projects: ResearchProjectView[]
   email: string | null
   showContactForm?: boolean | null
 }) {
@@ -184,9 +155,9 @@ export function Research({
       ) : (
         projects.map((project, index) => (
           <SectionRail
-            key={project._id}
+            key={project.id}
             num={String(index + 1).padStart(2, '0')}
-            label={project.tags?.[0] || 'Project'}
+            label={project.label}
             borderTop={index !== 0}
           >
             <Narrative project={project} />

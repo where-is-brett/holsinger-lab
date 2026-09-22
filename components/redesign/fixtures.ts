@@ -1,14 +1,10 @@
-import type {
-  ProfilePayload,
-  ResearchProjectPayload,
-  ResourcePayload,
-  RoleGroupPayload,
-  SettingsPayload,
-} from 'types'
+import { urlForImage } from 'lib/sanity.image'
+import type { ProfilePayload, ResourcePayload, RoleGroupPayload, SettingsPayload } from 'types'
 import { fallbackSettings } from 'types'
 
 import type { Publication } from './publicationModel'
 import { deriveLink, shortenLabel, splitAuthors } from './publicationModel'
+import { researchKicker, type ResearchProjectView } from './researchModel'
 
 // Real lab content, not placeholder strings -- the gallery this feeds is the
 // only place any of the twelve Phase 1 components actually render, so the
@@ -544,14 +540,6 @@ export const RESOURCES_FIXTURE: ResourcePayload[] = [
 // fixture requirements one-for-one, reusing the existing `portableParagraph`
 // helper above rather than a new one.
 //
-// Covers are real placeholder PNGs at `/public/fixtures` (task brief: "a
-// plain placeholder served from /public if one exists" -- none did, so
-// these four were added, each genuinely sized at its labelled aspect ratio
-// -- see Research.tsx's `coverAsset` for why a real Sanity asset can't
-// fabricate this: `urlForImage` never resizes/crops a cover off its native
-// upload size, so one real photo can't stand in for four different
-// ratios). The `/`-prefixed asset id is what routes these through the
-// local-file branch instead of the Sanity CDN.
 // `project.overview`'s schema allows no annotations (no `link` mark), so
 // TypeGen types its blocks' `markDefs` as `null | undefined` only, never an
 // array -- unlike `portableParagraph` above (shared with `resource`'s
@@ -567,23 +555,52 @@ function overviewParagraph(key: string, text: string) {
   }
 }
 
-function researchCover(path: string, width: number, height: number) {
+// Fix round 1 ruling 1: the gallery builds `ResearchProjectView`s directly
+// (Research.tsx no longer knows how to turn a raw `coverImage` into a URL
+// itself -- that's `researchModel.ts`'s `toResearchView`/`coverView`, which
+// only ever sees real Sanity payload shapes). Covers reuse the same real
+// Sanity photo already referenced elsewhere in this file
+// (`image-8804e1e4206e971126b4ea1593388981dda21fb7-827x1157-jpg`, native
+// 827×1157), requested at four different `width`/`height` pairs with
+// `fit('crop')` -- exactly the "real, cropped-to-ratio `cdn.sanity.io`
+// URL" the ruling asks for, so these are genuine images with real,
+// verifiable aspect ratios, not synthesized placeholders.
+const RESEARCH_PHOTO_ASSET = {
+  _type: 'image' as const,
+  asset: { _ref: 'image-8804e1e4206e971126b4ea1593388981dda21fb7-827x1157-jpg', _type: 'reference' as const },
+}
+
+function researchCoverView(width: number, height: number, alt: string): ResearchProjectView['cover'] {
+  const src = urlForImage(RESEARCH_PHOTO_ASSET)?.width(width).height(height).fit('crop').url()
+  if (!src) throw new Error('fixture research cover: urlForImage returned no URL')
+  return { src, width, height, alt }
+}
+
+function researchProjectView(overrides: {
+  id: string
+  title: string
+  overview: ReturnType<typeof overviewParagraph>[]
+  start: string | null
+  tags: string[]
+  category: string | null
+  cover: ResearchProjectView['cover']
+}): ResearchProjectView {
+  const tags = overrides.tags
   return {
-    _type: 'image' as const,
-    asset: {
-      _id: path,
-      metadata: {
-        dimensions: { width, height, aspectRatio: width / height },
-      },
-    },
+    id: overrides.id,
+    title: overrides.title,
+    label: tags[0] || 'Project',
+    kicker: researchKicker({ start: overrides.start, category: overrides.category }),
+    tagLine: tags.join(' · '),
+    overview: overrides.overview,
+    cover: overrides.cover,
   }
 }
 
-export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectPayload[] = [
-  {
-    _id: 'fixture-research-1',
+export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
+  researchProjectView({
+    id: 'fixture-research-1',
     title: 'Involvement of gut microbiota in Alzheimer’s disease',
-    slug: 'gut-microbiota-alzheimers',
     overview: [
       overviewParagraph(
         'research-1-p1',
@@ -592,19 +609,19 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectPayload[] = [
           'in improved cognition and pathology.'
       ),
     ],
-    coverImage: researchCover('/fixtures/research-cover-090.png', 180, 200),
     start: '2023-04-01T00:00:00.000Z',
     tags: ['Gut', 'Brain', 'Microbiome'],
     category: 'Non-pharmacological interventions',
-  },
+    // 720×800 = 0.90.
+    cover: researchCoverView(720, 800, 'Involvement of gut microbiota in Alzheimer’s disease'),
+  }),
   // Long unbreakable token in the overview (task brief) -- same class of
   // 320px overflow this repo guards elsewhere (ResourceBlock.tsx's DOI,
   // PortableBody's BIO_PARAGRAPH email) -- here a single long compound
   // identifier with no spaces or hyphens for the browser to wrap on.
-  {
-    _id: 'fixture-research-2',
+  researchProjectView({
+    id: 'fixture-research-2',
     title: 'Glial activity as a marker of disease',
-    slug: 'glial-activity-marker',
     overview: [
       overviewParagraph(
         'research-2-p1',
@@ -614,19 +631,19 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectPayload[] = [
           'held alongside the published dataset.'
       ),
     ],
-    coverImage: researchCover('/fixtures/research-cover-105.png', 210, 200),
     start: '2018-01-01T00:00:00.000Z',
     tags: ['Astrocytes', 'Microglia'],
     category: null,
-  },
+    // 630×600 = 1.05.
+    cover: researchCoverView(630, 600, 'Glial activity as a marker of disease'),
+  }),
   // No tags -- SectionRail's label falls back to "Project", and
   // researchKicker's tag-line half is empty (kicker is category-only, since
   // there's no `start` here either -- see fixture 4 for the start-only
   // partner case).
-  {
-    _id: 'fixture-research-3',
+  researchProjectView({
+    id: 'fixture-research-3',
     title: 'MAESTRO: multi-site cohort infrastructure',
-    slug: 'maestro-cohort-infrastructure',
     overview: [
       overviewParagraph(
         'research-3-p1',
@@ -634,18 +651,18 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectPayload[] = [
           'collaborating sites.'
       ),
     ],
-    coverImage: researchCover('/fixtures/research-cover-140.png', 280, 200),
     start: null,
     tags: [],
     category: 'Cohort infrastructure',
-  },
+    // 700×500 = 1.40.
+    cover: researchCoverView(700, 500, 'MAESTRO: multi-site cohort infrastructure'),
+  }),
   // No `start` date -- researchKicker's "Since {year}" half is empty, so
   // the kicker is tags-only (paired with fixture 3's category-only case
   // above).
-  {
-    _id: 'fixture-research-4',
+  researchProjectView({
+    id: 'fixture-research-4',
     title: 'Metabolic stress signalling in ageing glia',
-    slug: 'metabolic-stress-ageing-glia',
     overview: [
       overviewParagraph(
         'research-4-p1',
@@ -653,17 +670,17 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectPayload[] = [
           'course of healthy ageing.'
       ),
     ],
-    coverImage: researchCover('/fixtures/research-cover-205.png', 410, 200),
     start: null,
     tags: ['Metabolism', 'Ageing'],
     category: 'Metabolism, oxidative stress & neuroprotection',
-  },
+    // 820×400 = 2.05.
+    cover: researchCoverView(820, 400, 'Metabolic stress signalling in ageing glia'),
+  }),
   // No cover -- the narrative must take the full content width, with no
   // placeholder box (task brief point 2).
-  {
-    _id: 'fixture-research-5',
+  researchProjectView({
+    id: 'fixture-research-5',
     title: 'Novel biomarkers of early cognitive decline',
-    slug: 'novel-biomarkers-cognitive-decline',
     overview: [
       overviewParagraph(
         'research-5-p1',
@@ -671,9 +688,9 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectPayload[] = [
           'symptoms are apparent.'
       ),
     ],
-    coverImage: null,
     start: '2024-09-01T00:00:00.000Z',
     tags: ['Biomarkers'],
     category: 'Neuro-oncology & biomarkers',
-  },
+    cover: null,
+  }),
 ]
