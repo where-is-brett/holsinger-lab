@@ -100,8 +100,15 @@ async function main() {
   ]
   const docs = await client.fetch<CurrentDoc[]>(`*[_id in $ids]`, { ids })
   const existing = Object.fromEntries(docs.map((d) => [d._id, d]))
-  const drafts = await client.fetch<string[]>(`*[_id in $ids]._id`, { ids: ids.map((i) => `drafts.${i}`) })
+  const draftIds = await client.fetch<string[]>(`*[_id in $ids]._id`, { ids: ids.map((i) => `drafts.${i}`) })
   const ledgerDoc = await client.fetch<{ _rev?: string; entries?: Ledger } | null>(`*[_id == $id][0]`, { id: LEDGER_ID })
+
+  // Only the singleton docs' drafts are kept in step (Fix round 3) -- a draft
+  // publish there would otherwise silently drop the imported fields. Other
+  // document types' drafts are left alone, unchanged.
+  const singletonDraftIds = ['drafts.siteCopy', `drafts.${settingsId}`]
+  const singletonDraftDocs = await client.fetch<CurrentDoc[]>(`*[_id in $ids]`, { ids: singletonDraftIds })
+  const drafts = Object.fromEntries(singletonDraftDocs.map((d) => [d._id, d]))
 
   // Assets: uploaded only on --commit. Sanity dedupes by content hash, so re-runs add nothing.
   const urls = [
@@ -120,7 +127,7 @@ async function main() {
     assetIds[url] = asset._id
   }
 
-  const plan = planImport({ snapshot, existing, settingsId, roleGroupIds, assetIds, ledger: ledgerDoc?.entries ?? {} })
+  const plan = planImport({ snapshot, existing, settingsId, roleGroupIds, assetIds, ledger: ledgerDoc?.entries ?? {}, drafts })
 
   for (const op of plan.ops) {
     if (op.kind === 'create') console.log(`CREATE ${op.doc._type} ${op.doc._id}  ${String(op.doc.title ?? op.doc.name ?? '')}`)
@@ -128,7 +135,10 @@ async function main() {
   }
   for (const s of plan.skipped) console.log(`SKIP   ${s.id}.${s.field}  (${s.reason})`)
   for (const r of plan.reports) console.log(`NOTE   ${r}`)
-  for (const d of drafts) console.log(`WARN   unpublished draft exists for ${d} — the published document is patched; the draft is left as is`)
+  for (const d of draftIds) {
+    if (singletonDraftIds.includes(d)) console.log(`WARN   unpublished draft exists for ${d} — patched alongside the published document so publishing it later can't drop imported fields`)
+    else console.log(`WARN   unpublished draft exists for ${d} — the published document is patched; the draft is left as is`)
+  }
 
   // spec §9: every Sanity-only doc of a type the snapshot could own, not just
   // publications/profiles -- projects and standalone pages count too.
@@ -150,10 +160,14 @@ async function main() {
 
   if (!commit) { console.log('\nDry run only. Re-run with --commit to apply.'); process.exit(0) }
 
+  // Draft patches (drafts.siteCopy / drafts.<settingsId>) need their own
+  // revision, which isn't in `existing` -- merge it in for the guard below.
+  const revLookup: Record<string, CurrentDoc> = { ...existing, ...drafts }
+
   const tx = client.transaction()
   for (const op of plan.ops) {
     if (op.kind === 'create') tx.createIfNotExists(op.doc)
-    else tx.patch(op.id, (p) => p.ifRevisionId(existing[op.id]._rev as string).set(op.set))
+    else tx.patch(op.id, (p) => p.ifRevisionId(revLookup[op.id]._rev as string).set(op.set))
   }
   if (ledgerDoc) {
     tx.patch(LEDGER_ID, (p) => p.ifRevisionId(ledgerDoc._rev as string).set({ entries: plan.ledger, updatedAt: new Date().toISOString() }))
