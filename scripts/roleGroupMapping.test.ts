@@ -10,19 +10,19 @@ describe('roleGroupTitleForRole', () => {
   it('maps every one of the 19 live role strings to the expected group title', () => {
     const cases: [role: string, expected: string][] = [
       ['Research Scientist', 'Research Scientist'],
-      ['PhD Student', 'PhD Student'],
-      ['Honours Student (BioMedEng)', 'Honours Student'],
+      ['PhD Student', 'PhD Candidate'],
+      ['Honours Student (BioMedEng)', 'Lab Alumni'],
       ['Honours Student (Biomedical Engineering)', 'Honours Student'],
-      ['Honours student (Biomed Eng)', 'Honours Student'],
+      ['Honours student (Biomed Eng)', 'Lab Alumni'],
       ['Honours student (Diagnostic Radiography)', 'Honours Student'],
       ['Research Student - BSc/MD', 'Research Student'],
       ['Research Student - MD (UNSW)', 'Research Student'],
       ['Research Student - MDiagRad', 'Research Student'],
-      ['BAppSci (Diagnostic Radiography)', 'Undergraduate'],
-      ['BAppSci (Speech Pathology)', 'Undergraduate'],
-      ['BSc (Medical Sciences)', 'Undergraduate'],
-      ['Ungergraduate student - Diagnostic Radiography', 'Undergraduate'],
-      ['Study Abroad Student', 'Study Abroad Student'],
+      ['BAppSci (Diagnostic Radiography)', 'Research Student'],
+      ['BAppSci (Speech Pathology)', 'Research Student'],
+      ['BSc (Medical Sciences)', 'Research Student'],
+      ['Ungergraduate student - Diagnostic Radiography', 'Research Student'],
+      ['Study Abroad Student', 'International Interns'],
     ]
     for (const [role, expected] of cases) {
       expect(roleGroupTitleForRole(role)).toBe(expected)

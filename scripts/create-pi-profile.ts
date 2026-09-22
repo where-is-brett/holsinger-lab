@@ -124,8 +124,11 @@ async function main() {
 
   const source = projects[0]
   // `description` is the project's long-form body; `overview` is its SEO/subhead
-  // blurb. Prefer the body, fall back to the blurb.
-  const fullBio = (source.description ?? source.overview ?? []) as unknown[]
+  // blurb. Prefer the body, fall back to the blurb -- by text, not nullness: the
+  // live project's `description` is two empty blocks, so `??` never fell back.
+  const fullBio = ([source.description, source.overview].find(
+    (blocks) => preview(blocks) !== ''
+  ) ?? []) as unknown[]
 
   console.log(`Source project: ${source._id}  "${source.title}"`)
   console.log(`Would create a \`profile\`:`)
