@@ -1,10 +1,15 @@
 import Image from 'next/image'
+import Link from 'next/link'
 
 export interface PersonCardProps {
   name: string
   role: string
+  /** Optional second mono line under `role`, verbatim, shown only when non-empty (spec §5, ruling 3). */
+  detail?: string | null
   img?: string
   initials?: string
+  /** Real route: when set, the whole card links to it (`/people/<slug>` when `hasPage`). */
+  href?: string | null
 }
 
 // Ported from
@@ -37,49 +42,88 @@ const FOOTPRINT_FALLBACK =
 const STRIPE_BG =
   'repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in oklab, var(--sem-text) 4.5%, transparent) 12px 13px)'
 
-export function PersonCard({ name, role, img, initials }: PersonCardProps) {
-  return (
-    <div className="group">
-      {img ? (
-        <div className={FOOTPRINT_IMAGE}>
-          <Image
-            src={img}
-            alt={name}
-            fill
-            // Cards render at roughly a third of the content column on
-            // desktop and half the viewport on mobile -- matching the
-            // measured-not-guessed sizing convention Profile.tsx documents
-            // for the same People grid (ImageBox's `size` prop there).
-            sizes="(min-width: 768px) 25vw, 50vw"
-            // Grayscale at rest, releasing to colour on hover over the
-            // 160ms reveal token. `grayscale`/`contrast-[1.04]` are Tailwind
-            // filter utilities: unlike `transition-*` utilities (which each
-            // overwrite the *whole* transition-property/-duration/-easing
-            // triad), every filter utility composes into ONE shared `filter`
-            // declaration via CSS custom properties, so stacking
-            // `grayscale` and `contrast-[1.04]` here is safe and not an
-            // instance of the same-property trap documented in tokens.ts.
-            // Only one transition-* utility (`filter`) sits on this
-            // element, so it isn't at risk either.
-            className="object-cover grayscale contrast-[1.04] transition-[filter] duration-(--sem-motion-reveal) ease-(--sem-ease) group-hover:grayscale-0 group-hover:contrast-100"
-          />
-        </div>
-      ) : (
-        <div className={FOOTPRINT_FALLBACK} style={{ backgroundImage: STRIPE_BG }}>
-          <span className="font-mono text-[26px] leading-none font-medium text-text-muted">
-            {initials}
-          </span>
-          <span className="font-mono text-[8.5px] leading-[1.4] tracking-[0.08em] text-text-faint">
-            [ NO PORTRAIT ON FILE ]
-          </span>
-        </div>
-      )}
+const IMAGE_FILTER =
+  'object-cover grayscale contrast-[1.04] transition-[filter] duration-(--sem-motion-reveal) ease-(--sem-ease) group-hover:grayscale-0 group-hover:contrast-100'
+
+/**
+ * The image / initials-fallback footprint, extracted verbatim from
+ * `PersonCard` so the lab-head spotlight (spec §5, ruling 2 -- "the initials
+ * treatment") can reuse the exact same portrait anatomy at a different
+ * `sizes`. `sizes` is a required prop rather than a default: the two known
+ * call sites (this grid, the spotlight) render at different fractions of
+ * the viewport, and there is no "usually correct" default worth guessing --
+ * see PersonCard's own `sizes` comment for how this grid's value was
+ * measured.
+ */
+export function PortraitFrame({
+  name,
+  img,
+  initials,
+  sizes,
+  className,
+}: {
+  name: string
+  img?: string
+  initials?: string
+  sizes: string
+  className?: string
+}) {
+  return img ? (
+    <div className={`${FOOTPRINT_IMAGE} ${className ?? ''}`}>
+      <Image src={img} alt={name} fill sizes={sizes} className={IMAGE_FILTER} />
+    </div>
+  ) : (
+    <div className={`${FOOTPRINT_FALLBACK} ${className ?? ''}`} style={{ backgroundImage: STRIPE_BG }}>
+      <span className="font-mono text-[26px] leading-none font-medium text-text-muted">
+        {initials}
+      </span>
+      <span className="font-mono text-[8.5px] leading-[1.4] tracking-[0.08em] text-text-faint">
+        [ NO PORTRAIT ON FILE ]
+      </span>
+    </div>
+  )
+}
+
+export function PersonCard({ name, role, detail, img, initials, href }: PersonCardProps) {
+  // Cards render at roughly a third of the content column on desktop and
+  // half the viewport on mobile -- matching the measured-not-guessed sizing
+  // convention Profile.tsx documents for the same People grid (ImageBox's
+  // `size` prop there).
+  const sizes = '(min-width: 768px) 25vw, 50vw'
+
+  // When `href` is set, the whole card is a link and needs exactly one
+  // accessible name. The portrait <img>'s `alt={name}` and the link would
+  // otherwise both announce the name, so the image's `alt` is emptied here
+  // (decorative -- the name text below it already carries the content) and
+  // the name moves onto the link itself via `aria-label`. Without `href`
+  // there's no link to collide with, so the image keeps its own `alt=name`.
+  const portraitName = href ? '' : name
+
+  const body = (
+    <>
+      <PortraitFrame name={portraitName} img={img} initials={initials} sizes={sizes} />
       <div className="mt-2.5 text-[15px] leading-none font-semibold tracking-[-0.005em] transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease) group-hover:text-link">
         {name}
       </div>
-      {/* `role` is free text from the CMS -- printed verbatim, including any
-          misspelling in the source data. Never corrected here. */}
+      {/* `role` and `detail` are free text from the CMS -- printed verbatim,
+          including any misspelling in the source data. Never corrected
+          here. */}
       <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] text-text-faint">{role}</div>
-    </div>
+      {detail && (
+        <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] text-text-faint">
+          {detail}
+        </div>
+      )}
+    </>
   )
+
+  if (href) {
+    return (
+      <Link href={href} aria-label={name} className="group block">
+        {body}
+      </Link>
+    )
+  }
+
+  return <div className="group">{body}</div>
 }

@@ -112,6 +112,7 @@ function makeProfile(overrides: Partial<ProfilePayload> = {}): ProfilePayload {
     orderRank: null,
     name: 'Ada Lovelace',
     role: 'Postdoctoral Fellow',
+    roleDetail: null,
     roleGroup: null,
     email: null,
     phone: null,

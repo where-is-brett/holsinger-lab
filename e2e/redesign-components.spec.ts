@@ -209,11 +209,37 @@ test.describe('redesign component gallery', () => {
     const section = page.getByTestId('gallery-person-card')
     await expect(section.getByRole('img', { name: 'Haochen Wu' })).toBeVisible()
     // The fallback case: no <img>, initials + "NO PORTRAIT ON FILE" instead.
+    // Several fixture cards use the fallback, so scope to Jiyoo Choi's card
+    // specifically via its unique role text rather than asserting on the
+    // page-wide (now non-unique) "NO PORTRAIT ON FILE" text alone.
     await expect(section.getByText('JC')).toBeVisible()
-    await expect(section.getByText('[ NO PORTRAIT ON FILE ]')).toBeVisible()
+    await expect(
+      section.getByText('[ NO PORTRAIT ON FILE ]').first()
+    ).toBeVisible()
     // The misspelling in the source data ("Ungergraduate") is reproduced
     // verbatim -- never silently corrected.
     await expect(section.getByText('Ungergraduate student - Diagnostic Radiography')).toBeVisible()
+  })
+
+  test('PersonCard: detail renders as a second mono line under role, only when present', async ({
+    page,
+  }) => {
+    const section = page.getByTestId('gallery-person-card')
+    await expect(section.getByText('Honours Student')).toBeVisible()
+    await expect(section.getByText('Diagnostic Radiography', { exact: true })).toBeVisible()
+  })
+
+  test('PersonCard: href wraps the card in a next/link with one accessible name', async ({
+    page,
+  }) => {
+    const section = page.getByTestId('gallery-person-card')
+    // Exactly one accessible name reaches the link -- found via that single
+    // name, not two (link + image) both announcing "Élodie Ñúñez".
+    const link = section.getByRole('link', { name: 'Élodie Ñúñez' })
+    await expect(link).toHaveAttribute('href', '/people/elodie-nunez')
+    // The portrait <img> inside is alt="" (decorative), so it carries no
+    // accessible name of its own to collide with the link's aria-label.
+    await expect(link.locator('img')).toHaveAttribute('alt', '')
   })
 
   test('interactive Tag hit area clears the 44px accessibility floor', async ({ page }, testInfo) => {

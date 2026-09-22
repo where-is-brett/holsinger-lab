@@ -146,7 +146,14 @@ export const PUBLICATION_PAGE_FIXTURE: Publication = {
   resources: [{ id: 'resource-fixture-1', title: 'Cell culture chamber CAD files', kind: 'hardware' }],
 }
 
-export const SAMPLE_PEOPLE: { name: string; role: string; img?: string; initials?: string }[] = [
+export const SAMPLE_PEOPLE: {
+  name: string
+  role: string
+  detail?: string
+  img?: string
+  initials?: string
+  href?: string
+}[] = [
   {
     name: 'Haochen Wu',
     role: 'PhD Student',
@@ -159,4 +166,22 @@ export const SAMPLE_PEOPLE: { name: string; role: string; img?: string; initials
   // or anywhere else in the redesign components -- see the matching comment
   // in PersonCard.tsx. Do not "fix" this typo.
   { name: 'Jiyoo Choi', role: 'Ungergraduate student - Diagnostic Radiography', initials: 'JC' },
+  // Proves the `detail` second mono line (spec §5, ruling 3 -- roleDetail
+  // shown when present).
+  {
+    name: 'Fritz A. Graham',
+    role: 'Honours Student',
+    detail: 'Diagnostic Radiography',
+    initials: 'FG',
+  },
+  // Proves the `href` variant: the whole card becomes a next/link with a
+  // single accessible name (PersonCard's aria-label/empty-alt decision).
+  // Has a portrait (not just initials) so the alt=""/aria-label collision
+  // this decision resolves is actually exercised.
+  {
+    name: 'Élodie Ñúñez',
+    role: 'Postdoctoral Fellow',
+    img: 'https://cdn.sanity.io/images/j3f9z8os/production/8804e1e4206e971126b4ea1593388981dda21fb7-827x1157.jpg',
+    href: '/people/elodie-nunez',
+  },
 ]

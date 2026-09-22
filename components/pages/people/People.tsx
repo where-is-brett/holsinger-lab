@@ -1,10 +1,8 @@
+import { excludeLabHead, groupByRoleGroup, shouldShowLabHeadSpotlight } from 'components/redesign/peopleModel'
 import Layout from 'components/shared/Layout'
 import { ProfilePayload, RoleGroupPayload, SettingsPayload } from 'types'
 
-import { excludeLabHead } from './excludeLabHead'
-import { groupByRoleGroup } from './groupByRoleGroup'
 import Profile from './Profile'
-import { shouldShowLabHeadSpotlight } from './shouldShowLabHeadSpotlight'
 import { Spotlight } from './Spotlight'
 
 export default function People({

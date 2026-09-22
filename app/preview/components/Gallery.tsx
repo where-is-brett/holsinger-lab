@@ -244,7 +244,15 @@ export default function Gallery() {
         <Heading>Person card</Heading>
         <div className="grid max-w-md grid-cols-2 gap-8">
           {SAMPLE_PEOPLE.map((p) => (
-            <PersonCard key={p.name} name={p.name} role={p.role} img={p.img} initials={p.initials} />
+            <PersonCard
+              key={p.name}
+              name={p.name}
+              role={p.role}
+              detail={p.detail}
+              img={p.img}
+              initials={p.initials}
+              href={p.href}
+            />
           ))}
         </div>
       </section>
