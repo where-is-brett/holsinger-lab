@@ -523,6 +523,28 @@ test.describe('redesign component gallery', () => {
     const results = await new AxeBuilder({ page }).analyze()
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
   })
+
+  // Fix round 4: the two checks above run at first paint, where every
+  // year/type/topic chip is OFF -- no ON facet chip with a count exists on
+  // the page yet, so FacetChip's ON-state colour (`text-text-inverse-muted`)
+  // was never actually exercised by an axe pass, only its OFF state
+  // (`text-text-faint`). Clicking one chip here gives both states at once:
+  // the clicked chip goes ON (with its own count), its siblings stay OFF
+  // (with theirs) -- and re-running axe against `gallery-facet-band` (the
+  // whole page's own check already covers `gallery-home`'s new portrait
+  // instance, (c), added alongside this fix) is the regression coverage
+  // for both fixes in this round, independent of live Sanity content (the
+  // gallery fixture never changes with the dataset).
+  test('an ON facet chip (with a count) and an OFF facet chip (with a count) have no detectable accessibility violations', async ({
+    page,
+  }) => {
+    const band = page.getByTestId('gallery-facet-band')
+    await band.getByRole('button', { name: /^2025/ }).click()
+    await expect(band.getByRole('button', { name: /^2025/ })).toHaveAttribute('aria-pressed', 'true')
+
+    const results = await new AxeBuilder({ page }).include('[data-testid="gallery-facet-band"]').analyze()
+    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
+  })
 })
 
 // The Phase 1 completion check requires /preview/components to render in
@@ -545,6 +567,22 @@ test.describe('redesign component gallery -- dark colour scheme', () => {
 
   test('has no detectable accessibility violations (dark)', async ({ page }) => {
     const results = await new AxeBuilder({ page }).analyze()
+    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
+  })
+
+  // Dark-mode twin of the light-scheme test above -- the ON-chip colour
+  // regression this round fixes (`--sem-text-muted` composited under
+  // `opacity-55`) failed AA in both colour schemes against live data
+  // (`e2e/axe.spec.ts`'s `/`/`/publications` failures at both light and
+  // dark), so both are checked here too.
+  test('an ON facet chip (with a count) and an OFF facet chip (with a count) have no detectable accessibility violations', async ({
+    page,
+  }) => {
+    const band = page.getByTestId('gallery-facet-band')
+    await band.getByRole('button', { name: /^2025/ }).click()
+    await expect(band.getByRole('button', { name: /^2025/ })).toHaveAttribute('aria-pressed', 'true')
+
+    const results = await new AxeBuilder({ page }).include('[data-testid="gallery-facet-band"]').analyze()
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
   })
 })

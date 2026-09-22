@@ -752,6 +752,28 @@ export const HOME_SETTINGS_FIXTURE: SettingsPayload = {
   showLabHeadOnHome: true,
 }
 
+// Fix round 4 (axe regression): a third instance, `labHead` set *with* a
+// portrait -- the same real Sanity asset every other portrait fixture in
+// this file reuses (`PEOPLE_IMAGE`). Exists so the gallery (and the
+// whole-page axe checks that already run over it in both colour schemes,
+// `e2e/redesign-components.spec.ts`) actually renders a real `<Image>`
+// inside `PiPortrait64`'s image branch -- instance (a) above deliberately
+// keeps `image: null` to keep proving the initials fallback, so this is a
+// second fixture, not a change to that one. Home.tsx's `PiPortrait64` now
+// gives this image `alt=""` (decorative, fix round 4) since the PI's name
+// renders as visible text inside the same `Link` -- this fixture is what
+// makes axe's `image-redundant-alt` rule actually exercise that branch
+// instead of only ever seeing the no-image fallback.
+export const HOME_LAB_HEAD_PORTRAIT_FIXTURE: NonNullable<SettingsPayload['labHead']> = {
+  ...HOME_LAB_HEAD_FIXTURE,
+  image: PEOPLE_IMAGE,
+}
+
+export const HOME_SETTINGS_PORTRAIT_FIXTURE: SettingsPayload = {
+  ...HOME_SETTINGS_FIXTURE,
+  labHead: HOME_LAB_HEAD_PORTRAIT_FIXTURE,
+}
+
 export const HOME_PAGE_FIXTURE: HomePagePayload = {
   _id: 'fixture-home',
   title: 'Laboratory of Molecular Neuroscience and Dementia',
