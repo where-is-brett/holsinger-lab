@@ -4,6 +4,7 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
+    setupFiles: ['./vitest.setup.ts'],
     include: ['**/*.test.ts'],
     // Bare 'node_modules' only matches a top-level directory of that name.
     // This repo creates git worktrees under .claude/worktrees/, each with its
