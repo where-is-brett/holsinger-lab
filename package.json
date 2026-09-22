@@ -11,6 +11,7 @@
     "backfill:publication-topics": "node scripts/backfill-publication-topics.ts",
     "create:pi-profile": "node scripts/create-pi-profile.ts",
     "build": "next build",
+    "css:proof": "node scripts/css-proof.mjs",
     "dev": "next dev",
     "format": "npx prettier --write . --ignore-path .gitignore",
     "lint": "eslint .",
