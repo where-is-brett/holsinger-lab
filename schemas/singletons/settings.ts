@@ -15,6 +15,7 @@ export default defineType({
     { name: 'labHead', title: 'Lab head' },
     { name: 'navigation', title: 'Navigation' },
     { name: 'footer', title: 'Footer' },
+    { name: 'contact', title: 'Contact' },
   ],
   fields: [
     defineField({
@@ -210,6 +211,18 @@ export default defineType({
             ],
           },
         }),
+      ],
+    }),
+    defineField({
+      name: 'contact',
+      title: 'Contact details',
+      type: 'object',
+      group: 'contact',
+      description: 'Shown in the contact block on the Home and Contact pages.',
+      fields: [
+        defineField({ name: 'address', title: 'Address', type: 'text', rows: 2 }),
+        defineField({ name: 'email', title: 'Email', type: 'email' }),
+        defineField({ name: 'phone', title: 'Phone', type: 'string' }),
       ],
     }),
   ],

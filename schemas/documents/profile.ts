@@ -45,6 +45,13 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'roleDetail',
+      title: 'Role detail',
+      type: 'string',
+      description:
+        'Optional second line under the role, e.g. "(Diagnostic Radiography)" or "Honours Class I".',
+    }),
+    defineField({
       name: 'roleGroup',
       title: 'Role Group',
       type: 'reference',
