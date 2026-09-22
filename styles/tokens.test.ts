@@ -456,9 +456,10 @@ describe('token-role misuse guard', () => {
     // Generalizes past the co-occurrence check above. That check can only
     // ever catch bg-scrim paired with inverse text on a scanned className —
     // it structurally cannot see the *other* shape this same review found:
-    // MobileNavBar's hamburger icon used bg-scrim as a bare fill (no text
-    // involved anywhere) on a bg-scrim-coloured bar, so the icon and its
-    // background were the literal same colour. The fix here is to encode the
+    // the old MobileNavBar's hamburger icon (retired in Phase 3) used
+    // bg-scrim as a bare fill (no text involved anywhere) on a
+    // bg-scrim-coloured bar, so the icon and its background were the
+    // literal same colour. The fix here is to encode the
     // actual invariant directly — "--sem-scrim is a backdrop-only role; its
     // only legitimate consumer is ErrorDialog's DialogBackdrop" — rather than
     // continuing to guard one specific misuse shape of it.
@@ -467,8 +468,9 @@ describe('token-role misuse guard', () => {
     // check above is: it looks for the literal substring 'bg-scrim' anywhere
     // in a file's source, so a multi-literal composition — e.g.
     // `clsx('bg-scrim', 'text-text-inverse')`, which is exactly the style
-    // MobileNavBar's own `hamburgerLine` constant uses for its classes —
-    // can't evade it by splitting the class across separate string literals.
+    // the old MobileNavBar's own `hamburgerLine` constant used for its
+    // classes — can't evade it by splitting the class across separate
+    // string literals.
     const offenders = allTsxFiles()
       .filter((file) => readFileSync(file, 'utf8').includes('bg-scrim'))
       .map((file) => file.replace(PROJECT_ROOT, ''))
@@ -492,7 +494,13 @@ describe('every preset passes the contrast guards', () => {
       it(`${name} / ${scheme}`, () => {
         const t = readResolved(selector, scheme)
 
-        for (const token of ['--sem-text', '--sem-text-muted']) {
+        // --sem-text-faint is read against BOTH surfaces for the same reason
+        // the base token was darkened: PublicationRow's row hover swaps
+        // bg-surface under faint runs for bg-surface-raised. The warm preset
+        // sat at 4.455:1 on raised in dark mode, inheriting base's value
+        // against a lighter surface -- a miss no assertion covered, because
+        // this loop stopped at --sem-text-muted.
+        for (const token of ['--sem-text', '--sem-text-muted', '--sem-text-faint']) {
           expect(contrast(t[token], t['--sem-surface']), `${token} on surface`).toBeGreaterThanOrEqual(4.5)
           expect(contrast(t[token], t['--sem-surface-raised']), `${token} on raised`).toBeGreaterThanOrEqual(4.5)
         }
@@ -502,6 +510,10 @@ describe('every preset passes the contrast guards', () => {
         expect(
           contrast(t['--sem-text-inverse'], t['--sem-surface-inverse']),
           'inverse text on inverse surface'
+        ).toBeGreaterThanOrEqual(4.5)
+        expect(
+          contrast(t['--sem-text-inverse-muted'], t['--sem-surface-inverse']),
+          'inverse muted text on inverse surface'
         ).toBeGreaterThanOrEqual(4.5)
       })
     }

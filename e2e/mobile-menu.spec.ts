@@ -1,43 +1,45 @@
 import { expect, test } from '@playwright/test'
 
+// The trigger ("Menu") lives in the outer sticky band. The panel draws its
+// own copy of the same band, with the toggle reading "Close" there instead
+// (spec decision 3) -- so once the dialog is open, every assertion targets
+// the in-panel Close, not the outer trigger, which sits behind the panel.
+
 test.describe('mobile menu accessibility contract', () => {
   test.use({ viewport: { width: 375, height: 812 } })
 
-  test('hamburger button has a real accessible name and toggles aria-expanded/aria-controls', async ({
+  test('toggle has an accessible name equal to its visible text and toggles aria-expanded/aria-controls', async ({
     page,
   }) => {
     await page.goto('/')
 
-    const trigger = page.getByRole('button', { name: 'Open menu' })
+    const trigger = page.getByRole('button', { name: 'Menu', exact: true })
     await expect(trigger).toHaveAttribute('aria-expanded', 'false')
-    const controlsId = await trigger.getAttribute('aria-controls')
-    expect(controlsId).toBeTruthy()
+    await expect(trigger).toHaveAttribute('aria-controls', 'mobile-menu-panel')
 
     await trigger.click()
-    await expect(
-      page.getByRole('button', { name: 'Close menu' })
-    ).toHaveAttribute('aria-expanded', 'true')
+    const close = page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true })
+    await expect(close).toHaveAttribute('aria-expanded', 'true')
   })
 
   test('is reachable and operable via keyboard alone', async ({ page }) => {
     await page.goto('/')
 
-    // Two Tabs, not one: the header's logo <Link href="/"> precedes the
-    // hamburger button in DOM order (Task 3's markup), so it's the first
-    // stop in tab order. Verified against the live page (a tab-order probe
-    // logging document.activeElement after each Tab) rather than assumed -
-    // the original single-Tab version of this test failed not because the
-    // button was unreachable, but because it's the *second* stop, not the
-    // first.
-    await page.keyboard.press('Tab')
-    await page.keyboard.press('Tab')
-    const trigger = page.getByRole('button', { name: 'Open menu' })
+    const trigger = page.getByRole('button', { name: 'Menu', exact: true })
+    for (let i = 0; i < 5; i++) {
+      if (await trigger.evaluate((el) => el === document.activeElement)) break
+      await page.keyboard.press('Tab')
+    }
     await expect(trigger).toBeFocused()
 
     await page.keyboard.press('Enter')
-    await expect(
-      page.getByRole('button', { name: 'Close menu' })
-    ).toHaveAttribute('aria-expanded', 'true')
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+
+    // Controller ruling: initial focus lands on the in-panel Close, not the
+    // wordmark link that leads it in DOM order.
+    const close = dialog.getByRole('button', { name: 'Close', exact: true })
+    await expect(close).toBeFocused()
   })
 
   test('Escape closes the menu and returns focus to the trigger', async ({
@@ -45,9 +47,11 @@ test.describe('mobile menu accessibility contract', () => {
   }) => {
     await page.goto('/')
 
-    const trigger = page.getByRole('button', { name: 'Open menu' })
+    const trigger = page.getByRole('button', { name: 'Menu', exact: true })
     await trigger.click()
-    await expect(page.getByRole('button', { name: 'Close menu' })).toBeVisible()
+    await expect(
+      page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true })
+    ).toBeVisible()
 
     await page.keyboard.press('Escape')
     await expect(trigger).toHaveAttribute('aria-expanded', 'false')
@@ -57,14 +61,15 @@ test.describe('mobile menu accessibility contract', () => {
   test('Tab stays trapped inside the open panel', async ({ page }) => {
     await page.goto('/')
 
-    await page.getByRole('button', { name: 'Open menu' }).click()
+    await page.getByRole('button', { name: 'Menu', exact: true }).click()
     const panelLinks = page.getByRole('dialog').getByRole('link')
     const linkCount = await panelLinks.count()
     expect(linkCount).toBeGreaterThan(0)
 
     // Tab one more time than there are links in the panel; focus should
     // still be inside the dialog, never having escaped to page content
-    // behind it (e.g. the logo link, which sits outside the dialog).
+    // behind it (e.g. the outer wordmark link, which sits outside the
+    // dialog while it is open).
     for (let i = 0; i < linkCount + 1; i++) {
       await page.keyboard.press('Tab')
     }
@@ -83,13 +88,13 @@ test.describe('mobile menu accessibility contract', () => {
     )
     expect(overflowBeforeOpen).not.toBe('hidden')
 
-    await page.getByRole('button', { name: 'Open menu' }).click()
+    await page.getByRole('button', { name: 'Menu', exact: true }).click()
     const overflowWhileOpen = await page.evaluate(
       () => document.documentElement.style.overflow
     )
     expect(overflowWhileOpen).toBe('hidden')
 
-    await page.getByRole('button', { name: 'Close menu' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click()
     const overflowAfterClose = await page.evaluate(
       () => document.documentElement.style.overflow
     )
@@ -101,7 +106,7 @@ test.describe('mobile menu accessibility contract', () => {
   }) => {
     await page.goto('/')
 
-    await page.getByRole('button', { name: 'Open menu' }).click()
+    await page.getByRole('button', { name: 'Menu', exact: true }).click()
     await page
       .getByRole('dialog')
       .getByRole('link', { name: 'Publications' })
@@ -109,14 +114,14 @@ test.describe('mobile menu accessibility contract', () => {
 
     await expect(page).toHaveURL(/\/publications$/)
     await expect(
-      page.getByRole('button', { name: 'Open menu' })
+      page.getByRole('button', { name: 'Menu', exact: true })
     ).toHaveAttribute('aria-expanded', 'false')
   })
 
   test('has no axe violations while open', async ({ page }) => {
     const { default: AxeBuilder } = await import('@axe-core/playwright')
     await page.goto('/')
-    await page.getByRole('button', { name: 'Open menu' }).click()
+    await page.getByRole('button', { name: 'Menu', exact: true }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
 
     const results = await new AxeBuilder({ page }).analyze()
@@ -126,73 +131,58 @@ test.describe('mobile menu accessibility contract', () => {
     ).toEqual([])
   })
 
-  test('tapping the visible header icon (not just the overlay buttons own hit box) closes the menu', async ({
+  test('the in-panel Close sits exactly over the outer toggle', async ({
     page,
   }) => {
     await page.goto('/')
+    // The mono webfont swaps in after first paint; measuring before it
+    // loads would compare a fallback-font box against a webfont box and
+    // report a false geometry mismatch.
+    await page.evaluate(() => document.fonts.ready)
 
-    const trigger = page.getByRole('button', { name: 'Open menu' })
+    const trigger = page.getByRole('button', { name: 'Menu', exact: true })
+    const triggerBox = (await trigger.boundingBox())!
+
     await trigger.click()
-    await expect(
-      page.getByRole('button', { name: 'Close menu' })
-    ).toHaveAttribute('aria-expanded', 'true')
+    const close = page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true })
+    const closeBox = (await close.boundingBox())!
 
-    // Locate the ORIGINAL header button - the one that still visually paints
-    // the hamburger/close icon while the dialog is open, but is `inert` (and
-    // therefore not the element that actually receives clicks). Select it by
-    // its identifying attribute (`aria-controls="mobile-menu-panel"`) rather
-    // than by document-order position - a plain "first non-dialog button"
-    // selector would silently retarget to the wrong element if any other
-    // button (a skip link, a cookie-banner control, etc.) were ever added
-    // above the hamburger in document order. There are multiple buttons
-    // carrying `aria-controls="mobile-menu-panel"` in the DOM (the header's
-    // original hamburger, and the close-button overlay inside the dialog),
-    // so we still filter out anything inside `[role="dialog"]`'s tree to
-    // land on the one real header button.
-    const headerButtonRect = await page.evaluate(() => {
-      const dialog = document.querySelector('[role="dialog"]')
-      const headerButton = Array.from(
-        document.querySelectorAll('button[aria-controls="mobile-menu-panel"]')
-      ).find((button) => !dialog?.contains(button))
-      const rect = headerButton?.getBoundingClientRect()
-      return rect
-        ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
-        : null
-    })
-    expect(headerButtonRect).not.toBeNull()
+    // This is the geometry the design depends on: the panel draws its own
+    // band at exactly the position of the one beneath it, so nothing
+    // outside the dialog ever needs to receive a click while it is open.
+    expect(Math.abs(closeBox.x - triggerBox.x)).toBeLessThanOrEqual(1)
+    expect(Math.abs(closeBox.y - triggerBox.y)).toBeLessThanOrEqual(1)
+    expect(Math.abs(closeBox.width - triggerBox.width)).toBeLessThanOrEqual(1)
+    expect(Math.abs(closeBox.height - triggerBox.height)).toBeLessThanOrEqual(1)
+  })
 
-    // Click at the exact screen coordinates of the *visible* icon - not a
-    // role-resolved locator's own bounding box (which would still pass even
-    // if the overlay drifted out of alignment with the header button). This
-    // is the direct regression guard for the geometry coupling documented in
-    // MobileNavBar.tsx: if the header button's `right-6`/`py-4` or the
-    // header bar's `h-16` ever drifts out of sync with the overlay button's
-    // `right-6 top-0 h-16 w-9`, this click lands on nothing functional and
-    // this test fails, even though every other test here (which clicks the
-    // overlay's own bounding box directly) would stay green.
-    const { x, y, width, height } = headerButtonRect!
-    await page.mouse.click(x + width / 2, y + height / 2)
+  test('widening past md closes the menu', async ({ page }) => {
+    await page.goto('/')
 
-    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    await page.getByRole('button', { name: 'Menu', exact: true }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+
+    await page.setViewportSize({ width: 800, height: 812 })
+
+    await expect(page.getByRole('dialog')).toBeHidden()
+    const overflow = await page.evaluate(() => document.documentElement.style.overflow)
+    expect(overflow).not.toBe('hidden')
   })
 
   test.describe('touch input', () => {
     // Scoped to just this test: Playwright's touchscreen API requires a
     // touch-capable browser context (`hasTouch: true`), which the default
-    // Desktop Chrome project doesn't have. This is not incidental to the
-    // test - it's the whole point. The bug this test guards against only
-    // reproduces on touch input specifically: Headless UI's outside-click
-    // handling calls `preventDefault()` on `touchend` for elements outside
-    // DialogPanel's `resolveContainers()`, which suppresses the synthesized
-    // `click` event a touch tap would otherwise produce - but has no effect
-    // on a real `mouse.click()`, which fires a `click` event directly. A
-    // mouse-click version of this test would stay green even if the logo
-    // overlay regressed back to living outside DialogPanel, because mouse
-    // and touch take different code paths through that handler. See the
-    // logo overlay's comment in MobileNavBar.tsx for the full mechanism.
+    // Desktop Chrome project doesn't have.
     test.use({ hasTouch: true })
 
-    test('tapping the visible header logo (not just the overlay links own hit box) navigates home and closes the menu', async ({
+    // A real tap, not a click, is the point of this test: Headless UI's
+    // `useOutsideClick` calls `preventDefault` on `touchend` for anything
+    // outside `DialogPanel`, which suppresses the synthesized click that
+    // would otherwise follow. That is why the wordmark has to live inside
+    // the panel -- a mouse-click version of this test would pass even if it
+    // did not.
+
+    test('tapping the wordmark inside the open sheet navigates home and closes', async ({
       page,
     }) => {
       // Start from a non-home route so the eventual `toHaveURL(/\/$/)`
@@ -200,57 +190,13 @@ test.describe('mobile menu accessibility contract', () => {
       // never left "/" in the first place.
       await page.goto('/publications')
 
-      const trigger = page.getByRole('button', { name: 'Open menu' })
+      const trigger = page.getByRole('button', { name: 'Menu', exact: true })
       await trigger.click()
       await expect(
-        page.getByRole('button', { name: 'Close menu' })
+        page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true })
       ).toHaveAttribute('aria-expanded', 'true')
 
-      // Locate the actual visible logo in the header - the one that keeps
-      // painting while the dialog is open but is `inert` (its wrapping
-      // <Link> is a sibling of <Dialog>), so it is not the element that
-      // actually receives taps. Measuring the logo element itself (rather
-      // than its wrapping anchor, whose own box collapses since its only
-      // child is absolutely positioned) gives the real on-screen pixels a
-      // user taps. This element's own screen position doesn't change
-      // depending on where the overlay lives (inside or outside
-      // DialogPanel) - only whether tapping at these coordinates actually
-      // navigates does. In wordmark mode the logo is an inlined <svg
-      // role="img" aria-label="logo"> (Phase 3A Task 5); in image mode
-      // (Phase 4B) it's an <img alt="logo"> instead, so both are checked.
-      const logoRect = await page.evaluate(() => {
-        const dialog = document.querySelector('[role="dialog"]')
-        // Matches both render modes: the wordmark fallback is an
-        // <svg aria-label="logo">, an uploaded logo is an <img alt="logo">.
-        // Production currently renders the wordmark (no logo is uploaded),
-        // so this test exercises that path -- the selector is widened so it
-        // does not silently start passing vacuously the day one is.
-        const logoEl =
-          document.querySelector('svg[aria-label="logo"]') ??
-          document.querySelector('img[alt="logo"]')
-        if (!logoEl || dialog?.contains(logoEl)) {
-          return null
-        }
-        const rect = logoEl.getBoundingClientRect()
-        return { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
-      })
-      expect(logoRect).not.toBeNull()
-
-      // Tap (not click) at the exact screen coordinates of the *visible*
-      // logo, via the touchscreen API - not `page.mouse.click()`, and not
-      // a role-resolved locator's own bounding box. Using touch is the
-      // direct regression guard for the bug this test exists to catch:
-      // navigating the logo overlay from inside DialogPanel back out to
-      // being a Dialog-level sibling would make this tap close the menu
-      // (via Headless UI's own outside-click-closes-dialog behavior) but
-      // silently fail to navigate, while leaving a mouse-click version of
-      // this same test green. This is also still the geometry-coupling
-      // regression guard documented in MobileNavBar.tsx: if the logo's
-      // `left-4`/`my-4` or the header bar's `h-16` ever drifts out of sync
-      // with the overlay link's `left-4 top-0 h-16 w-[120px]`, this tap
-      // lands on nothing functional and this test fails.
-      const { x, y, width, height } = logoRect!
-      await page.touchscreen.tap(x + width / 2, y + height / 2)
+      await page.getByRole('dialog').getByTestId('mobile-wordmark').tap()
 
       await expect(page).toHaveURL(/\/$/)
       await expect(trigger).toHaveAttribute('aria-expanded', 'false')

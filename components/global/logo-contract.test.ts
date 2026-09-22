@@ -12,9 +12,10 @@ const logo = () => readFileSync('components/global/Logo.tsx', 'utf8')
 // media-dim.test.ts. Rendered behaviour is covered by Playwright instead.
 describe('Logo contract', () => {
   it('gives every render mode the fixed accessible name "logo"', () => {
-    // e2e/server-rendered-nav.spec.ts locates the header logo by this exact
-    // accessible name. Making it dynamic (e.g. the site name) would make
-    // every logo-locating test depend on live CMS content.
+    // A fixed name, rather than one derived from live content (e.g. the
+    // site name), keeps any locator that finds the logo independent of what
+    // the CMS currently holds -- so a Settings edit can never break or
+    // silently redirect a test that is looking for the header logo.
     expect(logo()).toMatch(/alt="logo"/)
     expect(logo()).toMatch(/aria-label="logo"/)
   })
@@ -97,47 +98,3 @@ describe('Logo contract', () => {
   })
 })
 
-const mobileNav = () =>
-  readFileSync('components/global/Navbar/MobileNavBar.tsx', 'utf8')
-
-describe('MobileNavBar tap-overlay contract', () => {
-  it('has no hardcoded overlay width', () => {
-    // Defect D5: the overlay was `w-[120px]` while the rendered wordmark is
-    // ~140px, so the rightmost ~20px of the visible logo was already dead to
-    // taps while the menu was open. A CMS logo of arbitrary aspect ratio
-    // turns that fixed 20px error into an unbounded one. Since image-mode
-    // cannot be exercised end-to-end in this environment (spec §4/§6), THIS
-    // is the real regression guard for that defect.
-    expect(mobileNav()).not.toMatch(/w-\[120px\]/)
-    expect(mobileNav()).not.toMatch(/w-\[\d+px\]/)
-  })
-
-  it('sizes the overlay from the shared resolver', () => {
-    expect(mobileNav()).toMatch(/resolveLogo/)
-  })
-
-  it('takes its bar height from the shared token, not a literal', () => {
-    expect(mobileNav()).toMatch(/h-\[var\(--nav-height\)\]/)
-    expect(mobileNav()).not.toMatch(/\bh-16\b/)
-  })
-
-  it('keeps the Phase 2C Headless UI mitigations intact', () => {
-    const source = mobileNav()
-    // The tap-overlay Link must remain INSIDE DialogPanel. As a
-    // Dialog-level sibling it works on mouse and silently fails on touch,
-    // because useOutsideClick calls preventDefault() on touchend for
-    // anything outside resolveContainers(), suppressing the synthesized
-    // click. Asserted structurally: the overlay's aria-label="Home" Link
-    // appears after <DialogPanel and before its closing tag.
-    const panelStart = source.indexOf('<DialogPanel')
-    const panelEnd = source.indexOf('</DialogPanel>')
-    const overlay = source.indexOf('aria-label="Home"')
-    expect(panelStart).toBeGreaterThan(-1)
-    expect(overlay).toBeGreaterThan(panelStart)
-    expect(overlay).toBeLessThan(panelEnd)
-    // onClick={closeMenu} on the overlay is load-bearing: tapping an element
-    // inside the panel is not an outside-click, so closing must come from
-    // its own handler.
-    expect(source).toMatch(/onClick=\{closeMenu\}/)
-  })
-})

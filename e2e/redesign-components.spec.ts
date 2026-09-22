@@ -18,6 +18,7 @@ const GALLERY_SECTIONS = [
   'facet-band',
   'person-card',
   'site-nav',
+  'site-nav-long',
   'mobile-header',
   'site-footer',
   'form-field',
@@ -83,17 +84,12 @@ test.describe('redesign component gallery', () => {
   })
 
   test('mobile header renders both a closed and an open state', async ({ page }) => {
-    // The open instance is wrapped `md:hidden` (mirrors the production
-    // Navbar's breakpoint split -- see the comment in Gallery.tsx's "Site
-    // nav" section for why), so it's only actually visible below md.
     await page.setViewportSize({ width: 390, height: 844 })
     const section = page.getByTestId('gallery-mobile-header')
-    // Closed: MENU toggle only, no nav rows.
-    await expect(section.getByRole('button', { name: 'MENU' })).toBeVisible()
-    // Open: the interactive instance defaults open and shows every nav row,
-    // including the current item marked aria-current="page".
-    await expect(section.getByRole('button', { name: 'CLOSE ✕' })).toBeVisible()
+    await expect(section.getByRole('button', { name: 'Menu', exact: true })).toBeVisible()
+    await expect(section.getByRole('button', { name: 'Close', exact: true })).toBeVisible()
     await expect(section.locator('a[aria-current="page"]')).toHaveCount(1)
+    await expect(section.locator('a[aria-current="page"]')).toContainText('Publications')
   })
 
   test('narrow publication-row variant lives inside a container under 720px', async ({
@@ -115,15 +111,17 @@ test.describe('redesign component gallery', () => {
     await expect(narrowRow).toHaveCSS('display', 'block')
   })
 
-  test('SiteNav marks exactly the current item aria-current', async ({ page }) => {
+  test('SiteNav marks exactly the current item aria-current, with real hrefs', async ({ page }) => {
     const nav = page.getByTestId('gallery-site-nav')
     await expect(nav.locator('a[aria-current="page"]')).toHaveText('Publications')
     await expect(nav.locator('a[aria-current="page"]')).toHaveCount(1)
+    await expect(nav.getByRole('link', { name: 'Publications' })).toHaveAttribute('href', '/publications')
   })
 
-  test('SiteFooter renders both the default and compact density', async ({ page }) => {
-    const footer = page.getByTestId('gallery-site-footer')
-    await expect(footer.locator('footer')).toHaveCount(2)
+  test('SiteFooter renders one span per line', async ({ page }) => {
+    const footer = page.getByTestId('gallery-site-footer').locator('footer')
+    await expect(footer).toHaveCount(1)
+    await expect(footer.locator('span')).toHaveText(['Designed by Brett Yang', 'Copyright 2026 © Holsinger Lab'])
   })
 
   test('PersonCard renders both the portrait and no-portrait fallback state', async ({

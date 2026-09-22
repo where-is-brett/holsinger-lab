@@ -34,12 +34,10 @@ function logoUrl(image: LogoImageSource): string | undefined {
  *   2. `logo` + `logoDark`        -> both, CSS-switched by colour scheme
  *   3. neither                    -> wordmark fallback (the stroked box)
  *
- * All three take their width from `resolveLogo`, which is also what sizes
- * MobileNavBar's transparent tap-overlay -- a second, independent call to
- * that same pure function, given the same `aspectRatio`/`shortName` inputs,
- * so it cannot resolve to a different number. That is the whole safety
- * property of Phase 4B: the overlay cannot drift from the logo it overlays,
- * even though neither call's result is passed to the other.
+ * All three take their width from `resolveLogo`. Phase 3's `MobileHeader`
+ * no longer needs a second, independent call to it -- the old transparent
+ * tap-overlay it used to size is gone, replaced by the dialog panel drawing
+ * its own copy of the header band in place.
  *
  * A plain <img> rather than next/image is deliberate — see the contract test.
  */
