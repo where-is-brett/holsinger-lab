@@ -44,10 +44,18 @@ vi.mock('next/headers', () => ({
 }))
 
 describe('wixFetch: preview deployments (VERCEL_ENV=preview) refresh on a short interval', () => {
+  // These tests are about the non-fixture path (sanityFetch vs. the preview
+  // client), so they must control WIX_FIXTURE themselves rather than inherit
+  // whatever the environment happens to have -- .github/workflows/ci.yml sets
+  // WIX_FIXTURE=1 at job level (for the e2e run against the fixture dataset),
+  // and unit tests inherit that. wixFetch checks WIX_FIXTURE first and treats
+  // anything other than the exact string '1' as "off" (`=== '1'`), so an
+  // empty string here reliably disables it regardless of CI's job-level env.
   const setUp = () => {
     sanityFetchMock.mockClear()
     previewFetchMock.mockClear()
     draftModeEnabled = false
+    vi.stubEnv('WIX_FIXTURE', '')
   }
 
   it('no VERCEL_ENV at all: options reach sanityFetch untouched, the preview client is never built', async () => {
@@ -65,6 +73,7 @@ describe('wixFetch: preview deployments (VERCEL_ENV=preview) refresh on a short 
       expect(result).toMatchObject({ via: 'sanityFetch' })
     } finally {
       if (had) process.env.VERCEL_ENV = original
+      vi.unstubAllEnvs()
     }
   })
 
@@ -110,6 +119,26 @@ describe('wixFetch: preview deployments (VERCEL_ENV=preview) refresh on a short 
       expect(sanityFetchMock).toHaveBeenCalledWith({ query: '*[_type == "x"]', params: { a: 1 }, stega: true })
       expect(previewFetchMock).not.toHaveBeenCalled()
       expect(result).toMatchObject({ via: 'sanityFetch' })
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
+  it('WIX_FIXTURE=1 wins over VERCEL_ENV=preview (Fix round 3): the fixture branch is checked first, so neither sanityFetch nor the preview client is ever called', async () => {
+    setUp()
+    vi.stubEnv('WIX_FIXTURE', '1')
+    vi.stubEnv('VERCEL_ENV', 'preview')
+    try {
+      const { wixFetch } = await import('./fetch')
+      // The fixture branch really runs here (it reads the committed
+      // data/wix/fixture.ndjson and evaluates the query with groq-js -- see
+      // lib/wix/fixture.test.ts for that path's own coverage). This query
+      // matches no document, so the real, meaningful result is an empty
+      // array -- what matters for THIS test is which branch ran at all.
+      const result = await wixFetch('*[_type == "no-such-type"]')
+      expect(result).toEqual([])
+      expect(sanityFetchMock).not.toHaveBeenCalled()
+      expect(previewFetchMock).not.toHaveBeenCalled()
     } finally {
       vi.unstubAllEnvs()
     }
