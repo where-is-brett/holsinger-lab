@@ -258,3 +258,21 @@ describe('planImport: guards (fix round 1)', () => {
     expect(plan.reports.some((r) => r.startsWith('publication pub-old: title differs'))).toBe(false)
   })
 })
+
+describe('planImport: media with no link or video (Channel 7 fixup)', () => {
+  it('creates a media item with no video, poster, or url field and reports the gap', () => {
+    const snap = snapshot()
+    snap.media = [
+      { key: 'creatine-for-the-brain', title: 'Creatine for the brain', outlet: 'Channel 7', date: null, url: null, videoUrl: null, posterUrl: null },
+    ]
+    const plan = planImport(input({ snapshot: snap }))
+    const doc = createFor(plan, 'wix-media-creatine-for-the-brain')?.doc
+    expect(doc).toBeDefined()
+    expect(doc).not.toHaveProperty('video')
+    expect(doc).not.toHaveProperty('poster')
+    expect(doc).not.toHaveProperty('url')
+    expect(plan.reports).toContain(
+      'media creatine-for-the-brain: no link or video — imported as a text row; add the video in Studio'
+    )
+  })
+})

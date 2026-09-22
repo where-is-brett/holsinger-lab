@@ -1,12 +1,18 @@
 // Imports the committed Wix snapshot (data/wix/snapshot.json) into Sanity.
 // Spec: docs/superpowers/specs/2026-09-22-wix-lookalike-design.md section 8.
 //
+// `npm run import:wix` loads .env.local automatically (via node's
+// --env-file-if-exists flag); it does not override a variable already set in
+// the shell environment.
+//
 // Dry run (default; no writes, no uploads -- image/video fields show as pending):
 //   npm run import:wix -- --dataset wix-preview
 // Apply:
 //   npm run import:wix -- --dataset wix-preview --commit
+// A write token can be supplied in the shell instead of (or on top of) .env.local:
+//   SANITY_API_WRITE_TOKEN=... npm run import:wix -- --dataset wix-preview --commit
 // Production additionally requires a dataset export taken first, and an explicit flag:
-//   npm run import:wix -- --dataset production --commit --backup ./backups/production-<date>.tar.gz --confirm-production
+//   SANITY_API_WRITE_TOKEN=... npm run import:wix -- --dataset production --commit --backup ./backups/production-<date>.tar.gz --confirm-production
 //
 // Never deletes. Never blanks a field. Fields edited in Studio since the last
 // import are reported and left alone (see scripts/wix/plan.ts). Patches (and

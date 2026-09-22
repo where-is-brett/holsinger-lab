@@ -110,7 +110,6 @@ export function validateSnapshot(input: unknown): string[] {
   for (const m of s.media) {
     asset(`media.${m.key}.videoUrl`, m.videoUrl)
     asset(`media.${m.key}.posterUrl`, m.posterUrl)
-    if (!m.url && !m.videoUrl) errors.push(`media.${m.key}: needs url or videoUrl`)
   }
   for (const p of s.projects) asset(`projects.${p.key}.imageUrl`, p.imageUrl)
   for (const p of s.people) {
