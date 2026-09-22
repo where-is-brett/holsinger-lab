@@ -399,10 +399,14 @@ export const PEOPLE_SETTINGS_WITHOUT_LAB_HEAD: SettingsPayload = {
 
 // Task 1 (Resources): production carries zero `resource` documents today
 // (spec §2), so this is the only place the populated state renders at all.
-// Two resources -- one with a linked publication (exercising the SOURCE
+// Four resources -- one with a linked publication (exercising the SOURCE
 // meta line and its DOI link, and a portable-text `howToObtain` holding a
 // real link, per the task brief), one without (proving the SOURCE/DOI meta
-// rows are genuinely omitted rather than rendered blank).
+// rows are genuinely omitted rather than rendered blank), and (fix round 1)
+// two more that exist purely to exercise a long, unbreakable identifier at
+// 320px -- a real DOI (`10.1016/j.neurobiolaging.2023.04.012`, 38 chars) and
+// a URL-only publication -- neither of which the first two fixtures'
+// short DOI (`10.1038/s41420-024-00000-1`) reached.
 function portableLinkParagraph(
   key: string,
   pre: string,
@@ -467,5 +471,55 @@ export const RESOURCES_FIXTURE: ResourcePayload[] = [
       portableParagraph('resource-2-p1', 'Contact the lab manager for the current SOP document.'),
     ],
     publication: null,
+  },
+  // Fix round 1: a realistic long DOI (38 characters, no internal spaces) is
+  // wider on its own than the ~246px/32-mono-character content column at
+  // 320px -- this is the overflow ResourceBlock.tsx's `IDENTIFIER` constant
+  // now guards with `break-all`.
+  {
+    _id: 'fixture-resource-3',
+    title: 'Cortical thickness segmentation atlas',
+    kind: 'dataset',
+    summary:
+      'A manually-curated cortical thickness atlas derived from the aging cohort described in the linked paper.',
+    howToObtain: [
+      portableParagraph('resource-3-p1', 'Available on request while the public archive is finalised.'),
+    ],
+    publication: {
+      _id: 'fixture-resource-3-pub',
+      title: 'Longitudinal cortical thickness change across healthy ageing',
+      date: '2023-06-01',
+      doi: '10.1016/j.neurobiolaging.2023.04.012',
+      url: null,
+      journal: 'Neurobiology of Aging',
+      volume: 128,
+      issue: null,
+      pages: '55-64',
+      slug: 'cortical-thickness-ageing',
+    },
+  },
+  // A URL-only publication (no DOI) -- `deriveLink` falls back to the
+  // scheme-stripped URL as the identifier, and that stripped form can still
+  // be a single long unbreakable token.
+  {
+    _id: 'fixture-resource-4',
+    title: 'Behavioural scoring software',
+    kind: 'software',
+    summary: 'Open-source scoring software for the novel-object-recognition assay used in the lab.',
+    howToObtain: [
+      portableParagraph('resource-4-p1', 'Source and installation instructions are on the project site.'),
+    ],
+    publication: {
+      _id: 'fixture-resource-4-pub',
+      title: 'An open-source pipeline for novel-object-recognition scoring',
+      date: '2022-11-15',
+      doi: null,
+      url: 'https://www.biorxiv.org/content/10.1101/2022.11.15.516432v1.full',
+      journal: 'bioRxiv',
+      volume: null,
+      issue: null,
+      pages: null,
+      slug: 'novel-object-recognition-pipeline',
+    },
   },
 ]

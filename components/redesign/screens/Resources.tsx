@@ -28,11 +28,20 @@ function buildMeta(resource: ResourcePayload): ResourceBlockMeta[] {
   if (pub) {
     const year = pub.date ? pub.date.slice(0, 4) : ''
     const ref = formatRef(pub.volume ?? null, pub.issue ?? null, pub.pages ?? null)
-    meta.push({
-      label: 'SOURCE',
-      value: formatSource(pub.journal ?? '', ref, year),
-      href: pub.slug ? `/publications/${pub.slug}` : undefined,
-    })
+    // Fix round 1: `formatSource` alone can come back empty (no journal, no
+    // ref, no year on file), which used to render a SOURCE row whose value
+    // was a blank, but still clickable, link. Falling back to the
+    // publication's own (trimmed) title keeps the link meaningful; if even
+    // that is blank, the row is dropped entirely below -- never an empty
+    // link.
+    const source = formatSource(pub.journal ?? '', ref, year) || (pub.title ?? '').trim()
+    if (source) {
+      meta.push({
+        label: 'SOURCE',
+        value: source,
+        href: pub.slug ? `/publications/${pub.slug}` : undefined,
+      })
+    }
     const link = deriveLink(pub.doi ?? null, pub.url ?? null)
     if (link) {
       meta.push({ label: link.kind, value: link.label, href: link.href })
@@ -60,8 +69,15 @@ export function Resources({ resources }: { resources: ResourcePayload[] }) {
             borderTop={index !== 0}
           >
             <ResourceBlock title={resource.title ?? ''} meta={buildMeta(resource)}>
+              {/* Fix round 1: aligned to PortableBody's own BIO_PARAGRAPH
+                  measure (`max-w-[720px]`), not ResourceBlock's narrower
+                  640px title column, so the summary and the howToObtain
+                  portable text directly below it -- rendered through that
+                  same component -- share one text measure rather than the
+                  summary wrapping at a different width than its own next
+                  paragraph. */}
               {resource.summary && (
-                <p className="max-w-[640px] text-pretty break-words text-body text-text-muted">
+                <p className="max-w-[720px] text-pretty break-words text-body text-text-muted">
                   {resource.summary}
                 </p>
               )}

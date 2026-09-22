@@ -6,10 +6,11 @@ import { e2eClient } from './support/sanity'
 // §5 / constraints.md "every e2e assertion must hold for any valid
 // dataset") -- production has ZERO `resource` documents today (spec §2), so
 // the live checks below only ever exercise the empty state against real
-// data. The populated state (two resources, one with a linked publication,
-// one with a portable-text `howToObtain` holding a link) is proven instead
-// against the `gallery-resources` fixture at /preview/components, per
-// constraints.md's "states the live data can't show go on gallery
+// data. The populated state (four resources -- linked publications with a
+// DOI, a long DOI, a URL only, and one resource with no linked publication
+// at all -- plus a portable-text `howToObtain` holding a link) is proven
+// instead against the `gallery-resources` fixture at /preview/components,
+// per constraints.md's "states the live data can't show go on gallery
 // fixtures".
 
 type LiveResource = {
@@ -43,7 +44,7 @@ test.describe('/resources', () => {
       await expect(page.getByTestId('resource-block-title')).toHaveCount(0)
     } else {
       const titles = await page.getByTestId('resource-block-title').allTextContents()
-      expect(titles).toEqual(resources.map((r) => r.title))
+      expect(titles).toEqual(resources.map((r) => r.title ?? ''))
     }
   })
 
@@ -86,7 +87,7 @@ test.describe('/resources', () => {
 })
 
 test.describe('/preview/components gallery: resources', () => {
-  test('renders both fixture resources, with the portable-text link, and no overflow at 320px', async ({
+  test('renders all fixture resources, with the portable-text link, and no overflow at 320px', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 320, height: 900 })
@@ -96,7 +97,7 @@ test.describe('/preview/components gallery: resources', () => {
     await expect(section).toBeVisible()
 
     const titles = await section.getByTestId('resource-block-title').allTextContents()
-    expect(titles.length).toBe(2)
+    expect(titles.length).toBe(4)
 
     // The howToObtain portable-text link renders as a real anchor inside the
     // gallery's resource fixture, not just as its own plain-text run.

@@ -28,7 +28,17 @@ export interface ResourceBlockProps {
 // !important` -- reproducing components.css's `.hl-identifier` guard (same
 // technique as PublicationRow.tsx's IDENTIFIER constant) so an ambient
 // uppercasing context can never mangle an identifier.
-const IDENTIFIER = 'normal-case!'
+//
+// Fix round 1: a realistic DOI (e.g.
+// "10.1016/j.neurobiolaging.2023.04.012", 38 characters, no internal
+// spaces) is wider on its own than the ~246px/32-mono-character content
+// column at 320px -- normal word-wrapping only breaks at spaces, so without
+// a hard break this single token pushed the whole page into horizontal
+// scroll. `break-all` (`word-break: break-all`) is the same fix
+// PublicationRow.tsx's own IDENTIFIER constant already applies, and is a
+// different CSS property than `normal-case!`'s `text-transform`, so this is
+// additive, not a same-property collision (constraints.md).
+const IDENTIFIER = 'normal-case! break-all'
 
 // Task brief decision #2: a static generated background is legitimate as an
 // inline style -- see the matching constant/comment in PersonCard.tsx.
@@ -64,7 +74,15 @@ export function ResourceBlock({ title, meta = [], figureLabel, children }: Resou
             companions from styles/index.css's `@theme inline` block -- left
             unoverridden here so both apply, matching the source's explicit
             `lineHeight`/`letterSpacing` var references. */}
-        <div data-testid="resource-block-title" className="max-w-[640px] text-heading font-semibold">
+        {/* Fix round 1: same mechanism as PublicationPage.tsx's own `<h1>`
+            (its own fix-round-1 comment) -- a single long unbreakable word
+            in `title` can be wider than this column at 320px, and
+            `break-words` (`overflow-wrap: break-word`) is a different
+            property than anything else already set here, so it's additive. */}
+        <div
+          data-testid="resource-block-title"
+          className="max-w-[640px] text-heading font-semibold break-words"
+        >
           {title}
         </div>
         <div className="mt-[26px] flex flex-col gap-2.5 font-mono text-[12.5px] leading-[1.5]">
