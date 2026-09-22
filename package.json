@@ -10,6 +10,7 @@
     "backfill:publication-slugs": "node scripts/backfill-publication-slugs.ts",
     "backfill:publication-topics": "node scripts/backfill-publication-topics.ts",
     "create:pi-profile": "node scripts/create-pi-profile.ts",
+    "import:wix": "node scripts/import-wix.ts",
     "build": "next build",
     "dev": "next dev",
     "format": "npx prettier --write . --ignore-path .gitignore",
