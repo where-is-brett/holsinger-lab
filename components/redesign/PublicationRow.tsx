@@ -1,5 +1,5 @@
 import { CopyCitation } from './CopyCitation'
-import type { Publication } from './publicationRow'
+import type { Publication } from './publicationModel'
 import { HIT_AREA, META } from './tokens'
 
 export interface PublicationRowProps {

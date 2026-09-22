@@ -1,4 +1,4 @@
-import type { Publication } from './publicationRow'
+import type { Publication } from './publicationModel'
 
 export function countBy<T>(items: T[], pick: (item: T) => string | string[]): Record<string, number> {
   const out: Record<string, number> = {}

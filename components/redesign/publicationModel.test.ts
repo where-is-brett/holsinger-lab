@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { deriveLink, shortenLabel, splitAuthors } from './publicationRow'
+import { deriveLink, shortenLabel, splitAuthors } from './publicationModel'
 
 describe('splitAuthors', () => {
   it('splits around the PI so the name can be emphasised', () => {

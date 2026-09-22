@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { applyFacets, countBy, toggleFacet } from './facets'
-import type { Publication } from './publicationRow'
+import type { Publication } from './publicationModel'
 
 const pub = (over: Partial<Publication>): Publication => ({
   year: '2023',

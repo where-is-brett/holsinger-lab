@@ -10,16 +10,8 @@ import { MobileBand, MobileHeader, MobileNavRows } from 'components/redesign/Mob
 import { FOOTER_FALLBACK, SITE_NAV } from 'components/redesign/navModel'
 import { PageTitle } from 'components/redesign/PageTitle'
 import { PersonCard } from 'components/redesign/PersonCard'
-// Explicit extensions on these two -- 'PublicationRow.tsx' (the component)
-// and 'publicationRow.ts' (its types/helpers) differ only in the case of
-// their first letter, and on this case-insensitive filesystem TypeScript's
-// bundler resolution collapses the two into one module identity when both
-// are imported (by the extension-less specifiers) from the same file,
-// silently resolving 'PublicationRow' to whichever of the two got included
-// in the program first. Spelling the extension out sidesteps the
-// extension-probing step that causes the collision.
-import type { Publication } from 'components/redesign/publicationRow.ts'
-import { PublicationRow } from 'components/redesign/PublicationRow.tsx'
+import type { Publication } from 'components/redesign/publicationModel'
+import { PublicationRow } from 'components/redesign/PublicationRow'
 import { ResourceBlock } from 'components/redesign/ResourceBlock'
 import { SectionRail } from 'components/redesign/SectionRail'
 import { SiteFooter } from 'components/redesign/SiteFooter'

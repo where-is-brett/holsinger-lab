@@ -1,5 +1,5 @@
-import type { Publication } from './publicationRow'
-import { deriveLink, shortenLabel, splitAuthors } from './publicationRow'
+import type { Publication } from './publicationModel'
+import { deriveLink, shortenLabel, splitAuthors } from './publicationModel'
 
 // Real lab content, not placeholder strings -- the gallery this feeds is the
 // only place any of the twelve Phase 1 components actually render, so the
