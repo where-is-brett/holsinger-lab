@@ -84,17 +84,12 @@ test.describe('redesign component gallery', () => {
   })
 
   test('mobile header renders both a closed and an open state', async ({ page }) => {
-    // The open instance is wrapped `md:hidden` (mirrors the production
-    // Navbar's breakpoint split -- see the comment in Gallery.tsx's "Site
-    // nav" section for why), so it's only actually visible below md.
     await page.setViewportSize({ width: 390, height: 844 })
     const section = page.getByTestId('gallery-mobile-header')
-    // Closed: MENU toggle only, no nav rows.
-    await expect(section.getByRole('button', { name: 'MENU' })).toBeVisible()
-    // Open: the interactive instance defaults open and shows every nav row,
-    // including the current item marked aria-current="page".
-    await expect(section.getByRole('button', { name: 'CLOSE ✕' })).toBeVisible()
+    await expect(section.getByRole('button', { name: 'Menu', exact: true })).toBeVisible()
+    await expect(section.getByRole('button', { name: 'Close', exact: true })).toBeVisible()
     await expect(section.locator('a[aria-current="page"]')).toHaveCount(1)
+    await expect(section.locator('a[aria-current="page"]')).toContainText('Publications')
   })
 
   test('narrow publication-row variant lives inside a container under 720px', async ({

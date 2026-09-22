@@ -6,7 +6,7 @@ import { FacetBand, type FacetChipSpec } from 'components/redesign/FacetBand'
 import { applyFacets, countBy, toggleFacet } from 'components/redesign/facets'
 import { SAMPLE_PEOPLE, SAMPLE_PUBLICATIONS } from 'components/redesign/fixtures'
 import { FormField } from 'components/redesign/FormField'
-import { MobileHeader } from 'components/redesign/MobileHeader'
+import { MobileBand, MobileHeader, MobileNavRows } from 'components/redesign/MobileHeader'
 import { FOOTER_FALLBACK, SITE_NAV } from 'components/redesign/navModel'
 import { PageTitle } from 'components/redesign/PageTitle'
 import { PersonCard } from 'components/redesign/PersonCard'
@@ -90,9 +90,6 @@ export default function Gallery() {
   // -- Tag / Button: onClick wiring, evidenced with a visible counter ------
   const [tagClicks, setTagClicks] = useState(0)
   const [buttonClicks, setButtonClicks] = useState(0)
-
-  // -- MobileHeader: onToggle wiring ----------------------------------------
-  const [mobileOpen, setMobileOpen] = useState(true)
 
   // -- FormField: onChange wiring -------------------------------------------
   const [name, setName] = useState('')
@@ -284,20 +281,17 @@ export default function Gallery() {
       <section data-testid="gallery-mobile-header">
         <Heading>Mobile header</Heading>
 
-        <SubHeading>Closed</SubHeading>
+        <SubHeading>Closed (live component -- Menu opens the real dialog)</SubHeading>
         <div className="mb-6 max-w-sm border border-rule">
-          <MobileHeader open={false} current="pubs" items={SITE_NAV} />
+          <MobileHeader current="pubs" items={SITE_NAV} wordmark="Holsinger Lab" />
         </div>
 
-        <SubHeading>Open (interactive -- onToggle flips this instance&apos;s state)</SubHeading>
-        {/* md:hidden -- see the comment on the Site nav section above. */}
+        <SubHeading>Open sheet (static rendering of the dialog&apos;s contents)</SubHeading>
+        {/* md:hidden: at md+ the gallery's SiteNav instances are visible, and
+            this nav would be one more landmark on the page. */}
         <div className="max-w-sm border border-rule md:hidden">
-          <MobileHeader
-            open={mobileOpen}
-            onToggle={() => setMobileOpen((o) => !o)}
-            current="pubs"
-            items={SITE_NAV}
-          />
+          <MobileBand wordmark="Holsinger Lab" open />
+          <MobileNavRows items={SITE_NAV} current="pubs" label="Gallery: mobile sheet" />
         </div>
       </section>
 
