@@ -102,6 +102,7 @@ export function buildFixtureDocs(
 
   const image = (url: string | null, alt?: string) => {
     if (!url) return undefined
+    if (!assetIds[url]) throw new Error(`asset not uploaded: ${url}`)
     return present({
       _type: 'image',
       asset: ref(assetIds[url]),

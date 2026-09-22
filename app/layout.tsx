@@ -1,7 +1,8 @@
 import 'styles/wix.css'
 
 import { PreviewBanner } from 'components/preview/PreviewBanner'
-import { sanityFetch, SanityLive } from 'lib/sanity.live'
+import { SanityLive } from 'lib/sanity.live'
+import { wixFetch } from 'lib/wix/fetch'
 import { siteNameQuery } from 'lib/wix/queries'
 import type { Metadata } from 'next'
 import { Bodoni_Moda, Lato, Montserrat, Playfair_Display, Raleway } from 'next/font/google'
@@ -18,8 +19,8 @@ const montserrat = Montserrat({ variable: '--wf-montserrat', subsets: ['latin'],
 export const revalidate = 60
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { data } = await sanityFetch({ query: siteNameQuery, stega: false })
-  const siteName = stegaClean((data as string | null) ?? 'Holsinger Lab')
+  const data = await wixFetch<string>(siteNameQuery, { stega: false })
+  const siteName = stegaClean(data ?? 'Holsinger Lab')
   return {
     title: { default: siteName, template: `%s | ${siteName}` },
     // Preview deploy of a candidate design -- never index it.

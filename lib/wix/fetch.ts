@@ -28,7 +28,7 @@ export async function wixFetch<T>(
   opts?: { params?: Record<string, unknown>; stega?: boolean }
 ): Promise<T | null> {
   if (process.env.WIX_FIXTURE === '1') {
-    const { parse, evaluate } = await import('groq-js')
+    const { parse, evaluate } = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ 'groq-js')
     const dataset = await loadFixtureDocs()
     const tree = parse(query)
     const result = await evaluate(tree, { dataset, params: opts?.params })
