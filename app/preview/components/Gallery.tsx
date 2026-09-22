@@ -166,7 +166,7 @@ export default function Gallery() {
         </div>
 
         <SubHeading>Home variant</SubHeading>
-        <div className="mb-8">
+        <div className="mb-8" data-testid="publication-row-home">
           {SAMPLE_PUBLICATIONS.map((p) => (
             <PublicationRow key={p.title} pub={p} variant="home" onOpen={setOpenedPub} />
           ))}

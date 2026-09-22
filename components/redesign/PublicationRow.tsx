@@ -57,20 +57,19 @@ const TITLE_HOVER =
 // label line) can never mangle a case-sensitive identifier.
 const IDENTIFIER = 'text-link normal-case! break-all'
 
-// Title renders as a real control only when there's somewhere for it to go.
-// `publication` has no `slug` field in the current Sanity schema (Phase 2
-// adds it), so there is no per-publication URL to link to in Phase 1 --
-// shipping the source's `href="#paper"` placeholder would be a visibly
-// broken link and the same `href="#"` smell already flagged and fixed on
-// Tag. Styled to read as text, not a control: no border, no background,
-// zeroed padding, left-aligned, and the shared `:focus-visible` ring (never
-// `outline-none`) is left untouched so keyboard users still see it land.
+// Title renders as a real control only when there's somewhere for it to go:
+// a `next/link` when `href` is set (real routes, Task 3/spec §4.1), else
+// the gallery's `onOpen` button, else a plain `<span>`. Styled to read as
+// text, not a control: no border, no background, zeroed padding (the
+// button branch only -- `Link` has no button chrome to strip), left-aligned,
+// and the shared `:focus-visible` ring (never `outline-none`) is left
+// untouched so keyboard users still see it land.
 //
-// TITLE_HOVER and HIT_AREA are applied here, inside the `onOpen` branch
-// only, rather than folded into each call site's `className` -- that keeps
-// the row-hover colour coupling and the 44px hit area from ever landing on
-// the non-interactive `<span>` branch, where there is no control for either
-// to describe.
+// TITLE_HOVER and HIT_AREA are applied here, inside the `href`/`onOpen`
+// branches only, rather than folded into each call site's `className` --
+// that keeps the row-hover colour coupling and the 44px hit area from ever
+// landing on the non-interactive `<span>` branch, where there is no control
+// for either to describe.
 function Title({
   pub,
   href,
@@ -213,12 +212,26 @@ export function PublicationRow({
           pub={pub}
           href={href}
           onOpen={onOpen}
-          className="lg:pr-3 text-[17.5px] leading-[1.35] font-semibold tracking-[-0.005em] text-pretty"
+          className="mt-1.5 lg:mt-0 lg:pr-3 text-[17.5px] leading-[1.35] font-semibold tracking-[-0.005em] text-pretty"
         />
         <span className="hidden font-mono text-[12.5px] leading-[1.5] text-text-muted lg:block">
           {pub.journal} {pub.ref}
         </span>
-        <Identifier pub={pub} fontSize="text-[12px]" label={pub.linkLabel} />
+        {/* `relative` (see the HIT_AREA comment in tokens.ts and the `narrow`
+            branch's identical comment below) -- below `lg` this identifier
+            sits directly under the title with nothing else between them, so
+            it's the element most exposed to the title's overhanging 44px
+            hit area. Promoting it to a positioned element makes it paint
+            after (on top of) the title's pseudo in the overlap band,
+            keeping the DOI/URL link tappable. `mt-1.5 lg:mt-0`: real
+            vertical rhythm below `lg` (matching the narrow branch), reset
+            to nothing once the grid takes over and column gap does the
+            spacing instead. */}
+        {pub.linkHref !== '' && (
+          <div className="relative mt-1.5 lg:mt-0">
+            <Identifier pub={pub} fontSize="text-[12px]" label={pub.linkLabel} />
+          </div>
+        )}
       </div>
     )
   }
@@ -240,12 +253,15 @@ export function PublicationRow({
           pub={pub}
           href={href}
           onOpen={onOpen}
-          className="truncate lg:pr-3 text-[14.5px] leading-[1.5] font-semibold tracking-[-0.005em]"
+          className="mt-1.5 lg:mt-0 lg:truncate lg:pr-3 text-[14.5px] leading-[1.5] font-semibold tracking-[-0.005em]"
         />
         <span className="hidden truncate font-mono text-[11.5px] leading-[1.6] text-text-muted lg:block">
           {pub.journal} · {pub.ref}
         </span>
-        <span className="flex items-baseline gap-2.5 whitespace-nowrap font-mono text-[11px] leading-[1.6]">
+        {/* `relative` + `mt-1.5 lg:mt-0`: same title-hit-area protection and
+            stacked-rhythm reset as the `home` branch above -- this row is
+            the identifier/CopyCitation block for `compact`. */}
+        <span className="relative mt-1.5 flex items-baseline gap-2.5 whitespace-nowrap font-mono text-[11px] leading-[1.6] lg:mt-0">
           {pub.linkHref !== '' && (
             <span className="overflow-hidden text-ellipsis">
               <span className="text-text-faint">{pub.linkKind} </span>
@@ -272,14 +288,14 @@ export function PublicationRow({
           — {pub.journal} {pub.ref}
         </span>
       </div>
-      <div className="flex flex-col gap-[7px] lg:pr-3">
+      <div className="mt-1.5 flex flex-col gap-[7px] lg:mt-0 lg:pr-3">
         <Title
           pub={pub}
           href={href}
           onOpen={onOpen}
           className="text-[17.5px] leading-[1.35] font-semibold tracking-[-0.005em] text-pretty"
         />
-        <div className="text-[13px] leading-[1.55] text-text-muted">
+        <div className="text-[13px] leading-[1.55] text-text-muted" data-testid="pub-authors">
           {pub.authorsPre}
           <strong className="font-semibold text-text">{pub.authorsPI}</strong>
           {pub.authorsPost}
@@ -295,7 +311,14 @@ export function PublicationRow({
         <br />
         {pub.ref}
       </div>
-      <div className="flex flex-col items-start gap-2.5">
+      {/* `relative` + `mt-1.5 lg:mt-0`: same title-hit-area protection and
+          stacked-rhythm reset as the `home`/`compact` branches above -- this
+          is the identifier/CopyCitation block for comfortable density. It
+          isn't always the element directly under the title (the authors
+          and tag lines usually sit between them), but the tag line is
+          conditional and titles vary in height, so this stays defensive
+          rather than relying on there always being a buffer. */}
+      <div className="relative mt-1.5 flex flex-col items-start gap-2.5 lg:mt-0">
         <Identifier pub={pub} fontSize="text-[11.5px]" label={pub.linkLabel} />
         <CopyCitation cite={pub.cite} />
       </div>

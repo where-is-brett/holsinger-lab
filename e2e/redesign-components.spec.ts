@@ -113,7 +113,7 @@ test.describe('redesign component gallery', () => {
 
   test('PublicationRow: href renders the title as a next/link to that href', async ({ page }) => {
     const row = page.getByTestId('publication-row-linked')
-    const titleLink = row.getByRole('link', { name: /record on file|Chromobox/i })
+    const titleLink = row.getByRole('link', { name: /Chromobox/i })
     await expect(titleLink).toHaveAttribute('href', '/publications/example')
   })
 
@@ -134,6 +134,44 @@ test.describe('redesign component gallery', () => {
 
     await page.setViewportSize({ width: 900, height: 900 })
     await expect(row).not.toHaveCSS('display', 'grid')
+  })
+
+  test('PublicationRow: comfortable index row still shows authors and CopyCitation below lg', async ({
+    page,
+  }) => {
+    // Fix round 1: the journal column collapses into the mobile kicker
+    // below `lg`, but the authors line and CopyCitation control must not --
+    // this settles it with a live viewport check, not just markup presence.
+    await page.setViewportSize({ width: 900, height: 900 })
+    const row = page.locator('[data-testid="publication-row-comfortable"] > div').first()
+
+    await expect(row.getByTestId('pub-authors').first()).toBeVisible()
+    await expect(row.getByRole('button', { name: /copy citation/i }).first()).toBeVisible()
+  })
+
+  test('PublicationRow: home row identifier link is clickable at 390px, not swallowed by the title hit area', async ({
+    page,
+  }) => {
+    // Fix round 1: the title's 44px hit-area pseudo used to overhang onto
+    // the identifier directly beneath it below `lg`, in the `home` variant
+    // where nothing sits between them. `click({ trial: true })` fails if a
+    // different element would actually intercept the click at that point.
+    await page.setViewportSize({ width: 390, height: 844 })
+    const row = page.getByTestId('publication-row-home')
+    const link = row.locator('[data-identifier]').first()
+    await expect(link).toBeVisible()
+
+    await link.click({ trial: true })
+
+    const inside = await link.evaluate((el) => {
+      const box = el.getBoundingClientRect()
+      const target = document.elementFromPoint(
+        box.left + box.width / 2,
+        box.top + box.height / 2,
+      )
+      return target === el || (target != null && el.contains(target))
+    })
+    expect(inside).toBe(true)
   })
 
   test('SiteNav marks exactly the current item aria-current, with real hrefs', async ({ page }) => {
