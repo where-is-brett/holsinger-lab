@@ -1,0 +1,36 @@
+@import 'tailwindcss';
+/* Tailwind scans markdown in docs/ for class-like strings and emits invalid
+   utilities from them (phase-1-decisions.md, final review). */
+@source not "../docs";
+
+/* Literal tokens: plain @theme both declares the custom property on :root and
+   registers the utility -- the "both halves" rule is satisfied in one place. */
+@theme {
+  --color-strip: #f7f7f7;
+  --color-menu: #bfbfbf;
+  --color-rule: rgb(0 0 0 / 0.85);
+  --color-nav-active: #191919;
+  --color-hero-panel: rgb(0 0 0 / 0.3);
+}
+
+/* Fonts reference next/font's runtime variables, so they must be inline. */
+@theme inline {
+  --font-playfair: var(--wf-playfair), 'Times New Roman', serif;
+  --font-lato: var(--wf-lato), Helvetica, Arial, sans-serif;
+  --font-raleway: var(--wf-raleway), Helvetica, Arial, sans-serif;
+  --font-didot: var(--wf-bodoni), 'Times New Roman', serif;
+  --font-menu: var(--wf-montserrat), Helvetica, Arial, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+/* Wix's desktop grid is a fixed 980px column. Below 1012px it would scroll
+   horizontally; we let it shrink with a 16px gutter instead. */
+.wix-col {
+  width: 100%;
+  max-width: calc(980px + 32px);
+  margin-inline: auto;
+  padding-inline: 16px;
+}

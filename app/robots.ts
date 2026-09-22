@@ -1,9 +1,6 @@
-import { siteUrl } from 'lib/site'
 import type { MetadataRoute } from 'next'
 
+// Preview deploy of a candidate design: disallow everything.
 export default function robots(): MetadataRoute.Robots {
-  return {
-    rules: { userAgent: '*', allow: '/' },
-    sitemap: `${siteUrl}/sitemap.xml`,
-  }
+  return { rules: { userAgent: '*', disallow: '/' } }
 }

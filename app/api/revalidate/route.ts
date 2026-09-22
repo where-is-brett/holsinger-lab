@@ -16,60 +16,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message }, { status: 401 })
     }
 
-    const { type, slug } = body ?? { type: undefined, slug: undefined }
+    const { type } = body ?? { type: undefined }
 
-    switch (type) {
-      case 'page':
-        if (!slug) {
-          return NextResponse.json(
-            { success: false, message: 'Missing "slug" in webhook payload' },
-            { status: 400 }
-          )
-        }
-        revalidatePath(`/${slug}`)
-        return NextResponse.json({
-          success: true,
-          message: `Revalidated "/${slug}"`,
-        })
-      case 'project':
-        if (!slug) {
-          return NextResponse.json(
-            { success: false, message: 'Missing "slug" in webhook payload' },
-            { status: 400 }
-          )
-        }
-        revalidatePath(`/projects/${slug}`)
-        revalidatePath(`/`)
-        return NextResponse.json({
-          success: true,
-          message: `Revalidated "${type}" with slug "projects/${slug}. Revalidated homepage."`,
-        })
-      case 'publication':
-        revalidatePath(`/publications`)
-        return NextResponse.json({
-          success: true,
-          message: `Revalidated "${type}" with slug "publications"`,
-        })
-      case 'profile':
-        revalidatePath(`/people`)
-        return NextResponse.json({
-          success: true,
-          message: `Revalidated "${type}" with slug "people"`,
-        })
-      default: {
-        const paths = await getAllPaths()
-        paths.forEach((path) => {
-          if (path) {
-            console.log(`Revalidating '${path}'...`)
-            revalidatePath(path)
-          }
-        })
-        return NextResponse.json({
-          success: true,
-          message: `Revalidated all pages.`,
-        })
-      }
-    }
+    const paths = await getAllPaths()
+    paths.forEach((path) => revalidatePath(path))
+    return NextResponse.json({
+      success: true,
+      message: `Revalidated ${paths.length} pages (type "${type}").`,
+    })
   } catch (err) {
     console.error(err)
     return NextResponse.json(
