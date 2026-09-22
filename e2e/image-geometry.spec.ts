@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 /** Routes that render at least one cover image. */
-const ROUTES = ['/', '/people', '/projects/about-dr-damian-holsinger']
+const ROUTES = ['/', '/people', '/projects/publication-highlights']
 
 /** Widths that exercise both the flex-col and flex-row card layouts. */
 const WIDTHS = [
