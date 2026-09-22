@@ -2,7 +2,7 @@
   "name": "holsinger-lab",
   "private": true,
   "engines": {
-    "node": ">=22"
+    "node": ">=22.9.0"
   },
   "scripts": {
     "backfill:profile-role-groups": "node scripts/backfill-profile-role-groups.ts",
