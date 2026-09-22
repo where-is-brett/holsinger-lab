@@ -45,7 +45,7 @@ function input(over: Partial<PlanInput> = {}): PlanInput {
     'pub-old': { _id: 'pub-old', _type: 'publication', title: 'Old (Sanity wording)', doi: null },
     settings: { _id: 'settings', _type: 'settings' },
   }
-  return { snapshot: snapshot(), existing, settingsId: 'settings', roleGroupIds: { ...GROUPS }, assetIds: {}, ledger: {}, ...over }
+  return { snapshot: snapshot(), existing, settingsId: 'settings', roleGroupIds: { ...GROUPS }, assetIds: {}, ledger: {}, drafts: {}, ...over }
 }
 
 const patchFor = (plan: ReturnType<typeof planImport>, id: string) =>
@@ -256,6 +256,52 @@ describe('planImport: guards (fix round 1)', () => {
     expect(plan.reports).toContain('publication pub-old: volume differs (Sanity "99" vs Wix "1") — not written')
     // Title matches here, so it must not be reported.
     expect(plan.reports.some((r) => r.startsWith('publication pub-old: title differs'))).toBe(false)
+  })
+})
+
+describe('planImport: singleton drafts kept in step (Fix round 3)', () => {
+  it('patches drafts.settings with contact when the draft exists', () => {
+    const plan = planImport(input({
+      drafts: { 'drafts.settings': { _id: 'drafts.settings', _type: 'settings' } },
+    }))
+    expect(patchFor(plan, 'drafts.settings')?.set).toEqual({ contact: { address: 'Addr', email: 'a@b.org', phone: '1' } })
+  })
+
+  it('produces no draft op when no draft exists', () => {
+    const plan = planImport(input())
+    expect(plan.ops.some((o) => (o.kind === 'create' ? o.doc._id : o.id).startsWith('drafts.'))).toBe(false)
+  })
+
+  it('skips a draft field edited after the last import and keeps the ledger', () => {
+    const first = planImport(input({
+      drafts: { 'drafts.settings': { _id: 'drafts.settings', _type: 'settings' } },
+    }))
+    const draftAfter: CurrentDoc = {
+      _id: 'drafts.settings', _type: 'settings',
+      contact: { address: 'Edited in Studio', email: 'a@b.org', phone: '1' },
+    }
+    const second = planImport(input({
+      drafts: { 'drafts.settings': draftAfter },
+      ledger: first.ledger,
+    }))
+    expect(patchFor(second, 'drafts.settings')).toBeUndefined()
+    expect(second.skipped).toContainEqual({ id: 'drafts.settings', field: 'contact', reason: 'edited-since-import' })
+    expect(second.ledger['drafts.settings#contact']).toBe(first.ledger['drafts.settings#contact'])
+  })
+
+  it('never creates a draft, even when the published singleton is itself being created', () => {
+    const existingNoSiteCopy: Record<string, CurrentDoc> = {
+      'p-jc': { _id: 'p-jc', _type: 'profile', name: 'Dr Johnny Chan (DDS)', role: 'Research Scientist', orderRank: '0|100014:' },
+      'pub-old': { _id: 'pub-old', _type: 'publication', title: 'Old (Sanity wording)', doi: null },
+      settings: { _id: 'settings', _type: 'settings' },
+    }
+    const plan = planImport(input({
+      existing: existingNoSiteCopy,
+      drafts: { 'drafts.siteCopy': { _id: 'drafts.siteCopy', _type: 'siteCopy' } },
+    }))
+    expect(createFor(plan, 'siteCopy')).toBeDefined()
+    expect(createFor(plan, 'drafts.siteCopy')).toBeUndefined()
+    expect(patchFor(plan, 'drafts.siteCopy')?.set).toMatchObject({ teamIntro: 'Team' })
   })
 })
 

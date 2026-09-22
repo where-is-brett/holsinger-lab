@@ -2,7 +2,7 @@
   "name": "holsinger-lab",
   "private": true,
   "engines": {
-    "node": ">=22"
+    "node": ">=22.9.0"
   },
   "scripts": {
     "backfill:profile-role-groups": "node scripts/backfill-profile-role-groups.ts",
@@ -13,6 +13,7 @@
     "fixture:wix": "node scripts/wix/build-fixture.ts",
     "import:wix": "node --env-file-if-exists=.env.local scripts/import-wix.ts",
     "build": "next build",
+    "css:proof": "node scripts/css-proof.mjs",
     "dev": "next dev",
     "format": "npx prettier --write . --ignore-path .gitignore",
     "lint": "eslint .",

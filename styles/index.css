@@ -210,6 +210,34 @@
   --sem-text-inverse: #fffdf9;
   --sem-field: #7a7168;
   --sem-rule: #e7e2d8;
+
+  /* The five tokens Phase 1 added to base are cool neutrals (hue 242-262).
+     A preset that declares only the original nine inherits them, which put
+     blue-grey faint text and rules on a warm surface -- and, in dark mode,
+     put --sem-text-faint at 4.455:1 on this preset's --sem-surface-raised,
+     under AA, because warm's raised is lighter than base's. Both are fixed
+     the same way: re-derive each token into this preset's own hue family,
+     keeping the tuned L and C, then tune L only where contrast needs it.
+     Hue families are read off the preset's own tokens -- text roles follow
+     --sem-text-muted, rule roles follow --sem-rule.
+
+     --sem-link-inverse is deliberately NOT redeclared: it is chromatic, and
+     presets vary neutrals only.
+
+     oklch(0.521 0.015 71.2). 5.18:1 on --sem-surface, 4.87:1 on
+     --sem-surface-raised. */
+  --sem-text-faint: #6f6860;
+  /* oklch(0.719 0.015 71.2). 6.49:1 on --sem-surface-inverse. */
+  --sem-text-inverse-muted: #aaa39a;
+  /* oklch(0.821 0.008 84.6). Re-hued at base's lightness, so it keeps base's
+     1.64:1 against --sem-surface -- below WCAG 1.4.11's 3:1 for a UI
+     boundary, exactly as base is. That shortfall is inherited from the
+     design system and recorded in phase-1-decisions.md as an open question;
+     it is a change of appearance across every Button, Tag and OFF-state
+     FacetChip, so it is not settled unilaterally here. */
+  --sem-rule-strong: #c7c4bf;
+  /* oklch(0.340 0.010 84.6). */
+  --sem-rule-inverse: #3a3832;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -227,6 +255,17 @@
     --sem-text-inverse: #12100d;
     --sem-field: #837a6f;
     --sem-rule: #2c2721;
+    /* oklch(0.630 0.014 75.3). Lightened by 0.010 from base's L so it clears
+       AA on this preset's raised surface, which is lighter than base's:
+       5.41:1 on --sem-surface, 4.61:1 on --sem-surface-raised. The inherited
+       value was 4.455:1 on raised. */
+    --sem-text-faint: #8e8880;
+    /* oklch(0.421 0.014 80.1). 7.46:1 on --sem-surface-inverse. */
+    --sem-text-inverse-muted: #514d45;
+    /* oklch(0.419 0.013 72.3). Base parity -- see the light block's note. */
+    --sem-rule-strong: #514c45;
+    /* oklch(0.881 0.005 72.3). */
+    --sem-rule-inverse: #dad7d4;
   }
 }
 
