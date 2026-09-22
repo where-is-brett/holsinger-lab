@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test'
+import { expect, type Locator, test } from '@playwright/test'
 import { currentMemberCount } from 'components/redesign/homeModel'
-import { fallbackSiteName } from 'lib/site'
+import { resolveBranding } from 'lib/branding'
 
 import { e2eClient } from './support/sanity'
 
@@ -48,15 +48,30 @@ async function fetchLiveMaestro(): Promise<LiveMaestro> {
 type LiveSettings = {
   labHeadId: string | null
   showLabHeadOnHome: boolean | null
+  showLabHeadOnPeople: boolean | null
   showPublications: boolean | null
   showPeople: boolean | null
 }
 
 async function fetchLiveSettings(): Promise<LiveSettings> {
   const settings = await e2eClient.fetch<LiveSettings | null>(
-    `*[_type == "settings"][0]{ "labHeadId": labHead->_id, showLabHeadOnHome, showPublications, showPeople }`
+    `*[_type == "settings"][0]{
+      "labHeadId": labHead->_id,
+      showLabHeadOnHome,
+      showLabHeadOnPeople,
+      showPublications,
+      showPeople
+    }`
   )
-  return settings ?? { labHeadId: null, showLabHeadOnHome: null, showPublications: null, showPeople: null }
+  return (
+    settings ?? {
+      labHeadId: null,
+      showLabHeadOnHome: null,
+      showLabHeadOnPeople: null,
+      showPublications: null,
+      showPeople: null,
+    }
+  )
 }
 
 type LiveProfile = { _id: string; roleGroupId: string | null }
@@ -80,7 +95,14 @@ test.describe('/', () => {
 
   test('the h1 equals home.title, or the site name when unset', async ({ page }) => {
     const home = await fetchLiveHome()
-    const expected = home.title || home.siteName?.trim() || fallbackSiteName
+    // `resolveBranding` (lib/branding.ts), not a re-implementation of its
+    // own fallback chain -- the one function that owns "whitespace-only
+    // counts as unset, fall back to fallbackSiteName" (fix round 1, point
+    // 2). `home.title?.trim() || siteName` mirrors Home.tsx's own
+    // `IdentityBlock` (fix round 1, point 3: a whitespace-only `home.title`
+    // is also treated as unset).
+    const { siteName } = resolveBranding({ siteName: home.siteName })
+    const expected = home.title?.trim() || siteName
 
     await page.goto('/')
     await expect(page.getByRole('heading', { level: 1, name: expected, exact: true })).toBeVisible()
@@ -104,13 +126,20 @@ test.describe('/', () => {
     const section = page.getByTestId('home-recent-work')
     await expect(section).toBeVisible()
 
-    const titles = await section.getByTestId('pub-title').allTextContents()
+    const rows = section.getByTestId('pub-title')
+    const titles = await rows.allTextContents()
     expect(titles.map((t) => t.trim())).toEqual(expectedRows.map((p) => p.title.trim()))
 
-    for (const pub of expectedRows) {
+    // Fix round 1, point 1: `nth(i)` by index, not `.filter({ hasText })`
+    // -- substring matching trips Playwright's strict mode whenever one
+    // title is itself a substring of another (or of a longer title later
+    // in the list), which a live 19-record dataset makes entirely
+    // possible. Index order is already proven equal to `expectedRows`'
+    // order by the `titles` assertion above.
+    for (let i = 0; i < expectedRows.length; i++) {
+      const pub = expectedRows[i]
       if (!pub.slug) continue
-      const link = section.getByTestId('pub-title').filter({ hasText: pub.title.trim() })
-      await expect(link).toHaveAttribute('href', `/publications/${pub.slug}`)
+      await expect(rows.nth(i)).toHaveAttribute('href', `/publications/${pub.slug}`)
     }
 
     await expect(section.getByRole('link', { name: `All ${n} publication${n === 1 ? '' : 's'} →` })).toHaveAttribute(
@@ -145,27 +174,66 @@ test.describe('/', () => {
     await expect(page.getByTestId('maestro-title')).toHaveText(maestro.title)
   })
 
-  test('the current-member count equals currentMemberCount computed from live profiles, roleGroups and labHead', async ({
+  test('the current-member count equals currentMemberCount computed from live profiles, roleGroups and labHead, excluding the PI only when the PI panel itself is showing', async ({
     page,
   }) => {
     const [{ profiles, roleGroups }, settings] = await Promise.all([
       fetchLiveMembers(),
       fetchLiveSettings(),
     ])
+    // Mirrors Home.tsx's own `showPiPanel` gate exactly (fix round 1,
+    // IMPORTANT 1) -- the PI is excluded from the count only when Home's
+    // own PI panel is the reason she isn't double-counted, not merely
+    // because `labHead` happens to be set.
+    const showPiPanel = Boolean(settings.labHeadId) && settings.showLabHeadOnHome !== false
     const expected = currentMemberCount(
       profiles.map((p) => ({ _id: p._id, roleGroup: p.roleGroupId ? { _id: p.roleGroupId, title: null } : null })),
       roleGroups,
-      settings.labHeadId
+      showPiPanel ? settings.labHeadId : null
     )
 
     await page.goto('/')
-    if (settings.showPeople === false) {
+    if (!(settings.showPeople !== false && expected > 0)) {
       await expect(page.getByTestId('home-member-count')).toHaveCount(0)
       return
     }
     const block = page.getByTestId('home-member-count')
     await expect(block).toBeVisible()
     await expect(block).toContainText(String(expected))
+  })
+
+  // Fix round 1, IMPORTANT 1: cross-checks Home's own rendered count
+  // against /people's own rendered "N CURRENT MEMBERS" meta, rather than
+  // re-deriving the same rule a second time (which couldn't have caught
+  // the original bug -- both implementations agreed with each other while
+  // disagreeing with /people). Only compared when the two pages' lab-head
+  // visibility flags agree (both pages then exclude, or both include, the
+  // same person) and both member-count elements are actually rendered --
+  // when the flags genuinely differ, the two pages are allowed to show
+  // different numbers (one page's PI is visible there and not the other),
+  // which is a valid configuration, not a bug.
+  test("the current-member count equals /people's own rendered count, whenever the two pages' lab-head visibility agree and both blocks are visible", async ({
+    page,
+  }) => {
+    const settings = await fetchLiveSettings()
+    const homeShowsPi = Boolean(settings.labHeadId) && settings.showLabHeadOnHome !== false
+    const peopleShowsSpotlight = Boolean(settings.labHeadId) && settings.showLabHeadOnPeople !== false
+    test.skip(
+      homeShowsPi !== peopleShowsSpotlight,
+      'showLabHeadOnHome and showLabHeadOnPeople disagree in this dataset -- the two pages are allowed to differ'
+    )
+
+    const peopleResponse = await page.goto('/people')
+    test.skip(peopleResponse?.status() !== 200, '/people 404s under current settings (showPeople is false)')
+    const peopleMeta = await page.getByTestId('page-title-meta').innerText()
+    const match = peopleMeta.match(/(\d+)\s+CURRENT MEMBERS?/)
+    test.skip(!match, `/people's meta "${peopleMeta}" has no "N CURRENT MEMBER(S)" segment`)
+    const peopleCount = Number(match![1])
+
+    await page.goto('/')
+    const homeBlock = page.getByTestId('home-member-count')
+    test.skip((await homeBlock.count()) === 0, "Home's member-count block isn't rendered under current settings")
+    await expect(homeBlock).toContainText(String(peopleCount))
   })
 
   test('the PI panel is present exactly when labHead is set and showLabHeadOnHome !== false', async ({
@@ -200,20 +268,52 @@ test.describe('/preview/components gallery: home', () => {
     const section = page.getByTestId('gallery-home')
     await expect(section).toBeVisible()
 
-    // gallery-home's fixture (fixtures.ts's HOME_* constants) sets every
-    // optional block: a labHead (no portrait), one resource, the maestro
-    // project, and a support page -- so all five numbered blocks render at
-    // once, which live data (no resource, no labHead) never does.
-    await expect(section.getByTestId('home-pi-panel')).toBeVisible()
-    await expect(section.getByTestId('home-recent-work')).toBeVisible()
-    await expect(section.getByTestId('home-resources')).toBeVisible()
-    await expect(section.getByTestId('home-maestro')).toBeVisible()
-    await expect(section.getByTestId('home-member-count')).toBeVisible()
-    await expect(section.getByTestId('home-support')).toBeVisible()
+    // Instance (a): fixtures.ts's HOME_* constants set every optional
+    // block: a labHead (no portrait), one resource, the maestro project,
+    // and a support page -- so all five numbered blocks render at once,
+    // which live data (no resource, no labHead) never does.
+    const a = section.getByTestId('gallery-home-a')
+    await expect(a.getByTestId('home-pi-panel')).toBeVisible()
+    await expect(a.getByTestId('home-recent-work')).toBeVisible()
+    await expect(a.getByTestId('home-resources')).toBeVisible()
+    await expect(a.getByTestId('home-maestro')).toBeVisible()
+    await expect(a.getByTestId('home-member-count')).toBeVisible()
+    await expect(a.getByTestId('home-support')).toBeVisible()
 
     const fits = await page.evaluate(
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
     )
     expect(fits).toBe(true)
+  })
+
+  // Fix round 1, IMPORTANT 1: instance (b) is the exact shape of the bug
+  // this fixes -- labHead set, showLabHeadOnHome false. No PI panel, and
+  // the PI must now count as an ordinary member: (b)'s count is (a)'s
+  // count plus exactly one.
+  test('(b) labHead hidden (showLabHeadOnHome: false): no PI panel, and the member count includes the PI', async ({
+    page,
+  }) => {
+    await page.goto('/preview/components')
+
+    const a = page.getByTestId('gallery-home-a')
+    const b = page.getByTestId('gallery-home-b')
+
+    await expect(b.getByTestId('home-pi-panel')).toHaveCount(0)
+    await expect(b.getByTestId('home-member-count')).toBeVisible()
+
+    const countText = (el: Locator) =>
+      el
+        .getByTestId('home-member-count')
+        .locator('a')
+        .first()
+        .evaluate((node) => {
+          const match = node.textContent?.match(/\d+/)
+          if (!match) throw new Error('no digit found in member-count link text')
+          return Number(match[0])
+        })
+
+    const countA = await countText(a)
+    const countB = await countText(b)
+    expect(countB).toBe(countA + 1)
   })
 })

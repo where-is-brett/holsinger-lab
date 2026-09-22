@@ -15,12 +15,14 @@ import type {
 
 import { currentMemberCount, plainTagline, resolveLabHeadHref, shouldShowLabHeadCard } from '../homeModel'
 import { initialsOf } from '../peopleModel'
+import { IMAGE_FILTER } from '../PersonCard'
 import { PortableBody } from '../PortableBody'
-import { deriveLink, formatRef, type Publication } from '../publicationModel'
+import type { Publication } from '../publicationModel'
 import { PublicationRow } from '../PublicationRow'
-import { ResourceBlock, type ResourceBlockMeta } from '../ResourceBlock'
+import { ResourceBlock } from '../ResourceBlock'
+import { buildResourceMeta } from '../resourceModel'
 import { SectionRail } from '../SectionRail'
-import { LABEL } from '../tokens'
+import { LABEL, STRIPE_BG } from '../tokens'
 
 // Composition follows
 // docs/redesign-experiment/design-system/ui_kits/site/Home.jsx (task brief
@@ -39,15 +41,23 @@ function IdentityBlock({
   home,
   siteName,
   settings,
+  headingLevel = 'h1',
 }: {
   home: HomePagePayload
   siteName: string
   settings: SettingsPayload
+  headingLevel?: 'h1' | 'h2'
 }) {
-  const title = home.title || siteName
+  // Fix round 1, point 3: a Studio string field can collect a stray space
+  // -- `.trim()` before the `||` fallback, same "whitespace-only counts as
+  // unset" rule `resolveBranding` (lib/branding.ts) already applies to
+  // `siteName` itself, so a whitespace-only `home.title` falls through to
+  // `siteName` instead of rendering a blank `<h1>`.
+  const title = home.title?.trim() || siteName
   const tagline = plainTagline(home.overview) ?? IA_TAGLINE
   const labHead = settings.labHead
   const showPiPanel = shouldShowLabHeadCard(settings) && Boolean(labHead)
+  const Heading = headingLevel
 
   return (
     <div>
@@ -57,9 +67,9 @@ function IdentityBlock({
           The University of Sydney
         </span>
       </div>
-      <h1 className="mt-[30px] max-w-[1180px] text-pretty break-words text-display font-semibold">
+      <Heading className="mt-[30px] max-w-[1180px] text-pretty break-words text-display font-semibold">
         {title}
-      </h1>
+      </Heading>
       {/* Two-column grid ([tagline | PI panel]) from `lg`, stacked below --
           same `grid-cols-1` + explicit `lg:`-prefixed track pattern as
           Research.tsx's NARRATIVE_GRID / PersonPage.tsx's PROFILE_GRID:
@@ -136,29 +146,10 @@ function RecentWorkBlock({ publications, count }: { publications: Publication[];
 
 // -- Block 3: Resources ---------------------------------------------------
 
-// Same SOURCE/DOI-or-URL meta shape as Resources.tsx's own `buildMeta` --
-// duplicated rather than imported, since Resources.tsx's version isn't
-// exported and Home only ever needs it for the single first resource, not
-// a whole list. Kept in lockstep by sharing `deriveLink`/`formatRef` from
-// publicationModel.ts, the same primitives Resources.tsx builds on.
-function buildResourceMeta(resource: HomeResourcePayload): ResourceBlockMeta[] {
-  const meta: ResourceBlockMeta[] = [{ label: 'KIND', value: resource.kind ?? '' }]
-  const pub = resource.publication
-  if (pub) {
-    const year = pub.date ? pub.date.slice(0, 4) : ''
-    const ref = formatRef(pub.volume ?? null, pub.issue ?? null, pub.pages ?? null)
-    const journalRef = [pub.journal ?? '', ref].filter(Boolean).join(' ')
-    const source = [journalRef, year].filter(Boolean).join(' · ') || (pub.title ?? '').trim()
-    if (source) {
-      meta.push({ label: 'SOURCE', value: source, href: pub.slug ? `/publications/${pub.slug}` : undefined })
-    }
-    const link = deriveLink(pub.doi ?? null, pub.url ?? null)
-    if (link) {
-      meta.push({ label: link.kind, value: link.label, href: link.href })
-    }
-  }
-  return meta
-}
+// `buildResourceMeta` (KIND / SOURCE / DOI-or-URL) moved to
+// resourceModel.ts (PR C Task 3 fix round 1, IMPORTANT 2) -- it was a
+// verbatim duplicate of Resources.tsx's own copy, and the two would have
+// silently drifted. Both screens import the one shared function now.
 
 function ResourcesBlock({ resource }: { resource: HomeResourcePayload }) {
   return (
@@ -189,7 +180,7 @@ function OutreachBlock({ maestro }: { maestro: MaestroProjectPayload }) {
       <div className="max-w-[720px] text-pretty break-words text-heading font-semibold" data-testid="maestro-title">
         {maestro.title}
       </div>
-      <PortableBody blocks={maestro.overview} size="inverse" />
+      <PortableBody blocks={maestro.overview} variant="inverse" />
       {maestro.site && (
         // No `data-identifier`: unlike PublicationRow/ResourceBlock's
         // identifiers, this anchor's rendered text is "REGISTER — <label>",
@@ -235,21 +226,30 @@ const LAB_GRID = 'grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-start lg:gap-x-
 // the collision entirely -- same reasoning as Research.tsx's
 // NARRATIVE_GRID_SOLO and ResourceBlock.tsx's `twoColumn` ternary: a
 // second whole shape, not a bolted-on override.
-const PI_PORTRAIT_STRIPE_BG =
-  'repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in oklab, var(--sem-text) 4.5%, transparent) 12px 13px)'
+//
+// Fix round 1, point 4: the image branch now composes PersonCard.tsx's own
+// exported `IMAGE_FILTER` (grayscale/contrast/hover-reveal treatment)
+// instead of a bare `object-cover`, so the PI's Home portrait matches
+// every other portrait in this direction rather than rendering in plain
+// colour. `IMAGE_FILTER` only ever targets `object-fit`/filter/transition
+// -- never `width`/`height`/`aspect-ratio` -- so it composes cleanly onto
+// this component's own `h-16 w-16` sizing with no property collision.
+// `STRIPE_BG` (the no-portrait fallback background) also now comes from
+// tokens.ts, the same hoist PersonCard.tsx/ResourceBlock.tsx's own
+// comments describe -- this was a third verbatim copy of the same string.
 
 function PiPortrait64({ name, img }: { name: string; img?: string }) {
   if (img) {
     return (
       <div className="relative h-16 w-16 shrink-0 overflow-hidden bg-surface-raised">
-        <Image src={img} alt={name} fill sizes="64px" className="object-cover" />
+        <Image src={img} alt={name} fill sizes="64px" className={IMAGE_FILTER} />
       </div>
     )
   }
   return (
     <div
       className="box-border flex h-16 w-16 shrink-0 items-center justify-center border border-rule"
-      style={{ backgroundImage: PI_PORTRAIT_STRIPE_BG }}
+      style={{ backgroundImage: STRIPE_BG }}
     >
       <span className="font-mono text-[16px] leading-none font-medium text-text-muted">{initialsOf(name)}</span>
     </div>
@@ -260,13 +260,13 @@ function TheLabBlock({
   showPiPanel,
   labHead,
   memberCount,
-  showPeople,
+  showMembersLine,
   supportPage,
 }: {
   showPiPanel: boolean
   labHead: SettingsPayload['labHead']
   memberCount: number
-  showPeople: boolean
+  showMembersLine: boolean
   supportPage: SupportPagePayload | null
 }) {
   return (
@@ -289,7 +289,15 @@ function TheLabBlock({
           </div>
         </div>
       )}
-      {showPeople && (
+      {/* Fix round 1, point 6 ruling: the members line renders only when
+          `memberCount > 0` (computed by the caller, passed as
+          `showMembersLine`) -- "0 — PEOPLE →" is not a useful link, and
+          `settings.showPeople !== false` alone (the old condition) doesn't
+          guarantee there's actually anyone to count. "The lab" block itself
+          still renders whenever any of its three parts has content -- see
+          `Home`'s own `showTheLab` calculation, which no longer treats
+          `showPeople` as sufficient on its own either. */}
+      {showMembersLine && (
         <div className="min-w-0" data-testid="home-member-count">
           <div className={`${LABEL} mb-2.5`}>Current members</div>
           <Link href="/people" className="text-[24px] font-semibold">
@@ -324,6 +332,7 @@ export function Home({
   profiles,
   roleGroups,
   supportPage,
+  headingLevel,
 }: {
   home: HomePagePayload
   settings: SettingsPayload
@@ -335,19 +344,53 @@ export function Home({
   profiles: ProfilePayload[]
   roleGroups: RoleGroupPayload[]
   supportPage: SupportPagePayload | null
+  /** Forwarded to Identity's own heading -- see PageTitle.tsx's identical
+   * doc comment and People.tsx/Research.tsx's own `headingLevel` prop.
+   * Only ever set by the /preview/components gallery, which (fix round 1)
+   * now renders two `Home` instances alongside its own headings; the real
+   * `/` route never passes this, so it always gets the correct `<h1>`. */
+  headingLevel?: 'h1' | 'h2'
 }) {
   const labHead = settings.labHead
   const showPiPanel = shouldShowLabHeadCard(settings) && Boolean(labHead)
   const showPeople = settings.showPeople !== false
-  const memberCount = currentMemberCount(profiles, roleGroups, labHead?._id)
+  // Fix round 1, IMPORTANT 1: excludes the lab head from the count only
+  // when Home's own PI panel actually renders (`showPiPanel`), not
+  // unconditionally whenever `labHead` is merely set. Before this fix,
+  // with `labHead` set and `showLabHeadOnHome === false`, Home hid the PI
+  // panel *and* still subtracted the PI from the count -- that person
+  // appeared nowhere on the page, yet still changed the number, an
+  // internal inconsistency between what this same render shows and what
+  // it counts. Gating the exclusion on `showPiPanel` (this page's own
+  // "is the PI visible here" boolean, mirroring how `People.tsx` gates
+  // `excludeLabHead` on its own `showSpotlight`) keeps Home internally
+  // consistent, and -- since `showPiPanel` and `People.tsx`'s
+  // `showSpotlight` are both "labHead set AND the page's own show flag"
+  // -- the two pages' counts agree whenever `showLabHeadOnHome` and
+  // `showLabHeadOnPeople` happen to carry the same value, which
+  // `e2e/home.spec.ts` now cross-checks directly against /people's own
+  // rendered meta rather than re-deriving the rule.
+  const memberCount = currentMemberCount(profiles, roleGroups, showPiPanel ? labHead?._id : null)
+  // Fix round 1, point 6: "0 — PEOPLE →" is never rendered -- the members
+  // line needs both the page-level flag and an actual positive count.
+  const showMembersLine = showPeople && memberCount > 0
 
   const showRecentWork = publications.length > 0 && settings.showPublications !== false
   const showResources = Boolean(resource)
   const showOutreach = Boolean(maestro)
-  const showTheLab = showPiPanel || showPeople || Boolean(supportPage)
+  // "The lab" itself still renders whenever any one of its three parts
+  // has content -- no longer keyed off `showPeople` alone, since a
+  // `showPeople`-true page with zero current members (and no PI panel, no
+  // support page) would otherwise render an empty rail.
+  const showTheLab = showPiPanel || showMembersLine || Boolean(supportPage)
 
   const blocks: Array<{ label: string; inverse?: boolean; content: ReactNode }> = [
-    { label: 'Identity', content: <IdentityBlock home={home} siteName={siteName} settings={settings} /> },
+    {
+      label: 'Identity',
+      content: (
+        <IdentityBlock home={home} siteName={siteName} settings={settings} headingLevel={headingLevel} />
+      ),
+    },
   ]
   if (showRecentWork) {
     blocks.push({
@@ -369,7 +412,7 @@ export function Home({
           showPiPanel={showPiPanel}
           labHead={labHead}
           memberCount={memberCount}
-          showPeople={showPeople}
+          showMembersLine={showMembersLine}
           supportPage={supportPage}
         />
       ),

@@ -782,3 +782,18 @@ export const HOME_SUPPORT_PAGE_FIXTURE: SupportPagePayload = {
   title: 'Support our research',
   slug: 'support-our-research',
 }
+
+// Fix round 1, IMPORTANT 1: a second settings fixture, `labHead` set but
+// `showLabHeadOnHome: false` -- the exact shape of the bug this fix
+// addresses (Home hid the PI panel *and* still subtracted the PI from the
+// member count, an internal inconsistency within the same render). With
+// the PI panel genuinely hidden, `currentMemberCount` must now count the
+// PI as an ordinary member (`homeModel.ts`'s `currentMemberCount` is only
+// ever told to exclude the id Home decided *not* to show a panel for) --
+// `e2e/home.spec.ts`'s own gallery assertions prove the two `gallery-home*`
+// instances' counts differ by exactly one, the PI herself.
+export const HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE: SettingsPayload = {
+  ...fallbackSettings,
+  labHead: HOME_LAB_HEAD_FIXTURE,
+  showLabHeadOnHome: false,
+}

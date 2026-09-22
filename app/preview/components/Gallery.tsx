@@ -11,6 +11,7 @@ import {
   HOME_PUBLICATIONS_FIXTURE,
   HOME_RESOURCE_FIXTURE,
   HOME_SETTINGS_FIXTURE,
+  HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE,
   HOME_SUPPORT_PAGE_FIXTURE,
   LINKED_PUB,
   NO_LINK_PUB,
@@ -485,7 +486,8 @@ export default function Gallery() {
             link actually render. The `maestro` project *does* exist live,
             but the fixture's own copy proves the block independent of
             live-data drift. */}
-        <div className="border border-rule">
+        <SubHeading>(a) labHead set, showLabHeadOnHome true -- PI panel shows, PI excluded from the count</SubHeading>
+        <div className="mb-8 border border-rule" data-testid="gallery-home-a">
           <Home
             home={HOME_PAGE_FIXTURE}
             settings={HOME_SETTINGS_FIXTURE}
@@ -497,6 +499,30 @@ export default function Gallery() {
             profiles={PEOPLE_PROFILES_FIXTURE}
             roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
             supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+            headingLevel="h2"
+          />
+        </div>
+
+        {/* Fix round 1, IMPORTANT 1: the exact shape of the bug this fixes
+            -- labHead set, but showLabHeadOnHome false, so the PI panel is
+            hidden. The PI must now count as an ordinary member (this
+            instance's count is instance (a)'s count plus exactly one, the
+            PI herself) instead of being silently subtracted while
+            appearing nowhere on the page. */}
+        <SubHeading>(b) labHead set, showLabHeadOnHome false -- no PI panel, PI included in the count</SubHeading>
+        <div className="border border-rule" data-testid="gallery-home-b">
+          <Home
+            home={HOME_PAGE_FIXTURE}
+            settings={HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE}
+            siteName="Holsinger Lab"
+            publications={HOME_PUBLICATIONS_FIXTURE}
+            publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+            resource={HOME_RESOURCE_FIXTURE}
+            maestro={HOME_MAESTRO_FIXTURE}
+            profiles={PEOPLE_PROFILES_FIXTURE}
+            roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+            supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+            headingLevel="h2"
           />
         </div>
       </section>

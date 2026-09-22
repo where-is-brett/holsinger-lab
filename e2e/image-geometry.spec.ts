@@ -22,15 +22,25 @@ const WIDTHS = [
 
 /**
  * Routes for the undefined-class sweep. Deliberately a superset of
- * ROUTES, with `/tutorial` added as defence-in-depth breadth rather than
- * because it currently reaches an interpolation site the other routes
- * miss: today, every call site that omits `paragraphClasses` (Header,
- * ProjectListItem) renders only `normal` paragraph blocks, and both
- * already appear on `/` and the project route, while `/tutorial`'s
- * richer blocks (lists, headings) come via Page.tsx, which always
- * passes a non-empty `paragraphClasses`. The extra route guards against
- * a future caller or future content that changes that, not a gap that
- * exists today.
+ * ROUTES, plus `/` and `/tutorial` as defence-in-depth breadth rather than
+ * because either currently reaches an interpolation site the other routes
+ * miss.
+ *
+ * `/tutorial`'s richer portable-text blocks (lists, headings) come via
+ * Page.tsx (`CustomPortableText`), which always passes a non-empty
+ * `paragraphClasses` -- `Header`'s own call site (Page.tsx, ProjectPage.tsx,
+ * neither of them `/`) omits it and renders only `normal` blocks, already
+ * covered by `/tutorial` and `/projects/about-dr-damian-holsinger` above.
+ *
+ * Task 3 update: `/` is kept in this sweep, but no longer for the
+ * `Header`/`CustomPortableText` reason above -- the rebuilt Home
+ * (Home.tsx) doesn't render `CustomPortableText` at all (its one portable-
+ * text block, the MAESTRO overview, goes through `PortableBody`, which
+ * always supplies its own paragraph class). `/` stays in the sweep because
+ * it renders several other components that each interpolate a class string
+ * from data (`PublicationRow`, `ResourceBlock`, `PersonCard`-style
+ * portrait treatment) -- the same general breadth reasoning as
+ * `/tutorial`'s own inclusion, not a specific known gap.
  */
 const CLASS_SWEEP_ROUTES = ['/', ...ROUTES, '/tutorial']
 

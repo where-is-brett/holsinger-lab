@@ -74,10 +74,10 @@ function Narrative({ project }: { project: ResearchProjectView }) {
           {project.title}
         </h2>
         {/* IMPORTANT 1 (fix round 1): the overview is lead-size body colour
-            (`size="lead"`), per the brief and the ui_kit's own `Narrative`
+            (`variant="lead"`), per the brief and the ui_kit's own `Narrative`
             body paragraph (`fontSize: "var(--text-lead)"`, no muted colour
             override) -- not the bio's smaller, muted default. */}
-        <PortableBody blocks={project.overview} size="lead" />
+        <PortableBody blocks={project.overview} variant="lead" />
       </div>
       {cover && (
         <Image

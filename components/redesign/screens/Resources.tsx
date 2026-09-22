@@ -2,8 +2,8 @@ import type { ResourcePayload } from 'types'
 
 import { PageTitle } from '../PageTitle'
 import { PortableBody } from '../PortableBody'
-import { deriveLink, formatRef } from '../publicationModel'
-import { ResourceBlock, type ResourceBlockMeta } from '../ResourceBlock'
+import { ResourceBlock } from '../ResourceBlock'
+import { buildResourceMeta } from '../resourceModel'
 import { SectionRail } from '../SectionRail'
 
 // Task 1 brief / spec §6, §2 ruling 1: one `/resources` index page, no
@@ -13,42 +13,10 @@ import { SectionRail } from '../SectionRail'
 // `gallery-resources` fixture (app/preview/components/Gallery.tsx), never
 // against real data yet.
 
-// "journal ref · year" (Task 1 brief point 2) -- the same "journal ref"
-// pairing PublicationRow.tsx already prints, with the year appended after a
-// separating " · ". Each half is dropped rather than leaving a dangling
-// separator when the linked publication is missing a piece.
-function formatSource(journal: string, ref: string, year: string): string {
-  const journalRef = [journal, ref].filter(Boolean).join(' ')
-  return [journalRef, year].filter(Boolean).join(' · ')
-}
-
-function buildMeta(resource: ResourcePayload): ResourceBlockMeta[] {
-  const meta: ResourceBlockMeta[] = [{ label: 'KIND', value: resource.kind ?? '' }]
-  const pub = resource.publication
-  if (pub) {
-    const year = pub.date ? pub.date.slice(0, 4) : ''
-    const ref = formatRef(pub.volume ?? null, pub.issue ?? null, pub.pages ?? null)
-    // Fix round 1: `formatSource` alone can come back empty (no journal, no
-    // ref, no year on file), which used to render a SOURCE row whose value
-    // was a blank, but still clickable, link. Falling back to the
-    // publication's own (trimmed) title keeps the link meaningful; if even
-    // that is blank, the row is dropped entirely below -- never an empty
-    // link.
-    const source = formatSource(pub.journal ?? '', ref, year) || (pub.title ?? '').trim()
-    if (source) {
-      meta.push({
-        label: 'SOURCE',
-        value: source,
-        href: pub.slug ? `/publications/${pub.slug}` : undefined,
-      })
-    }
-    const link = deriveLink(pub.doi ?? null, pub.url ?? null)
-    if (link) {
-      meta.push({ label: link.kind, value: link.label, href: link.href })
-    }
-  }
-  return meta
-}
+// `formatSource`/`buildResourceMeta` moved to `resourceModel.ts` (PR C
+// Task 3 fix round 1, IMPORTANT 2) -- Home.tsx builds the identical
+// KIND/SOURCE/DOI-or-URL meta rows for its own single first resource, and
+// the two were a verbatim duplicate that would have silently drifted.
 
 export function Resources({ resources }: { resources: ResourcePayload[] }) {
   const n = resources.length
@@ -68,7 +36,7 @@ export function Resources({ resources }: { resources: ResourcePayload[] }) {
             label={resource.kind ?? ''}
             borderTop={index !== 0}
           >
-            <ResourceBlock title={resource.title ?? ''} meta={buildMeta(resource)}>
+            <ResourceBlock title={resource.title ?? ''} meta={buildResourceMeta(resource)}>
               {/* Fix round 1: aligned to PortableBody's own BIO_PARAGRAPH
                   measure (`max-w-[720px]`), not ResourceBlock's narrower
                   640px title column, so the summary and the howToObtain

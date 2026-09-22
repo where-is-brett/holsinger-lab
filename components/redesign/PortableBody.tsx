@@ -93,26 +93,29 @@ const INVERSE_COMPONENTS = components(BIO_PARAGRAPH_INVERSE, BIO_LINK_INVERSE)
  * paragraph for a CMS record that only has the legacy `bio` string field.
  * Renders nothing when neither is set.
  *
- * `size`: `'body'` (default) is the muted bio style every existing caller
- * (People's spotlight, PersonPage's full profile) already renders at --
- * unchanged. `'lead'` is Research's project overview. `'inverse'` is
- * Home's MAESTRO band (PR C Task 3) -- each a whole separate paragraph
- * (and, for `'inverse'`, link) class string picked below, per this file's
- * own same-property-collision reasoning, never `BIO_PARAGRAPH_BODY` with a
- * colour/size override bolted on.
+ * `variant` (renamed from `size` -- PR C Task 3 fix round 1, point 7: this
+ * picks more than font size, `'inverse'` changes colour not size, so
+ * `variant` names what the prop actually controls): `'body'` (default) is
+ * the muted bio style every existing caller (People's spotlight,
+ * PersonPage's full profile) already renders at -- unchanged. `'lead'` is
+ * Research's project overview. `'inverse'` is Home's MAESTRO band -- each
+ * a whole separate paragraph (and, for `'inverse'`, link) class string
+ * picked below, per this file's own same-property-collision reasoning,
+ * never `BIO_PARAGRAPH_BODY` with a colour/size override bolted on.
  */
 export function PortableBody({
   blocks,
   bio,
-  size = 'body',
+  variant = 'body',
 }: {
   blocks?: (PortableTextBlock | ArbitraryTypedObject)[] | null
   bio?: string | null
-  size?: 'body' | 'lead' | 'inverse'
+  variant?: 'body' | 'lead' | 'inverse'
 }) {
   const paragraphClass =
-    size === 'lead' ? BIO_PARAGRAPH_LEAD : size === 'inverse' ? BIO_PARAGRAPH_INVERSE : BIO_PARAGRAPH_BODY
-  const bioComponents = size === 'lead' ? LEAD_COMPONENTS : size === 'inverse' ? INVERSE_COMPONENTS : BIO_COMPONENTS
+    variant === 'lead' ? BIO_PARAGRAPH_LEAD : variant === 'inverse' ? BIO_PARAGRAPH_INVERSE : BIO_PARAGRAPH_BODY
+  const bioComponents =
+    variant === 'lead' ? LEAD_COMPONENTS : variant === 'inverse' ? INVERSE_COMPONENTS : BIO_COMPONENTS
 
   if (blocks && blocks.length > 0) {
     return <PortableText value={blocks} components={bioComponents} />

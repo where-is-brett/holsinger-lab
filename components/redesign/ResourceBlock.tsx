@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 
+import { STRIPE_BG } from './tokens'
+
 export interface ResourceBlockMeta {
   label: string
   value: string
@@ -40,10 +42,9 @@ export interface ResourceBlockProps {
 // additive, not a same-property collision (constraints.md).
 const IDENTIFIER = 'normal-case! break-all'
 
-// Task brief decision #2: a static generated background is legitimate as an
-// inline style -- see the matching constant/comment in PersonCard.tsx.
-const STRIPE_BG =
-  'repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in oklab, var(--sem-text) 4.5%, transparent) 12px 13px)'
+// `STRIPE_BG` (task brief decision #2: a static generated background is
+// legitimate as an inline style) now lives in tokens.ts (PR C Task 3 fix
+// round 1) -- see that file's own comment.
 
 export function ResourceBlock({ title, meta = [], figureLabel, children }: ResourceBlockProps) {
   // Fix round 1: the two-track grid (a 1fr text column plus a fixed
