@@ -248,9 +248,10 @@ export default function Gallery() {
             in the section below -- two simultaneously-visible, unlabelled
             navigation landmarks on one page trip axe's landmark-unique
             check. The production SiteChrome mirrors the same `hidden
-            md:block` / `md:hidden` breakpoint split as the old
-            Desktop|MobileNavBar.tsx -- axe treats a `display: none` subtree
-            as absent, so only one <nav> is ever "seen" at a given viewport.
+            md:block` / `md:hidden` breakpoint split as the retired
+            Desktop/MobileNavBar pair -- axe treats a `display: none`
+            subtree as absent, so only one <nav> is ever "seen" at a given
+            viewport.
             Each instance below also gets its own distinct `label`, since
             several navs are visible on this page at once. */}
         <div className="hidden border border-rule md:block">

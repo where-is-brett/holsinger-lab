@@ -1,8 +1,9 @@
-import { Footer } from 'components/global/Footer'
-import { Navbar } from 'components/global/Navbar/Navbar'
+import Logo from 'components/global/Logo'
+import { footerLines, liveNavItems } from 'components/redesign/navModel'
+import { SiteChrome } from 'components/redesign/SiteChrome'
+import { SiteFooter } from 'components/redesign/SiteFooter'
 import { resolveBranding } from 'lib/branding'
-import { fallbackSettings } from 'types'
-import { SettingsPayload } from 'types'
+import { fallbackSettings, type SettingsPayload } from 'types'
 
 export interface LayoutProps {
   children: React.ReactNode
@@ -15,27 +16,31 @@ export default function Layout({
   settings = fallbackSettings,
   childrenStyles = 'px-gutter',
 }: LayoutProps) {
-  const { shortName } = resolveBranding(settings)
+  const { siteName, shortName } = resolveBranding(settings)
+
+  // Phase 4B's uploaded logo still wins over the text wordmark when set.
+  const logo = settings?.logo ? (
+    <Logo logo={settings.logo} logoDark={settings.logoDark} shortName={shortName} />
+  ) : undefined
 
   return (
-    <div className={`flex min-h-screen flex-col bg-surface text-text`}>
-      <Navbar
-        menuItems={settings?.menuItems}
-        showPublications={settings?.showPublications ?? true}
-        showPeople={settings?.showPeople ?? true}
-        showContactForm={settings?.showContactForm ?? true}
-        logo={settings?.logo}
-        logoDark={settings?.logoDark}
-        shortName={shortName}
+    <div className="flex min-h-screen flex-col bg-surface text-text">
+      <SiteChrome
+        items={liveNavItems()}
+        wordmark={{ long: siteName, short: shortName }}
+        logo={logo}
       />
 
-      <main
-        className={`mt-32 flex-grow md:mt-16 md:px-gutter-md lg:px-gutter-lg ${childrenStyles}`}
-      >
+      {/* The header is now in-flow and sticky at every width. `mt-20`
+          keeps mobile content where it sat under the old 48px fixed bar
+          plus mt-32 (128 - 48 = 80px); desktop was already in-flow, so
+          md:mt-16 is unchanged. Step 2's screen rebuilds own this spacing
+          from here on. */}
+      <main className={`mt-20 flex-grow md:mt-16 md:px-gutter-md lg:px-gutter-lg ${childrenStyles}`}>
         {children}
       </main>
 
-      <Footer footer={settings?.footer} />
+      <SiteFooter lines={footerLines(settings?.footer)} />
     </div>
   )
 }

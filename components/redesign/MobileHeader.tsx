@@ -16,7 +16,7 @@ import type { NavId, NavItem } from './navModel'
 // `sticky top-0` header, the panel is `fixed inset-0`). While open, every
 // control the user can see is inside the dialog's own tree, so nothing
 // outside it ever needs to receive a click. That is what retires the two
-// transparent overlays components/global/Navbar/MobileNavBar.tsx carried.
+// transparent overlays the old MobileNavBar carried (Phase 3 deleted it).
 
 // Height from --nav-height, not the source's hardcoded 48 (styles/nav-height.test.ts).
 const BAND =
@@ -25,10 +25,17 @@ const BAND =
 const WORDMARK =
   'flex min-w-0 items-center font-mono text-[9.5px] leading-none font-medium tracking-[0.1em] uppercase'
 
-// `min-w-11`: the source's ~43px-wide toggle sits under the 44px floor; the
-// band's full height already clears it vertically (`items-stretch`).
+// `w-16`: a FIXED width, not just the source's ~43px min-width floor. Open
+// and closed render different labels ("Menu" vs "Close ✕"), and a
+// content-sized button would then be two different widths -- which is
+// exactly the 13px mismatch e2e/mobile-menu.spec.ts's geometry test caught
+// (Task 4). A fixed width, comfortably over either label's natural width,
+// keeps the in-panel Close's box identical to the outer Menu toggle's,
+// which both clears the 44px tap-target floor and is the geometry decision
+// 3 depends on. The band's full height already clears the target
+// vertically (`items-stretch`).
 const TOGGLE =
-  'flex min-w-11 shrink-0 items-center justify-center px-1 font-mono text-[9.5px] leading-none font-medium tracking-[0.14em] uppercase text-link'
+  'flex w-16 shrink-0 items-center justify-center px-1 font-mono text-[9.5px] leading-none font-medium tracking-[0.14em] uppercase text-link'
 
 const SHEET_ROW =
   'flex min-h-14 items-center gap-4 box-border border-b border-rule px-(--spacing-gutter) font-mono text-[14px] leading-none font-medium tracking-[0.12em] uppercase'
@@ -43,9 +50,16 @@ export interface MobileBandProps {
   onToggle?: () => void
   /** Called when the wordmark link is activated -- the open sheet closes itself. */
   onHome?: () => void
+  /**
+   * Headless UI 2.x honours `data-autofocus` on an element inside the
+   * panel: passed only by the in-panel instance, so the dialog's initial
+   * focus lands on Close rather than the wordmark link that precedes it in
+   * DOM order.
+   */
+  autoFocus?: boolean
 }
 
-export function MobileBand({ wordmark, logo, open, onToggle, onHome }: MobileBandProps) {
+export function MobileBand({ wordmark, logo, open, onToggle, onHome, autoFocus }: MobileBandProps) {
   return (
     <div className={BAND}>
       <Link
@@ -62,6 +76,7 @@ export function MobileBand({ wordmark, logo, open, onToggle, onHome }: MobileBan
         onClick={onToggle}
         aria-expanded={open}
         aria-controls="mobile-menu-panel"
+        data-autofocus={autoFocus || undefined}
         className={TOGGLE}
       >
         {open ? (
@@ -133,7 +148,10 @@ export function MobileHeader({ items, current, wordmark, logo }: MobileHeaderPro
   }, [])
 
   return (
-    <div data-testid="mobile-header">
+    // `<header>`, not a bare `<div>`: the closed band's wordmark link
+    // otherwise sits outside any landmark, which axe's `region` rule flags
+    // (found running e2e/axe.spec.ts at mobile viewports in Task 4).
+    <header data-testid="mobile-header">
       <MobileBand wordmark={wordmark} logo={logo} open={open} onToggle={() => setOpen(true)} />
       <Dialog
         open={open}
@@ -141,17 +159,22 @@ export function MobileHeader({ items, current, wordmark, logo }: MobileHeaderPro
         transition
         unmount={false}
         aria-label="Menu"
-        className="relative z-50"
+        // `fixed inset-0`, not `relative`: DialogPanel is itself `fixed
+        // inset-0`, which is out of flow -- a merely `relative` root has no
+        // in-flow content and collapses to zero height, which is a real
+        // box, and a role="dialog" element with a zero-size box reads as
+        // not visible (Playwright's actionability checks, some AT).
+        className="fixed inset-0 z-50"
       >
         <DialogPanel
           id="mobile-menu-panel"
           transition
           className="fixed inset-0 overflow-y-auto bg-surface text-text transition-opacity duration-(--sem-motion-reveal) ease-(--sem-ease) data-closed:opacity-0"
         >
-          <MobileBand wordmark={wordmark} logo={logo} open onToggle={close} onHome={close} />
+          <MobileBand wordmark={wordmark} logo={logo} open onToggle={close} onHome={close} autoFocus />
           <MobileNavRows items={items} current={current} onNavigate={close} />
         </DialogPanel>
       </Dialog>
-    </div>
+    </header>
   )
 }

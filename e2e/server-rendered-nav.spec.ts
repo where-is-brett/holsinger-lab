@@ -9,7 +9,7 @@ test.describe('navigation renders without client-side JavaScript', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/')
     await expect(
-      page.getByRole('link', { name: 'Publications' })
+      page.getByTestId('site-header').getByRole('link', { name: 'Publications' })
     ).toBeVisible()
   })
 
@@ -18,9 +18,7 @@ test.describe('navigation renders without client-side JavaScript', () => {
   }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/')
-    // The logo is an inlined <svg role="img" aria-label="logo"> (Phase 3A
-    // Task 5 -- an external image reference couldn't pick up the dark-mode
-    // token colour), so it has no `alt` attribute for getByAltText to match.
-    await expect(page.getByRole('img', { name: 'logo' })).toBeVisible()
+    await expect(page.getByTestId('mobile-wordmark').first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Menu', exact: true })).toBeVisible()
   })
 })

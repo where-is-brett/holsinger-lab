@@ -456,9 +456,10 @@ describe('token-role misuse guard', () => {
     // Generalizes past the co-occurrence check above. That check can only
     // ever catch bg-scrim paired with inverse text on a scanned className —
     // it structurally cannot see the *other* shape this same review found:
-    // MobileNavBar's hamburger icon used bg-scrim as a bare fill (no text
-    // involved anywhere) on a bg-scrim-coloured bar, so the icon and its
-    // background were the literal same colour. The fix here is to encode the
+    // the old MobileNavBar's hamburger icon (retired in Phase 3) used
+    // bg-scrim as a bare fill (no text involved anywhere) on a
+    // bg-scrim-coloured bar, so the icon and its background were the
+    // literal same colour. The fix here is to encode the
     // actual invariant directly — "--sem-scrim is a backdrop-only role; its
     // only legitimate consumer is ErrorDialog's DialogBackdrop" — rather than
     // continuing to guard one specific misuse shape of it.
@@ -467,8 +468,9 @@ describe('token-role misuse guard', () => {
     // check above is: it looks for the literal substring 'bg-scrim' anywhere
     // in a file's source, so a multi-literal composition — e.g.
     // `clsx('bg-scrim', 'text-text-inverse')`, which is exactly the style
-    // MobileNavBar's own `hamburgerLine` constant uses for its classes —
-    // can't evade it by splitting the class across separate string literals.
+    // the old MobileNavBar's own `hamburgerLine` constant used for its
+    // classes — can't evade it by splitting the class across separate
+    // string literals.
     const offenders = allTsxFiles()
       .filter((file) => readFileSync(file, 'utf8').includes('bg-scrim'))
       .map((file) => file.replace(PROJECT_ROOT, ''))
