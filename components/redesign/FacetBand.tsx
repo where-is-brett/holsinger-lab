@@ -31,8 +31,13 @@ export interface FacetBandProps {
 // is generated before `.items-start` -- so `${ROW} items-center` silently
 // stayed top-aligned (Task 8a review finding). A second, fully-formed class
 // string sidesteps the collision instead of relying on override order.
-const ROW = 'grid grid-cols-[72px_1fr] gap-x-5 items-start'
-const ROW_CENTER = 'grid grid-cols-[72px_1fr] gap-x-5 items-center'
+// `min-w-0` on both: the `1fr` track has an implicit `min-width: auto` and
+// would otherwise refuse to shrink below the widest chip row's min-content
+// width (the same blowout SectionRail.tsx's content column had before its
+// round-1 fix) -- additive to the existing `grid-cols`/`gap-x`/`items-*`
+// classes, not a replacement, so no same-property collision.
+const ROW = 'grid grid-cols-[72px_1fr] gap-x-5 items-start min-w-0'
+const ROW_CENTER = 'grid grid-cols-[72px_1fr] gap-x-5 items-center min-w-0'
 const ROW_LABEL = 'font-mono text-[10px] leading-[2.6] tracking-[0.14em] text-text-faint uppercase'
 
 // Duplicates SectionRail's rail-header block (accent num + vertical mono-
@@ -72,7 +77,14 @@ export function FacetBand({
           intra-group gap (Task 8a review finding). The density row below
           doesn't need this: its border-t + pt-3 already add ~18.5px of real
           separation from the last group's chips. */}
-      <div className="flex flex-col gap-5 pt-8 pr-(--spacing-gutter-lg) pb-9 pl-(--spacing-gutter-md)">
+      {/* Fix round 2: same fix as PageTitle.tsx's content column -- `min-w-0`
+          stops this RAIL_GRID `1fr` track's implicit `min-width: auto` from
+          blowing out on a long chip row, and the `pr`/`pl` gutters (were
+          hardcoded to the desktop `--spacing-gutter-lg`/`-md` tokens at
+          every width) now use the single `--spacing-gutter` token below
+          `md`, switching to the asymmetric desktop tokens from `md` --
+          pixel-identical there to before. */}
+      <div className="min-w-0 flex flex-col gap-5 pt-8 px-(--spacing-gutter) pb-9 md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)">
         {visibleGroups.map((g) => (
           <div key={g.label} className={ROW}>
             <span className={ROW_LABEL}>{g.label}</span>

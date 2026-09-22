@@ -51,21 +51,23 @@ function PaperBlock({ pub }: { pub: Publication }) {
         {[pub.journal, pub.ref, pub.dateLabel].filter(Boolean).join(' · ')}
       </div>
       {(pub.type || pub.topics.length > 0) && (
-        // Fix round 1: `flex-wrap` moves an *overflowing set* of tags onto a
-        // new line, but Tag's own chip is `whitespace-nowrap` (tokens.ts:
-        // fixed geometry, deliberately) -- a single long topic (e.g.
-        // "Metabolism, oxidative stress & neuroprotection", a real title in
-        // schemas/lib/topics) is wider on its own than a mobile content
-        // column, and flex items have the same implicit
-        // `min-width: auto` floor as grid items, so that one chip would
-        // still push past the row's width even after SectionRail.tsx's
-        // min-w-0 fix stops the page-wide blowout. `overflow-x-auto`
-        // contains that pathological case to a local horizontal scroll on
-        // this row, instead of it visually overflowing into the page.
-        <div className="mt-5 flex flex-wrap gap-2 overflow-x-auto">
-          {pub.type && <Tag>{pub.type}</Tag>}
+        // Fix round 1 tried `overflow-x-auto` here to contain a single long
+        // topic tag (Tag's chip is `whitespace-nowrap` by default --
+        // tokens.ts, fixed geometry -- so one long enough label, e.g. the
+        // real topic "Metabolism, oxidative stress & neuroprotection",
+        // pushes past the row's width even after SectionRail.tsx's min-w-0
+        // fix stops the page-wide blowout). Round 2: that scrollable region
+        // had nothing focusable inside it (axe's
+        // `scrollable-region-focusable`) and looked visually cut off on a
+        // phone. `Tag`'s new `wrap` prop is the real fix -- the chip wraps
+        // its own text and grows taller instead of needing to scroll or
+        // overflow, so this row no longer needs `overflow-x-auto` at all.
+        <div className="mt-5 flex flex-wrap gap-2">
+          {pub.type && <Tag wrap>{pub.type}</Tag>}
           {pub.topics.map((topic) => (
-            <Tag key={topic}>{topic}</Tag>
+            <Tag key={topic} wrap>
+              {topic}
+            </Tag>
           ))}
         </div>
       )}

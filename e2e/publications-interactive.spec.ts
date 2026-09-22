@@ -192,7 +192,13 @@ test.describe('publications index', () => {
   })
 
   test.describe('no horizontal overflow', () => {
-    for (const width of [768, 1023, 1024, 1280]) {
+    // 375/390 added in fix round 2: PageTitle.tsx and FacetBand.tsx had
+    // non-responsive gutters (fixed `pr`/`pl` gutter tokens at every width)
+    // and neither RAIL_GRID content column had its own `min-w-0`, so this
+    // page genuinely overflowed at real phone widths (measured 621px
+    // scrollWidth vs a 375px viewport before the fix) -- previously
+    // uncaught because this describe block only ever checked >=768px.
+    for (const width of [375, 390, 768, 1023, 1024, 1280]) {
       test(`at ${width}px`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 })
         await page.goto('/publications')

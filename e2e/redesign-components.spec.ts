@@ -299,56 +299,47 @@ test.describe('redesign component gallery', () => {
     expect(citationBox!.width).toBeGreaterThan(wrapperBox!.width * 0.95)
   })
 
-  // Fix round 1 note: this is scoped to the new `gallery-publication-page`
-  // section rather than a whole-page `document.documentElement.scrollWidth`
-  // check. Investigating the latter surfaced a genuine, *pre-existing*
-  // horizontal-overflow defect in the gallery's own `PageTitle`/`FacetBand`
-  // sections (from Task 4, unrelated to ResourceBlock or PublicationPage --
-  // confirmed present on the real production `/publications` route too, not
-  // just this gallery), which no test caught before because no prior test
-  // checked 375px on this page. Fixing that is a separate, out-of-scope
-  // change (touches two shared components used by production routes); it's
-  // flagged as a follow-up rather than silently expanded into this fix
-  // round. This test instead proves the actual thing under test: that
-  // ResourceBlock/PublicationPage's own mobile fix holds, by checking that
-  // no *unclipped* element inside the new section pushes past the
-  // viewport (an `overflow-x-auto` descendant, like the Tag row fix below,
-  // is expected to have interior overflow -- that's the point of giving it
-  // a scrollbar instead of blowing out the page -- so only elements with no
-  // clipping ancestor count as real page-overflow contributors). The real
-  // `/publications/[slug]` production route gets its own whole-page 375px
-  // check across every live paper in e2e/publication-page.spec.ts, which is
-  // unaffected by the gallery-only PageTitle/FacetBand issue and does pass.
-  test('publication page: no unclipped overflow at 375px', async ({ page }) => {
+  // Fix round 1 tried a bounding-rect walk scoped to the new
+  // `gallery-publication-page` section, with an ancestor `isClipped()` check
+  // meant to exempt legitimately-scrolled descendants. Round 2 found two
+  // independent problems with that approach:
+  //
+  // 1. **It could never fail.** `styles/index.css` sets
+  //    `html { overflow-x: hidden }`, so `isClipped()`'s walk up to `html`
+  //    always found a clipping ancestor -- every element was "exempt",
+  //    including genuine offenders. Proven empirically: reverting
+  //    `ResourceBlock.tsx`'s `figureLabel`-gated `lg:` grid back to the old
+  //    unconditional `grid grid-cols-[1fr_340px]` and rerunning the old
+  //    version of this test still passed (see the fix-round-2 report for
+  //    that run's output).
+  // 2. **Even fixed, a bounding-rect (or `el.scrollWidth`) walk can't catch
+  //    this specific defect class at all.** A fixed-length grid track
+  //    (`340px`) with *no item placed in it* (this fixture's own
+  //    `ResourceBlock` usage has no `figureLabel`, so the figure branch
+  //    never renders) still reserves that track's width in the grid's
+  //    layout -- but since nothing paints there, no element's own
+  //    `getBoundingClientRect()`/`scrollWidth` reports it; the *page's*
+  //    `scrollWidth` grows regardless. Confirmed by reverting
+  //    `ResourceBlock.tsx` again and measuring
+  //    `document.documentElement.scrollWidth` directly: 614 vs a 375
+  //    `clientWidth`, while every per-element check inside the section
+  //    reported zero offenders (see the fix-round-2 report).
+  //
+  // The reliable check is therefore the whole-page one the controller asked
+  // for in round 1 to begin with -- it was blocked back then by a genuine,
+  // separate defect (`PageTitle`/`FacetBand`'s non-responsive gutters, and
+  // `PageTitle`'s `<h1>` missing its own flex-item `min-w-0`), which round 2
+  // has now fixed at the source (see `PageTitle.tsx`, `FacetBand.tsx`).
+  // `Tag`'s new `wrap` prop also replaced the tag row's `overflow-x-auto`
+  // entirely this round, so there is no longer any element on this page
+  // that's *meant* to have interior scroll/overflow either.
+  test('no horizontal overflow at 375px', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 })
     await page.goto('/preview/components')
-
-    const overflowing = await page.evaluate(() => {
-      const docWidth = document.documentElement.clientWidth
-      const section = document.querySelector('[data-testid="gallery-publication-page"]')
-      if (!section) return null
-      function isClipped(el: Element) {
-        let node = el.parentElement
-        while (node) {
-          const overflowX = getComputedStyle(node).overflowX
-          if (overflowX === 'auto' || overflowX === 'scroll' || overflowX === 'hidden' || overflowX === 'clip') {
-            return true
-          }
-          node = node.parentElement
-        }
-        return false
-      }
-      const offenders: string[] = []
-      section.querySelectorAll('*').forEach((el) => {
-        const rect = el.getBoundingClientRect()
-        if (rect.right > docWidth + 1 && !isClipped(el)) {
-          offenders.push(el.tagName)
-        }
-      })
-      return offenders
-    })
-
-    expect(overflowing).toEqual([])
+    const fits = await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+    )
+    expect(fits).toBe(true)
   })
 
   test('has no detectable accessibility violations (light)', async ({ page }) => {

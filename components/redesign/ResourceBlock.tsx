@@ -32,14 +32,17 @@ export function ResourceBlock({ title, meta = [], figureLabel }: ResourceBlockPr
   // 340px-wide figure track) was unconditional and unprefixed, so it
   // reserved the figure track (and squeezed the text into whatever was
   // left) at every width, including mobile, even when there is no
-  // `figureLabel` to put in it. Now: a plain block (single
-  // column, no `figureLabel` needed) at every width when there's no figure,
-  // and the two-track grid only `lg:` and only when `figureLabel` is set --
-  // below `lg`, or with no figure, the figure branch below doesn't render
-  // at all, so a single column is correct either way. Each of `display` and
-  // `grid-template-columns` is set by at most one class here (this ternary
-  // picks one string or the other, never both), so there's no same-property
-  // collision at any breakpoint.
+  // `figureLabel` to put in it. Now: a plain block at every width when
+  // there's no figure (a single column, since there's nothing to put in a
+  // second one), and the two-track grid only `lg:` and only when
+  // `figureLabel` is set. Below `lg`, with a `figureLabel`, the figure
+  // block below still renders -- it isn't gated by breakpoint, only by
+  // whether `figureLabel` is truthy -- it just stacks under the text block
+  // instead of sitting beside it (fix round 2: given its own `mt-8 lg:mt-0`
+  // below, so the two blocks don't touch when stacked). Each of `display`
+  // and `grid-template-columns` is set by at most one class here (this
+  // ternary picks one string or the other, never both), so there's no
+  // same-property collision at any breakpoint.
   const twoColumn = Boolean(figureLabel)
   return (
     <div
@@ -70,7 +73,7 @@ export function ResourceBlock({ title, meta = [], figureLabel }: ResourceBlockPr
       </div>
       {figureLabel && (
         <div
-          className="box-border flex h-[200px] items-center justify-center border border-rule px-5"
+          className="mt-8 box-border flex h-[200px] items-center justify-center border border-rule px-5 lg:mt-0"
           style={{ backgroundImage: STRIPE_BG }}
         >
           <span className="text-center font-mono text-[11px] leading-[1.6] text-text-faint">
