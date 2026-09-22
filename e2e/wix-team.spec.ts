@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test'
 import { placeRow } from 'lib/wix/placeRow'
+import { groupTeam } from 'lib/wix/team'
+
+import { expectedTeam } from './support/expected'
 
 test.use({ viewport: { width: 1280, height: 900 } })
 
@@ -19,6 +22,8 @@ function expectedX(count: number, index: number): number {
 }
 
 test('team structure', async ({ page }) => {
+  const team = await expectedTeam()
+  const expectedCurrent = groupTeam(team.profiles, team.labHeadId).current
   await page.goto('/team')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Our Team')
   const current = page.locator('[data-wix="current"] [data-wix="person"]')
@@ -26,7 +31,11 @@ test('team structure', async ({ page }) => {
   // Current members' names are h2 (no heading sits between the page's h1 and
   // this grid); alumni/intern cards nest under a visible h2 section heading
   // and so stay h3 -- see PersonCard's headingLevel prop (axe heading-order).
-  await expect(current.first().locator('h2')).toHaveText('Haochen Wu')
+  if (expectedCurrent.length > 0) {
+    await expect(current.first().locator('h2')).toHaveText(expectedCurrent[0].name)
+  } else {
+    await expect(current).toHaveCount(0)
+  }
   // The PI (Damian Holsinger) is never on the Team page -- see groupTeam and
   // its labHeadId / "role === Lab Head" fallback (I1). The fixture now
   // includes a PI profile (fixture-pi, with settings.labHead pointing at

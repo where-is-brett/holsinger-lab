@@ -1,3 +1,5 @@
+import { stegaClean } from 'next-sanity'
+
 import type { TeamProfile } from './types'
 
 export interface TeamGroups { current: TeamProfile[]; alumniCards: TeamProfile[]; alumniRows: TeamProfile[]; interns: TeamProfile[] }
@@ -17,7 +19,12 @@ export function groupTeam(profiles: TeamProfile[], labHeadId: string | null): Te
     // current-members grid as an empty portrait box. Exclude by role instead
     // whenever labHeadId isn't set. This never runs once labHeadId is set,
     // since that branch above already excludes the PI.
-    if (!labHeadId && p.role === 'Lab Head') continue
+    //
+    // Compare with stegaClean: in draft mode `sanityFetch` stega-encodes
+    // string fields with invisible zero-width characters, so a raw
+    // `p.role === 'Lab Head'` fails on the encoded value even though it
+    // reads and renders as "Lab Head".
+    if (!labHeadId && stegaClean(p.role) === 'Lab Head') continue
     if (p.group === 'Lab Alumni') (p.image?.asset ? out.alumniCards : out.alumniRows).push(p)
     else if (p.group === 'International Interns') out.interns.push(p)
     else out.current.push(p)
