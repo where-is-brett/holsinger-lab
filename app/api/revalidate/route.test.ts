@@ -50,7 +50,7 @@ describe('POST /api/revalidate', () => {
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 
-  it('revalidates the page path for a page webhook', async () => {
+  it('revalidates the page path and the homepage for a page webhook (Task 3: a page can be the Support link)', async () => {
     vi.mocked(parseBody).mockResolvedValue({
       isValidSignature: true,
       body: { type: 'page', slug: 'about' },
@@ -60,7 +60,8 @@ describe('POST /api/revalidate', () => {
     const json = await response.json()
 
     expect(revalidatePath).toHaveBeenCalledWith('/about')
-    expect(revalidatePath).toHaveBeenCalledTimes(1)
+    expect(revalidatePath).toHaveBeenCalledWith('/')
+    expect(revalidatePath).toHaveBeenCalledTimes(2)
     expect(json.success).toBe(true)
   })
 
@@ -78,7 +79,7 @@ describe('POST /api/revalidate', () => {
     expect(json.success).toBe(false)
   })
 
-  it('revalidates the project path and the homepage for a project webhook', async () => {
+  it('revalidates the project path, the homepage and /research for a project webhook (Task 3: /research and the maestro project)', async () => {
     vi.mocked(parseBody).mockResolvedValue({
       isValidSignature: true,
       body: { type: 'project', slug: 'my-project' },
@@ -88,7 +89,8 @@ describe('POST /api/revalidate', () => {
 
     expect(revalidatePath).toHaveBeenCalledWith('/projects/my-project')
     expect(revalidatePath).toHaveBeenCalledWith('/')
-    expect(revalidatePath).toHaveBeenCalledTimes(2)
+    expect(revalidatePath).toHaveBeenCalledWith('/research')
+    expect(revalidatePath).toHaveBeenCalledTimes(3)
   })
 
   it('returns 400 without revalidating when a project webhook is missing a slug', async () => {
@@ -103,7 +105,7 @@ describe('POST /api/revalidate', () => {
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 
-  it('revalidates /publications and every /publications/[slug] page for a publication webhook, ignoring slug', async () => {
+  it('revalidates /publications, every /publications/[slug] page and the homepage for a publication webhook, ignoring slug (Task 3: Home renders the 5 most recent publications and the count)', async () => {
     vi.mocked(parseBody).mockResolvedValue({
       isValidSignature: true,
       body: { type: 'publication', slug: undefined },
@@ -113,10 +115,11 @@ describe('POST /api/revalidate', () => {
 
     expect(revalidatePath).toHaveBeenCalledWith('/publications')
     expect(revalidatePath).toHaveBeenCalledWith('/publications/[slug]', 'page')
-    expect(revalidatePath).toHaveBeenCalledTimes(2)
+    expect(revalidatePath).toHaveBeenCalledWith('/')
+    expect(revalidatePath).toHaveBeenCalledTimes(3)
   })
 
-  it('revalidates /people for a profile webhook, ignoring slug', async () => {
+  it('revalidates /people and the homepage for a profile webhook, ignoring slug (Task 3: currentMemberCount, the PI panel)', async () => {
     vi.mocked(parseBody).mockResolvedValue({
       isValidSignature: true,
       body: { type: 'profile', slug: undefined },
@@ -125,7 +128,35 @@ describe('POST /api/revalidate', () => {
     await POST(request())
 
     expect(revalidatePath).toHaveBeenCalledWith('/people')
-    expect(revalidatePath).toHaveBeenCalledTimes(1)
+    expect(revalidatePath).toHaveBeenCalledWith('/')
+    expect(revalidatePath).toHaveBeenCalledTimes(2)
+  })
+
+  it('revalidates /people and the homepage for a roleGroup webhook, ignoring slug', async () => {
+    vi.mocked(parseBody).mockResolvedValue({
+      isValidSignature: true,
+      body: { type: 'roleGroup', slug: undefined },
+    })
+
+    await POST(request())
+
+    expect(revalidatePath).toHaveBeenCalledWith('/people')
+    expect(revalidatePath).toHaveBeenCalledWith('/')
+    expect(revalidatePath).toHaveBeenCalledTimes(2)
+  })
+
+  it('revalidates /resources, the homepage and every /publications/[slug] page for a resource webhook, ignoring slug', async () => {
+    vi.mocked(parseBody).mockResolvedValue({
+      isValidSignature: true,
+      body: { type: 'resource', slug: undefined },
+    })
+
+    await POST(request())
+
+    expect(revalidatePath).toHaveBeenCalledWith('/resources')
+    expect(revalidatePath).toHaveBeenCalledWith('/')
+    expect(revalidatePath).toHaveBeenCalledWith('/publications/[slug]', 'page')
+    expect(revalidatePath).toHaveBeenCalledTimes(3)
   })
 
   it('revalidates every known path for an unrecognized type', async () => {

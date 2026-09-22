@@ -10,7 +10,7 @@ import { PageTitle } from '../PageTitle'
 import type { Publication } from '../publicationModel'
 import { PublicationRow } from '../PublicationRow'
 import { SectionRail } from '../SectionRail'
-import { LABEL } from '../tokens'
+import { LABEL, PUBLICATION_GRID } from '../tokens'
 
 // Fixed presentation order (spec §4.3 point 2) -- filtered to the values the
 // facet is actually carrying, same pattern as the ui_kit's TYPES constant.
@@ -26,7 +26,7 @@ const NOTE =
 // (unprefixed) / `lg:grid` (prefixed) is the same paired-per-breakpoint
 // `display` pattern PublicationRow's own KICKER/GRID split uses, so there is
 // no same-property collision at either breakpoint.
-const COLUMN_HEADS = 'hidden lg:grid lg:grid-cols-[64px_1fr_230px_250px] lg:gap-x-[28px] pb-3'
+const COLUMN_HEADS = `hidden ${PUBLICATION_GRID} pb-3`
 
 // ui_kit: `padding: "32px var(--spacing-gutter-lg) var(--spacing-stack-lg) var(--spacing-gutter-md)"`.
 // `pt`/`pb` don't vary by breakpoint in the source, so they're set once,

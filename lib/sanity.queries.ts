@@ -75,6 +75,7 @@ export const settingsQuery = groq`
     showContactForm,
     showLabHeadOnHome,
     showLabHeadOnPeople,
+    contact{ email },
     menuItems[]->{
       _type,
       "slug": slug.current,
@@ -169,21 +170,104 @@ export const featuredPublicationsQuery = groq`
   }
 `
 
-export const resourcesQuery = groq`
-  *[_type == "resource"] | order(title asc) {
+// Home's "Recent work" block (Task 3 brief / spec §6): the latest 5
+// publications by date, sharing `publicationFields` with every other
+// publication query so the three can never drift apart.
+export const homeRecentPublicationsQuery = groq`
+  *[_type == "publication"] | order(date desc)[0...5] {
+    ${publicationFields}
+  }
+`
+
+// The "All {count} publications →" link's count -- a separate `count()`
+// query rather than fetching every publication and taking `.length`, since
+// Home only ever needs the 5 most recent records, not the full list.
+export const publicationCountQuery = groq`
+  count(*[_type == "publication"])
+`
+
+// The projection shared by every resource query, so the list and the
+// home-page highlight cannot drift apart -- same pattern as
+// `publicationFields` above.
+const resourceFields = `
+  _id,
+  title,
+  kind,
+  summary,
+  howToObtain,
+  publication->{
     _id,
     title,
-    kind,
-    summary,
-    howToObtain,
-    publication->{
-      _id,
-      title,
-      date,
-      doi,
-      url,
-      "slug": slug.current,
+    date,
+    doi,
+    url,
+    journal,
+    volume,
+    issue,
+    pages,
+    "slug": slug.current,
+  },
+`
+
+// Home's "Resources" block (Task 3 brief / spec §6): the first resource, in
+// the same order as `resourcesQuery` (title asc) -- one document, not the
+// full list.
+export const homeResourceQuery = groq`
+  *[_type == "resource"] | order(title asc) [0] {
+    ${resourceFields}
+  }
+`
+
+// Home's "Outreach" band (Task 3 brief / spec §2 ruling 4): the `maestro`
+// project document, by its fixed slug. The block is omitted entirely when
+// this document doesn't exist (spec ruling 4) -- `home` itself carries no
+// editorial fields for it.
+export const maestroProjectQuery = groq`
+  *[_type == "project" && slug.current == "maestro"][0]{
+    _id,
+    title,
+    overview,
+    site,
+  }
+`
+
+// Home's "Support our research" link (Task 3 brief / spec §6, "The lab"):
+// resolved by the fixed `support-our-research` slug, same "only render when
+// the document exists" pattern as `maestroProjectQuery` above.
+export const supportPageQuery = groq`
+  *[_type == "page" && slug.current == "support-our-research"][0]{
+    title,
+    "slug": slug.current,
+  }
+`
+
+// Spec §2 / §6, Task 2 brief: the Research page lists projects that carry a
+// `researchOrder`, in that order. Production has zero such projects today
+// (a coming Wix import sets it on four); the screen's populated state is
+// exercised against the `gallery-research` fixture until then, same
+// situation as Task 1's `resourcesQuery`.
+export const researchProjectsQuery = groq`
+  *[_type == "project" && defined(researchOrder)] | order(researchOrder asc) {
+    _id,
+    title,
+    "slug": slug.current,
+    overview,
+    coverImage{
+      ...,
+      asset->{
+        _id,
+        metadata{ dimensions{ width, height, aspectRatio } }
+      }
     },
+    "start": duration.start,
+    tags,
+    category,
+  }
+`
+
+export const resourcesQuery = groq`
+  *[_type == "resource"] | order(title asc) {
+    ${resourceFields}
   }
 `
 

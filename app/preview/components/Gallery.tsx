@@ -5,6 +5,14 @@ import { CopyCitation } from 'components/redesign/CopyCitation'
 import { FacetBand, type FacetChipSpec } from 'components/redesign/FacetBand'
 import { applyFacets, countBy, toggleFacet } from 'components/redesign/facets'
 import {
+  HOME_MAESTRO_FIXTURE,
+  HOME_PAGE_FIXTURE,
+  HOME_PUBLICATION_COUNT_FIXTURE,
+  HOME_PUBLICATIONS_FIXTURE,
+  HOME_RESOURCE_FIXTURE,
+  HOME_SETTINGS_FIXTURE,
+  HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE,
+  HOME_SUPPORT_PAGE_FIXTURE,
   LINKED_PUB,
   NO_LINK_PUB,
   PEOPLE_PROFILES_FIXTURE,
@@ -12,6 +20,8 @@ import {
   PEOPLE_SETTINGS_WITH_LAB_HEAD,
   PEOPLE_SETTINGS_WITHOUT_LAB_HEAD,
   PUBLICATION_PAGE_FIXTURE,
+  RESEARCH_PROJECTS_FIXTURE,
+  RESOURCES_FIXTURE,
   SAMPLE_PEOPLE,
   SAMPLE_PUBLICATIONS,
 } from 'components/redesign/fixtures'
@@ -23,8 +33,11 @@ import { PersonCard } from 'components/redesign/PersonCard'
 import type { Publication } from 'components/redesign/publicationModel'
 import { PublicationRow } from 'components/redesign/PublicationRow'
 import { ResourceBlock } from 'components/redesign/ResourceBlock'
+import { Home } from 'components/redesign/screens/Home'
 import { People } from 'components/redesign/screens/People'
 import { PublicationPage } from 'components/redesign/screens/PublicationPage'
+import { Research } from 'components/redesign/screens/Research'
+import { Resources } from 'components/redesign/screens/Resources'
 import { SectionRail } from 'components/redesign/SectionRail'
 import { SiteFooter } from 'components/redesign/SiteFooter'
 import { SiteNav } from 'components/redesign/SiteNav'
@@ -404,6 +417,114 @@ export default function Gallery() {
           ]}
           figureLabel="Figure preview unavailable"
         />
+      </section>
+
+      <section data-testid="gallery-research">
+        <Heading>Research screen</Heading>
+        {/* Task 2: production has zero `defined(researchOrder)` projects
+            today (spec §2), so this fixture is the only place the
+            populated Research screen -- five projects, four covers at
+            varying aspect ratios plus one with none, a long unbreakable
+            overview token, one with no tags and one with no start date --
+            actually renders. */}
+        <div className="border border-rule">
+          <Research
+            projects={RESEARCH_PROJECTS_FIXTURE}
+            email="lab@example.org"
+            showContactForm
+            headingLevel="h2"
+          />
+        </div>
+      </section>
+
+      {/* Fix round 2, IMPORTANT: the two Enquiries branches production data
+          can never show today (no `resource`... no, `project` with
+          `researchOrder`, no `settings.contact`/`labHead` email, and
+          `settings.showContactForm` is `true` live -- spec §2) get their
+          own permanent fixtures here, per constraints.md's "states the live
+          data can't show go on gallery fixtures". Both also pass
+          `projects={[]}`, which doubles as the empty-state fixture (the
+          "Research projects will be listed here soon." line) -- a third,
+          separate empty-state-only fixture would be redundant with these
+          two. Each instance's `<Research>` renders its own
+          `data-testid="research-enquiries"` (and, when populated,
+          `"research-project-title"`) -- not unique across instances on this
+          one page, so e2e scopes every query through the wrapping
+          `data-testid` below rather than relying on page-wide testid
+          uniqueness. */}
+      <section data-testid="gallery-research-no-link">
+        <Heading>Research screen -- no email, showContactForm false (no link)</Heading>
+        <div className="border border-rule">
+          <Research projects={[]} email={null} showContactForm={false} headingLevel="h2" />
+        </div>
+      </section>
+
+      <section data-testid="gallery-research-contact-link">
+        <Heading>Research screen -- no email, showContactForm true (&quot;get in touch&quot;)</Heading>
+        <div className="border border-rule">
+          <Research projects={[]} email={null} showContactForm headingLevel="h2" />
+        </div>
+      </section>
+
+      <section data-testid="gallery-resources">
+        <Heading>Resources screen</Heading>
+        {/* Task 1: production carries zero `resource` documents today (spec
+            §2), so this fixture is the only place the populated Resources
+            screen -- four resources, one with a linked publication's SOURCE/
+            DOI meta, one with a portable-text `howToObtain` link -- actually
+            renders. */}
+        <div className="border border-rule">
+          <Resources resources={RESOURCES_FIXTURE} />
+        </div>
+      </section>
+
+      <section data-testid="gallery-home">
+        <Heading>Home screen</Heading>
+        {/* Task 3: production today has no resource, an unset labHead, and
+            no `support-our-research` page (spec §2) -- this is the only
+            place Home's populated PI panel, Resources block, and Support
+            link actually render. The `maestro` project *does* exist live,
+            but the fixture's own copy proves the block independent of
+            live-data drift. */}
+        <SubHeading>(a) labHead set, showLabHeadOnHome true -- PI panel shows, PI excluded from the count</SubHeading>
+        <div className="mb-8 border border-rule" data-testid="gallery-home-a">
+          <Home
+            home={HOME_PAGE_FIXTURE}
+            settings={HOME_SETTINGS_FIXTURE}
+            siteName="Holsinger Lab"
+            publications={HOME_PUBLICATIONS_FIXTURE}
+            publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+            resource={HOME_RESOURCE_FIXTURE}
+            maestro={HOME_MAESTRO_FIXTURE}
+            profiles={PEOPLE_PROFILES_FIXTURE}
+            roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+            supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+            headingLevel="h2"
+          />
+        </div>
+
+        {/* Fix round 1, IMPORTANT 1: the exact shape of the bug this fixes
+            -- labHead set, but showLabHeadOnHome false, so the PI panel is
+            hidden. The PI must now count as an ordinary member (this
+            instance's count is instance (a)'s count plus exactly one, the
+            PI herself) instead of being silently subtracted while
+            appearing nowhere on the page. */}
+        <SubHeading>(b) labHead set, showLabHeadOnHome false -- no PI panel, PI included in the count</SubHeading>
+        <div className="border border-rule" data-testid="gallery-home-b">
+          <Home
+            home={HOME_PAGE_FIXTURE}
+            settings={HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE}
+            siteName="Holsinger Lab"
+            publications={HOME_PUBLICATIONS_FIXTURE}
+            publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+            resource={HOME_RESOURCE_FIXTURE}
+            maestro={HOME_MAESTRO_FIXTURE}
+            profiles={PEOPLE_PROFILES_FIXTURE}
+            roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+            supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+            headingLevel="h2"
+          />
+        </div>
       </section>
     </main>
   )

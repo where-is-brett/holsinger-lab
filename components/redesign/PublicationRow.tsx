@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 import { CopyCitation } from './CopyCitation'
 import type { Publication } from './publicationModel'
-import { HIT_AREA, META } from './tokens'
+import { HIT_AREA, META, PUBLICATION_GRID } from './tokens'
 
 export interface PublicationRowProps {
   pub: Publication
@@ -30,7 +30,7 @@ export interface PublicationRowProps {
 // `lg` the container is a plain block (no `grid`/`flex` utility at all --
 // that's the initial value, so there is nothing to set and nothing that
 // could collide with the `lg:` triad below).
-const GRID = 'lg:grid lg:grid-cols-[64px_1fr_230px_250px] lg:gap-x-[28px]'
+const GRID = PUBLICATION_GRID
 // The mobile "year — journal ref" kicker line, shared by every non-narrow
 // variant below `lg`. Same anatomy as the `narrow` branch's kicker.
 const KICKER = 'font-mono text-[10px] leading-[1.4] font-medium tracking-[0.06em] uppercase'

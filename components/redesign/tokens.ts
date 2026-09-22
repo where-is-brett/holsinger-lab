@@ -79,3 +79,29 @@ export const PRESS = 'hl-press active:scale-[0.97]'
  */
 export const HIT_AREA =
   "relative before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']"
+/**
+ * The system's one "no portrait on file" background: a faint diagonal
+ * stripe, `color-mix`ed against `--sem-text` so it works unchanged in both
+ * themes. A static generated background is legitimate as an inline style
+ * (Tailwind arbitrary values are fragile with nested parens and commas) --
+ * was defined identically in PersonCard.tsx's `PortraitFrame` fallback,
+ * ResourceBlock.tsx's figure placeholder, and Home.tsx's `PiPortrait64`
+ * fallback (PR C Task 3 fix round 1); hoisted here as the one place that
+ * knows the value, per this file's own header comment. Consumers apply it
+ * via `style={{ backgroundImage: STRIPE_BG }}`, not a class -- see any of
+ * the three call sites above.
+ */
+export const STRIPE_BG =
+  'repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in oklab, var(--sem-text) 4.5%, transparent) 12px 13px)'
+/**
+ * The publication ledger's 4-column `[year | title | journal | link-cite]`
+ * grid track: 64px year, fluid title, 230px journal, 250px link-cite, 28px
+ * column gap, `lg` only. Home's column head, PublicationRow's row grid and
+ * PublicationsIndex's column heads MUST use the same value or the head row's
+ * cells stop lining up with the rows underneath it -- same reasoning as
+ * RAIL_GRID above. Was spelled out identically in Home.tsx, PublicationRow.tsx
+ * and PublicationsIndex.tsx (final-review fix wave); hoisted here as the one
+ * place that knows the track, per this file's own header comment.
+ */
+export const PUBLICATION_GRID =
+  'lg:grid lg:grid-cols-[64px_1fr_230px_250px] lg:gap-x-[28px]'

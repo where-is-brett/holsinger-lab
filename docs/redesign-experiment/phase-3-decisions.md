@@ -466,3 +466,197 @@ probably break when Home is rebuilt.
 | `npm run typegen`     | 16 queries / 40 schema types             | 16 queries / 40 schema types     |
 | `npm run build`       | 43 static pages, including 19 `/publications/[slug]` | 43 static pages, including 19 `/publications/[slug]` and 1 `/people/[slug]` |
 | `npm run test:e2e`    | 142 passed / 4 skipped                   | **166 passed / 5 skipped**       |
+
+## Step 2 — PR C (Research, Resources, Home)
+
+Branch `redesign/phase-3-home`, off `redesign/integration`. Spec:
+`docs/superpowers/specs/2026-09-22-redesign-phase-3-screens-design.md` (§1, §2, §6). Three
+tasks (Resources, Research, Home), each controller-reviewed to clean before the next started;
+see `progress.md` in the SDD working directory for the full ledger.
+
+### Empty states
+
+All three screens are honest about missing data rather than hiding themselves or the nav:
+
+- **`/resources`** with zero `resource` documents renders one unlabeled `SectionRail` saying
+  "No resources are listed yet." — the live case today.
+- **`/research`** with zero `defined(researchOrder)` projects renders the meta as
+  `0 ACTIVE PROJECTS` and one `SectionRail` saying "Research projects will be listed here
+  soon." — also the live case today (`researchOrder` is unset on every project).
+- **Home's five blocks** (Identity, Recent work, Resources, Outreach/MAESTRO, The lab) are each
+  omitted independently when their own data is missing — no block renders an empty shell. On
+  live data today, the blocks that render are Identity, Recent work, MAESTRO, and The lab
+  (member count plus Support) — there is no Resources block and no PI panel today.
+
+None of this is simulated — every state above is what the live dataset actually produces today;
+the populated states are proven only by gallery fixtures (`/preview/components`).
+
+### `researchOrder` — the shared selector
+
+`researchProjectsQuery` selects `defined(researchOrder)`, ordered by it. This field is the
+selector the parallel Wix-lookalike track (`redesign/wix`) also reads from the same schema and
+dataset — Research was built to handle 4+ projects (the gallery fixture carries five), not just
+the two the live dataset happens to have today once `researchOrder` is set.
+
+### Covers keep their intrinsic ratio
+
+`researchModel.ts`'s `toResearchView` is a pure payload→view mapping. Its `coverView` is `null`
+when there's no `coverImage`, no `metadata.dimensions`, or `urlForImage` can't resolve a URL.
+With no `crop`, `width`/`height` come straight from the asset's native `metadata.dimensions` and
+`src` carries no size params — the cover is never resized off its native upload size. With a
+`crop`, `width`/`height` are scaled by `(1 - left - right)` / `(1 - top - bottom)` and `src` is
+requested at exactly that width/height with `fit('crop')`, because `@sanity/image-url`'s own
+`fit()` only applies the crop rect's pixel size when both dimensions are requested explicitly —
+otherwise it delivers the full uncropped asset regardless of what the editor chose in Studio.
+When a project has no cover, the narrative grid drops to a plain single-column track
+(`NARRATIVE_GRID_SOLO`) rather than leaving the `lg:grid-cols-[1fr_380px]` track's second column
+empty — a two-column grid with only one child would otherwise reserve a blank 380px box.
+
+**Ruling (fix round 1):** `Research.tsx` originally had a fixture-only branch in its own
+`coverAsset` helper, routing a `/`-prefixed asset id straight to a local `/public` PNG instead of
+through `urlForImage` — production-file logic that existed solely to support four synthetic
+fixture aspect ratios. That branch is gone. `toResearchView` is the only cover-resolving code
+path, real and fixture alike, and **no binary fixtures ship**: the gallery's four cover ratios
+(0.90 / 1.05 / 1.40 / 2.05) are built by requesting the one real Sanity photo already used
+elsewhere in `fixtures.ts` at four `width`/`height` pairs via `urlForImage(...).fit('crop')` —
+genuine, verifiable `cdn.sanity.io` URLs, not synthesized images. The earlier
+`public/fixtures/research-cover-*.png` files and the now-empty `public/fixtures/` directory were
+deleted.
+
+### Enquiry email resolution
+
+`researchModel.ts`'s `enquiryEmail(settings)` resolves, in order: trimmed
+`settings.contact.email`, then trimmed `settings.labHead.email`, then nothing (`null`). The
+Research screen's Enquiries band renders the resolved email as a `mailto:` identifier when one
+exists; otherwise "get in touch" links to `/contact` when `showContactForm !== false`; otherwise
+the sentence ends at "welcome." with no link at all. Live data today has no email set and
+`showContactForm: true`, so only the `/contact`-link branch is reachable against the real
+dataset — the email branch and the no-link-at-all branch are proven by permanent gallery
+fixtures (`gallery-research-contact-link`, `gallery-research-no-link`) added specifically because
+live data can't reach them.
+
+### MAESTRO
+
+Home's Outreach block reads the `maestro` project document: title printed **verbatim, including
+the "endevor" typo**, overview through `PortableBody variant="inverse"`, and a "REGISTER —
+`<site without scheme>`" link when the project's `site` field is set. The block is omitted
+entirely if the `maestro` document doesn't exist.
+
+**Step 4 must move this content before retiring that document, or Home loses the block.** Step 4
+(retiring the `project` type) redistributes the five `project` documents per `agreed-ia.md` §2 —
+MAESTRO becomes a Lab section — but until that migration runs, Home's Outreach block has no
+other source for this copy. This was already flagged in PR A's "Step 4 dependency" note; PR C's
+own Home implementation is the concrete thing that would break.
+
+### Home's title and overview
+
+Home uses the existing `home.title` and `home.overview` fields only — no new editorial fields
+were added to the `page`/`home` schema. `home.title` falls back to the resolved site name when
+unset; a **whitespace-only title counts as unset** (`home.title?.trim() || siteName`, matching
+`resolveBranding`'s own rule for `siteName`). The tagline is `plainTagline(home.overview)` — the
+portable-text overview flattened to plain text via `toPlainText`, `null` (falling back to the
+IA's stand-in copy) when the field is unset, an empty array, or whitespace-only.
+
+### Member count
+
+Home excludes the lab head from `currentMemberCount` **only when its own PI panel is actually
+rendering** (`showPiPanel ? labHead?._id : null`), mirroring how `/people` gates its own
+exclusion on whether its spotlight is showing, rather than reading `/people`'s flag directly —
+a page's count should stay internally consistent with what that same page renders, not depend on
+a different page's unrelated setting. The two pages' counts agree whenever
+`showLabHeadOnHome`/`showLabHeadOnPeople` carry the same value (the common case), and are allowed
+to genuinely differ when an editor deliberately sets them differently. `e2e/home.spec.ts`
+cross-checks this against `/people`'s own rendered "N CURRENT MEMBERS" meta text, skipping only
+when the two flags disagree or either page can't render its count.
+
+**The members line renders only when the count is above zero** — a "0 — PEOPLE →" line is not
+honest content, so `showMembersLine = showPeople && memberCount > 0`. "The lab" block itself
+still renders if the PI panel or the Support link has content, even with `showMembersLine` false.
+
+### Shared `resourceModel`
+
+`formatSource` and `buildResourceMeta` (KIND/SOURCE/DOI-or-URL row building) were duplicated
+between `Resources.tsx` and Home's own copy in the first Home pass. Both now live in
+`components/redesign/resourceModel.ts`, imported by both screens, so Home and Resources can't
+drift on how a resource's meta is built.
+
+### `PortableBody`'s `variant` prop
+
+`PortableBody` gained a `variant?: 'body' | 'lead' | 'inverse'` prop (default `'body'`), each a
+whole, separate paragraph/link class string — never one string with a bolted-on colour or
+font-size override, per the standing same-property-collision rule. `'body'` is the original
+`People`/`PersonPage` styling, unchanged. `'lead'` (Research's project overviews) is larger and
+uses the default text colour. `'inverse'` (Home's MAESTRO overview, on the dark `SectionRail
+inverse` background) uses `text-text-inverse-muted` and its own inverse link colour. (Originally
+named `size`; renamed to `variant` once the `'inverse'` case made clear it changes more than
+size.)
+
+### Nav
+
+`research` and `resources` are flipped to `live: true` in `navModel.ts` — both routes go live in
+the nav even though production has zero `researchOrder` projects and zero `resource` documents
+today. This is the controller's ruling (recorded in `progress.md`'s preflight scan): making nav
+visibility data-driven would add a query to every page's `Layout`, just to avoid two links to
+honest-empty-state pages until the Wix import / resource creation land. `lab` is still `live:
+false`; `contact` still stands in for it, unchanged from step 1.
+
+### Revalidation
+
+`app/api/revalidate/route.ts` gained/extended cases for PR C's new data dependencies:
+
+- **`page`** now also revalidates `/` — a `page` document can be the Support link's target
+  (`support-our-research`), which Home reads on every render.
+- **`project`** now also revalidates `/research` (which lists every `defined(researchOrder)`
+  project) alongside its existing `/projects/[slug]` and `/` — a `project` edit could be either a
+  Research project or the `maestro` project Home reads, and the webhook payload doesn't
+  distinguish them cheaply, so both revalidate on every `project` edit.
+- **`profile`** now also revalidates `/` — Home's member count and PI panel both depend on
+  `profile` documents.
+- **`roleGroup`** (new case) revalidates `/people` and `/` — role groups drive `/people`'s
+  grouping and Home's `currentMemberCount` (which group counts as alumni).
+- **`resource`** (new case) revalidates `/resources`, `/` (Home shows the first resource) and the
+  whole `/publications/[slug]` page type — a `resource` document carries no publication slug in
+  the webhook payload and has no `slug` of its own (spec §2 ruling 1), so every publication page
+  revalidates, matching the existing `publication` case's own blanket call.
+
+### Image-geometry retarget
+
+`e2e/image-geometry.spec.ts`'s "image frames are dimmed in dark mode only" test used to target
+`/` on the assumption Home still rendered `ImageBox`/`.media-frame` (pre-redesign). The rebuilt
+Home renders zero such elements — its one image, the PI portrait, is a dedicated `PiPortrait64`
+component using `next/image` directly. The test now resolves the first `project` with a
+`coverImage` via a live Sanity query and targets `/projects/<slug>` (still on `ImageBox`), and
+**skips honestly** (with a reason) if no such project exists. `/` was also dropped from the
+"routes that render at least one cover image" sweep (Home renders zero images against live data
+today — `labHead` is unset) but kept in the separate "no literal `undefined` class" sweep, since
+Home still renders `PublicationRow`/`ResourceBlock`/portrait classes that sweep exists to check.
+
+### Deleted
+
+The old Home components — `components/pages/home/{HomePage,FeatureRow,ProjectListItem}.tsx` and
+`feature-row-contract.test.ts` — are gone, along with the now-empty `components/pages/home/`
+directory. `shouldShowLabHeadCard` and `resolveLabHeadHref` (previously
+`components/pages/home/{shouldShowLabHeadCard,resolveLabHeadHref}.ts` + tests) moved unchanged,
+apart from import paths, into the new `components/redesign/homeModel.ts` /
+`homeModel.test.ts`, alongside the new `currentMemberCount` and `plainTagline`.
+`components/shared/Header.tsx` was **not** deleted — it's still imported by
+`components/pages/page/Page.tsx` and `components/pages/project/ProjectPage.tsx`.
+
+### Local-testing note
+
+A local `npm run build` on this checkout's Next 16.3.1 regenerates `next-env.d.ts`, dropping a
+`next/navigation-types/compat/navigation` triple-slash reference every time — this is genuinely
+reproducible on every build, not a one-off. Restore it with
+`git checkout origin/redesign/integration -- next-env.d.ts` and confirm `git diff` is empty
+before every commit; carried forward from Task 2's original report, which mistakenly believed
+one revert had settled it for good.
+
+### Verification (run 2026-09-23, this branch, final)
+
+| Check              | PR B (`redesign/phase-3-people`)                                      | Now (PR C)                                                                |
+| --------------------| ------------------------------------------------------------------------| -----------------------------------------------------------------------------|
+| `npm test`          | 413 passed, 39 files                                                    | **466 passed**, 39 files                                                    |
+| `npm run lint`      | 0 errors, 4 warnings                                                    | 0 errors, 4 warnings                                                        |
+| `npm run typegen`   | 16 queries / 40 schema types                                             | **22 queries / 40 schema types**                                             |
+| `npm run build`     | 43 static pages, including 19 `/publications/[slug]` and 1 `/people/[slug]` | **45 static pages**, adding `/research` and `/resources` (`/support-our-research` is a pre-existing `page` route, not one this PR adds) |
+| `npm run test:e2e`  | 166 passed / 5 skipped                                                   | **211 passed / 6 skipped**                                                   |

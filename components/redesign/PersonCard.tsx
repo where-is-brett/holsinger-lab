@@ -1,6 +1,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { STRIPE_BG } from './tokens'
+
 export interface PersonCardProps {
   name: string
   role: string
@@ -33,14 +35,12 @@ const FOOTPRINT_IMAGE = 'relative aspect-[4/5] w-full overflow-hidden bg-surface
 const FOOTPRINT_FALLBACK =
   'relative aspect-[4/5] w-full box-border border border-rule flex flex-col items-center justify-center gap-2.5'
 
-// Task brief decision #2: a static generated background is legitimate as an
-// inline style -- Tailwind arbitrary values are fragile with nested parens
-// and commas, and this repeating-gradient has both. Property-specific
-// (`backgroundImage`, not the `background` shorthand the source uses) so it
-// composes with a Tailwind `bg-*` utility if one is ever added alongside it
-// without either silently overwriting the other.
-const STRIPE_BG =
-  'repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in oklab, var(--sem-text) 4.5%, transparent) 12px 13px)'
+// `STRIPE_BG` (task brief decision #2: a static generated background is
+// legitimate as an inline style -- Tailwind arbitrary values are fragile
+// with nested parens and commas, and this repeating-gradient has both) now
+// lives in tokens.ts (PR C Task 3 fix round 1) -- ResourceBlock.tsx and
+// Home.tsx's `PiPortrait64` fallback use the identical value, and it was a
+// verbatim triplicate before this hoist.
 
 // Carried Task 1 review minor (c): a linked card's colour reveal (grayscale
 // portrait, name colour) is mouse-only without these -- `group-focus-visible:`
@@ -49,7 +49,13 @@ const STRIPE_BG =
 // reveal a mouse hover does. Each pair targets a distinct pseudo-class
 // selector (`.group:hover &`, `.group:focus-visible &`), never the same
 // selector twice, so this is additive, not a same-property collision.
-const IMAGE_FILTER =
+// Exported (PR C Task 3 fix round 1) so Home.tsx's `PiPortrait64` can give
+// the PI's Home portrait the exact same treatment every other portrait in
+// this direction gets, rather than a bare `object-cover`. Safe to compose
+// onto a differently-sized image element: every declaration here targets
+// `object-fit`/filter/transition, never `width`/`height`/`aspect-ratio`, so
+// it never collides with a call site's own sizing classes.
+export const IMAGE_FILTER =
   'object-cover grayscale contrast-[1.04] transition-[filter] duration-(--sem-motion-reveal) ease-(--sem-ease) group-hover:grayscale-0 group-hover:contrast-100 group-focus-visible:grayscale-0 group-focus-visible:contrast-100'
 
 /**

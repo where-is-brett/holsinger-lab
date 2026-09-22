@@ -1,8 +1,19 @@
-import type { ProfilePayload, RoleGroupPayload, SettingsPayload } from 'types'
+import { urlForImage } from 'lib/sanity.image'
+import type {
+  HomePagePayload,
+  HomeResourcePayload,
+  MaestroProjectPayload,
+  ProfilePayload,
+  ResourcePayload,
+  RoleGroupPayload,
+  SettingsPayload,
+  SupportPagePayload,
+} from 'types'
 import { fallbackSettings } from 'types'
 
 import type { Publication } from './publicationModel'
 import { deriveLink, shortenLabel, splitAuthors } from './publicationModel'
+import { researchKicker, type ResearchProjectView } from './researchModel'
 
 // Real lab content, not placeholder strings -- the gallery this feeds is the
 // only place any of the twelve Phase 1 components actually render, so the
@@ -395,4 +406,394 @@ export const PEOPLE_SETTINGS_WITH_LAB_HEAD: SettingsPayload = {
 export const PEOPLE_SETTINGS_WITHOUT_LAB_HEAD: SettingsPayload = {
   ...fallbackSettings,
   labHead: null,
+}
+
+// Task 1 (Resources): production carries zero `resource` documents today
+// (spec §2), so this is the only place the populated state renders at all.
+// Four resources -- one with a linked publication (exercising the SOURCE
+// meta line and its DOI link, and a portable-text `howToObtain` holding a
+// real link, per the task brief), one without (proving the SOURCE/DOI meta
+// rows are genuinely omitted rather than rendered blank), and (fix round 1)
+// two more that exist purely to exercise a long, unbreakable identifier at
+// 320px -- a real DOI (`10.1016/j.neurobiolaging.2023.04.012`, 38 chars) and
+// a URL-only publication -- neither of which the first two fixtures'
+// short DOI (`10.1038/s41420-024-00000-1`) reached.
+function portableLinkParagraph(
+  key: string,
+  pre: string,
+  linkText: string,
+  href: string,
+  post = ''
+) {
+  const linkKey = `${key}-link`
+  return {
+    _type: 'block' as const,
+    _key: key,
+    style: 'normal' as const,
+    markDefs: [{ _type: 'link' as const, _key: linkKey, href }],
+    children: [
+      { _type: 'span' as const, _key: `${key}-s1`, text: pre, marks: [] },
+      { _type: 'span' as const, _key: `${key}-s2`, text: linkText, marks: [linkKey] },
+      ...(post ? [{ _type: 'span' as const, _key: `${key}-s3`, text: post, marks: [] }] : []),
+    ],
+  }
+}
+
+export const RESOURCES_FIXTURE: ResourcePayload[] = [
+  {
+    _id: 'fixture-resource-1',
+    title: 'Electrical-stimulation cell-culture chamber',
+    kind: 'hardware',
+    summary:
+      'A custom chamber for delivering controlled electrical stimulation to cultured neurons over extended time courses.',
+    howToObtain: [
+      portableParagraph(
+        'resource-1-p1',
+        'Request access by emailing the lab, or build your own from the published design.'
+      ),
+      portableLinkParagraph(
+        'resource-1-p2',
+        'Design files and firmware are on ',
+        'GitHub',
+        'https://github.com/example/cell-culture-chamber',
+        '.'
+      ),
+    ],
+    publication: {
+      _id: 'fixture-resource-1-pub',
+      title: 'A chamber for chronic electrical stimulation of cultured neurons',
+      date: '2024-03-01',
+      doi: '10.1038/s41420-024-00000-1',
+      url: null,
+      journal: 'Journal of Neuroscience Methods',
+      volume: 401,
+      issue: 2,
+      pages: '110-118',
+      slug: 'chronic-stimulation-chamber',
+    },
+  },
+  {
+    _id: 'fixture-resource-2',
+    title: 'Neuronal culture medium protocol',
+    kind: 'protocol',
+    summary:
+      'Step-by-step preparation of the serum-free medium used for primary cortical neuron cultures in the lab.',
+    howToObtain: [
+      portableParagraph('resource-2-p1', 'Contact the lab manager for the current SOP document.'),
+    ],
+    publication: null,
+  },
+  // Fix round 1: a realistic long DOI (38 characters, no internal spaces) is
+  // wider on its own than the ~246px/32-mono-character content column at
+  // 320px -- this is the overflow ResourceBlock.tsx's `IDENTIFIER` constant
+  // now guards with `break-all`.
+  {
+    _id: 'fixture-resource-3',
+    title: 'Cortical thickness segmentation atlas',
+    kind: 'dataset',
+    summary:
+      'A manually-curated cortical thickness atlas derived from the aging cohort described in the linked paper.',
+    howToObtain: [
+      portableParagraph('resource-3-p1', 'Available on request while the public archive is finalised.'),
+    ],
+    publication: {
+      _id: 'fixture-resource-3-pub',
+      title: 'Longitudinal cortical thickness change across healthy ageing',
+      date: '2023-06-01',
+      doi: '10.1016/j.neurobiolaging.2023.04.012',
+      url: null,
+      journal: 'Neurobiology of Aging',
+      volume: 128,
+      issue: null,
+      pages: '55-64',
+      slug: 'cortical-thickness-ageing',
+    },
+  },
+  // A URL-only publication (no DOI) -- `deriveLink` falls back to the
+  // scheme-stripped URL as the identifier, and that stripped form can still
+  // be a single long unbreakable token.
+  {
+    _id: 'fixture-resource-4',
+    title: 'Behavioural scoring software',
+    kind: 'software',
+    summary: 'Open-source scoring software for the novel-object-recognition assay used in the lab.',
+    howToObtain: [
+      portableParagraph('resource-4-p1', 'Source and installation instructions are on the project site.'),
+    ],
+    publication: {
+      _id: 'fixture-resource-4-pub',
+      title: 'An open-source pipeline for novel-object-recognition scoring',
+      date: '2022-11-15',
+      doi: null,
+      url: 'https://www.biorxiv.org/content/10.1101/2022.11.15.516432v1.full',
+      journal: 'bioRxiv',
+      volume: null,
+      issue: null,
+      pages: null,
+      slug: 'novel-object-recognition-pipeline',
+    },
+  },
+]
+
+// Task 2 (Research): production has zero `defined(researchOrder)` projects
+// today (spec §2) -- the coming Wix import sets it on 4 (FMT, Glial, and
+// two new ones), with cover aspect ratios "about 0.90, 1.05, 1.40, 1.41 and
+// 2.05" (task brief). Five projects here: four with covers at four of
+// those ratios (0.90, 1.05, 1.40, 2.05) plus one with no cover at all, so
+// the populated screen's "with cover" / "without cover" branches (and the
+// no-placeholder-box rule) are both exercised. Also, spread across those
+// five: one overview with a long unbreakable token (the 320px overflow
+// guard), one with no tags (SectionRail's "Project" label fallback,
+// researchKicker's tag-less branch) and one with no `start` date
+// (researchKicker's category-only branch) -- matching the task brief's
+// fixture requirements one-for-one, reusing the existing `portableParagraph`
+// helper above rather than a new one.
+//
+// `project.overview`'s schema allows no annotations (no `link` mark), so
+// TypeGen types its blocks' `markDefs` as `null | undefined` only, never an
+// array -- unlike `portableParagraph` above (shared with `resource`'s
+// `howToObtain`, which does allow a `link` annotation and so types
+// `markDefs` as an array). Omitting the field entirely (not `[]`) keeps
+// this satisfying `ResearchProjectPayload['overview']` without a cast.
+function overviewParagraph(key: string, text: string) {
+  return {
+    _type: 'block' as const,
+    _key: key,
+    style: 'normal' as const,
+    children: [{ _type: 'span' as const, _key: `${key}-s`, text, marks: [] }],
+  }
+}
+
+// Fix round 1 ruling 1: the gallery builds `ResearchProjectView`s directly
+// (Research.tsx no longer knows how to turn a raw `coverImage` into a URL
+// itself -- that's `researchModel.ts`'s `toResearchView`/`coverView`, which
+// only ever sees real Sanity payload shapes). Covers reuse the same real
+// Sanity photo already referenced elsewhere in this file
+// (`image-8804e1e4206e971126b4ea1593388981dda21fb7-827x1157-jpg`, native
+// 827×1157), requested at four different `width`/`height` pairs with
+// `fit('crop')` -- exactly the "real, cropped-to-ratio `cdn.sanity.io`
+// URL" the ruling asks for, so these are genuine images with real,
+// verifiable aspect ratios, not synthesized placeholders.
+const RESEARCH_PHOTO_ASSET = {
+  _type: 'image' as const,
+  asset: { _ref: 'image-8804e1e4206e971126b4ea1593388981dda21fb7-827x1157-jpg', _type: 'reference' as const },
+}
+
+function researchCoverView(width: number, height: number, alt: string): ResearchProjectView['cover'] {
+  const src = urlForImage(RESEARCH_PHOTO_ASSET)?.width(width).height(height).fit('crop').url()
+  if (!src) throw new Error('fixture research cover: urlForImage returned no URL')
+  return { src, width, height, alt }
+}
+
+function researchProjectView(overrides: {
+  id: string
+  title: string
+  overview: ReturnType<typeof overviewParagraph>[]
+  start: string | null
+  tags: string[]
+  category: string | null
+  cover: ResearchProjectView['cover']
+}): ResearchProjectView {
+  const tags = overrides.tags
+  return {
+    id: overrides.id,
+    title: overrides.title,
+    label: tags[0] || 'Project',
+    kicker: researchKicker({ start: overrides.start, category: overrides.category }),
+    tagLine: tags.join(' · '),
+    overview: overrides.overview,
+    cover: overrides.cover,
+  }
+}
+
+export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
+  researchProjectView({
+    id: 'fixture-research-1',
+    title: 'Involvement of gut microbiota in Alzheimer’s disease',
+    overview: [
+      overviewParagraph(
+        'research-1-p1',
+        'The gut microbiome has been implicated in numerous neurodegenerative diseases. We were the ' +
+          'first to demonstrate that modulation of the gut microbiome of Alzheimer’s disease mice results ' +
+          'in improved cognition and pathology.'
+      ),
+    ],
+    start: '2023-04-01T00:00:00.000Z',
+    tags: ['Gut', 'Brain', 'Microbiome'],
+    category: 'Non-pharmacological interventions',
+    // 720×800 = 0.90.
+    cover: researchCoverView(720, 800, 'Involvement of gut microbiota in Alzheimer’s disease'),
+  }),
+  // Long unbreakable token in the overview (task brief) -- same class of
+  // 320px overflow this repo guards elsewhere (ResourceBlock.tsx's DOI,
+  // PortableBody's BIO_PARAGRAPH email) -- here a single long compound
+  // identifier with no spaces or hyphens for the browser to wrap on.
+  researchProjectView({
+    id: 'fixture-research-2',
+    title: 'Glial activity as a marker of disease',
+    overview: [
+      overviewParagraph(
+        'research-2-p1',
+        'Astrocytes and microglia play an important role in maintaining a homeostatic brain environment. ' +
+          'The assay reference for this cohort is ' +
+          'GSE000000-glial-activation-cohort-2018-2024-longitudinal-imaging-dataset-full-identifier, ' +
+          'held alongside the published dataset.'
+      ),
+    ],
+    start: '2018-01-01T00:00:00.000Z',
+    tags: ['Astrocytes', 'Microglia'],
+    category: null,
+    // 630×600 = 1.05.
+    cover: researchCoverView(630, 600, 'Glial activity as a marker of disease'),
+  }),
+  // No tags -- SectionRail's label falls back to "Project", and
+  // researchKicker's tag-line half is empty (kicker is category-only, since
+  // there's no `start` here either -- see fixture 4 for the start-only
+  // partner case).
+  researchProjectView({
+    id: 'fixture-research-3',
+    title: 'MAESTRO: multi-site cohort infrastructure',
+    overview: [
+      overviewParagraph(
+        'research-3-p1',
+        'A shared infrastructure project coordinating cohort recruitment and data harmonisation across ' +
+          'collaborating sites.'
+      ),
+    ],
+    start: null,
+    tags: [],
+    category: 'Cohort infrastructure',
+    // 700×500 = 1.40.
+    cover: researchCoverView(700, 500, 'MAESTRO: multi-site cohort infrastructure'),
+  }),
+  // No `start` date -- researchKicker's "Since {year}" half is empty, so
+  // the kicker is tags-only (paired with fixture 3's category-only case
+  // above).
+  researchProjectView({
+    id: 'fixture-research-4',
+    title: 'Metabolic stress signalling in ageing glia',
+    overview: [
+      overviewParagraph(
+        'research-4-p1',
+        'Investigating how chronic metabolic stress alters glial support of neuronal circuits over the ' +
+          'course of healthy ageing.'
+      ),
+    ],
+    start: null,
+    tags: ['Metabolism', 'Ageing'],
+    category: 'Metabolism, oxidative stress & neuroprotection',
+    // 820×400 = 2.05.
+    cover: researchCoverView(820, 400, 'Metabolic stress signalling in ageing glia'),
+  }),
+  // No cover -- the narrative must take the full content width, with no
+  // placeholder box (task brief point 2).
+  researchProjectView({
+    id: 'fixture-research-5',
+    title: 'Novel biomarkers of early cognitive decline',
+    overview: [
+      overviewParagraph(
+        'research-5-p1',
+        'Identifying candidate blood-based biomarkers that track cognitive decline before clinical ' +
+          'symptoms are apparent.'
+      ),
+    ],
+    start: '2024-09-01T00:00:00.000Z',
+    tags: ['Biomarkers'],
+    category: 'Neuro-oncology & biomarkers',
+    cover: null,
+  }),
+]
+
+// Task 3 (Home): production today has no resource, an unset labHead, and no
+// `support-our-research` page (spec §2) -- the states this fixture proves
+// are exactly the ones live data can't show (constraints.md), reusing the
+// same People fixtures (`PEOPLE_LAB_HEAD_FIXTURE`, `PEOPLE_PROFILES_FIXTURE`,
+// `PEOPLE_ROLE_GROUPS_FIXTURE`) and the first `RESOURCES_FIXTURE` entry
+// rather than inventing parallel ones, so this gallery instance and the
+// People gallery above stay consistent with each other.
+
+// "labHead set (no portrait)" (task brief): the same lab head as the People
+// gallery, minus her image -- proves Home's own 64px PortraitFrame-style
+// initials fallback (PiPortrait64 in Home.tsx), distinct from People's own
+// 220px spotlight fallback.
+export const HOME_LAB_HEAD_FIXTURE: NonNullable<SettingsPayload['labHead']> = {
+  ...PEOPLE_LAB_HEAD_FIXTURE,
+  image: null,
+  email: 'lab@example.org',
+}
+
+export const HOME_SETTINGS_FIXTURE: SettingsPayload = {
+  ...fallbackSettings,
+  labHead: HOME_LAB_HEAD_FIXTURE,
+  showLabHeadOnHome: true,
+}
+
+export const HOME_PAGE_FIXTURE: HomePagePayload = {
+  _id: 'fixture-home',
+  title: 'Laboratory of Molecular Neuroscience and Dementia',
+  overview: [
+    portableParagraph(
+      'home-overview-p1',
+      'Advancing the understanding and treatment of neurological disorders through molecular research, in the gallery fixture.'
+    ),
+  ],
+  showcaseProjects: [],
+}
+
+// Real routes carry `href` (Home's Recent work rows link to the paper
+// page) -- SAMPLE_PUBLICATIONS is reused rather than invented, per the
+// task brief ("The recent-work rows use SAMPLE_PUBLICATIONS, or a fixture
+// through toPublication"), with an `href` added to each row. The gallery's
+// total count (42) is deliberately larger than the two rows actually shown
+// -- Home's "All {n} publications →" count is the live publication total,
+// independent of how many of the latest five are rendered, and a gallery
+// fixture where the two never happened to match would leave that
+// distinction unproven.
+export const HOME_PUBLICATIONS_FIXTURE: Publication[] = SAMPLE_PUBLICATIONS.map((pub, index) => ({
+  ...pub,
+  href: `/publications/fixture-${index + 1}`,
+}))
+export const HOME_PUBLICATION_COUNT_FIXTURE = 42
+
+export const HOME_RESOURCE_FIXTURE: HomeResourcePayload = RESOURCES_FIXTURE[0]
+
+// The `maestro` project's title, printed verbatim including its own typo
+// ("endevor") -- constraints.md: CMS text (including the maestro project's
+// title and its typo) is never "corrected" in code, and that rule applies
+// equally to this fixture.
+export const HOME_MAESTRO_FIXTURE: MaestroProjectPayload = {
+  _id: 'fixture-maestro',
+  title: 'Join our new endevor - MAESTRO - dreaMers And doErs: the Scientists of TomorROw',
+  // `overviewParagraph` (no `markDefs` key), not `portableParagraph` --
+  // same reasoning as `RESEARCH_PROJECTS_FIXTURE`'s own comment above:
+  // `project.overview`'s schema allows no link annotation, so TypeGen
+  // types its blocks' `markDefs` as `null | undefined` only, never an
+  // array, and `maestro` is a `project` document too.
+  overview: [
+    overviewParagraph(
+      'maestro-overview-p1',
+      'A platform for postgraduate student presentations, open to collaborators across the faculty.'
+    ),
+  ],
+  site: 'https://tinyurl.com/maestrotalks',
+}
+
+export const HOME_SUPPORT_PAGE_FIXTURE: SupportPagePayload = {
+  title: 'Support our research',
+  slug: 'support-our-research',
+}
+
+// Fix round 1, IMPORTANT 1: a second settings fixture, `labHead` set but
+// `showLabHeadOnHome: false` -- the exact shape of the bug this fix
+// addresses (Home hid the PI panel *and* still subtracted the PI from the
+// member count, an internal inconsistency within the same render). With
+// the PI panel genuinely hidden, `currentMemberCount` must now count the
+// PI as an ordinary member (`homeModel.ts`'s `currentMemberCount` is only
+// ever told to exclude the id Home decided *not* to show a panel for) --
+// `e2e/home.spec.ts`'s own gallery assertions prove the two `gallery-home*`
+// instances' counts differ by exactly one, the PI herself.
+export const HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE: SettingsPayload = {
+  ...fallbackSettings,
+  labHead: HOME_LAB_HEAD_FIXTURE,
+  showLabHeadOnHome: false,
 }

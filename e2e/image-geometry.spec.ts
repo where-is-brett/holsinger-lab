@@ -1,7 +1,18 @@
 import { expect, test } from '@playwright/test'
 
+import { e2eClient } from './support/sanity'
+
+// Task 3 (Home): the rebuilt `/` no longer renders any cover image in the
+// old `ImageBox`/`.media-frame` frames this file's tests exercise -- Home's
+// only image is its own 64px PI portrait (Home.tsx's `PiPortrait64`, a
+// plain next/image with no `.media-frame` wrapper at all), and production's
+// PI has no portrait on file today besides (spec §2). `/` is removed from
+// this list -- see the "image frames are dimmed" test below, which now
+// resolves its own route instead of assuming `/` works, and
+// CLASS_SWEEP_ROUTES below, which adds `/` back explicitly so the
+// undefined-class sweep still covers it.
 /** Routes that render at least one cover image. */
-const ROUTES = ['/', '/people', '/projects/about-dr-damian-holsinger']
+const ROUTES = ['/people', '/projects/about-dr-damian-holsinger']
 
 /** Widths that exercise both the flex-col and flex-row card layouts. */
 const WIDTHS = [
@@ -11,17 +22,27 @@ const WIDTHS = [
 
 /**
  * Routes for the undefined-class sweep. Deliberately a superset of
- * ROUTES, with `/tutorial` added as defence-in-depth breadth rather than
- * because it currently reaches an interpolation site the other routes
- * miss: today, every call site that omits `paragraphClasses` (Header,
- * ProjectListItem) renders only `normal` paragraph blocks, and both
- * already appear on `/` and the project route, while `/tutorial`'s
- * richer blocks (lists, headings) come via Page.tsx, which always
- * passes a non-empty `paragraphClasses`. The extra route guards against
- * a future caller or future content that changes that, not a gap that
- * exists today.
+ * ROUTES, plus `/` and `/tutorial` as defence-in-depth breadth rather than
+ * because either currently reaches an interpolation site the other routes
+ * miss.
+ *
+ * `/tutorial`'s richer portable-text blocks (lists, headings) come via
+ * Page.tsx (`CustomPortableText`), which always passes a non-empty
+ * `paragraphClasses` -- `Header`'s own call site (Page.tsx, ProjectPage.tsx,
+ * neither of them `/`) omits it and renders only `normal` blocks, already
+ * covered by `/tutorial` and `/projects/about-dr-damian-holsinger` above.
+ *
+ * Task 3 update: `/` is kept in this sweep, but no longer for the
+ * `Header`/`CustomPortableText` reason above -- the rebuilt Home
+ * (Home.tsx) doesn't render `CustomPortableText` at all (its one portable-
+ * text block, the MAESTRO overview, goes through `PortableBody`, which
+ * always supplies its own paragraph class). `/` stays in the sweep because
+ * it renders several other components that each interpolate a class string
+ * from data (`PublicationRow`, `ResourceBlock`, `PersonCard`-style
+ * portrait treatment) -- the same general breadth reasoning as
+ * `/tutorial`'s own inclusion, not a specific known gap.
  */
-const CLASS_SWEEP_ROUTES = [...ROUTES, '/tutorial']
+const CLASS_SWEEP_ROUTES = ['/', ...ROUTES, '/tutorial']
 
 for (const { label, width, height } of WIDTHS) {
   for (const route of ROUTES) {
@@ -100,12 +121,21 @@ test('no element renders a literal "undefined" CSS class', async ({ page }) => {
 test('image frames are dimmed in dark mode only', async ({ browser }) => {
   // Phase 3 PR B rebuilt /people on the redesign primitives (PersonCard's
   // own `next/image` + Tailwind filter, not ImageBox/ImageContainer), so it
-  // no longer renders a `.media-frame` element at all -- this now targets
-  // '/' (Home, still on the pre-redesign system via FeatureRow's ImageBox,
-  // and explicitly out of this PR's scope per constraints.md) so the
-  // dark-dim mechanism itself stays covered by a route that still uses it.
+  // no longer renders a `.media-frame` element at all. Task 3 (this PR)
+  // rebuilt Home the same way (Home.tsx's `PiPortrait64`), so '/' no
+  // longer renders one either. `/projects/[slug]` (ProjectPage.tsx, still
+  // on ImageBox) is the one remaining route that does -- resolved from the
+  // live dataset (the first `project` with a `coverImage`, per the task
+  // brief) rather than hardcoded, so this holds for any valid dataset
+  // (constraints.md), and skips with a reason if none exists.
+  const withCover = await e2eClient.fetch<{ slug: string } | null>(
+    `*[_type == "project" && defined(coverImage) && defined(slug.current)][0]{ "slug": slug.current }`
+  )
+  test.skip(!withCover, 'no project with a coverImage exists in live data yet')
+  const route = `/projects/${withCover!.slug}`
+
   const dark = await browser.newPage({ colorScheme: 'dark' })
-  await dark.goto('/')
+  await dark.goto(route)
   const darkFilter = await dark
     .locator('.media-frame')
     .first()
@@ -114,7 +144,7 @@ test('image frames are dimmed in dark mode only', async ({ browser }) => {
   await dark.close()
 
   const light = await browser.newPage({ colorScheme: 'light' })
-  await light.goto('/')
+  await light.goto(route)
   const lightFilter = await light
     .locator('.media-frame')
     .first()
