@@ -212,3 +212,55 @@ test.describe('/preview/components gallery: research', () => {
     expect(fits).toBe(true)
   })
 })
+
+// Fix round 2, IMPORTANT: the enquiry line's "no link at all" and "get in
+// touch" branches, and the empty-state line, can't be exercised against
+// live data today (spec §2, and live `settings.showContactForm` is `true`
+// with no email set -- confirmed at fix round 1). Both gallery fixtures
+// pass `projects={[]}`, so each also doubles as the empty-state fixture.
+// `research-enquiries`/`research-project-title` are not unique testids
+// across the page's several `Research` instances, so every query here is
+// scoped through the section's own testid first.
+test.describe('/preview/components gallery: research enquiries branches', () => {
+  test('no email + showContactForm false: no anchor in the enquiries line, text ends "welcome."', async ({
+    page,
+  }) => {
+    await page.goto('/preview/components')
+    const section = page.getByTestId('gallery-research-no-link')
+    await expect(section).toBeVisible()
+
+    await expect(
+      section.getByText('Research projects will be listed here soon.', { exact: true })
+    ).toBeVisible()
+
+    const enquiries = section.getByTestId('research-enquiries')
+    await expect(enquiries.locator('a')).toHaveCount(0)
+    await expect(enquiries).toContainText('Student and collaboration enquiries are welcome.')
+  })
+
+  test('no email + showContactForm true: the enquiries line links to /contact', async ({ page }) => {
+    await page.goto('/preview/components')
+    const section = page.getByTestId('gallery-research-contact-link')
+    await expect(section).toBeVisible()
+
+    await expect(
+      section.getByText('Research projects will be listed here soon.', { exact: true })
+    ).toBeVisible()
+
+    const enquiries = section.getByTestId('research-enquiries')
+    const contactLink = enquiries.getByRole('link', { name: 'get in touch' })
+    await expect(contactLink).toHaveAttribute('href', '/contact')
+  })
+
+  test('no overflow at 320px', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 900 })
+    await page.goto('/preview/components')
+    await expect(page.getByTestId('gallery-research-no-link')).toBeVisible()
+    await expect(page.getByTestId('gallery-research-contact-link')).toBeVisible()
+
+    const fits = await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+    )
+    expect(fits).toBe(true)
+  })
+})

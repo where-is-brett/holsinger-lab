@@ -423,7 +423,37 @@ export default function Gallery() {
             projects={RESEARCH_PROJECTS_FIXTURE}
             email="lab@example.org"
             showContactForm
+            headingLevel="h2"
           />
+        </div>
+      </section>
+
+      {/* Fix round 2, IMPORTANT: the two Enquiries branches production data
+          can never show today (no `resource`... no, `project` with
+          `researchOrder`, no `settings.contact`/`labHead` email, and
+          `settings.showContactForm` is `true` live -- spec §2) get their
+          own permanent fixtures here, per constraints.md's "states the live
+          data can't show go on gallery fixtures". Both also pass
+          `projects={[]}`, which doubles as the empty-state fixture (the
+          "Research projects will be listed here soon." line) -- a third,
+          separate empty-state-only fixture would be redundant with these
+          two. Each instance's `<Research>` renders its own
+          `data-testid="research-enquiries"` (and, when populated,
+          `"research-project-title"`) -- not unique across instances on this
+          one page, so e2e scopes every query through the wrapping
+          `data-testid` below rather than relying on page-wide testid
+          uniqueness. */}
+      <section data-testid="gallery-research-no-link">
+        <Heading>Research screen -- no email, showContactForm false (no link)</Heading>
+        <div className="border border-rule">
+          <Research projects={[]} email={null} showContactForm={false} headingLevel="h2" />
+        </div>
+      </section>
+
+      <section data-testid="gallery-research-contact-link">
+        <Heading>Research screen -- no email, showContactForm true (&quot;get in touch&quot;)</Heading>
+        <div className="border border-rule">
+          <Research projects={[]} email={null} showContactForm headingLevel="h2" />
         </div>
       </section>
 

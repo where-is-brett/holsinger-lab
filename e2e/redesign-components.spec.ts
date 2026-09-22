@@ -26,6 +26,8 @@ const GALLERY_SECTIONS = [
   'resource-block',
   'publication-page',
   'research',
+  'research-no-link',
+  'research-contact-link',
   'resources',
 ]
 

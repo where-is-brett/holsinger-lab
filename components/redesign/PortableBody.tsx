@@ -31,7 +31,21 @@ const BIO_PARAGRAPH_BODY = 'mt-4 max-w-[720px] text-pretty break-words text-body
 // collide on the same element at the same breakpoint (constraints.md); the
 // 680px measure is the ui_kit's own `maxWidth: 680` for this paragraph,
 // distinct from the bio's 720px.
-const BIO_PARAGRAPH_LEAD = 'mt-4 max-w-[680px] text-pretty break-words text-lead text-text'
+//
+// Fix round 2 minor 1: `mt-[22px]`, not `mt-4` (16px) -- the ui_kit's own
+// `Narrative` body paragraph is `margin: "22px 0 0"`, a value with no
+// existing Tailwind step (`mt-4`=16px, `mt-5`=20px, `mt-6`=24px), so this
+// stays an arbitrary value like the file's other exact-pixel measures.
+// This is one whole class string, still applied uniformly to every
+// "normal" block by `components()` below (unchanged) -- every project's
+// `overview` here and in every fixture is a single paragraph, so this is
+// never exercised as a "first vs. later paragraph" question yet, and nothing
+// here would introduce a same-property collision if it later is: any
+// future first/later split would still have to pick between two whole
+// `margin-top` values (a `first:`-style structural variant, not a second
+// unconditional utility competing with this one), the same "whole string,
+// not a bolted-on override" rule as everywhere else in this file.
+const BIO_PARAGRAPH_LEAD = 'mt-[22px] max-w-[680px] text-pretty break-words text-lead text-text'
 // hl-link-style underlined link (this repo never ported the docs design
 // system's literal `.hl-link` class into styles/index.css -- see
 // PublicationPage.tsx's own IDENTIFIER constant for the same "reproduce the

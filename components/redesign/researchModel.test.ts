@@ -185,9 +185,12 @@ describe('toResearchView', () => {
     expect(view.cover?.height).toBe(800)
     expect(view.cover?.alt).toBe('Uncropped project')
     expect(view.cover?.src).toBeTruthy()
-    // No crop -- no width/height transform requested; Sanity delivers the
-    // asset at its native size (@sanity/image-url's own `fit()`: with
-    // neither dimension requested, it never applies the crop rect at all).
+    // No editorial crop on this fixture, so no width/height transform is
+    // requested; Sanity delivers the asset at its native size. (Fix round 2
+    // correction: this is not because @sanity/image-url ignores a crop
+    // without explicit dimensions -- it doesn't, its `fit()` still returns
+    // `rect: source.crop` and that becomes the URL's `rect=` param. There
+    // simply is no `crop` on this fixture's `coverImage` to apply.)
     expect(view.cover?.src).not.toMatch(/[?&]w=/)
     expect(view.cover?.src).not.toMatch(/[?&]h=/)
   })

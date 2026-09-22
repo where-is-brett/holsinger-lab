@@ -68,19 +68,28 @@ export interface ResearchProjectView {
  *
  * When the editor set an image `crop` in the Studio, `width`/`height` are
  * scaled down by `(1 - left - right)` / `(1 - top - bottom)` -- the
- * fraction of the native asset the crop actually keeps -- and the request
- * to Sanity carries that same `width`/`height` (default `fit` is `crop`,
- * so a sized request honours the editor's crop + hotspot). Without a
- * `width`/`height` on the request, `@sanity/image-url` never applies the
- * crop rect at all (its own `fit()` returns `rect: source.crop` verbatim,
- * i.e. the untouched crop metadata, only when both dimensions are given --
- * with neither, Sanity delivers the full, uncropped asset regardless of
- * what the editor chose), so this only requests a transform when there is
- * an editorial crop to honour. With no crop, `width`/`height` are the
- * asset's own native `metadata.dimensions` unchanged -- the exact bytes
- * `urlForImage(...).url()` (no size params) delivers, so the box never
- * shifts on load (constraints.md: covers are never cropped by this
- * component itself -- only ever what the editor already chose in Sanity).
+ * fraction of the native asset the crop actually keeps.
+ *
+ * Fix round 2 correction: `@sanity/image-url` *does* apply the crop even
+ * with no `width`/`height` requested at all -- its own `fit()` returns
+ * `rect: source.crop` (the crop, already converted to a pixel rect)
+ * whenever neither dimension is given, and that rect is what ends up in
+ * the URL's own `rect=` param. The reason this still explicitly requests
+ * `width`/`height` (with `fit('crop')`) when there's a crop is different:
+ * the library computes the crop rect's own pixel size independently
+ * (rounding `left`/`top` first, then deriving `width`/`height` from what's
+ * left), which is not guaranteed to land on the exact same pixel as this
+ * function's own `(1 - left - right)` math above -- an off-by-one would
+ * mean the bytes Sanity actually delivers are a different size than the
+ * `width`/`height` this view hands to `next/image`, which is exactly the
+ * "shifts on load" defect this exists to prevent. Requesting the same
+ * explicit `width`/`height` this function already computed forces Sanity
+ * to deliver exactly that many pixels, so the box and the bytes always
+ * agree. With no crop, `width`/`height` are the asset's own native
+ * `metadata.dimensions` unchanged -- the exact bytes `urlForImage(...).url()`
+ * (no size params) delivers, so the box never shifts on load either
+ * (constraints.md: covers are never cropped by this component itself --
+ * only ever what the editor already chose in Sanity).
  */
 function coverView(p: ResearchProjectPayload): ResearchProjectCover | null {
   const coverImage = p.coverImage

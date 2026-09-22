@@ -136,16 +136,28 @@ export function Research({
   projects,
   email,
   showContactForm,
+  headingLevel,
 }: {
   projects: ResearchProjectView[]
   email: string | null
   showContactForm?: boolean | null
+  /** Forwarded to PageTitle -- see its own doc comment and People.tsx's
+   * identical prop. Fix round 2: the gallery now renders three `Research`
+   * instances alongside its own `<h1>` (and People's own two), so every
+   * instance here needs the same `<h2>` treatment those already get. The
+   * real /research route never passes this, so it always gets the correct
+   * `<h1>`. */
+  headingLevel?: 'h1' | 'h2'
 }) {
   const n = projects.length
 
   return (
     <div>
-      <PageTitle title="Research" meta={`${n} ACTIVE PROJECT${n === 1 ? '' : 'S'}`} />
+      <PageTitle
+        title="Research"
+        meta={`${n} ACTIVE PROJECT${n === 1 ? '' : 'S'}`}
+        headingLevel={headingLevel}
+      />
       {n === 0 ? (
         <SectionRail>
           <p className="text-[14px] leading-[1.5] text-text-muted">
