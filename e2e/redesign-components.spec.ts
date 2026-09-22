@@ -29,6 +29,7 @@ const GALLERY_SECTIONS = [
   'research-no-link',
   'research-contact-link',
   'resources',
+  'home',
 ]
 
 test.describe('redesign component gallery', () => {
@@ -290,7 +291,10 @@ test.describe('redesign component gallery', () => {
     const link = section.getByRole('link', { name: 'Élodie Ñúñez' })
     await expect(link).toHaveAttribute('href', '/people/elodie-nunez')
     // The portrait <img> inside is alt="" (decorative), so it carries no
-    // accessible name of its own to collide with the link's aria-label.
+    // accessible name of its own to collide with the link's own accessible
+    // name -- PersonCard no longer sets an `aria-label` on the link at all
+    // (final-review fix wave, PersonCard.tsx's own comment); the link's
+    // accessible name is computed from its visible text content instead.
     await expect(link.locator('img')).toHaveAttribute('alt', '')
   })
 
@@ -345,6 +349,24 @@ test.describe('redesign component gallery', () => {
     const instance = page.getByTestId('gallery-people-a')
     await expect(instance.getByText('Visiting Intern — Germany')).toBeVisible()
     await expect(instance.getByText('Visiting Intern — Vietnam')).toBeVisible()
+  })
+
+  // Carried assertion (Task 3 brief): the number of `people-section-title`
+  // headings actually rendered must equal `g`, the group count baked into
+  // PageTitle's own meta string ("LAB HEAD + N CURRENT MEMBERS · G GROUPS")
+  // -- People.tsx's `g` is derived by counting titled member sections
+  // (peopleModel.ts's `groupByRoleGroup`/`splitAlumni`), and this is the
+  // one place that number is checked against what the DOM actually shows,
+  // rather than trusting the two never drift apart.
+  test('People gallery (a): the number of section-title headings equals the meta\'s group count', async ({
+    page,
+  }) => {
+    const instance = page.getByTestId('gallery-people-a')
+    const meta = await instance.getByTestId('page-title-meta').innerText()
+    const match = meta.match(/(\d+)\s+GROUPS?/)
+    expect(match, `meta "${meta}" has no "N GROUP(S)" segment`).not.toBeNull()
+    const expectedGroups = Number(match![1])
+    await expect(instance.getByTestId('people-section-title')).toHaveCount(expectedGroups)
   })
 
   test('People gallery (b): no spotlight when labHead is unset, and the PI-equivalent profile reappears as an ordinary card', async ({

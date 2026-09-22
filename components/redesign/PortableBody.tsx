@@ -46,20 +46,37 @@ const BIO_PARAGRAPH_BODY = 'mt-4 max-w-[720px] text-pretty break-words text-body
 // unconditional utility competing with this one), the same "whole string,
 // not a bolted-on override" rule as everywhere else in this file.
 const BIO_PARAGRAPH_LEAD = 'mt-[22px] max-w-[680px] text-pretty break-words text-lead text-text'
+// PR C Task 3: Home's MAESTRO band (SectionRail `inverse`) renders the
+// `maestro` project's `overview` on the dark inverse surface -- a third,
+// entirely separate paragraph class string, same reasoning as
+// BIO_PARAGRAPH_LEAD's own comment above (never BIO_PARAGRAPH_BODY with a
+// colour override bolted on, so `text-text-muted`/`text-text-inverse-muted`
+// never collide on the same element at the same breakpoint). Task brief:
+// "Use text-text-inverse-muted for the body". No `max-w`/`text-lead` change
+// needed beyond that -- this keeps the same 720px measure and `--text-body`
+// size as the default bio style, just the inverse-surface colour token
+// (matching Research.tsx's Enquiries band and SectionRail's own `inverse`
+// prop, which pair `text-text-inverse`/`text-text-inverse-muted` with a
+// `bg-surface-inverse` ancestor).
+const BIO_PARAGRAPH_INVERSE = 'mt-4 max-w-[720px] text-pretty break-words text-body text-text-inverse-muted'
 // hl-link-style underlined link (this repo never ported the docs design
 // system's literal `.hl-link` class into styles/index.css -- see
 // PublicationPage.tsx's own IDENTIFIER constant for the same "reproduce the
 // intent with Tailwind utilities" approach elsewhere in this direction).
 const BIO_LINK = 'text-link underline'
+// The inverse band's own link colour token (`--sem-link-inverse`), pairing
+// with BIO_PARAGRAPH_INVERSE the same way Research.tsx's Enquiries band
+// pairs `text-link-inverse` with its own inverse-surface text.
+const BIO_LINK_INVERSE = 'text-link-inverse underline'
 
-function components(paragraphClass: string): PortableTextComponents {
+function components(paragraphClass: string, linkClass: string = BIO_LINK): PortableTextComponents {
   return {
     block: {
       normal: ({ children }) => <p className={paragraphClass}>{children}</p>,
     },
     marks: {
       link: ({ children, value }) => (
-        <a href={value?.href} className={BIO_LINK} rel="noreferrer noopener">
+        <a href={value?.href} className={linkClass} rel="noreferrer noopener">
           {children}
         </a>
       ),
@@ -69,6 +86,7 @@ function components(paragraphClass: string): PortableTextComponents {
 
 const BIO_COMPONENTS = components(BIO_PARAGRAPH_BODY)
 const LEAD_COMPONENTS = components(BIO_PARAGRAPH_LEAD)
+const INVERSE_COMPONENTS = components(BIO_PARAGRAPH_INVERSE, BIO_LINK_INVERSE)
 
 /**
  * Renders a portable-text bio through the shared component map, or a plain
@@ -77,10 +95,11 @@ const LEAD_COMPONENTS = components(BIO_PARAGRAPH_LEAD)
  *
  * `size`: `'body'` (default) is the muted bio style every existing caller
  * (People's spotlight, PersonPage's full profile) already renders at --
- * unchanged. `'lead'` is Research's project overview -- a whole separate
- * paragraph class string picked by the ternary below, per this file's own
- * same-property-collision reasoning, never `BIO_PARAGRAPH_BODY` with a
- * `'lead'` override bolted on.
+ * unchanged. `'lead'` is Research's project overview. `'inverse'` is
+ * Home's MAESTRO band (PR C Task 3) -- each a whole separate paragraph
+ * (and, for `'inverse'`, link) class string picked below, per this file's
+ * own same-property-collision reasoning, never `BIO_PARAGRAPH_BODY` with a
+ * colour/size override bolted on.
  */
 export function PortableBody({
   blocks,
@@ -89,10 +108,11 @@ export function PortableBody({
 }: {
   blocks?: (PortableTextBlock | ArbitraryTypedObject)[] | null
   bio?: string | null
-  size?: 'body' | 'lead'
+  size?: 'body' | 'lead' | 'inverse'
 }) {
-  const paragraphClass = size === 'lead' ? BIO_PARAGRAPH_LEAD : BIO_PARAGRAPH_BODY
-  const bioComponents = size === 'lead' ? LEAD_COMPONENTS : BIO_COMPONENTS
+  const paragraphClass =
+    size === 'lead' ? BIO_PARAGRAPH_LEAD : size === 'inverse' ? BIO_PARAGRAPH_INVERSE : BIO_PARAGRAPH_BODY
+  const bioComponents = size === 'lead' ? LEAD_COMPONENTS : size === 'inverse' ? INVERSE_COMPONENTS : BIO_COMPONENTS
 
   if (blocks && blocks.length > 0) {
     return <PortableText value={blocks} components={bioComponents} />

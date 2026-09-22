@@ -5,6 +5,13 @@ import { CopyCitation } from 'components/redesign/CopyCitation'
 import { FacetBand, type FacetChipSpec } from 'components/redesign/FacetBand'
 import { applyFacets, countBy, toggleFacet } from 'components/redesign/facets'
 import {
+  HOME_MAESTRO_FIXTURE,
+  HOME_PAGE_FIXTURE,
+  HOME_PUBLICATION_COUNT_FIXTURE,
+  HOME_PUBLICATIONS_FIXTURE,
+  HOME_RESOURCE_FIXTURE,
+  HOME_SETTINGS_FIXTURE,
+  HOME_SUPPORT_PAGE_FIXTURE,
   LINKED_PUB,
   NO_LINK_PUB,
   PEOPLE_PROFILES_FIXTURE,
@@ -25,6 +32,7 @@ import { PersonCard } from 'components/redesign/PersonCard'
 import type { Publication } from 'components/redesign/publicationModel'
 import { PublicationRow } from 'components/redesign/PublicationRow'
 import { ResourceBlock } from 'components/redesign/ResourceBlock'
+import { Home } from 'components/redesign/screens/Home'
 import { People } from 'components/redesign/screens/People'
 import { PublicationPage } from 'components/redesign/screens/PublicationPage'
 import { Research } from 'components/redesign/screens/Research'
@@ -466,6 +474,30 @@ export default function Gallery() {
             renders. */}
         <div className="border border-rule">
           <Resources resources={RESOURCES_FIXTURE} />
+        </div>
+      </section>
+
+      <section data-testid="gallery-home">
+        <Heading>Home screen</Heading>
+        {/* Task 3: production today has no resource, an unset labHead, and
+            no `support-our-research` page (spec §2) -- this is the only
+            place Home's populated PI panel, Resources block, and Support
+            link actually render. The `maestro` project *does* exist live,
+            but the fixture's own copy proves the block independent of
+            live-data drift. */}
+        <div className="border border-rule">
+          <Home
+            home={HOME_PAGE_FIXTURE}
+            settings={HOME_SETTINGS_FIXTURE}
+            siteName="Holsinger Lab"
+            publications={HOME_PUBLICATIONS_FIXTURE}
+            publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+            resource={HOME_RESOURCE_FIXTURE}
+            maestro={HOME_MAESTRO_FIXTURE}
+            profiles={PEOPLE_PROFILES_FIXTURE}
+            roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+            supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+          />
         </div>
       </section>
     </main>

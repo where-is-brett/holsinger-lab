@@ -1,13 +1,34 @@
 import { toPlainText } from '@portabletext/react'
-import { HomePage } from 'components/pages/home/HomePage'
+import { toPublication } from 'components/redesign/publicationModel'
+import { Home } from 'components/redesign/screens/Home'
+import Layout from 'components/shared/Layout'
 import { resolveBranding } from 'lib/branding'
 import { buildMetadata } from 'lib/metadata'
 import { sanityFetch } from 'lib/sanity.live'
-import { homePageQuery, settingsQuery } from 'lib/sanity.queries'
+import {
+  homePageQuery,
+  homeRecentPublicationsQuery,
+  homeResourceQuery,
+  maestroProjectQuery,
+  profileQuery,
+  publicationCountQuery,
+  roleGroupQuery,
+  settingsQuery,
+  supportPageQuery,
+} from 'lib/sanity.queries'
 import type { Metadata } from 'next'
 import { cache } from 'react'
 import type { Image } from 'sanity'
-import type { HomePagePayload, SettingsPayload } from 'types'
+import type {
+  HomePagePayload,
+  HomeResourcePayload,
+  MaestroProjectPayload,
+  ProfilePayload,
+  PublicationPayload,
+  RoleGroupPayload,
+  SettingsPayload,
+  SupportPagePayload,
+} from 'types'
 import { fallbackSettings } from 'types'
 
 export const revalidate = 60
@@ -23,14 +44,59 @@ const fallbackPage: HomePagePayload = {
 // (per its own .d.ts) cannot preserve literal string types — so `sanityFetch`'s
 // `SanityQueries` lookup can't match and `data` resolves to `unknown`. Falling
 // back to explicit casts here, per this task's documented fallback.
+//
+// Task 3 brief: everything the rebuilt Home screen needs, fetched in one
+// `Promise.all` -- the settings/home-page pair `generateMetadata` already
+// depended on, plus the five new Home-only queries (recent publications,
+// the live publication count, the first resource, the `maestro` project,
+// and the `support-our-research` page) and the People data Home's own
+// member count and PI panel need (`currentMemberCount`,
+// `shouldShowLabHeadCard`/`resolveLabHeadHref`, both from homeModel.ts).
 const getData = cache(async () => {
-  const [{ data: settingsData }, { data: pageData }] = await Promise.all([
+  const [
+    { data: settingsData },
+    { data: pageData },
+    { data: publicationsData },
+    { data: publicationCountData },
+    { data: resourceData },
+    { data: maestroData },
+    { data: supportPageData },
+    { data: profilesData },
+    { data: roleGroupsData },
+  ] = await Promise.all([
     sanityFetch({ query: settingsQuery, stega: false }),
     sanityFetch({ query: homePageQuery }),
+    // `stega: false`, matching /publications and /resources: this data
+    // feeds row titles, journal refs and identifier hrefs, none of which
+    // should carry invisible Presentation-mode stega characters.
+    sanityFetch({ query: homeRecentPublicationsQuery, stega: false }),
+    sanityFetch({ query: publicationCountQuery, stega: false }),
+    sanityFetch({ query: homeResourceQuery, stega: false }),
+    sanityFetch({ query: maestroProjectQuery, stega: false }),
+    sanityFetch({ query: supportPageQuery, stega: false }),
+    sanityFetch({ query: profileQuery, stega: false }),
+    sanityFetch({ query: roleGroupQuery, stega: false }),
   ])
   const settings = (settingsData as SettingsPayload | null) ?? fallbackSettings
   const page = (pageData as HomePagePayload | null) ?? fallbackPage
-  return { settings, page }
+  const publications = (publicationsData as PublicationPayload[] | null) ?? []
+  const publicationCount = (publicationCountData as number | null) ?? 0
+  const resource = (resourceData as HomeResourcePayload | null) ?? null
+  const maestro = (maestroData as MaestroProjectPayload | null) ?? null
+  const supportPage = (supportPageData as SupportPagePayload | null) ?? null
+  const profiles = (profilesData as ProfilePayload[] | null) ?? []
+  const roleGroups = (roleGroupsData as RoleGroupPayload[] | null) ?? []
+  return {
+    settings,
+    page,
+    publications,
+    publicationCount,
+    resource,
+    maestro,
+    supportPage,
+    profiles,
+    roleGroups,
+  }
 })
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -50,6 +116,33 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Page() {
-  const { settings, page } = await getData()
-  return <HomePage page={page} settings={settings} />
+  const {
+    settings,
+    page,
+    publications,
+    publicationCount,
+    resource,
+    maestro,
+    supportPage,
+    profiles,
+    roleGroups,
+  } = await getData()
+  const { siteName } = resolveBranding(settings)
+
+  return (
+    <Layout settings={settings} childrenStyles="px-0">
+      <Home
+        home={page}
+        settings={settings}
+        siteName={siteName}
+        publications={publications.map(toPublication)}
+        publicationCount={publicationCount}
+        resource={resource}
+        maestro={maestro}
+        profiles={profiles}
+        roleGroups={roleGroups}
+        supportPage={supportPage}
+      />
+    </Layout>
+  )
 }

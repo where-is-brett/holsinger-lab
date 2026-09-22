@@ -127,8 +127,12 @@ test('the home page renders, and the lab-head card matches settings.labHead / sh
   page,
 }) => {
   // Derived from the live dataset -- mirrors
-  // components/pages/home/shouldShowLabHeadCard.ts -- rather than the
-  // "no lab head is set" assumption this test previously hardcoded.
+  // components/redesign/homeModel.ts's `shouldShowLabHeadCard` -- rather
+  // than the "no lab head is set" assumption this test previously
+  // hardcoded. Task 3 retargets this to the rebuilt Home's new markup: the
+  // PI panel is no longer an "About {name}" heading/card (the old
+  // HomePage/FeatureRow), it's Identity block 1's `data-testid=
+  // "home-pi-panel"` (Home.tsx), holding the PI's linked name.
   const settings = await e2eClient.fetch<{
     labHeadId: string | null
     labHeadName: string | null
@@ -145,22 +149,10 @@ test('the home page renders, and the lab-head card matches settings.labHead / sh
   await page.goto('/')
 
   if (showCard) {
-    await expect(
-      page.getByRole('heading', {
-        level: 2,
-        name: `About ${settings!.labHeadName}`,
-        exact: true,
-      })
-    ).toBeVisible()
+    const panel = page.getByTestId('home-pi-panel')
+    await expect(panel).toBeVisible()
+    await expect(panel.getByRole('link', { name: settings!.labHeadName as string, exact: true })).toBeVisible()
   } else {
-    // Scoped to level: 2 -- the lab-head card's own heading is an `<h2>`
-    // ("About {name}"), distinct from showcase projects' `<h3>` titles. Live
-    // data has previously had a showcase project literally titled "About Dr
-    // Damian Holsinger" (the same project the design doc's future migration
-    // deletes from home.showcaseProjects), whose `<h3>` would otherwise
-    // false-match an unscoped /^About / heading query.
-    await expect(
-      page.getByRole('heading', { level: 2, name: /^About / })
-    ).toHaveCount(0)
+    await expect(page.getByTestId('home-pi-panel')).toHaveCount(0)
   }
 })

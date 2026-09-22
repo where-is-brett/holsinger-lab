@@ -18,8 +18,15 @@ for (const path of CONTENT_ROUTES) {
     const response = await page.goto(path)
     expect(response?.status()).toBe(200)
     await expect(page).toHaveTitle(/.+/)
+    // `exact: true` (Task 3): `/` now also renders "All N publications →"
+    // (Home's Recent work block), whose accessible name contains
+    // "publications" as a case-insensitive substring -- Playwright's
+    // default (non-exact) name matching would resolve both links and trip
+    // strict mode. The nav link's own accessible name is exactly
+    // "Publications", so `exact: true` disambiguates without scoping to
+    // the nav landmark.
     await expect(
-      page.getByRole('link', { name: 'Publications' })
+      page.getByRole('link', { name: 'Publications', exact: true })
     ).toBeVisible()
   })
 }

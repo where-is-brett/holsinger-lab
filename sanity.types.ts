@@ -1250,6 +1250,108 @@ export type FeaturedPublicationsQueryResult = Array<{
 }>
 
 // Source: lib/sanity.queries.ts
+// Variable: homeRecentPublicationsQuery
+// Query: *[_type == "publication"] | order(date desc)[0...5] {      _id,  title,  author,  journal,  volume,  issue,  pages,  abstract,  url,  doi,  date,  "slug": slug.current,  type,  topics,  featured,  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {    _id,    title,    kind,  },  }
+export type HomeRecentPublicationsQueryResult = Array<{
+  _id: string
+  title: string | null
+  author: string | null
+  journal: string | null
+  volume: number | null
+  issue: number | null
+  pages: string | null
+  abstract: string | null
+  url: string | null
+  doi: string | null
+  date: string | null
+  slug: string | null
+  type: 'Article' | 'Case report' | 'Review' | null
+  topics: Array<string> | null
+  featured: boolean | null
+  resources: Array<{
+    _id: string
+    title: string | null
+    kind: 'dataset' | 'hardware' | 'protocol' | 'software' | null
+  }>
+}>
+
+// Source: lib/sanity.queries.ts
+// Variable: publicationCountQuery
+// Query: count(*[_type == "publication"])
+export type PublicationCountQueryResult = number
+
+// Source: lib/sanity.queries.ts
+// Variable: homeResourceQuery
+// Query: *[_type == "resource"] | order(title asc) [0] {    _id,    title,    kind,    summary,    howToObtain,    publication->{      _id,      title,      date,      doi,      url,      journal,      volume,      issue,      pages,      "slug": slug.current,    },  }
+export type HomeResourceQueryResult = {
+  _id: string
+  title: string | null
+  kind: 'dataset' | 'hardware' | 'protocol' | 'software' | null
+  summary: string | null
+  howToObtain: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+  publication: {
+    _id: string
+    title: string | null
+    date: string | null
+    doi: string | null
+    url: string | null
+    journal: string | null
+    volume: number | null
+    issue: number | null
+    pages: string | null
+    slug: string | null
+  } | null
+} | null
+
+// Source: lib/sanity.queries.ts
+// Variable: maestroProjectQuery
+// Query: *[_type == "project" && slug.current == "maestro"][0]{    _id,    title,    overview,    site,  }
+export type MaestroProjectQueryResult = {
+  _id: string
+  title: string | null
+  overview: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: null
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+  site: string | null
+} | null
+
+// Source: lib/sanity.queries.ts
+// Variable: supportPageQuery
+// Query: *[_type == "page" && slug.current == "support-our-research"][0]{    title,    "slug": slug.current,  }
+export type SupportPageQueryResult = {
+  title: string | null
+  slug: string | null
+} | null
+
+// Source: lib/sanity.queries.ts
 // Variable: researchProjectsQuery
 // Query: *[_type == "project" && defined(researchOrder)] | order(researchOrder asc) {    _id,    title,    "slug": slug.current,    overview,    coverImage{      ...,      asset->{        _id,        metadata{ dimensions{ width, height, aspectRatio } }      }    },    "start": duration.start,    tags,    category,  }
 export type ResearchProjectsQueryResult = Array<{
@@ -1444,6 +1546,11 @@ declare module '@sanity/client' {
     '\n  *[_type == "publication" && slug.current == $slug][0]{\n    \n  _id,\n  title,\n  author,\n  journal,\n  volume,\n  issue,\n  pages,\n  abstract,\n  url,\n  doi,\n  date,\n  "slug": slug.current,\n  type,\n  topics,\n  featured,\n  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {\n    _id,\n    title,\n    kind,\n  },\n\n  }\n': PublicationBySlugQueryResult
     '\n  *[_type == "publication" && slug.current != null].slug.current\n': PublicationPathsResult
     '\n  *[_type == "publication" && featured == true] | order(date desc) {\n    \n  _id,\n  title,\n  author,\n  journal,\n  volume,\n  issue,\n  pages,\n  abstract,\n  url,\n  doi,\n  date,\n  "slug": slug.current,\n  type,\n  topics,\n  featured,\n  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {\n    _id,\n    title,\n    kind,\n  },\n\n  }\n': FeaturedPublicationsQueryResult
+    '\n  *[_type == "publication"] | order(date desc)[0...5] {\n    \n  _id,\n  title,\n  author,\n  journal,\n  volume,\n  issue,\n  pages,\n  abstract,\n  url,\n  doi,\n  date,\n  "slug": slug.current,\n  type,\n  topics,\n  featured,\n  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {\n    _id,\n    title,\n    kind,\n  },\n\n  }\n': HomeRecentPublicationsQueryResult
+    '\n  count(*[_type == "publication"])\n': PublicationCountQueryResult
+    '\n  *[_type == "resource"] | order(title asc) [0] {\n    _id,\n    title,\n    kind,\n    summary,\n    howToObtain,\n    publication->{\n      _id,\n      title,\n      date,\n      doi,\n      url,\n      journal,\n      volume,\n      issue,\n      pages,\n      "slug": slug.current,\n    },\n  }\n': HomeResourceQueryResult
+    '\n  *[_type == "project" && slug.current == "maestro"][0]{\n    _id,\n    title,\n    overview,\n    site,\n  }\n': MaestroProjectQueryResult
+    '\n  *[_type == "page" && slug.current == "support-our-research"][0]{\n    title,\n    "slug": slug.current,\n  }\n': SupportPageQueryResult
     '\n  *[_type == "project" && defined(researchOrder)] | order(researchOrder asc) {\n    _id,\n    title,\n    "slug": slug.current,\n    overview,\n    coverImage{\n      ...,\n      asset->{\n        _id,\n        metadata{ dimensions{ width, height, aspectRatio } }\n      }\n    },\n    "start": duration.start,\n    tags,\n    category,\n  }\n': ResearchProjectsQueryResult
     '\n  *[_type == "resource"] | order(title asc) {\n    _id,\n    title,\n    kind,\n    summary,\n    howToObtain,\n    publication->{\n      _id,\n      title,\n      date,\n      doi,\n      url,\n      journal,\n      volume,\n      issue,\n      pages,\n      "slug": slug.current,\n    },\n  }\n': ResourcesQueryResult
     '\n  *[_type == "roleGroup"] | order(orderRank) {\n    _id,\n    title,\n  }\n': RoleGroupQueryResult

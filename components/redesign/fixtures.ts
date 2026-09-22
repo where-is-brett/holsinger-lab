@@ -1,5 +1,14 @@
 import { urlForImage } from 'lib/sanity.image'
-import type { ProfilePayload, ResourcePayload, RoleGroupPayload, SettingsPayload } from 'types'
+import type {
+  HomePagePayload,
+  HomeResourcePayload,
+  MaestroProjectPayload,
+  ProfilePayload,
+  ResourcePayload,
+  RoleGroupPayload,
+  SettingsPayload,
+  SupportPagePayload,
+} from 'types'
 import { fallbackSettings } from 'types'
 
 import type { Publication } from './publicationModel'
@@ -694,3 +703,82 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
     cover: null,
   }),
 ]
+
+// Task 3 (Home): production today has no resource, an unset labHead, and no
+// `support-our-research` page (spec §2) -- the states this fixture proves
+// are exactly the ones live data can't show (constraints.md), reusing the
+// same People fixtures (`PEOPLE_LAB_HEAD_FIXTURE`, `PEOPLE_PROFILES_FIXTURE`,
+// `PEOPLE_ROLE_GROUPS_FIXTURE`) and the first `RESOURCES_FIXTURE` entry
+// rather than inventing parallel ones, so this gallery instance and the
+// People gallery above stay consistent with each other.
+
+// "labHead set (no portrait)" (task brief): the same lab head as the People
+// gallery, minus her image -- proves Home's own 64px PortraitFrame-style
+// initials fallback (PiPortrait64 in Home.tsx), distinct from People's own
+// 220px spotlight fallback.
+export const HOME_LAB_HEAD_FIXTURE: NonNullable<SettingsPayload['labHead']> = {
+  ...PEOPLE_LAB_HEAD_FIXTURE,
+  image: null,
+  email: 'lab@example.org',
+}
+
+export const HOME_SETTINGS_FIXTURE: SettingsPayload = {
+  ...fallbackSettings,
+  labHead: HOME_LAB_HEAD_FIXTURE,
+  showLabHeadOnHome: true,
+}
+
+export const HOME_PAGE_FIXTURE: HomePagePayload = {
+  _id: 'fixture-home',
+  title: 'Laboratory of Molecular Neuroscience and Dementia',
+  overview: [
+    portableParagraph(
+      'home-overview-p1',
+      'Advancing the understanding and treatment of neurological disorders through molecular research, in the gallery fixture.'
+    ),
+  ],
+  showcaseProjects: [],
+}
+
+// Real routes carry `href` (Home's Recent work rows link to the paper
+// page) -- SAMPLE_PUBLICATIONS is reused rather than invented, per the
+// task brief ("The recent-work rows use SAMPLE_PUBLICATIONS, or a fixture
+// through toPublication"), with an `href` added to each row. The gallery's
+// total count (42) is deliberately larger than the two rows actually shown
+// -- Home's "All {n} publications →" count is the live publication total,
+// independent of how many of the latest five are rendered, and a gallery
+// fixture where the two never happened to match would leave that
+// distinction unproven.
+export const HOME_PUBLICATIONS_FIXTURE: Publication[] = SAMPLE_PUBLICATIONS.map((pub, index) => ({
+  ...pub,
+  href: `/publications/fixture-${index + 1}`,
+}))
+export const HOME_PUBLICATION_COUNT_FIXTURE = 42
+
+export const HOME_RESOURCE_FIXTURE: HomeResourcePayload = RESOURCES_FIXTURE[0]
+
+// The `maestro` project's title, printed verbatim including its own typo
+// ("endevor") -- constraints.md: CMS text (including the maestro project's
+// title and its typo) is never "corrected" in code, and that rule applies
+// equally to this fixture.
+export const HOME_MAESTRO_FIXTURE: MaestroProjectPayload = {
+  _id: 'fixture-maestro',
+  title: 'Join our new endevor - MAESTRO - dreaMers And doErs: the Scientists of TomorROw',
+  // `overviewParagraph` (no `markDefs` key), not `portableParagraph` --
+  // same reasoning as `RESEARCH_PROJECTS_FIXTURE`'s own comment above:
+  // `project.overview`'s schema allows no link annotation, so TypeGen
+  // types its blocks' `markDefs` as `null | undefined` only, never an
+  // array, and `maestro` is a `project` document too.
+  overview: [
+    overviewParagraph(
+      'maestro-overview-p1',
+      'A platform for postgraduate student presentations, open to collaborators across the faculty.'
+    ),
+  ],
+  site: 'https://tinyurl.com/maestrotalks',
+}
+
+export const HOME_SUPPORT_PAGE_FIXTURE: SupportPagePayload = {
+  title: 'Support our research',
+  slug: 'support-our-research',
+}
