@@ -295,6 +295,49 @@ describe('planImport: created publications get a slug (Wix-freshness FU6)', () =
       `publication new-2: generated slug "${slug}" collides with publication new in this same import`
     )
   })
+
+  it('sets the slug on a first run (create)', () => {
+    const plan = planImport(input())
+    expect(createFor(plan, 'wix-publication-new')?.doc.slug).toEqual({
+      _type: 'slug', current: publicationSlug('New', '2026-04-19'),
+    })
+  })
+
+  it('fills a slug on a doc this importer previously created without one, via the normal untouched-field path', () => {
+    // Reproduces the wix-preview state this PR exists to fix: a publication
+    // this importer created earlier (so it already exists in the dataset,
+    // under its deterministic id) but that has no slug at all, because an
+    // earlier version of this planner never wrote one.
+    const withUnslugged = input({
+      existing: { ...input().existing, 'wix-publication-new': { _id: 'wix-publication-new', _type: 'publication', title: 'New' } },
+    })
+    const plan = planImport(withUnslugged)
+    expect(patchFor(plan, 'wix-publication-new')?.set).toMatchObject({
+      slug: { _type: 'slug', current: publicationSlug('New', '2026-04-19') },
+    })
+  })
+
+  it('fix round 1 regression: never rewrites a slug once set, even when the title changes later', () => {
+    // The reviewer's exact repro -- create a doc with a slug, then edit the
+    // Wix title before the next run. The slug must survive untouched even
+    // though `title` (an ordinary "Wix wins" field) is patched.
+    const first = planImport(input())
+    const created = createFor(first, 'wix-publication-new')?.doc as CurrentDoc
+    expect(created.slug).toBeDefined()
+
+    const snap2 = snapshot()
+    snap2.publications[1] = { ...snap2.publications[1], title: 'Corrected Title' }
+
+    const second = planImport(input({
+      snapshot: snap2,
+      existing: { ...input().existing, 'wix-publication-new': created },
+      ledger: first.ledger,
+    }))
+
+    const patch = patchFor(second, 'wix-publication-new')
+    expect(patch?.set).toEqual({ title: 'Corrected Title' })
+    expect(patch?.set).not.toHaveProperty('slug')
+  })
 })
 
 describe('planImport: singleton drafts kept in step (Fix round 3)', () => {

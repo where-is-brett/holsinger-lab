@@ -318,6 +318,14 @@ export function planImport(input: PlanInput): Plan {
     })
   })
 
+  // A publication already has a usable slug once `slug.current` is a
+  // non-empty string. Used below to make sure slug generation only ever
+  // fires ONCE per document -- see the fix-round-1 note at `claimedSlugs`.
+  const hasSlug = (doc: CurrentDoc | undefined): boolean => {
+    const cur = doc?.slug as { current?: unknown } | undefined
+    return typeof cur?.current === 'string' && cur.current.length > 0
+  }
+
   // Publications: create new ones; for matched ones only fill a missing DOI.
   // Every other publication difference is reported, never written.
   //
@@ -328,6 +336,22 @@ export function planImport(input: PlanInput): Plan {
   // slug is either already set or is a job for the backfill script, not
   // this importer.
   //
+  // Fix round 1: slug generation must run at most ONCE per document, never
+  // again after that. It is gated on `!hasSlug(existing[id])`, not merely on
+  // `!existing[id]` (a genuine create) -- because a handful of documents
+  // this importer previously created are already sitting in the dataset
+  // with no slug at all (the bug this PR fixes), and those need exactly one
+  // more run to pick a slug up through the normal `fieldRuleSet` "untouched"
+  // path below (no ledger entry yet for `#slug` + no current value => Wix
+  // wins, once). The bug the reviewer caught: generating the slug on every
+  // run, unconditionally, meant that once the doc existed, a later Wix
+  // title/date edit produced a NEW slug that `fieldRuleSet` then treated
+  // like any other "untouched" field and silently overwrote the live,
+  // possibly-already-cited slug. Gating on `hasSlug` closes that: the
+  // moment a document has any slug at all -- from a create, or from this
+  // catch-up patch -- it is never regenerated or offered to `upsert` again,
+  // so a later title/date change can never reach it.
+  //
   // A collision (with an existing slug, or with another publication created
   // in this same run) is never auto-suffixed: two papers landing on the same
   // title+year slug is a content problem -- a duplicate record, an erratum,
@@ -336,19 +360,24 @@ export function planImport(input: PlanInput): Plan {
   const claimedSlugs = new Map<string, string>()
   for (const p of s.publications) {
     if (p.sanityId === null) {
-      const slug = publicationSlug(p.title, p.date)
-      if (slug) {
-        if (input.existingSlugs.has(slug))
-          throw new Error(`publication ${p.key}: generated slug "${slug}" already exists in the dataset`)
-        const clash = claimedSlugs.get(slug)
-        if (clash)
-          throw new Error(`publication ${p.key}: generated slug "${slug}" collides with publication ${clash} in this same import`)
-        claimedSlugs.set(slug, p.key)
+      const id = `wix-publication-${p.key}`
+      let slugField: Record<string, unknown> = {}
+      if (!hasSlug(existing[id])) {
+        const slug = publicationSlug(p.title, p.date)
+        if (slug) {
+          if (input.existingSlugs.has(slug))
+            throw new Error(`publication ${p.key}: generated slug "${slug}" already exists in the dataset`)
+          const clash = claimedSlugs.get(slug)
+          if (clash)
+            throw new Error(`publication ${p.key}: generated slug "${slug}" collides with publication ${clash} in this same import`)
+          claimedSlugs.set(slug, p.key)
+          slugField = { slug: { _type: 'slug', current: slug } }
+        }
       }
-      upsert(`wix-publication-${p.key}`, 'publication', {
+      upsert(id, 'publication', {
         title: p.title, author: p.authors, journal: p.journal, date: p.date,
         volume: p.volume, issue: p.issue, pages: p.pages, doi: p.doi, type: p.type,
-        ...(slug ? { slug: { _type: 'slug', current: slug } } : {}),
+        ...slugField,
       })
       continue
     }

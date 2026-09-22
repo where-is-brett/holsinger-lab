@@ -92,7 +92,13 @@ async function main() {
   if (!settingsId) throw new Error('No settings document.')
 
   // Read-only: lets the planner refuse a generated slug that would collide
-  // with one already in the dataset (see scripts/wix/plan.ts).
+  // with one already in the dataset (see scripts/wix/plan.ts). Unlike the
+  // `groups`/`settingsId` queries above, this deliberately does NOT exclude
+  // drafts.** -- a draft's slug is still a real value someone could publish,
+  // and treating it as free would let a generated slug collide with it the
+  // moment that draft goes live. Including it only ever makes the check
+  // stricter (never blocks a slug that was actually free), so it's safe to
+  // leave in.
   const existingSlugList = await client.fetch<string[]>(
     `*[_type == "publication" && defined(slug.current)].slug.current`
   )
