@@ -30,15 +30,21 @@ function metaOf(person: ProfileBySlugPayload): string | undefined {
 // for the same property at the same breakpoint (constraints.md).
 //
 // `grid-cols-1` (unprefixed): without an explicit single-column track below
-// `md`, the implicit grid column CSS creates for two stacked children sizes
-// itself to their max-content width, not the container's full width -- so a
-// long bio paragraph's text column (and the portrait beside it) sat wider
-// than the viewport instead of being constrained to it. Caught empirically
-// against Damian Holsinger's live 540-character `fullBio`: the shorter
-// gallery fixture text in redesign-components.spec.ts never triggered this
-// because it happened to fit within max-content at 320px. `grid-cols-1` and
-// `md:grid-cols-[220px_1fr]` are one unprefixed declaration plus one `md:`
-// declaration for the same property -- not a same-breakpoint collision.
+// `md`, the implicit grid track CSS creates for the two stacked children
+// (portrait, text) sets its own min-content floor from the widest
+// unbreakable run of text inside them -- not their max-content width, their
+// min-content width, i.e. the narrowest that track can shrink to without
+// breaking a single unbroken token -- so a long unbroken run in the bio
+// (Damian Holsinger's live `fullBio` inlines his email as plain text) pushed
+// the track past the viewport instead of being constrained to it. The
+// shorter gallery fixture text in redesign-components.spec.ts didn't
+// trigger this until fix round 1 gave it a matching unbreakable token.
+// `grid-cols-1` compiles to `grid-template-columns: repeat(1, minmax(0,
+// 1fr))`, which already zeroes that track's min-content floor on its own --
+// the `min-w-0` below is belt-and-braces, not load-bearing for this fix.
+// `grid-cols-1` and `md:grid-cols-[220px_1fr]` are one unprefixed
+// declaration plus one `md:` declaration for the same property -- not a
+// same-breakpoint collision.
 const PROFILE_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr] md:items-start md:gap-x-11 md:gap-y-0'
 const PROFILE_PORTRAIT = 'max-w-[220px] md:max-w-none'
 
@@ -59,14 +65,13 @@ function ProfileBlock({ person }: { person: ProfileBySlugPayload }) {
         sizes="220px"
         className={PROFILE_PORTRAIT}
       />
-      {/* `min-w-0`: this is the grid's second track (a `1fr` from `md`, and
-          the single explicit `grid-cols-1` track below it) -- a grid item's
-          automatic minimum width is its own content size by default (the
-          same flexbox/grid min-size gotcha PageTitle.tsx's `<h1>` and
-          SectionRail.tsx's content column both already guard against), so
-          without this a long unbroken bio paragraph could still refuse to
-          shrink to the track's actual width even with `break-words` set on
-          the paragraph itself. */}
+      {/* `min-w-0`: belt-and-braces, not load-bearing here -- `grid-cols-1`
+          above already compiles to `minmax(0, 1fr)`, which zeroes this
+          track's min-content floor on its own. Added anyway to match the
+          existing convention (PageTitle.tsx's `<h1>`, SectionRail.tsx's
+          content column) of guarding every grid/flex item that holds
+          unpredictable CMS text, in case a future edit narrows the track
+          back to a bare `1fr` without carrying this comment along. */}
       <div className="min-w-0">
         <PortableBody blocks={person.fullBio} bio={person.bio} />
         {person.email && (

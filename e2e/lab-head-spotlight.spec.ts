@@ -96,17 +96,22 @@ test('a profile without hasPage enabled 404s', async ({ page }) => {
   expect(response?.status()).toBe(404)
 })
 
-test('no /people/[slug] page overflows horizontally at 320/375px', async ({ page }) => {
+test('no /people/[slug] page overflows horizontally at 320/375/768/1024/1280px', async ({
+  page,
+}) => {
   // Same "every real record, not just one" reasoning as
   // e2e/publication-page.spec.ts's own overflow test -- a content-dependent
   // defect (a long unbreakable token in the name or bio) can only be caught
-  // by checking every live hasPage profile.
+  // by checking every live hasPage profile. Fix round 1: widths widened
+  // from just 320/375 to the constraints.md standard set (320, 375, 768,
+  // 1024, 1280) -- matching e2e/people.spec.ts's own overflow loop -- so
+  // this covers the layout above `md`/`lg` too, not just the phone widths.
   const withPages = await e2eClient.fetch<{ slug: string }[]>(
     `*[_type == "profile" && hasPage == true && defined(slug.current)]{ "slug": slug.current }`
   )
   test.skip(withPages.length === 0, 'no profile with hasPage=true exists in live data yet')
 
-  for (const width of [320, 375]) {
+  for (const width of [320, 375, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     for (const profile of withPages) {
       await page.goto(`/people/${profile.slug}`)

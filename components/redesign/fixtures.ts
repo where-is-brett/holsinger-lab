@@ -244,6 +244,13 @@ export const PEOPLE_LAB_HEAD_FIXTURE: NonNullable<SettingsPayload['labHead']> = 
       'Before joining the University of Sydney she trained across three continents, and continues to collaborate widely ' +
         'on cross-institutional projects spanning basic and translational neuroscience.'
     ),
+    // Fix round 1: a long unbreakable token -- an inline email address, the
+    // same shape as live data's own Damian Holsinger fullBio -- so this
+    // gallery fixture's own overflow check (redesign-components.spec.ts's
+    // "no page overflow at 320px") actually exercises the spotlight's
+    // min-content floor, the same way it's exercised against real data
+    // (PersonPage.tsx's task-3 report).
+    portableParagraph('bio-p3', 'Contact the laboratory at ilse.vanderberg.laboratory@sydney.edu.au'),
   ],
 }
 

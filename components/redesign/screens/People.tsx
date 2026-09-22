@@ -33,7 +33,20 @@ import { LABEL, LABEL_BASE } from '../tokens'
 // override each for `gap-x`/`gap-y`: a responsive pair per property, not two
 // utilities fighting for the same property at the same breakpoint
 // (constraints.md).
-const SPOTLIGHT_GRID = 'grid gap-6 md:grid-cols-[220px_1fr] md:items-start md:gap-x-11 md:gap-y-0'
+//
+// Fix round 1 (PR B Task 3): `grid-cols-1` (unprefixed), paired with the
+// existing `md:grid-cols-[220px_1fr]` -- without an explicit single-column
+// track below `md`, the implicit grid track CSS creates for the two stacked
+// children (portrait, text) sets its own min-content width from the widest
+// unbreakable run of text inside them, rather than being constrained to the
+// viewport. A long unbroken token in the bio (an inline email address --
+// exactly what the live Damian Holsinger `fullBio` contains, and what the
+// gallery fixture's own bio now includes, see fixtures.ts) pushes that
+// min-content past 320px and the page overflows. Same defect, same fix as
+// `PersonPage.tsx`'s `PROFILE_GRID` (task-3 report) -- caught there first
+// against live data, then reproduced here once the gallery fixture carried
+// the same shape of token.
+const SPOTLIGHT_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr] md:items-start md:gap-x-11 md:gap-y-0'
 const SPOTLIGHT_PORTRAIT = 'max-w-[220px] md:max-w-none'
 
 // Mono caps, faint -- ui_kit's "Head of laboratory · Principal investigator"
@@ -85,7 +98,15 @@ function SpotlightBlock({ labHead }: { labHead: LabHead }) {
         sizes="220px"
         className={SPOTLIGHT_PORTRAIT}
       />
-      <div>
+      {/* `min-w-0`: belt-and-braces alongside `grid-cols-1` above --
+          `grid-cols-1` alone already compiles to `grid-template-columns:
+          repeat(1, minmax(0, 1fr))`, which zeroes the track's own
+          min-content floor, so this isn't strictly required for the
+          overflow this fix addresses. Added anyway to match `PageTitle.tsx`
+          and `SectionRail.tsx`'s existing convention of guarding every
+          grid/flex item that holds unpredictable CMS text, in case a future
+          edit narrows the track back to a bare `1fr`. */}
+      <div className="min-w-0">
         <div className={SPOTLIGHT_LABEL_CLASS}>Head of laboratory · Principal investigator</div>
         <h2 className="mt-3 text-heading">{labHead.name}</h2>
         <PortableBody blocks={labHead.fullBio} bio={labHead.bio} />
