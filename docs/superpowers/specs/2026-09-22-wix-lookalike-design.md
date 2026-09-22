@@ -129,13 +129,17 @@ in `redesign/integration` first (§7).
 - `body` (portable text: bold, italic, links): the Home highlight text.
 - `summary` (string): the one-sentence line on the News page. If empty, the News page falls
   back to `title`.
-- `date` (date, required): sets the order, newest first.
+- `date` (date, optional; not displayed, because Wix shows no dates on news items). Order is
+  curated by drag and drop: `orderRank` plus an orderable Studio list, the same pattern
+  `profile` uses. Dates are never invented by the import.
 - `showOnHome` (boolean, default true) and `showOnNewsPage` (boolean, default true). Both are
   needed because Wix's "Highly Cited Article" is on Home but not on the News page.
 
 **New document `mediaAppearance`** (Studio title "Media")
 
-- `title` (required), `outlet` (required), `date`, `url` (optional; the external article link)
+- `title` (required), `outlet` (required), `date` (optional; the Channel 7 item has none),
+  `url` (optional; the external article link). Order is `orderRank`, drag and drop, as with
+  `newsItem`.
 - `video` (file, mp4, optional) plus `poster` (image, optional). If a video is present it
   renders as an inline `<video controls>` player. Otherwise the title links to `url`.
 
@@ -150,12 +154,13 @@ redesign's plan for a zero-editorial Home intact.
 
 **`settings`: new `contact` object** (shared by both sites): `address`, `email`, `phone`.
 
-**`profile`: two new optional fields**
+**`profile`: one new optional field**
 
 - `roleDetail` (string): the second italic line Wix shows under the role, e.g. "(Diagnostic
   Radiography)" or "Honours Class I".
-- `sortOrder` (number): the curated order within a role group. Where it is unset, profiles
-  sort by name.
+- Order reuses the **existing** `orderRank` (profiles are already a drag-and-drop list in
+  Studio, and `main` orders by it too). The import writes `orderRank` values that reproduce
+  Wix's order.
 
 **`project`: one new optional field**
 
@@ -186,12 +191,12 @@ Everything goes through `npm run typegen`. `app/api/revalidate/route.ts` learns 
 
 | Route | Data |
 |---|---|
-| `/` | `siteCopy`; `newsItem` where `showOnHome`; `settings.contact` |
+| `/` | `siteCopy`; `newsItem` where `showOnHome`, by `orderRank`; `settings.contact` |
 | `/research` | `project` where `defined(researchOrder)`, ordered by `researchOrder`: `title`, `description` (portable text), `coverImage` |
-| `/news` | `newsItem` where `showOnNewsPage` |
+| `/news` | `newsItem` where `showOnNewsPage`, by `orderRank` |
 | `/publications` | every `publication`, ordered by `date desc` |
-| `/team` | `siteCopy.teamIntro`; `profile`s grouped by `roleGroup` in the migration's group order, then by `sortOrder`, then by `name` |
-| `/media` | `mediaAppearance`, ordered by `date desc` |
+| `/team` | `siteCopy.teamIntro`; `profile`s by `orderRank`. Current members (every group except Lab Alumni and International Interns, and excluding `settings.labHead`) form one grid, as on Wix. Lab Alumni split into photo cards and name rows. International Interns are rows. |
+| `/media` | `mediaAppearance`, by `orderRank` |
 | `/contact` | `siteCopy.contactIntro`; `settings.contact` |
 
 - **Redirects** in `next.config.mjs`: `/blank-5` → `/team`, `/blank-4` → `/contact`
@@ -238,7 +243,7 @@ Everything goes through `npm run typegen`. `app/api/revalidate/route.ts` learns 
   documents are matched through an **explicit match table** in the snapshot (for example Wix
   "Dr Johnny Chan" → Sanity "Dr Johnny Chan (DDS)"), never by fuzzy matching.
 - **Wix wins, scoped.**
-  - Profiles: `name`, `role`, `roleDetail`, `roleGroup`, `sortOrder` take the Wix value.
+  - Profiles: `name`, `role`, `roleDetail`, `roleGroup`, `orderRank` take the Wix value.
   - Research projects: `title`, `description`, `coverImage` take the Wix value.
   - Publications are the one scoped exception. Wix shows a *composite* citation string, and
     parsing it back into `volume`, `issue` and `pages` would degrade good structured data. So
@@ -263,6 +268,10 @@ Everything goes through `npm run typegen`. `app/api/revalidate/route.ts` learns 
   - Every production run happens only after Brett's explicit yes, relayed through the command
     centre.
   - **No deletes exist in the code path.**
+- **One preview dataset serves development and the impact report.** With Brett's yes,
+  production is copied to `wix-preview` and the import is run against it. The Wix site is
+  built and e2e-tested against `wix-preview` (via `NEXT_PUBLIC_SANITY_DATASET`), because
+  production has no Wix content until the final import.
 - **Live-site impact gate (Brett's amendment, 2026-09-22).** The live site
   (holsingerlab.vercel.app, built from `main`) reads the same production dataset.
   - Its People page lists every profile grouped by roleGroup (`lib/sanity.queries.ts:140` on
