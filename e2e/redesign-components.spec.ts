@@ -111,6 +111,31 @@ test.describe('redesign component gallery', () => {
     await expect(narrowRow).toHaveCSS('display', 'block')
   })
 
+  test('PublicationRow: href renders the title as a next/link to that href', async ({ page }) => {
+    const row = page.getByTestId('publication-row-linked')
+    const titleLink = row.getByRole('link', { name: /record on file|Chromobox/i })
+    await expect(titleLink).toHaveAttribute('href', '/publications/example')
+  })
+
+  test('PublicationRow: no DOI/URL on file renders no identifier markup', async ({ page }) => {
+    const row = page.getByTestId('publication-row-no-link')
+    await expect(row.locator('[data-identifier]')).toHaveCount(0)
+    const text = await row.innerText()
+    expect(text).not.toMatch(/^(DOI|URL)\s/m)
+  })
+
+  test('PublicationRow: comfortable index row is a grid from lg, stacked below lg', async ({
+    page,
+  }) => {
+    const row = page.locator('[data-testid="publication-row-comfortable"] > div').first()
+
+    await page.setViewportSize({ width: 1024, height: 900 })
+    await expect(row).toHaveCSS('display', 'grid')
+
+    await page.setViewportSize({ width: 900, height: 900 })
+    await expect(row).not.toHaveCSS('display', 'grid')
+  })
+
   test('SiteNav marks exactly the current item aria-current, with real hrefs', async ({ page }) => {
     const nav = page.getByTestId('gallery-site-nav')
     await expect(nav.locator('a[aria-current="page"]')).toHaveText('Publications')

@@ -4,7 +4,7 @@ import { Button } from 'components/redesign/Button'
 import { CopyCitation } from 'components/redesign/CopyCitation'
 import { FacetBand, type FacetChipSpec } from 'components/redesign/FacetBand'
 import { applyFacets, countBy, toggleFacet } from 'components/redesign/facets'
-import { SAMPLE_PEOPLE, SAMPLE_PUBLICATIONS } from 'components/redesign/fixtures'
+import { LINKED_PUB, NO_LINK_PUB, SAMPLE_PEOPLE, SAMPLE_PUBLICATIONS } from 'components/redesign/fixtures'
 import { FormField } from 'components/redesign/FormField'
 import { MobileBand, MobileHeader, MobileNavRows } from 'components/redesign/MobileHeader'
 import { FOOTER_FALLBACK, SITE_NAV } from 'components/redesign/navModel'
@@ -152,7 +152,7 @@ export default function Gallery() {
         <Heading>Publication row</Heading>
 
         <SubHeading>Comfortable density</SubHeading>
-        <div className="mb-8">
+        <div className="mb-8" data-testid="publication-row-comfortable">
           {SAMPLE_PUBLICATIONS.map((p) => (
             <PublicationRow key={p.title} pub={p} density="comfortable" onOpen={setOpenedPub} />
           ))}
@@ -177,6 +177,16 @@ export default function Gallery() {
           {SAMPLE_PUBLICATIONS.map((p) => (
             <PublicationRow key={p.title} pub={p} narrow onOpen={setOpenedPub} />
           ))}
+        </div>
+
+        <SubHeading>Linked title (href renders a next/link)</SubHeading>
+        <div className="mb-8" data-testid="publication-row-linked">
+          <PublicationRow pub={LINKED_PUB} href="/publications/example" onOpen={setOpenedPub} />
+        </div>
+
+        <SubHeading>No link on file (empty linkHref -- no identifier markup)</SubHeading>
+        <div className="mb-8" data-testid="publication-row-no-link">
+          <PublicationRow pub={NO_LINK_PUB} onOpen={setOpenedPub} />
         </div>
 
         <p className={META}>

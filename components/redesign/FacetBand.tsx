@@ -19,11 +19,12 @@ export interface FacetBandProps {
 // Presentational only -- the parent owns filter state and counts; this
 // component just renders chips and forwards their onClick.
 //
-// Sticky facet band. In this direction the header is NOT sticky, so the
-// band pins at top: 0 and the record scrolls beneath it. If this is ever
-// placed under a sticky header, the offset MUST become var(--nav-height) --
-// never a hardcoded pixel value (app token contract; see SiteNav's
-// --nav-height usage).
+// Sticky facet band, sticky only from `lg` (spec §4.2): below `lg` three
+// wrapped chip groups plus density would pin half a phone screen, so the
+// band stays `static` there. From `lg` it pins at `top: var(--nav-height)`
+// -- this site's header IS sticky (unlike the vendored source's own
+// assumption), so a hardcoded `top: 0` would tuck the band under the header
+// instead of below it.
 // Two variants, not one ROW plus an appended `items-center` override:
 // Tailwind utilities of equal specificity win by generation order in the
 // build's CSS, not by position in the className string, and `.items-center`
@@ -48,9 +49,10 @@ export function FacetBand({
   num = '01',
   label = 'Filter',
 }: FacetBandProps) {
+  const visibleGroups = groups.filter((g) => g.chips.length > 0)
   return (
     <div
-      className={`${sticky ? 'sticky' : 'static'} top-0 z-[5] bg-surface ${RAIL_GRID} border-t border-b border-rule`}
+      className={`${sticky ? 'static lg:sticky lg:top-(--nav-height)' : 'static'} z-[5] bg-surface ${RAIL_GRID} border-t border-b border-rule`}
     >
       <div className="flex flex-col items-center gap-[18px] border-r border-rule pt-8">
         <span className="font-mono text-[13px] leading-none font-medium text-accent">{num}</span>
@@ -71,7 +73,7 @@ export function FacetBand({
           doesn't need this: its border-t + pt-3 already add ~18.5px of real
           separation from the last group's chips. */}
       <div className="flex flex-col gap-5 pt-8 pr-(--spacing-gutter-lg) pb-9 pl-(--spacing-gutter-md)">
-        {groups.map((g) => (
+        {visibleGroups.map((g) => (
           <div key={g.label} className={ROW}>
             <span className={ROW_LABEL}>{g.label}</span>
             {/* Vertical gap is 20px (gap-y-5), not the source's 8px: a 44px hit

@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import { CopyCitation } from './CopyCitation'
 import type { Publication } from './publicationModel'
 import { HIT_AREA, META } from './tokens'
@@ -9,6 +11,8 @@ export interface PublicationRowProps {
   /** stacked anatomy for <720px containers -- the grid must not squeeze */
   narrow?: boolean
   onOpen?: (pub: Publication) => void
+  /** Real routes: when set, the title is a next/link to it (spec §4.1). */
+  href?: string | null
 }
 
 // The load-bearing component of the direction. Four-column ledger anatomy on
@@ -20,7 +24,16 @@ export interface PublicationRowProps {
 // Grid columns and gap are concrete pixel literals in brackets, not custom
 // property references, so there's no var()-wrapping trap here (see
 // tokens.ts's PRESS comment for the trap itself).
-const GRID = 'grid grid-cols-[64px_1fr_230px_250px] gap-x-[28px]'
+//
+// Grid only from `lg` (spec §4.1 / ruling in §7): the 4-column ledger needs
+// ~700px of content box, which the `md` rail layout doesn't leave. Below
+// `lg` the container is a plain block (no `grid`/`flex` utility at all --
+// that's the initial value, so there is nothing to set and nothing that
+// could collide with the `lg:` triad below).
+const GRID = 'lg:grid lg:grid-cols-[64px_1fr_230px_250px] lg:gap-x-[28px]'
+// The mobile "year — journal ref" kicker line, shared by every non-narrow
+// variant below `lg`. Same anatomy as the `narrow` branch's kicker.
+const KICKER = 'font-mono text-[10px] leading-[1.4] font-medium tracking-[0.06em] uppercase'
 
 // The row is the hover target, never a click target -- only the title (an
 // optional <button>) is. `group` on the row pairs with `group-hover:` on the
@@ -60,13 +73,25 @@ const IDENTIFIER = 'text-link normal-case! break-all'
 // to describe.
 function Title({
   pub,
+  href,
   onOpen,
   className,
 }: {
   pub: Publication
+  href?: string | null
   onOpen?: (pub: Publication) => void
   className: string
 }) {
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={`${TITLE_HOVER} ${HIT_AREA} ${className} block`}
+      >
+        {pub.title}
+      </Link>
+    )
+  }
   if (onOpen) {
     return (
       <button
@@ -85,6 +110,8 @@ function Title({
 // a Tailwind arbitrary text size (matching the source's per-shape font
 // shorthand), and `label` lets compact substitute `linkLabelShort` while the
 // href always carries the full `linkHref`.
+// No identifier markup at all when there's nothing on file (spec §4.1) --
+// not even the "DOI "/"URL " label, which only ever accompanies a real link.
 function Identifier({
   pub,
   fontSize,
@@ -94,6 +121,7 @@ function Identifier({
   fontSize: string
   label: string
 }) {
+  if (pub.linkHref === '') return null
   return (
     <span className={`font-mono ${fontSize} leading-[1.5] break-all`}>
       <span className="text-text-faint">{pub.linkKind} </span>
@@ -104,17 +132,24 @@ function Identifier({
   )
 }
 
+// [type, ...topics] joined verbatim, empty segments dropped -- so an empty
+// `type` never leaves a leading " · " (spec §4.1, requirement 4).
+function tagLine(pub: Publication): string {
+  return [pub.type, ...pub.topics].filter(Boolean).join(' · ')
+}
+
 export function PublicationRow({
   pub,
   density = 'comfortable',
   variant = 'index',
   narrow = false,
   onOpen,
+  href,
 }: PublicationRowProps) {
   if (narrow) {
     return (
       <div className="group border-t border-rule py-[13px]">
-        <div className="font-mono text-[10px] leading-[1.4] font-medium tracking-[0.06em] uppercase">
+        <div className={KICKER}>
           <span className="text-accent">{pub.year}</span>
           <span className="text-text-faint">
             {' '}
@@ -123,6 +158,7 @@ export function PublicationRow({
         </div>
         <Title
           pub={pub}
+          href={href}
           onOpen={onOpen}
           className="mt-1.5 text-[14.5px] leading-[1.4] font-semibold text-pretty"
         />
@@ -137,28 +173,49 @@ export function PublicationRow({
             same paint tier as the title's pseudo -- and being later in
             document order, it wins the overlap, so the real link stays
             clickable. */}
-        <div className="relative mt-1.5 truncate font-mono text-[9.5px] leading-[1.4]">
-          <span className="text-text-faint">{pub.linkKind} </span>
-          <a className={IDENTIFIER} href={pub.linkHref} data-identifier>
-            {pub.linkLabel}
-          </a>
-        </div>
+        {pub.linkHref !== '' && (
+          <div className="relative mt-1.5 truncate font-mono text-[9.5px] leading-[1.4]">
+            <span className="text-text-faint">{pub.linkKind} </span>
+            <a className={IDENTIFIER} href={pub.linkHref} data-identifier>
+              {pub.linkLabel}
+            </a>
+          </div>
+        )}
       </div>
     )
   }
 
+  // Below, the responsive stacked-to-grid anatomy shared by `home` and both
+  // `index` densities (spec §4.1, Task 3 brief point 2): one DOM tree per
+  // variant, container classes switch to the ledger grid at `lg` (`GRID`),
+  // and every element sets `display` at most once per breakpoint --
+  // unprefixed for its stacked-anatomy role, `lg:` for its ledger-cell role
+  // -- so no same-property pair can ever collide. The title element is
+  // never duplicated (only its href/onOpen wiring changes); every other
+  // paired element (year, journal/meta) is duplicated intentionally, once
+  // as its mobile kicker/inline role and once as its own ledger cell, each
+  // hidden at the breakpoint it doesn't serve.
+
   if (variant === 'home') {
     return (
       <div className={`${ROW} items-baseline py-(--spacing-row)`}>
-        <span className="font-mono text-[13px] leading-[1.5] font-medium text-accent">
+        <span className="hidden font-mono text-[13px] leading-[1.5] font-medium text-accent lg:block">
           {pub.year}
         </span>
+        <div className={`${KICKER} lg:hidden`}>
+          <span className="text-accent">{pub.year}</span>
+          <span className="text-text-faint">
+            {' '}
+            — {pub.journal} {pub.ref}
+          </span>
+        </div>
         <Title
           pub={pub}
+          href={href}
           onOpen={onOpen}
-          className="pr-3 text-[17.5px] leading-[1.35] font-semibold tracking-[-0.005em] text-pretty"
+          className="lg:pr-3 text-[17.5px] leading-[1.35] font-semibold tracking-[-0.005em] text-pretty"
         />
-        <span className="font-mono text-[12.5px] leading-[1.5] text-text-muted">
+        <span className="hidden font-mono text-[12.5px] leading-[1.5] text-text-muted lg:block">
           {pub.journal} {pub.ref}
         </span>
         <Identifier pub={pub} fontSize="text-[12px]" label={pub.linkLabel} />
@@ -169,24 +226,34 @@ export function PublicationRow({
   if (density === 'compact') {
     return (
       <div className={`${ROW} items-baseline py-[10px]`}>
-        <span className="font-mono text-[12px] leading-[1.5] font-medium text-accent">
+        <span className="hidden font-mono text-[12px] leading-[1.5] font-medium text-accent lg:block">
           {pub.year}
         </span>
+        <div className={`${KICKER} lg:hidden`}>
+          <span className="text-accent">{pub.year}</span>
+          <span className="text-text-faint">
+            {' '}
+            — {pub.journal} {pub.ref}
+          </span>
+        </div>
         <Title
           pub={pub}
+          href={href}
           onOpen={onOpen}
-          className="truncate pr-3 text-[14.5px] leading-[1.5] font-semibold tracking-[-0.005em]"
+          className="truncate lg:pr-3 text-[14.5px] leading-[1.5] font-semibold tracking-[-0.005em]"
         />
-        <span className="truncate font-mono text-[11.5px] leading-[1.6] text-text-muted">
+        <span className="hidden truncate font-mono text-[11.5px] leading-[1.6] text-text-muted lg:block">
           {pub.journal} · {pub.ref}
         </span>
         <span className="flex items-baseline gap-2.5 whitespace-nowrap font-mono text-[11px] leading-[1.6]">
-          <span className="overflow-hidden text-ellipsis">
-            <span className="text-text-faint">{pub.linkKind} </span>
-            <a className={IDENTIFIER} href={pub.linkHref} data-identifier>
-              {pub.linkLabelShort || pub.linkLabel}
-            </a>
-          </span>
+          {pub.linkHref !== '' && (
+            <span className="overflow-hidden text-ellipsis">
+              <span className="text-text-faint">{pub.linkKind} </span>
+              <a className={IDENTIFIER} href={pub.linkHref} data-identifier>
+                {pub.linkLabelShort || pub.linkLabel}
+              </a>
+            </span>
+          )}
           <CopyCitation cite={pub.cite} compact />
         </span>
       </div>
@@ -195,12 +262,20 @@ export function PublicationRow({
 
   return (
     <div className={`${ROW} items-start py-(--spacing-row)`}>
-      <span className="font-mono text-[13px] leading-[1.5] font-medium text-accent">
+      <span className="hidden font-mono text-[13px] leading-[1.5] font-medium text-accent lg:block">
         {pub.year}
       </span>
-      <div className="flex flex-col gap-[7px] pr-3">
+      <div className={`${KICKER} lg:hidden`}>
+        <span className="text-accent">{pub.year}</span>
+        <span className="text-text-faint">
+          {' '}
+          — {pub.journal} {pub.ref}
+        </span>
+      </div>
+      <div className="flex flex-col gap-[7px] lg:pr-3">
         <Title
           pub={pub}
+          href={href}
           onOpen={onOpen}
           className="text-[17.5px] leading-[1.35] font-semibold tracking-[-0.005em] text-pretty"
         />
@@ -209,12 +284,13 @@ export function PublicationRow({
           <strong className="font-semibold text-text">{pub.authorsPI}</strong>
           {pub.authorsPost}
         </div>
-        <div className="font-mono text-[10px] leading-[1.6] font-medium tracking-[0.1em] text-text-faint uppercase">
-          {pub.type}
-          {pub.topics && pub.topics.length ? ` · ${pub.topics.join(' · ')}` : ''}
-        </div>
+        {tagLine(pub) !== '' && (
+          <div className="font-mono text-[10px] leading-[1.6] font-medium tracking-[0.1em] text-text-faint uppercase">
+            {tagLine(pub)}
+          </div>
+        )}
       </div>
-      <div className={META}>
+      <div className={`hidden lg:block ${META}`}>
         {pub.journal}
         <br />
         {pub.ref}

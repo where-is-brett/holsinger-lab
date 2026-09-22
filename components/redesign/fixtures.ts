@@ -73,6 +73,45 @@ export const SAMPLE_PUBLICATIONS: Publication[] = [
   ),
 ]
 
+// Real routes carry an `href` (Task 3, spec §4.1): a clone of the first
+// fixture is enough to prove the title renders as a next/link, without
+// touching SAMPLE_PUBLICATIONS and its length-2 assumptions elsewhere in
+// this gallery (facet-band result counts).
+export const LINKED_PUB: Publication = {
+  ...SAMPLE_PUBLICATIONS[0],
+  id: 'linked-pub-fixture',
+  href: '/publications/example',
+}
+
+// The no-link case (§4.1: "No identifier markup when linkHref === ''"):
+// neither a DOI nor a URL on file, and an empty `type` so the tag line
+// (requirement 4) also has to tolerate a missing first segment. Built by
+// hand, not through `make()`, since `make()` deliberately throws when
+// there's no DOI/URL -- that guard exists for the real dataset, where the
+// case never happens; this fixture exists precisely because the component
+// must still handle it.
+export const NO_LINK_PUB: Publication = {
+  id: 'no-link-pub-fixture',
+  href: null,
+  year: '2022',
+  dateLabel: '',
+  title: 'A record on file with neither a DOI nor a URL',
+  authorsPre: '',
+  authorsPI: '',
+  authorsPost: 'Holsinger, R.M.D.',
+  journal: 'Journal of Unlinked Records',
+  ref: '1(1) · 1',
+  linkKind: '',
+  linkLabel: '',
+  linkLabelShort: '',
+  linkHref: '',
+  type: '',
+  topics: [],
+  cite: 'Holsinger, R.M.D. (2022). A record on file with neither a DOI nor a URL. Journal of Unlinked Records 1(1) · 1.',
+  abstract: [],
+  resources: [],
+}
+
 export const SAMPLE_PEOPLE: { name: string; role: string; img?: string; initials?: string }[] = [
   {
     name: 'Haochen Wu',
