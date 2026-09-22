@@ -117,17 +117,25 @@ test('image frames are dimmed in dark mode only', async ({ browser }) => {
   await light.close()
 })
 
-test('the People grayscale treatment survives the dark-mode dim', async ({
-  browser,
-}) => {
-  // Regression guard: applying the dim to the <img> instead of the wrapper
-  // silently replaced this grayscale, because `filter` is one property.
-  const page = await browser.newPage({ colorScheme: 'dark' })
-  await page.goto('/people')
-  const imgFilter = await page
-    .locator('.media-frame img')
-    .first()
-    .evaluate((el) => getComputedStyle(el).filter)
-  expect(imgFilter).toContain('grayscale')
-  await page.close()
-})
+for (const colorScheme of ['light', 'dark'] as const) {
+  test(`portraits render in full colour at rest (${colorScheme})`, async ({
+    browser,
+  }) => {
+    // Covers every framed image on both pages that show people -- the
+    // /people grid, the lab-head spotlight and the home lab-head card --
+    // so a grayscale (or any other) <img> filter anywhere fails this. The
+    // dark-mode dim lives on the .media-frame wrapper, never the <img>.
+    const page = await browser.newPage({ colorScheme })
+    for (const route of ['/people', '/']) {
+      await page.goto(route)
+      const imgFilters = await page
+        .locator('.media-frame img')
+        .evaluateAll((imgs) => imgs.map((img) => getComputedStyle(img).filter))
+      expect(imgFilters.length, `${route} has framed images`).toBeGreaterThan(0)
+      for (const filter of imgFilters) {
+        expect(filter, `${route} <img> filter`).toBe('none')
+      }
+    }
+    await page.close()
+  })
+}
