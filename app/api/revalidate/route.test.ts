@@ -103,7 +103,7 @@ describe('POST /api/revalidate', () => {
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 
-  it('revalidates /publications for a publication webhook, ignoring slug', async () => {
+  it('revalidates /publications and every /publications/[slug] page for a publication webhook, ignoring slug', async () => {
     vi.mocked(parseBody).mockResolvedValue({
       isValidSignature: true,
       body: { type: 'publication', slug: undefined },
@@ -112,7 +112,8 @@ describe('POST /api/revalidate', () => {
     await POST(request())
 
     expect(revalidatePath).toHaveBeenCalledWith('/publications')
-    expect(revalidatePath).toHaveBeenCalledTimes(1)
+    expect(revalidatePath).toHaveBeenCalledWith('/publications/[slug]', 'page')
+    expect(revalidatePath).toHaveBeenCalledTimes(2)
   })
 
   it('revalidates /people for a profile webhook, ignoring slug', async () => {

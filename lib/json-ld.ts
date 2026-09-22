@@ -157,7 +157,7 @@ export function buildPersonJsonLd({
   return person
 }
 
-interface ScholarlyArticleJsonLd {
+export interface ScholarlyArticleJsonLd {
   '@type': 'ScholarlyArticle'
   headline: string
   author?: { '@type': 'Person'; name: string }
@@ -176,6 +176,44 @@ export interface ScholarlyArticleListJsonLd {
   }>
 }
 
+/**
+ * Field mapping shared by the ItemList builder (below) and the single-paper
+ * builder (`buildScholarlyArticleJsonLd`, Task 5) -- the one place that
+ * knows how a `PublicationPayload` becomes a `ScholarlyArticle`. `url` is
+ * the canonical link: the DOI URL when there is a DOI, else the recorded
+ * publisher URL -- matching `publicationModel.ts`'s `deriveLink`, which
+ * prefers DOI the same way.
+ */
+function buildScholarlyArticleItem(
+  publication: PublicationPayload
+): ScholarlyArticleJsonLd {
+  // Trimmed to match the rendered `<h1>` (publicationModel.ts's `toPublication`
+  // trims the title the same way) -- the raw Sanity field sometimes carries
+  // leading/trailing whitespace (e.g. " Chromobox protein...pathway. ").
+  const item: ScholarlyArticleJsonLd = {
+    '@type': 'ScholarlyArticle',
+    headline: (publication.title ?? '').trim(),
+  }
+
+  if (publication.author) {
+    item.author = { '@type': 'Person', name: publication.author }
+  }
+  if (publication.journal) {
+    item.isPartOf = { '@type': 'Periodical', name: publication.journal }
+  }
+  if (publication.date) {
+    item.datePublished = publication.date
+  }
+  const url = publication.doi
+    ? `https://doi.org/${publication.doi}`
+    : (publication.url ?? undefined)
+  if (url) {
+    item.url = url
+  }
+
+  return item
+}
+
 export function buildScholarlyArticleListJsonLd(
   publications: PublicationPayload[]
 ): ScholarlyArticleListJsonLd {
@@ -188,26 +226,20 @@ export function buildScholarlyArticleListJsonLd(
   return {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    itemListElement: titled.map((publication, index) => {
-      const item: ScholarlyArticleJsonLd = {
-        '@type': 'ScholarlyArticle',
-        headline: publication.title,
-      }
+    itemListElement: titled.map((publication, index) => ({
+      '@type': 'ListItem' as const,
+      position: index + 1,
+      item: buildScholarlyArticleItem(publication),
+    })),
+  }
+}
 
-      if (publication.author) {
-        item.author = { '@type': 'Person', name: publication.author }
-      }
-      if (publication.journal) {
-        item.isPartOf = { '@type': 'Periodical', name: publication.journal }
-      }
-      if (publication.date) {
-        item.datePublished = publication.date
-      }
-      if (publication.url) {
-        item.url = publication.url
-      }
-
-      return { '@type': 'ListItem' as const, position: index + 1, item }
-    }),
+/** Single-paper `ScholarlyArticle` JSON-LD for `/publications/[slug]` (spec §4.4). */
+export function buildScholarlyArticleJsonLd(
+  publication: PublicationPayload
+): ScholarlyArticleJsonLd & { '@context': 'https://schema.org' } {
+  return {
+    '@context': 'https://schema.org',
+    ...buildScholarlyArticleItem(publication),
   }
 }

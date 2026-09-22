@@ -16,10 +16,10 @@ export function Header(props: HeaderProps) {
       // pattern Task 6 removed elsewhere (Layout now owns gutters via
       // `md:px-gutter-md lg:px-gutter-lg`), but it's intentional here, not an
       // instance of that bug: HomePage renders Layout with
-      // `childrenStyles="px-0"`, opting out of Layout's own gutter entirely,
-      // so this component is the only thing supplying the mobile-width
-      // padding on that page. Removing it would remove HomePage's mobile
-      // gutter, not just deduplicate it.
+      // `childrenStyles="px-0 md:px-gutter-md lg:px-gutter-lg"`, opting out
+      // of Layout's gutter only below `md`, so this component is the only
+      // thing supplying the mobile-width padding on that page. Removing it
+      // would remove HomePage's mobile gutter, not just deduplicate it.
       className={`${
         centered ? 'px-4 text-center md:px-0 md:text-start' : 'w-5/6 lg:w-3/5'
       }`}

@@ -4,23 +4,22 @@ import { Button } from 'components/redesign/Button'
 import { CopyCitation } from 'components/redesign/CopyCitation'
 import { FacetBand, type FacetChipSpec } from 'components/redesign/FacetBand'
 import { applyFacets, countBy, toggleFacet } from 'components/redesign/facets'
-import { SAMPLE_PEOPLE, SAMPLE_PUBLICATIONS } from 'components/redesign/fixtures'
+import {
+  LINKED_PUB,
+  NO_LINK_PUB,
+  PUBLICATION_PAGE_FIXTURE,
+  SAMPLE_PEOPLE,
+  SAMPLE_PUBLICATIONS,
+} from 'components/redesign/fixtures'
 import { FormField } from 'components/redesign/FormField'
 import { MobileBand, MobileHeader, MobileNavRows } from 'components/redesign/MobileHeader'
 import { FOOTER_FALLBACK, SITE_NAV } from 'components/redesign/navModel'
 import { PageTitle } from 'components/redesign/PageTitle'
 import { PersonCard } from 'components/redesign/PersonCard'
-// Explicit extensions on these two -- 'PublicationRow.tsx' (the component)
-// and 'publicationRow.ts' (its types/helpers) differ only in the case of
-// their first letter, and on this case-insensitive filesystem TypeScript's
-// bundler resolution collapses the two into one module identity when both
-// are imported (by the extension-less specifiers) from the same file,
-// silently resolving 'PublicationRow' to whichever of the two got included
-// in the program first. Spelling the extension out sidesteps the
-// extension-probing step that causes the collision.
-import type { Publication } from 'components/redesign/publicationRow.ts'
-import { PublicationRow } from 'components/redesign/PublicationRow.tsx'
+import type { Publication } from 'components/redesign/publicationModel'
+import { PublicationRow } from 'components/redesign/PublicationRow'
 import { ResourceBlock } from 'components/redesign/ResourceBlock'
+import { PublicationPage } from 'components/redesign/screens/PublicationPage'
 import { SectionRail } from 'components/redesign/SectionRail'
 import { SiteFooter } from 'components/redesign/SiteFooter'
 import { SiteNav } from 'components/redesign/SiteNav'
@@ -160,7 +159,7 @@ export default function Gallery() {
         <Heading>Publication row</Heading>
 
         <SubHeading>Comfortable density</SubHeading>
-        <div className="mb-8">
+        <div className="mb-8" data-testid="publication-row-comfortable">
           {SAMPLE_PUBLICATIONS.map((p) => (
             <PublicationRow key={p.title} pub={p} density="comfortable" onOpen={setOpenedPub} />
           ))}
@@ -174,7 +173,7 @@ export default function Gallery() {
         </div>
 
         <SubHeading>Home variant</SubHeading>
-        <div className="mb-8">
+        <div className="mb-8" data-testid="publication-row-home">
           {SAMPLE_PUBLICATIONS.map((p) => (
             <PublicationRow key={p.title} pub={p} variant="home" onOpen={setOpenedPub} />
           ))}
@@ -185,6 +184,16 @@ export default function Gallery() {
           {SAMPLE_PUBLICATIONS.map((p) => (
             <PublicationRow key={p.title} pub={p} narrow onOpen={setOpenedPub} />
           ))}
+        </div>
+
+        <SubHeading>Linked title (href renders a next/link)</SubHeading>
+        <div className="mb-8" data-testid="publication-row-linked">
+          <PublicationRow pub={LINKED_PUB} href="/publications/example" onOpen={setOpenedPub} />
+        </div>
+
+        <SubHeading>No link on file (empty linkHref -- no identifier markup)</SubHeading>
+        <div className="mb-8" data-testid="publication-row-no-link">
+          <PublicationRow pub={NO_LINK_PUB} onOpen={setOpenedPub} />
         </div>
 
         <p className={META}>
@@ -320,6 +329,27 @@ export default function Gallery() {
             onChange={(e) => setMessage(e.target.value)}
           />
           <FormField label="Disabled" disabled value="Locked" />
+        </div>
+      </section>
+
+      <section data-testid="gallery-publication-page">
+        <Heading>Publication page</Heading>
+        {/* Task 5 fix round 1: the only place `PublicationPage` actually
+            renders outside a real `/publications/[slug]` route, proving
+            (a) `ResourceBlock`'s Resource rail with a fixture that has one
+            -- the live dataset has zero `resource` documents today, so
+            without this the block would ship unrendered on real content --
+            and (b) `Cite & access` falls back to a full-width citation
+            column when there is no canonical link (`PUBLICATION_PAGE_FIXTURE`
+            has neither a DOI nor a URL). `PublicationPage` renders its own
+            `<h1>`; axe's default ruleset only requires at least one `<h1>`
+            per page (`page-has-heading-one`) and only flags a heading level
+            jumping forward by more than one, never a later heading
+            returning to `h1` -- so a second `<h1>` here does not trip axe,
+            and no extra scoping/exclusion is needed (verified empirically:
+            see the fix-round-1 report). */}
+        <div className="border border-rule">
+          <PublicationPage pub={PUBLICATION_PAGE_FIXTURE} />
         </div>
       </section>
 

@@ -28,6 +28,14 @@ test('robots.txt is served with the real siteUrl, not a hardcoded deployment URL
   expect(body).toContain(`Sitemap: ${siteUrl}/sitemap.xml`)
 })
 
+test('sitemap.xml lists at least one publication detail page', async ({ request }) => {
+  const response = await request.get('/sitemap.xml')
+  expect(response.ok()).toBe(true)
+  const body = await response.text()
+
+  expect(body).toMatch(/<loc>[^<]*\/publications\/[^/<]+<\/loc>/)
+})
+
 test.describe('theme-color viewport meta', () => {
   test('emits distinct light and dark scheme entries', async ({ page }) => {
     await page.goto('/')

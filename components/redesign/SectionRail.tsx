@@ -58,12 +58,39 @@ export function SectionRail({
           </span>
         )}
       </div>
+      {/* Fix round 1: this is the RAIL_GRID's `1fr` content track, and a `1fr`
+          grid track has an implicit `min-width: auto` -- it refuses to
+          shrink below its widest child's own min-content width. A long,
+          unbreakable child (Task 5's Tag row, when a topic title is long
+          enough) was blowing this track out past the viewport rather than
+          being constrained to the space the grid actually allotted it,
+          which propagated a full-page horizontal-scroll defect through
+          every sibling in the column (the `<h1>`, paragraphs, etc. -- all
+          `width: auto` elements that stretch to fill this box). `min-w-0`
+          overrides that implicit minimum so the track is sized by the grid
+          definition, not by its content; it's additive to (not merged
+          with) the conditional padding classes below, so there's no
+          same-property collision. */}
+      {/* Fix round 3: `pad`'s `pr`/`pl` were hardcoded to the desktop-sized
+          `--spacing-gutter-lg`/`-md` tokens at every width -- the same
+          non-responsive-gutter defect PageTitle.tsx and FacetBand.tsx had
+          before their own fixes, and this prop was never given the same
+          treatment. Fixed the same way: `px-(--spacing-gutter)` (one token,
+          both sides) below `md`, overridden by the asymmetric `pr`/`pl`
+          tokens from `md` -- matching RAIL_GRID's own rail-width breakpoint,
+          so this switches together with the rail rather than at a different
+          point. `pt`/`pb` don't vary by breakpoint, so they stay unprefixed
+          as before; desktop (`md` and up) is pixel-identical to the prior
+          fixed values. Each of `padding-right` and `padding-left` gets
+          exactly one unprefixed declaration and one `md:` declaration --
+          never two utilities for the same property at the same breakpoint
+          (constraints.md). */}
       <div
-        className={
+        className={`min-w-0 ${
           pad
-            ? 'pt-(--spacing-stack) pr-(--spacing-gutter-lg) pb-(--spacing-stack-lg) pl-(--spacing-gutter-md)'
+            ? 'pt-(--spacing-stack) px-(--spacing-gutter) pb-(--spacing-stack-lg) md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)'
             : ''
-        }
+        }`}
       >
         {children}
       </div>

@@ -42,7 +42,7 @@ export default defineType({
       title: 'Slug',
       type: 'slug',
       description:
-        'Used in this publication\'s page URL: /publications/<slug>. Generated from the title and the publication year -- press "Generate" after filling in Title and Date. Existing records have no slug until the backfill script is run (npm run backfill:publication-slugs); a publication without one is still listed, it just has no page of its own.',
+        'Used in this publication\'s page URL: /publications/<slug>. Generated from the title and the publication year -- press "Generate" after filling in Title and Date.',
       options: {
         source: (doc) => publicationSlug(doc.title, doc.date),
         maxLength: 96,
@@ -51,11 +51,11 @@ export default defineType({
         slugify: (value: string) => value,
         isUnique: (value, context) => context.defaultIsUnique(value, context),
       },
-      // Deliberately not `required()`: the 19 live records have no slug yet and
-      // this work does not write to the live dataset, so requiring it would mark
-      // every existing publication invalid in Studio. Phase 3 tightens this once
-      // the backfill has run.
-      validation: (rule) => rule.custom(validateSlugFormat),
+      // The backfill (npm run backfill:publication-slugs) ran 2026-09-22: all
+      // 19 live records now have a unique slug, so this is required going
+      // forward. A draft can still be saved without one mid-edit; `required()`
+      // only blocks publishing.
+      validation: (Rule) => Rule.required().custom(validateSlugFormat),
     }),
     defineField({
       name: 'volume',

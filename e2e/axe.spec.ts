@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { e2eClient } from './support/sanity'
+
 // `/` previously carried a `color-contrast` violation (ProjectListItem's
 // overview text, gray-500 #727892 on #f8f8f8 = 4.10:1, below AA's 4.5).
 // Phase 2C deferred it here as a design-token decision; Phase 3A Task 2
@@ -68,6 +70,22 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
             ).toEqual([])
           })
         }
+
+        // A publication detail page (Task 5): the path is a real slug fetched
+        // from the live dataset, not hardcoded -- the specific paper doesn't
+        // matter, only that /publications/[slug] itself is accessible.
+        test('a publication detail page has no unexpected accessibility violations', async ({
+          page,
+        }) => {
+          const slug = await e2eClient.fetch<string | null>(
+            `*[_type == "publication" && defined(slug.current)][0].slug.current`
+          )
+          test.skip(!slug, 'no publication has a slug in this dataset')
+
+          await page.goto(`/publications/${slug}`)
+          const results = await new AxeBuilder({ page }).analyze()
+          expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
+        })
       })
     }
   })

@@ -14,7 +14,11 @@ export interface LayoutProps {
 export default function Layout({
   children,
   settings = fallbackSettings,
-  childrenStyles = 'px-gutter',
+  // Invariant: `childrenStyles` owns ALL of `main`'s horizontal padding at
+  // every breakpoint (nothing else sets it), so a caller's value fully
+  // replaces this default rather than competing with a separately-hardcoded
+  // `md:`/`lg:` rule -- see Task 4's report for the bug this fixed.
+  childrenStyles = 'px-gutter md:px-gutter-md lg:px-gutter-lg',
 }: LayoutProps) {
   const { siteName, shortName } = resolveBranding(settings)
 
@@ -40,7 +44,7 @@ export default function Layout({
           plus mt-32 (128 - 48 = 80px); desktop was already in-flow, so
           md:mt-16 is unchanged. Step 2's screen rebuilds own this spacing
           from here on. */}
-      <main className={`mt-20 flex-grow md:mt-16 md:px-gutter-md lg:px-gutter-lg ${childrenStyles}`}>
+      <main className={`mt-20 flex-grow md:mt-16 ${childrenStyles}`}>
         {children}
       </main>
 

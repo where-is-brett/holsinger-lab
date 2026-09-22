@@ -7,7 +7,7 @@
 // a parallel track on the same dataset may still read it.
 //
 // Named navModel, not siteNav: `siteNav.ts` beside `SiteNav.tsx` collides on
-// a case-insensitive filesystem (see publicationRow.ts / PublicationRow.tsx).
+// a case-insensitive filesystem (see publicationModel.ts / PublicationRow.tsx).
 
 export type NavId =
   | 'home'

@@ -19,20 +19,49 @@ export interface FacetBandProps {
 // Presentational only -- the parent owns filter state and counts; this
 // component just renders chips and forwards their onClick.
 //
-// Sticky facet band. In this direction the header is NOT sticky, so the
-// band pins at top: 0 and the record scrolls beneath it. If this is ever
-// placed under a sticky header, the offset MUST become var(--nav-height) --
-// never a hardcoded pixel value (app token contract; see SiteNav's
-// --nav-height usage).
+// Sticky facet band, sticky only when the viewport is at least 64rem wide
+// AND at least 56rem tall (spec §4.2, fix round 3): width alone isn't
+// enough -- on a short-but-wide viewport (e.g. a laptop with the window
+// resized short, or landscape tablet) three wrapped chip groups plus
+// density can be taller than the viewport itself, so pinning it at
+// `top: var(--nav-height)` would leave no way to scroll past it to reach
+// the records below. `[@media(min-width:64rem)_and_(min-height:56rem)]:`
+// is a single Tailwind 4 arbitrary variant carrying both conditions, used
+// for both `sticky` and `top-(--nav-height)` -- not `lg:` plus a bare
+// media-query wrapper, which would set `position`/`top` twice at the same
+// breakpoint (constraints.md's same-property rule). Below that combined
+// breakpoint the band stays `static`. From it, it pins at
+// `top: var(--nav-height)` -- this site's header IS sticky (unlike the
+// vendored source's own assumption), so a hardcoded `top: 0` would tuck the
+// band under the header instead of below it.
 // Two variants, not one ROW plus an appended `items-center` override:
 // Tailwind utilities of equal specificity win by generation order in the
 // build's CSS, not by position in the className string, and `.items-center`
 // is generated before `.items-start` -- so `${ROW} items-center` silently
 // stayed top-aligned (Task 8a review finding). A second, fully-formed class
 // string sidesteps the collision instead of relying on override order.
-const ROW = 'grid grid-cols-[72px_1fr] gap-x-5 items-start'
-const ROW_CENTER = 'grid grid-cols-[72px_1fr] gap-x-5 items-center'
+// `grid-cols-[72px_minmax(0,1fr)]` on both, not a bare `1fr`: the `1fr`
+// track has an implicit `min-width: auto` and would otherwise refuse to
+// shrink below the widest chip row's min-content width (the same blowout
+// SectionRail.tsx's content column had before its round-1 fix). A separate
+// `min-w-0` utility on the row div would have been inert here -- `min-w-0`
+// constrains a grid *item's* own min-width, not the width the grid formula
+// assigns to a *track*, and it's the track's implicit `min-width: auto`
+// that was blowing out at 320px. `minmax(0,1fr)` sets the track's own
+// minimum directly, so this stays a real fix rather than a dead class.
+const ROW = 'grid grid-cols-[72px_minmax(0,1fr)] gap-x-5 items-start'
+const ROW_CENTER = 'grid grid-cols-[72px_minmax(0,1fr)] gap-x-5 items-center'
 const ROW_LABEL = 'font-mono text-[10px] leading-[2.6] tracking-[0.14em] text-text-faint uppercase'
+// Density's label sits in a `items-center` row (no wrapped chip rows to
+// vertically center against), so it doesn't need ROW_LABEL's `leading-[2.6]`
+// -- but `${ROW_LABEL} leading-none` doesn't override that, it collides
+// with it: both set `line-height` on the same element at the same
+// (unprefixed) breakpoint, and Tailwind resolves the tie by generation
+// order in the build's CSS, not by position in the className string, so
+// `leading-[2.6]` was silently still winning. A separate constant with its
+// own single `line-height` declaration sidesteps the collision instead of
+// relying on override order (same fix shape as ROW/ROW_CENTER above it).
+const DENSITY_ROW_LABEL = 'font-mono text-[10px] leading-none tracking-[0.14em] text-text-faint uppercase'
 
 // Duplicates SectionRail's rail-header block (accent num + vertical mono-
 // caps label) with its own padding (32px, not --spacing-stack) and its own
@@ -48,9 +77,10 @@ export function FacetBand({
   num = '01',
   label = 'Filter',
 }: FacetBandProps) {
+  const visibleGroups = groups.filter((g) => g.chips.length > 0)
   return (
     <div
-      className={`${sticky ? 'sticky' : 'static'} top-0 z-[5] bg-surface ${RAIL_GRID} border-t border-b border-rule`}
+      className={`${sticky ? 'static [@media(min-width:64rem)_and_(min-height:56rem)]:sticky [@media(min-width:64rem)_and_(min-height:56rem)]:top-(--nav-height)' : 'static'} z-[5] bg-surface ${RAIL_GRID} border-t border-b border-rule`}
     >
       <div className="flex flex-col items-center gap-[18px] border-r border-rule pt-8">
         <span className="font-mono text-[13px] leading-none font-medium text-accent">{num}</span>
@@ -70,8 +100,15 @@ export function FacetBand({
           intra-group gap (Task 8a review finding). The density row below
           doesn't need this: its border-t + pt-3 already add ~18.5px of real
           separation from the last group's chips. */}
-      <div className="flex flex-col gap-5 pt-8 pr-(--spacing-gutter-lg) pb-9 pl-(--spacing-gutter-md)">
-        {groups.map((g) => (
+      {/* Fix round 2: same fix as PageTitle.tsx's content column -- `min-w-0`
+          stops this RAIL_GRID `1fr` track's implicit `min-width: auto` from
+          blowing out on a long chip row, and the `pr`/`pl` gutters (were
+          hardcoded to the desktop `--spacing-gutter-lg`/`-md` tokens at
+          every width) now use the single `--spacing-gutter` token below
+          `md`, switching to the asymmetric desktop tokens from `md` --
+          pixel-identical there to before. */}
+      <div className="min-w-0 flex flex-col gap-5 pt-8 px-(--spacing-gutter) pb-9 md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)">
+        {visibleGroups.map((g) => (
           <div key={g.label} className={ROW}>
             <span className={ROW_LABEL}>{g.label}</span>
             {/* Vertical gap is 20px (gap-y-5), not the source's 8px: a 44px hit
@@ -91,8 +128,12 @@ export function FacetBand({
         ))}
         {density && (
           <div className={`${ROW_CENTER} border-t border-rule pt-3`}>
-            <span className={`${ROW_LABEL} leading-none`}>Density</span>
-            <div className="flex gap-2">
+            <span className={DENSITY_ROW_LABEL}>Density</span>
+            {/* `flex-wrap` plus the same `gap-x-2 gap-y-5` hit-area clearance
+                as the chip groups above (see that comment for the 44px hit
+                area / 20px gap math) -- without it, COMPACT's options row
+                had nowhere to wrap to and clipped at 320px. */}
+            <div className="flex flex-wrap gap-x-2 gap-y-5">
               {density.options.map((d) => (
                 <FacetChip key={d} label={d} on={density.value === d} onClick={() => density.onChange(d)} />
               ))}

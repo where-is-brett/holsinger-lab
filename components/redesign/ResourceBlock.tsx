@@ -28,8 +28,28 @@ const STRIPE_BG =
   'repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in oklab, var(--sem-text) 4.5%, transparent) 12px 13px)'
 
 export function ResourceBlock({ title, meta = [], figureLabel }: ResourceBlockProps) {
+  // Fix round 1: the two-track grid (a 1fr text column plus a fixed
+  // 340px-wide figure track) was unconditional and unprefixed, so it
+  // reserved the figure track (and squeezed the text into whatever was
+  // left) at every width, including mobile, even when there is no
+  // `figureLabel` to put in it. Now: a plain block at every width when
+  // there's no figure (a single column, since there's nothing to put in a
+  // second one), and the two-track grid only `lg:` and only when
+  // `figureLabel` is set. Below `lg`, with a `figureLabel`, the figure
+  // block below still renders -- it isn't gated by breakpoint, only by
+  // whether `figureLabel` is truthy -- it just stacks under the text block
+  // instead of sitting beside it (fix round 2: given its own `mt-8 lg:mt-0`
+  // below, so the two blocks don't touch when stacked). Each of `display`
+  // and `grid-template-columns` is set by at most one class here (this
+  // ternary picks one string or the other, never both), so there's no
+  // same-property collision at any breakpoint.
+  const twoColumn = Boolean(figureLabel)
   return (
-    <div className="grid grid-cols-[1fr_340px] items-start gap-x-(--spacing-gutter-lg)">
+    <div
+      className={
+        twoColumn ? 'lg:grid lg:grid-cols-[1fr_340px] lg:items-start lg:gap-x-(--spacing-gutter-lg)' : ''
+      }
+    >
       <div>
         {/* `text-heading` carries its own line-height/letter-spacing
             companions from styles/index.css's `@theme inline` block -- left
@@ -53,7 +73,7 @@ export function ResourceBlock({ title, meta = [], figureLabel }: ResourceBlockPr
       </div>
       {figureLabel && (
         <div
-          className="box-border flex h-[200px] items-center justify-center border border-rule px-5"
+          className="mt-8 box-border flex h-[200px] items-center justify-center border border-rule px-5 lg:mt-0"
           style={{ backgroundImage: STRIPE_BG }}
         >
           <span className="text-center font-mono text-[11px] leading-[1.6] text-text-faint">

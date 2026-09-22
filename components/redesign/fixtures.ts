@@ -1,5 +1,5 @@
-import type { Publication } from './publicationRow'
-import { deriveLink, shortenLabel, splitAuthors } from './publicationRow'
+import type { Publication } from './publicationModel'
+import { deriveLink, shortenLabel, splitAuthors } from './publicationModel'
 
 // Real lab content, not placeholder strings -- the gallery this feeds is the
 // only place any of the twelve Phase 1 components actually render, so the
@@ -26,7 +26,10 @@ function make(
   // runtime concern.
   if (!link) throw new Error(`fixture ${title} has neither DOI nor URL`)
   return {
+    id: doi ?? link.href,
+    href: null,
     year,
+    dateLabel: '',
     title,
     authorsPre: a.pre,
     authorsPI: a.pi,
@@ -40,6 +43,8 @@ function make(
     type,
     topics,
     cite: `${authors} (${year}). ${title} ${journal} ${ref}. ${link.href}`,
+    abstract: [],
+    resources: [],
   }
 }
 
@@ -67,6 +72,79 @@ export const SAMPLE_PUBLICATIONS: Publication[] = [
     ['Metabolism, oxidative stress & neuroprotection'],
   ),
 ]
+
+// Real routes carry an `href` (Task 3, spec §4.1): a clone of the first
+// fixture is enough to prove the title renders as a next/link, without
+// touching SAMPLE_PUBLICATIONS and its length-2 assumptions elsewhere in
+// this gallery (facet-band result counts).
+export const LINKED_PUB: Publication = {
+  ...SAMPLE_PUBLICATIONS[0],
+  id: 'linked-pub-fixture',
+  href: '/publications/example',
+}
+
+// The no-link case (§4.1: "No identifier markup when linkHref === ''"):
+// neither a DOI nor a URL on file, and an empty `type` so the tag line
+// (requirement 4) also has to tolerate a missing first segment. Built by
+// hand, not through `make()`, since `make()` deliberately throws when
+// there's no DOI/URL -- that guard exists for the real dataset, where the
+// case never happens; this fixture exists precisely because the component
+// must still handle it.
+export const NO_LINK_PUB: Publication = {
+  id: 'no-link-pub-fixture',
+  href: null,
+  year: '2022',
+  dateLabel: '',
+  title: 'A record on file with neither a DOI nor a URL',
+  authorsPre: '',
+  authorsPI: '',
+  authorsPost: 'Holsinger, R.M.D.',
+  journal: 'Journal of Unlinked Records',
+  ref: '1(1) · 1',
+  linkKind: '',
+  linkLabel: '',
+  linkLabelShort: '',
+  linkHref: '',
+  type: '',
+  topics: [],
+  cite: 'Holsinger, R.M.D. (2022). A record on file with neither a DOI nor a URL. Journal of Unlinked Records 1(1) · 1.',
+  abstract: [],
+  resources: [],
+}
+
+// Fix round 1: `/publications/[slug]`'s ResourceBlock/citation-full-width
+// fixes needed a gallery fixture exercising the no-canonical-link + linked-
+// resource case together -- neither SAMPLE_PUBLICATIONS entry nor
+// NO_LINK_PUB carries an abstract or a resource. No DOI and no URL (so
+// Cite & access has no canonical-link column and the citation box should
+// take the full width), a two-paragraph abstract (so the Abstract rail
+// renders more than one <p>), and one linked resource (so the Resource
+// rail -- otherwise unrendered on real data, since the live dataset has
+// zero `resource` documents today -- gets proven at all).
+export const PUBLICATION_PAGE_FIXTURE: Publication = {
+  id: 'publication-page-fixture',
+  href: '/publications/publication-page-fixture',
+  year: '2021',
+  dateLabel: '1 March 2021',
+  title: 'A record on file with no canonical link, an abstract, and one linked resource',
+  authorsPre: 'Choi, J., Wu, H. and ',
+  authorsPI: 'Holsinger, R.M.D.',
+  authorsPost: '',
+  journal: 'Journal of Unlinked Records',
+  ref: '2(1) · 15',
+  linkKind: '',
+  linkLabel: '',
+  linkLabelShort: '',
+  linkHref: '',
+  type: 'Article',
+  topics: ['Metabolism, oxidative stress & neuroprotection'],
+  cite: 'Choi, J., Wu, H. and Holsinger, R.M.D. (2021). A record on file with no canonical link, an abstract, and one linked resource. Journal of Unlinked Records 2(1) · 15.',
+  abstract: [
+    'The first paragraph sets up the problem: this fixture exists to prove the Abstract rail renders more than one paragraph, and that Cite & access falls back to a full-width citation column when there is no DOI or URL on file.',
+    'The second paragraph proves the same block renders a second <p> rather than concatenating both into one -- the two-paragraph split is the thing under test, not the prose itself.',
+  ],
+  resources: [{ id: 'resource-fixture-1', title: 'Cell culture chamber CAD files', kind: 'hardware' }],
+}
 
 export const SAMPLE_PEOPLE: { name: string; role: string; img?: string; initials?: string }[] = [
   {

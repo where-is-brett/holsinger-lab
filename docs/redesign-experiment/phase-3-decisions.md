@@ -184,3 +184,146 @@ at merge time, but only if that branch has also edited those specific files.
 | `npm run typegen`      | clean, 16 queries, 36 schema types | not re-run — no query or schema changed                 |
 | `npm run build`        | 23 routes                         | 23 routes                                                |
 | `npm run test:e2e`     | 102 passed / 5 skipped            | 117 passed / 5 skipped                                   |
+
+## Step 2 — PR A (Publications)
+
+Branch `redesign/phase-3-publications`, off `redesign/integration` at `2c5d7b1`. Spec:
+`docs/superpowers/specs/2026-09-22-redesign-phase-3-screens-design.md` (§4, §7). Six tasks,
+each controller-reviewed to clean before the next started; see `progress.md` in the SDD
+working directory for the full ledger.
+
+### What shipped
+
+- **`ui_kits` vendored verbatim, read-only,** to
+  `docs/redesign-experiment/design-system/ui_kits/site/` — the design project's screens
+  (`Home.jsx`, `PublicationsIndex.jsx`, `PublicationPage.jsx`, `People.jsx`, `Research.jsx`,
+  `LabData.jsx`, `README.md`, `index.html`) were never checked in before. They are the
+  appearance authority; the IA wins on content where the two disagree (spec §1).
+- **`publicationRow.ts` renamed to `publicationModel.ts`,** with its test renamed to match.
+  This settles the case-insensitive collision with `PublicationRow.tsx` that
+  `phase-1-decisions.md` carried forward as an open item — same directory, same name up to
+  case, on a case-insensitive filesystem. `toPublication` is now the one mapping from query
+  payload to view, gaining `id`, `href`, `dateLabel`, `abstract` and `resources`.
+- **Spec §7 rulings, taken as written:**
+  - Publications search, year jump-links and the APA/BibTeX toggle are dropped from the
+    index. The IA's block list is count + facets + list; the design has one citation and one
+    copy control. `formatApaCitation` moved to `lib/citation.ts`; the BibTeX helpers and
+    their tests were deleted with it, since nothing else called them.
+  - `PublicationRow`'s ledger grid applies from `lg`, not `md` — the 4-column grid needs
+    about 700px of content box, which the `md` rail layout doesn't have. `md` keeps the
+    stacked anatomy.
+  - `FacetBand` is sticky only from `lg` (`lg:sticky lg:top-(--nav-height)`), static below
+    it — three wrapped chip groups plus density would pin half a phone screen otherwise.
+  - Tags on `/publications/[slug]` are informational, not links — no URL filter state
+    exists on the index, and adding one is out of scope.
+- **`publication.slug` is now `required()`** in `schemas/documents/publication.ts`, closing
+  the item Phase 2 left open. `npm run typegen` re-run; no type became non-nullable that
+  fixtures didn't already treat as present, since 19/19 live records already have unique
+  slugs (spec §2).
+- **The type backfill must be committed by Brett.** `backfill:publication-types` (`scripts/`)
+  is dry-run only in this worktree — `.env.local` deliberately lacks
+  `SANITY_API_WRITE_TOKEN`. Brett runs `npm run backfill:publication-types -- --commit` with
+  that token set. Until then `publication.type` stays null on all 19 records, the Type facet
+  group hides itself (an empty `groups` entry doesn't render), and two e2e tests skip with a
+  reason.
+
+### Data gaps carried from spec §2
+
+- **Zero `resource` documents exist.** `ResourceBlock` on `/publications/[slug]` is proven
+  entirely by a gallery `PublicationPage` fixture — there is no real data to render it
+  against. The block is omitted when `resources.length === 0`, which is every real page
+  today.
+- **`publication.type` is null on all 19** until the backfill above is committed.
+- **`project.researchOrder` is unset** on every project — out of scope for PR A, carried to
+  PR C's Research screen.
+
+### Resources route ruling
+
+One `/resources` index page, no per-resource route and no `resource.slug` — the IA gives
+resources no pages, and one item launches. (Spec §2 ruling 1; PR C builds the route, but the
+ruling was made and recorded here as part of the shared spec PR A also implements.)
+
+### Step 4 dependency: move the `maestro` project's content first
+
+Per spec §2: the `maestro` project document holds the MAESTRO copy (overview + `site` link)
+that Home's MAESTRO block will read (PR C, ruling 4). **Step 4 — `project` type retirement —
+must move this content to its new home before that document is deleted**, or Home's MAESTRO
+block loses its only source. This is a dependency on Phase 3 step 4, not something PR A
+changes; recorded here so it isn't missed when step 4 is scoped.
+
+### Departures during execution
+
+- **`Layout.tsx` `childrenStyles` bug (Task 4).** `childrenStyles="px-0"` didn't remove
+  `<main>`'s hardcoded `md:`/`lg:` horizontal gutters — a same-property collision
+  (`phase-1-decisions.md`'s standing trap), since `px-0` and the hardcoded `md:px-*` /
+  `lg:px-*` classes all set the same property and the later-generated one wins. Caught by
+  the new 1024px width check, not by eye. Fix: `childrenStyles` now owns all of `<main>`'s
+  horizontal padding; `HomePage` passes its old effective classes explicitly so its layout
+  is unchanged.
+- **`PublicationRow`:** stacked identifiers are protected from the title's 44px hit area,
+  so a tap near a DOI/URL line doesn't register as a tap on the title link.
+- **`ResourceBlock`:** made responsive — the grid layout applies only from `lg`, and only
+  when the resource has a figure. Proven by a gallery `PublicationPage` fixture, since there
+  are zero real resource documents to test against.
+- **`Tag`:** gained a `wrap` mode so long topics wrap instead of overflowing. A scrollable
+  tag row (`overflow-x-auto`) had nothing focusable inside it, which axe's
+  `scrollable-region-focusable` rule flags.
+- **`FacetChip`:** wraps too, for the same reason as `Tag`, which keeps the hit-area math
+  intact instead of trading one defect for another.
+- **`PageTitle` / `FacetBand`:** gained mobile gutters. `/publications` overflowed at 375px
+  (`scrollWidth` 621 against a 375 viewport) because these two didn't have the responsive
+  padding the rest of the page did. Width checks now run at 320 / 375 / 390 / 768 / 1023 /
+  1024 / 1280px, not just 768 and up.
+- **`SectionRail`:** gained `min-w-0`, so a long unbreakable child (an identifier, a DOI)
+  can't force the rail wider than its column.
+- **`e2e/interactive-controls.spec.ts`** was rewritten to target `CopyCitation`, since
+  `Toggle.tsx` was deleted in this PR and the spec exercised it.
+- **The dataset-pinned "10 DOIs" e2e test was dropped.** It asserted exactly 10 rows show a
+  DOI identifier and 9 a URL — true of today's 19 records, but not a fact any future dataset
+  has to hold. Kept instead: a check that partitions rows into DOI / URL / no-link and
+  verifies each partition against the row's own data (a DOI href starts with
+  `https://doi.org/`, a URL href equals the row's recorded URL, a no-link row has no
+  identifier). The dropped replacement's first pass still silently assumed every row had a
+  link — DOI and URL are both optional, so "no link" is valid content the check has to
+  allow for, not a case it can rule out by construction. This is PR #30's lesson (every e2e
+  assertion must hold for any dataset) applied a second time.
+
+### Two local-testing traps
+
+- **`.next/cache/fetch-cache` survives local builds** and can serve pre-migration Sanity
+  data. A stale entry (a roleGroup query cached before the migrations ran, returning `[]`)
+  masked as a "pre-existing `/people` failure" until traced to the cache. Clear
+  `.next/cache/fetch-cache` before local e2e.
+- **A new Playwright run reused a previous run's `next start` on :3000** that was still
+  shutting down, producing spurious failures. Wait for :3000 to be free before starting a
+  new run.
+
+### Deferred minors (carried, not fixed)
+
+- `FacetBand`'s `ROW` `min-w-0` is inert (the comment describing it is also wrong).
+- Wrapping `Tag`/`FacetChip` labels keep `leading-none`, which cramps two-line labels on
+  phones.
+- At 768–1023px on `/publications`, `PageTitle`/`FacetBand`'s gutters switch at `md` but the
+  record-list padding switches at `lg` — the left edges misalign in that range.
+- `FacetBand`'s density row has no `flex-wrap`.
+- `html { overflow-x: hidden }` in `styles/index.css` silently clips overflow site-wide,
+  which can mask a future width regression the same way it complicated diagnosing this one.
+- The `Layout` comment is 4 lines, not the 2–3 it should be.
+
+### Verification (run 2026-09-23, this branch)
+
+| Check              | Baseline (`2c5d7b1`)     | Now                                                                 |
+| ------------------- | ------------------------- | --------------------------------------------------------------------- |
+| `npm test`          | 385                       | **393** (42 files; tests of deleted old-Publications code removed; new model, citation, JSON-LD and type-rule tests added) |
+| `npm run type-check` | clean                     | clean                                                                |
+| `npm run lint`      | 0 errors, 4 warnings      | 0 errors, 4 warnings                                                 |
+| `npm run typegen`   | 16 queries / 40 types     | 16 queries / 40 types                                                |
+| `npm run build`     | 23 routes                 | 43 static pages, including 19 `/publications/[slug]`                 |
+| `npm run test:e2e`  | 118 passed / 2 skipped (after PR #30) | **142 passed / 4 skipped**                                 |
+
+### The type-backfill dry run
+
+It plans 19 writes (Article 11, Review 7, Case report 1), with no unmatched papers, no
+ambiguous matches and no unused rules. Brett runs
+`npm run backfill:publication-types -- --commit` with `SANITY_API_WRITE_TOKEN` set. Until
+then the Type facet hides itself, and two e2e tests skip with a reason.

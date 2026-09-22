@@ -154,9 +154,10 @@ export const publicationBySlugQuery = groq`
   }
 `
 
-// Only publications that have a slug get a page. The 19 live records have none
-// until the backfill runs, so this returns nothing rather than breaking -- the
-// same shape as `projectPaths` and `profilePaths`.
+// Only publications that have a slug get a page. All 19 live records were
+// backfilled with a unique slug on 2026-09-22, and `slug` is now required in
+// the schema, but a draft can still lack one, so this guard stays -- the same
+// shape as `projectPaths` and `profilePaths`.
 export const publicationPaths = groq`
   *[_type == "publication" && slug.current != null].slug.current
 `

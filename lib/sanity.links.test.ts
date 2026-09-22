@@ -46,11 +46,20 @@ describe('resolveHref', () => {
     expect(resolveHref('settings', 'ignored')).toBe('/')
   })
 
+  it('resolves a publication document to /publications/<slug>', () => {
+    expect(resolveHref('publication', 'my-paper')).toBe('/publications/my-paper')
+  })
+
+  it('returns undefined for a publication document with no slug', () => {
+    expect(resolveHref('publication')).toBeUndefined()
+    expect(resolveHref('publication', null)).toBeUndefined()
+  })
+
   it('returns undefined and warns for an unrecognized document type', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    expect(resolveHref('publication', 'x')).toBeUndefined()
-    expect(warn).toHaveBeenCalledWith('Invalid document type:', 'publication')
+    expect(resolveHref('nonsense', 'x')).toBeUndefined()
+    expect(warn).toHaveBeenCalledWith('Invalid document type:', 'nonsense')
 
     warn.mockRestore()
   })
@@ -71,6 +80,7 @@ describe('resolveHref', () => {
     resolveHref('page', 'about')
     resolveHref('project', 'my-project')
     resolveHref('profile', 'damian-holsinger')
+    resolveHref('publication', 'my-paper')
     resolveHref('settings')
     expect(warn).not.toHaveBeenCalled()
 

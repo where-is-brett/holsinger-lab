@@ -23,6 +23,7 @@ const GALLERY_SECTIONS = [
   'site-footer',
   'form-field',
   'resource-block',
+  'publication-page',
 ]
 
 test.describe('redesign component gallery', () => {
@@ -44,9 +45,24 @@ test.describe('redesign component gallery', () => {
       const el = ids.nth(i)
       const text = (await el.innerText()).replace('…', '')
       const href = await el.getAttribute('href')
-      // The rendered label must not have been case-transformed, and the href
-      // must carry the full identifier even when the label is truncated.
-      expect(href).toContain(text.replace(/^https?:\/\//, '').replace(/^www\./, ''))
+      // The rendered label must not have been case-transformed. `href`
+      // containment only applies to identifiers that are *links to that
+      // identifier* (a DOI/URL anchor, always an absolute `http(s)` URL) --
+      // fix round 1 adds two `data-identifier` cases this doesn't cover:
+      // the citation box's cite string (plain text, no `href` at all -- per
+      // the Task 5 brief, "a bordered box with the cite text
+      // (data-identifier, mono)") and ResourceBlock's `MORE` meta entry
+      // (per the same brief: `{ label: 'MORE', value: 'Resources', href:
+      // '/resources' }` -- a same-site navigational link whose label is a
+      // human word, not the href repeated back). Both are legitimately
+      // `data-identifier` (verbatim, never-uppercased text) without being
+      // "the href must contain the label" identifiers -- distinguished
+      // here by `href` starting with `/` (same-site nav) vs `http` (an
+      // actual DOI/URL identifier).
+      if (href !== null && !href.startsWith('/')) {
+        // the href must carry the full identifier even when the label is truncated.
+        expect(href).toContain(text.replace(/^https?:\/\//, '').replace(/^www\./, ''))
+      }
       expect(await el.evaluate((n) => getComputedStyle(n).textTransform)).not.toBe('uppercase')
     }
   })
@@ -109,6 +125,69 @@ test.describe('redesign component gallery', () => {
       .locator('> div')
       .first()
     await expect(narrowRow).toHaveCSS('display', 'block')
+  })
+
+  test('PublicationRow: href renders the title as a next/link to that href', async ({ page }) => {
+    const row = page.getByTestId('publication-row-linked')
+    const titleLink = row.getByRole('link', { name: /Chromobox/i })
+    await expect(titleLink).toHaveAttribute('href', '/publications/example')
+  })
+
+  test('PublicationRow: no DOI/URL on file renders no identifier markup', async ({ page }) => {
+    const row = page.getByTestId('publication-row-no-link')
+    await expect(row.locator('[data-identifier]')).toHaveCount(0)
+    const text = await row.innerText()
+    expect(text).not.toMatch(/^(DOI|URL)\s/m)
+  })
+
+  test('PublicationRow: comfortable index row is a grid from lg, stacked below lg', async ({
+    page,
+  }) => {
+    const row = page.locator('[data-testid="publication-row-comfortable"] > div').first()
+
+    await page.setViewportSize({ width: 1024, height: 900 })
+    await expect(row).toHaveCSS('display', 'grid')
+
+    await page.setViewportSize({ width: 900, height: 900 })
+    await expect(row).not.toHaveCSS('display', 'grid')
+  })
+
+  test('PublicationRow: comfortable index row still shows authors and CopyCitation below lg', async ({
+    page,
+  }) => {
+    // Fix round 1: the journal column collapses into the mobile kicker
+    // below `lg`, but the authors line and CopyCitation control must not --
+    // this settles it with a live viewport check, not just markup presence.
+    await page.setViewportSize({ width: 900, height: 900 })
+    const row = page.locator('[data-testid="publication-row-comfortable"] > div').first()
+
+    await expect(row.getByTestId('pub-authors').first()).toBeVisible()
+    await expect(row.getByRole('button', { name: /copy citation/i }).first()).toBeVisible()
+  })
+
+  test('PublicationRow: home row identifier link is clickable at 390px, not swallowed by the title hit area', async ({
+    page,
+  }) => {
+    // Fix round 1: the title's 44px hit-area pseudo used to overhang onto
+    // the identifier directly beneath it below `lg`, in the `home` variant
+    // where nothing sits between them. `click({ trial: true })` fails if a
+    // different element would actually intercept the click at that point.
+    await page.setViewportSize({ width: 390, height: 844 })
+    const row = page.getByTestId('publication-row-home')
+    const link = row.locator('[data-identifier]').first()
+    await expect(link).toBeVisible()
+
+    await link.click({ trial: true })
+
+    const inside = await link.evaluate((el) => {
+      const box = el.getBoundingClientRect()
+      const target = document.elementFromPoint(
+        box.left + box.width / 2,
+        box.top + box.height / 2,
+      )
+      return target === el || (target != null && el.contains(target))
+    })
+    expect(inside).toBe(true)
   })
 
   test('SiteNav marks exactly the current item aria-current, with real hrefs', async ({ page }) => {
@@ -195,6 +274,72 @@ test.describe('redesign component gallery', () => {
     const countBefore = await page.getByTestId('tag-click-count').innerText()
     await page.mouse.click(visualBox!.x + visualBox!.width / 2, clickY)
     await expect(page.getByTestId('tag-click-count')).not.toHaveText(countBefore)
+  })
+
+  test('publication page: Resource rail links to /resources', async ({ page }) => {
+    const section = page.getByTestId('gallery-publication-page')
+    const link = section.getByRole('link', { name: 'Resources' })
+    await expect(link).toBeVisible()
+    await expect(link).toHaveAttribute('href', '/resources')
+  })
+
+  test('publication page: citation box takes the full width when there is no canonical link', async ({
+    page,
+  }) => {
+    // PUBLICATION_PAGE_FIXTURE has neither a DOI nor a URL, so the Cite &
+    // access grid should collapse to a single column (fix round 1) and the
+    // citation box should span the same width as its containing block,
+    // rather than sitting in a 1fr track sized for two columns.
+    await page.setViewportSize({ width: 1280, height: 900 })
+    const section = page.getByTestId('gallery-publication-page')
+    const wrapperBox = await section.getByTestId('pub-cite-access').boundingBox()
+    const citationBox = await section.getByTestId('pub-citation-box').boundingBox()
+    expect(wrapperBox).not.toBeNull()
+    expect(citationBox).not.toBeNull()
+    expect(citationBox!.width).toBeGreaterThan(wrapperBox!.width * 0.95)
+  })
+
+  // Fix round 1 tried a bounding-rect walk scoped to the new
+  // `gallery-publication-page` section, with an ancestor `isClipped()` check
+  // meant to exempt legitimately-scrolled descendants. Round 2 found two
+  // independent problems with that approach:
+  //
+  // 1. **It could never fail.** `styles/index.css` sets
+  //    `html { overflow-x: hidden }`, so `isClipped()`'s walk up to `html`
+  //    always found a clipping ancestor -- every element was "exempt",
+  //    including genuine offenders. Proven empirically: reverting
+  //    `ResourceBlock.tsx`'s `figureLabel`-gated `lg:` grid back to the old
+  //    unconditional `grid grid-cols-[1fr_340px]` and rerunning the old
+  //    version of this test still passed (see the fix-round-2 report for
+  //    that run's output).
+  // 2. **Even fixed, a bounding-rect (or `el.scrollWidth`) walk can't catch
+  //    this specific defect class at all.** A fixed-length grid track
+  //    (`340px`) with *no item placed in it* (this fixture's own
+  //    `ResourceBlock` usage has no `figureLabel`, so the figure branch
+  //    never renders) still reserves that track's width in the grid's
+  //    layout -- but since nothing paints there, no element's own
+  //    `getBoundingClientRect()`/`scrollWidth` reports it; the *page's*
+  //    `scrollWidth` grows regardless. Confirmed by reverting
+  //    `ResourceBlock.tsx` again and measuring
+  //    `document.documentElement.scrollWidth` directly: 614 vs a 375
+  //    `clientWidth`, while every per-element check inside the section
+  //    reported zero offenders (see the fix-round-2 report).
+  //
+  // The reliable check is therefore the whole-page one the controller asked
+  // for in round 1 to begin with -- it was blocked back then by a genuine,
+  // separate defect (`PageTitle`/`FacetBand`'s non-responsive gutters, and
+  // `PageTitle`'s `<h1>` missing its own flex-item `min-w-0`), which round 2
+  // has now fixed at the source (see `PageTitle.tsx`, `FacetBand.tsx`).
+  // `Tag`'s new `wrap` prop also replaced the tag row's `overflow-x-auto`
+  // entirely this round, so there is no longer any element on this page
+  // that's *meant* to have interior scroll/overflow either.
+  test('no horizontal overflow at 375px', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 })
+    await page.goto('/preview/components')
+    const fits = await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+    )
+    expect(fits).toBe(true)
   })
 
   test('has no detectable accessibility violations (light)', async ({ page }) => {

@@ -28,12 +28,24 @@ export interface FacetChipProps {
 // fixed at the token source. See tokens.ts's PRESS comment and
 // styles/index.css's `.hl-press` comment for the full story.
 export function FacetChip({ label, count, on = false, onClick }: FacetChipProps) {
+  // Fix round 2: was `whitespace-nowrap` unconditionally -- fine for the
+  // Year/Type chips (short labels), but a Topic chip can carry a full CMS
+  // topic title (e.g. "Metabolism, oxidative stress & neuroprotection"),
+  // and `whitespace-nowrap` gave that single chip no way to shrink below
+  // its own unbroken text width, overflowing the page at narrow widths
+  // (this is what made /publications overflow at 375/390px -- see the
+  // fix-round-2 report). `whitespace-normal` + `max-w-full` lets a long
+  // label wrap onto a second line and bounds the chip to its flex row's
+  // own width, instead. A short label that already fits on one line is
+  // unaffected either way -- `white-space: normal` only wraps when content
+  // doesn't fit. Exactly one `white-space` utility is present, so there's
+  // no same-property collision.
   return (
     <button
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`${HIT_AREA} ${PRESS} font-mono text-[11px] leading-none font-medium tracking-[0.08em] whitespace-nowrap border px-[13px] py-2 ${
+      className={`${HIT_AREA} ${PRESS} font-mono text-[11px] leading-none font-medium tracking-[0.08em] whitespace-normal max-w-full border px-[13px] py-2 ${
         on
           ? 'border-surface-inverse bg-surface-inverse text-text-inverse'
           : 'border-rule-strong bg-transparent text-text-muted'
