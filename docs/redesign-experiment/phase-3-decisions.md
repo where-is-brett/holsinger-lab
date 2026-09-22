@@ -212,8 +212,9 @@ working directory for the full ledger.
   - `PublicationRow`'s ledger grid applies from `lg`, not `md` — the 4-column grid needs
     about 700px of content box, which the `md` rail layout doesn't have. `md` keeps the
     stacked anatomy.
-  - `FacetBand` is sticky only from `lg` (`lg:sticky lg:top-(--nav-height)`), static below
-    it — three wrapped chip groups plus density would pin half a phone screen otherwise.
+  - `FacetBand` is sticky only at min-width 64rem **and** min-height 56rem
+    (`[@media(min-width:64rem)_and_(min-height:56rem)]:sticky`), static otherwise — width
+    alone isn't enough on a short landscape viewport; per PR A's final-review ruling.
   - Tags on `/publications/[slug]` are informational, not links — no URL filter state
     exists on the index, and adding one is out of scope.
 - **`publication.slug` is now `required()`** in `schemas/documents/publication.ts`, closing
@@ -327,3 +328,107 @@ It plans 19 writes (Article 11, Review 7, Case report 1), with no unmatched pape
 ambiguous matches and no unused rules. Brett runs
 `npm run backfill:publication-types -- --commit` with `SANITY_API_WRITE_TOKEN` set. Until
 then the Type facet hides itself, and two e2e tests skip with a reason.
+
+## Step 2 — PR B (People)
+
+Branch `redesign/phase-3-people`, off `redesign/phase-3-publications`. Spec:
+`docs/superpowers/specs/2026-09-22-redesign-phase-3-screens-design.md` (§4, §5). Four tasks,
+each controller-reviewed to clean before the next started; see `progress.md` in the SDD
+working directory for the full ledger.
+
+### What shipped
+
+- **The spotlight rules.** `shouldShowLabHeadSpotlight` and `excludeLabHead` (carried from
+  the old `People.tsx`, now merged into `components/redesign/peopleModel.ts`) gate a single
+  block at the top of `/people`: **unset** (`settings.labHead` not set — today's production
+  state) renders no spotlight and the lab head sits in the grid as an ordinary card if she
+  also has a profile document; **set** renders the `SPOTLIGHT_GRID` block (`PortraitFrame` at
+  4:5, name, `fullBio`/`bio` via `PortableBody`, mailto identifier, `Full profile →` when
+  `hasPage`) and excludes that profile from the member grid below; **no portrait** falls back
+  to `PortraitFrame`'s initials treatment (`initialsOf`, code-point splitting for non-BMP
+  first characters) rather than a broken image.
+- **The alumni inline list and how the alumni group is identified.** `isAlumniGroup` matches
+  a role-group title containing "alumni" (trimmed, case-insensitive substring — no fixed
+  taxonomy value is assumed). `splitAlumni` pulls that one group out of `groupByRoleGroup`'s
+  output; the screen renders it as a single `<p>` of comma-separated names (each
+  `data-testid="alumni-name" data-name={name}`, linked when `hasPage`), not as cards — the
+  IA treats alumni as a name list, not a gallery.
+- **The photo-less design.** A profile with no `img` renders `PortraitFrame`'s
+  initials-and-stripe fallback (`initialsOf`, a repeating-gradient background as an inline
+  style, `[ NO PORTRAIT ON FILE ]` caption) at the same 4:5 footprint an image would occupy,
+  so the grid never reflows around a missing portrait.
+- **`roleDetail`.** An optional second mono line under `role` on `PersonCard`, shown only
+  when non-empty (spec §5, ruling 3) — both `role` and `detail` print verbatim, including any
+  source misspelling, same rule as publication identifiers.
+- **`PortableBody`** (`components/redesign/PortableBody.tsx`), extracted from `People.tsx`'s
+  original inline bio-rendering (`BIO_COMPONENTS`/`BIO_PARAGRAPH`/`BIO_LINK`/
+  `labHeadBioBlocks`) in Task 3, so both the spotlight (`People.tsx`) and `/people/[slug]`
+  (`PersonPage.tsx`) render `fullBio`/`bio` through one shared component instead of two
+  copies.
+- **The deleted old People components:** `components/pages/people/{People,Profile,Spotlight,
+  ContactLinks,PersonBio}.tsx`, plus `components/pages/interactive-elements-contract.test.ts`
+  (its one case covered the deleted `Profile.tsx`; no cases remained). The now-empty
+  `components/pages/people/` folder is gone.
+- **The gallery fixture's wix-preview shape.** `PEOPLE_LAB_HEAD_FIXTURE` (lab head set, no
+  portrait — proves the initials fallback), `PEOPLE_PROFILES_FIXTURE` (22 Lab Alumni, every
+  third linked via `hasPage`; 10 photo-less International Interns, each with a country in
+  `role` and 3 with `roleDetail`; 2 Research Scientists with photos), and an ungrouped entry
+  reusing the lab head's real `_id`/`name`/`role`/`hasPage`/`slug` shape with `roleGroup: null`
+  — proving the exclusion rule (instance (a), spotlight shown, she's excluded from the grid)
+  against its absence (instance (b), no `labHead` set, she reappears as an ordinary card).
+  `app/preview/components/Gallery.tsx` renders both instances.
+
+### Departures during execution
+
+- **`PageTitle` gained a `headingLevel?: 'h1' | 'h2'` prop** (default `'h1'`, every real
+  route unaffected). The gallery renders two People instances on one non-routed preview page
+  that already has its own `<h1>`; a duplicate default `<h1>People</h1>` twice over would
+  make that page read to assistive tech as three separate top-level documents. Both gallery
+  instances pass `headingLevel="h2"`, matching the level of the gallery's own per-section
+  headings.
+- **`PageTitle`'s meta span gained `min-w-0`,** paired with the existing `md:flex-shrink-0`.
+  People's longer meta string (`"LAB HEAD + n MEMBERS · g GROUPS"` vs. Publications' shorter
+  one) overflowed at 320/375px — the meta span had no minimum-width override, so it could not
+  shrink below its own content's width inside the flex row.
+- **The member group titles are real `<h2>`s,** not `<span>`s, so they show up in a screen
+  reader's headings list for page navigation — same visual class, no layout change (Preflight
+  already zeroes `h2`'s default margin).
+- **The implicit grid track caused overflows at 320px** in both `PersonPage`'s `PROFILE_GRID`
+  and `People.tsx`'s `SPOTLIGHT_GRID`, from an unbreakable email token in the bio (the live
+  dataset's one `hasPage` profile has an email address inlined as plain bio text; the gallery
+  fixture was extended with the same shape to reproduce it). Precise cause: neither grid had
+  an explicit column track below `md`, so the browser fell back to one implicit auto track,
+  and an **auto track's min-content floor** is set by the widest unbreakable run inside it —
+  not, as first suspected, the track's max-content width. Fix: an explicit `grid-cols-1`
+  (which Tailwind compiles to `grid-template-columns: repeat(1, minmax(0, 1fr))`, zeroing that
+  floor on its own) alongside the existing `md:grid-cols-[220px_1fr]`, plus `min-w-0` on the
+  text column as belt-and-braces, matching the existing convention of guarding every
+  grid/flex item that holds unpredictable CMS text.
+- **`PersonCard`:** a linked card puts its accessible name on the `Link` via `aria-label`
+  rather than on the portrait image, and the image's `alt` is emptied (`alt=""`, decorative)
+  — otherwise the image's own `alt={name}` and the link would both announce the name.
+  Unlinked cards keep `alt={name}` on the image, since there's no link to collide with. The
+  colour reveal (grayscale portrait → full colour, name → link colour) also triggers on
+  keyboard focus (`group-focus-visible:` pairs mirroring every `group-hover:` one), not just
+  mouse hover. `sizes` gained an `lg` step (`(min-width: 1024px) 15vw, (min-width: 768px)
+  30vw, 50vw`) matching `CARD_GRID`'s actual `grid-cols-2`/`md:grid-cols-3`/`lg:grid-cols-6`
+  breakpoints — the previous two-step value was carried over from the old `Profile.tsx`'s
+  3-up desktop grid and under/over-declared the served image width against the new 6-up
+  layout.
+
+### Carried forward to PR C
+
+`e2e/image-geometry.spec.ts`'s "image frames are dimmed" test now points at `/` — it used to
+target `/people` against a `.media-frame` class the old `Profile.tsx` rendered and the new
+`PersonCard`-based screen never does. `/` is still on the old design system, so this will
+probably break when Home is rebuilt.
+
+### Verification (run 2026-09-23, this branch)
+
+| Check                | PR A (`redesign/phase-3-publications`) | Now (PR B)                    |
+| --------------------- | ---------------------------------------- | -------------------------------- |
+| `npm test`            | 393 passed                               | **413 passed**, 39 files        |
+| `npm run lint`        | 0 errors, 4 warnings                     | 0 errors, 4 warnings             |
+| `npm run typegen`     | 16 queries / 40 schema types             | 16 queries / 40 schema types     |
+| `npm run build`       | 43 static pages, including 19 `/publications/[slug]` | 43 static pages, including 19 `/publications/[slug]` and 1 `/people/[slug]` |
+| `npm run test:e2e`    | 142 passed / 4 skipped                   | **166 passed / 5 skipped**       |
