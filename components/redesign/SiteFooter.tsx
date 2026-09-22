@@ -1,36 +1,23 @@
 export interface SiteFooterProps {
-  compact?: boolean
+  /** From navModel's `footerLines(settings.footer)` -- never empty. */
+  lines: readonly string[]
 }
 
 // Ported from
 // docs/redesign-experiment/design-system/components/navigation/SiteFooter.jsx.
-// Purely presentational, no state or handlers -- no 'use client'.
+// The source's `compact` variant is now the below-`md` layout and its
+// default the `md`-and-up layout, as responsive pairs: each property is set
+// once per breakpoint, so no two utilities fight over one property at the
+// same width. Content comes from `settings.footer` (spec decision 5).
+const FOOTER =
+  'box-border flex flex-col gap-[5px] border-t border-rule px-(--spacing-gutter) pt-3.5 pb-[18px] font-mono text-[8.5px] leading-[1.4] tracking-[0.08em] uppercase text-text-faint md:flex-row md:justify-between md:gap-6 md:px-8 md:pt-5 md:pb-[26px] md:text-[11px] md:leading-none'
 
-// Task brief decision #6: this footer is page chrome sitting outside
-// Layout's content column, so it owns its own horizontal padding rather
-// than deferring to Layout's gutters. `px-8` (2rem, non-compact variant)
-// matches none of --spacing-gutter (1.125rem), -md (3rem) or -lg (3.5rem)
-// -- that inconsistency belongs to the vendored source and is intentionally
-// not "fixed" here with an invented replacement value.
-//
-// Two fully-formed strings, not one shared base plus a same-property
-// override (flex-direction/gap/padding/font-size all differ between
-// variants) -- see tokens.ts's PRESS comment for why that separation
-// matters whenever variants could collide on one property.
-const FOOTER_DEFAULT =
-  'flex flex-row justify-between gap-6 box-border border-t border-rule pt-5 px-8 pb-[26px] font-mono text-[11px] leading-none tracking-[0.08em] uppercase text-text-faint'
-const FOOTER_COMPACT =
-  'flex flex-col justify-between gap-[5px] box-border border-t border-rule pt-3.5 px-(--spacing-gutter) pb-[18px] font-mono text-[8.5px] leading-[1.4] tracking-[0.08em] uppercase text-text-faint'
-
-export function SiteFooter({ compact = false }: SiteFooterProps) {
+export function SiteFooter({ lines }: SiteFooterProps) {
   return (
-    <footer className={compact ? FOOTER_COMPACT : FOOTER_DEFAULT}>
-      <span>Designed by Brett Yang</span>
-      {/* Copyright year is hardcoded in the vendored source, kept verbatim
-          per the task brief -- flagged in the task report as something that
-          will go stale and need a follow-up (e.g. new Date().getFullYear())
-          outside this task's scope. */}
-      <span>Copyright 2026 © Holsinger Lab</span>
+    <footer className={FOOTER}>
+      {lines.map((line, i) => (
+        <span key={i}>{line}</span>
+      ))}
     </footer>
   )
 }
