@@ -16,12 +16,22 @@ test('media', async ({ page }) => {
   await expect(channel7).toContainText('Channel 7')
   await expect(channel7.locator('a')).toHaveCount(0)
 
-  const abc = page.getByRole('link', { name: /Slip-ups like Joe Biden/ })
+  // On Wix, the <a> wraps only the title -- the " - outlet" suffix is plain
+  // text outside the link, so the link's accessible name is title-only and
+  // the outlet must still be present in the row.
+  const abcRow = page.locator('[data-wix="media"]', { hasText: 'Slip-ups like Joe Biden' })
+  const abc = abcRow.getByRole('link', { name: /Slip-ups like Joe Biden/ })
   await expect(abc).toHaveAttribute('href', /abc\.net\.au/)
+  await expect(abc).not.toHaveAccessibleName(/ABC News/)
+  await expect(abcRow).toContainText('ABC News')
+  await expect(abc).toHaveCSS('text-decoration-line', /underline/)
   await expect(page.getByText('14 Jul 2024')).toBeVisible()
 
-  const smh = page.getByRole('link', { name: /pandemic stress/ })
+  const smhRow = page.locator('[data-wix="media"]', { hasText: 'pandemic stress' })
+  const smh = smhRow.getByRole('link', { name: /pandemic stress/ })
   await expect(smh).toHaveAttribute('href', /smh\.com\.au/)
+  await expect(smh).not.toHaveAccessibleName(/Sydney Morning Herald/)
+  await expect(smhRow).toContainText('Sydney Morning Herald')
   await expect(page.getByText('22 Aug 2021')).toBeVisible()
 })
 

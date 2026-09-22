@@ -37,19 +37,23 @@ export function MediaRow({ item, isFirst }: { item: MediaItem; isFirst?: boolean
   }
 
   const href = item.url ? stegaClean(item.url) : null
-  const label = (
-    <>
-      {item.title} - <em>{item.outlet}</em>
-    </>
-  )
+
   return (
     <li data-wix="media" className="mt-[40px] first:mt-0">
       {href ? (
-        <a href={href} target="_blank" rel="noreferrer" className={`${titleClass} underline`}>
-          {label}
-        </a>
+        // On Wix, the <a> wraps only the title (with an underline); the
+        // " - outlet" suffix follows as plain, unlinked, un-underlined text.
+        <span className={titleClass}>
+          <a href={href} target="_blank" rel="noreferrer" className="underline">
+            {item.title}
+          </a>
+          {' - '}
+          <em>{item.outlet}</em>
+        </span>
       ) : (
-        <span className={titleClass}>{label}</span>
+        <span className={titleClass}>
+          {item.title} - <em>{item.outlet}</em>
+        </span>
       )}
       {date ? <p className="mt-0 font-playfair text-[18px]/[24px] md:text-[22px]/[30px]">{date}</p> : null}
     </li>
