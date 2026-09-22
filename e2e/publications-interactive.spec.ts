@@ -184,10 +184,7 @@ test.describe('publications index', () => {
     expect(doiCount).toBe(doiHrefLinks)
   })
 
-  // Task 5 wires up real detail routes once publication.slug is required
-  // (spec §4.5); today's 19 live records all lack a slug, so every title
-  // renders as inert text. Turned on in Task 5.
-  test.fixme('a row title navigates to its detail page', async ({ page }) => {
+  test('a row title navigates to its detail page', async ({ page }) => {
     await page.goto('/publications')
     const firstRow = page.locator('[data-testid="pub-row"]').first()
     await firstRow.getByTestId('pub-title').click()

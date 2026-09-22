@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
         })
       case 'publication':
         revalidatePath(`/publications`)
+        revalidatePath('/publications/[slug]', 'page')
         return NextResponse.json({
           success: true,
           message: `Revalidated "${type}" with slug "publications"`,
