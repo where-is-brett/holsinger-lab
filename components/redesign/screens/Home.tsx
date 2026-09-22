@@ -15,7 +15,7 @@ import type {
 
 import { currentMemberCount, plainTagline, resolveLabHeadHref, shouldShowLabHeadCard } from '../homeModel'
 import { initialsOf } from '../peopleModel'
-import { IMAGE_FILTER } from '../PersonCard'
+import { PORTRAIT_IMAGE_CLASS } from '../PersonCard'
 import { PortableBody } from '../PortableBody'
 import type { Publication } from '../publicationModel'
 import { PublicationRow } from '../PublicationRow'
@@ -226,13 +226,17 @@ const LAB_GRID = 'grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-start lg:gap-x-
 // NARRATIVE_GRID_SOLO and ResourceBlock.tsx's `twoColumn` ternary: a
 // second whole shape, not a bolted-on override.
 //
-// Fix round 1, point 4: the image branch now composes PersonCard.tsx's own
-// exported `IMAGE_FILTER` (grayscale/contrast/hover-reveal treatment)
-// instead of a bare `object-cover`, so the PI's Home portrait matches
-// every other portrait in this direction rather than rendering in plain
-// colour. `IMAGE_FILTER` only ever targets `object-fit`/filter/transition
-// -- never `width`/`height`/`aspect-ratio` -- so it composes cleanly onto
-// this component's own `h-16 w-16` sizing with no property collision.
+// Fix round 1, point 4: the image branch composes PersonCard.tsx's own
+// exported `PORTRAIT_IMAGE_CLASS` instead of a bare inline `object-cover`,
+// so the PI's Home portrait matches every other portrait in this direction
+// (same single `object-cover` declaration, not a bolted-on treatment).
+// Brett's review (fix/research-description-fallback) removed the
+// grayscale/contrast-at-rest treatment this class used to carry, along
+// with its `group-hover:`/`group-focus-visible:` reveal -- portraits render
+// in full colour at rest everywhere now, this one included.
+// `PORTRAIT_IMAGE_CLASS` only ever targets `object-fit` -- never
+// `width`/`height`/`aspect-ratio` -- so it composes cleanly onto this
+// component's own `h-16 w-16` sizing with no property collision.
 // `STRIPE_BG` (the no-portrait fallback background) also now comes from
 // tokens.ts, the same hoist PersonCard.tsx/ResourceBlock.tsx's own
 // comments describe -- this was a third verbatim copy of the same string.
@@ -252,7 +256,7 @@ function PiPortrait64({ name, img }: { name: string; img?: string }) {
     // inside a shared link there, so there's no duplication to fix.
     return (
       <div className="relative h-16 w-16 shrink-0 overflow-hidden bg-surface-raised">
-        <Image src={img} alt="" fill sizes="64px" className={IMAGE_FILTER} />
+        <Image src={img} alt="" fill sizes="64px" className={PORTRAIT_IMAGE_CLASS} />
       </div>
     )
   }
@@ -281,23 +285,21 @@ function TheLabBlock({
 }) {
   return (
     <div className={LAB_GRID}>
-      {/* Fix round 2, point 1: the whole portrait-plus-name row is now the
-          one `Link` (`group`), not just the name text beside a plain
-          portrait `div` -- `IMAGE_FILTER`'s `group-hover:`/
-          `group-focus-visible:` halves only ever match `.group:hover &`/
-          `.group:focus-visible &`, which needs the *group element itself*
-          (not a descendant) to be hovered/focused. With the name as its
-          own separate `<Link>` inside a plain `div`, neither pseudo-class
-          selector could ever match anything -- hovering the portrait
-          hovered the outer `div` (no `group` class), and focusing the name
-          focused the inner `Link` (also no `group` class), so the
-          grayscale reveal was permanently inert regardless of mouse or
-          keyboard. Making the `Link` itself the `group` (and wrapping the
-          portrait inside it, same shape as PersonCard.tsx's own `href`
-          branch) means hovering or keyboard-focusing the one real
-          interactive element is exactly what triggers the reveal, and
-          focus-visible reaches it because the focusable element and the
-          group element are now the same node. The "Principal investigator"
+      {/* Fix round 2, point 1: the whole portrait-plus-name row is the one
+          `Link` (`group`), not just the name text beside a plain portrait
+          `div` -- wrapping the portrait inside it (same shape as
+          PersonCard.tsx's own `href` branch) keeps hovering or
+          keyboard-focusing the one real interactive element consistent with
+          every other linked portrait in this direction. The portrait itself
+          no longer carries a colour reveal (Brett's review,
+          fix/research-description-fallback -- portraits render in full
+          colour at rest everywhere, no grayscale-to-colour transition left
+          to trigger), but the `group` is still load-bearing: the name
+          `span` below keeps its own `group-hover:text-link`/
+          `group-focus-visible:text-link` reveal, matching PersonCard.tsx's
+          own name `div` (the coordinator's fix round 2 caught this reveal
+          going dead when the portrait's half was removed without adding the
+          name's -- restored here). The "Principal investigator"
           label moves above the row (still outside the `Link` -- only the
           name is the identifier per the task brief, "the name (linked)")
           rather than beside the portrait only, so this is additive to the
@@ -308,6 +310,7 @@ function TheLabBlock({
           <Link
             href={resolveLabHeadHref(labHead)}
             className="group flex min-w-0 items-center gap-5"
+            data-testid="home-lab-head-link"
           >
             <PiPortrait64
               name={labHead.name ?? ''}
@@ -317,7 +320,7 @@ function TheLabBlock({
                   : undefined
               }
             />
-            <span className="min-w-0 break-words text-[24px] font-semibold tracking-[-0.01em]">
+            <span className="min-w-0 break-words text-[24px] font-semibold tracking-[-0.01em] transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease) group-hover:text-link group-focus-visible:text-link">
               {labHead.name}
             </span>
           </Link>
