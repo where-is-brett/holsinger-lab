@@ -2,7 +2,7 @@
   "name": "holsinger-lab",
   "private": true,
   "engines": {
-    "node": ">=22"
+    "node": ">=22.9.0"
   },
   "scripts": {
     "backfill:profile-role-groups": "node scripts/backfill-profile-role-groups.ts",
@@ -10,7 +10,7 @@
     "backfill:publication-slugs": "node scripts/backfill-publication-slugs.ts",
     "backfill:publication-topics": "node scripts/backfill-publication-topics.ts",
     "create:pi-profile": "node scripts/create-pi-profile.ts",
-    "import:wix": "node scripts/import-wix.ts",
+    "import:wix": "node --env-file-if-exists=.env.local scripts/import-wix.ts",
     "build": "next build",
     "css:proof": "node scripts/css-proof.mjs",
     "dev": "next dev",

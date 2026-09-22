@@ -14,6 +14,13 @@ export interface PlanInput {
   roleGroupIds: Record<RoleGroupTitle, string>
   assetIds: Record<string, string>
   ledger: Ledger
+  /**
+   * Unpublished drafts of the singleton docs (siteCopy, settings), keyed by
+   * draft `_id` (e.g. "drafts.settings"). May be empty -- most datasets have
+   * no such draft. Only siteCopy and settings are kept in step; other
+   * document types' drafts are left alone (see plan §Fix round 3).
+   */
+  drafts: Record<string, CurrentDoc>
 }
 export type Op =
   | { kind: 'create'; doc: CurrentDoc }
@@ -61,22 +68,13 @@ export function planImport(input: PlanInput): Plan {
     return { _type: 'file', asset: ref(assetIds[url]) }
   }
 
-  /** Applies the field rule to one document. */
-  function upsert(id: string, type: string, desiredRaw: Record<string, unknown>) {
-    const desired = present(desiredRaw)
-    const current = existing[id]
-    if (!current) {
-      // A doc we previously created (or patched) and that is now gone was
-      // deleted in Studio, not merely "not yet imported" — never recreate it.
-      const previouslyImported = Object.keys(input.ledger).some((k) => k.startsWith(`${id}#`))
-      if (previouslyImported) {
-        skipped.push({ id, field: '*', reason: 'deleted-since-import' })
-        return
-      }
-      ops.push({ kind: 'create', doc: { _id: id, _type: type, ...desired } })
-      for (const [f, v] of Object.entries(desired)) ledger[`${id}#${f}`] = stableHash(v)
-      return
-    }
+  /**
+   * The field rule shared by every patch target (published docs and, for
+   * singletons, their draft counterpart): Wix wins on an untouched field,
+   * Studio wins (and is reported as skipped) once a field has been imported
+   * and then edited or cleared since.
+   */
+  function fieldRuleSet(id: string, current: CurrentDoc, desired: Record<string, unknown>): Record<string, unknown> {
     const set: Record<string, unknown> = {}
     for (const [f, v] of Object.entries(desired)) {
       const cur = current[f]
@@ -94,12 +92,48 @@ export function planImport(input: PlanInput): Plan {
       if (untouched) { set[f] = v; ledger[lk] = stableHash(v) }
       else skipped.push({ id, field: f, reason: 'edited-since-import' })
     }
+    return set
+  }
+
+  /** Applies the field rule to one document. */
+  function upsert(id: string, type: string, desiredRaw: Record<string, unknown>) {
+    const desired = present(desiredRaw)
+    const current = existing[id]
+    if (!current) {
+      // A doc we previously created (or patched) and that is now gone was
+      // deleted in Studio, not merely "not yet imported" — never recreate it.
+      const previouslyImported = Object.keys(input.ledger).some((k) => k.startsWith(`${id}#`))
+      if (previouslyImported) {
+        skipped.push({ id, field: '*', reason: 'deleted-since-import' })
+        return
+      }
+      ops.push({ kind: 'create', doc: { _id: id, _type: type, ...desired } })
+      for (const [f, v] of Object.entries(desired)) ledger[`${id}#${f}`] = stableHash(v)
+      return
+    }
+    const set = fieldRuleSet(id, current, desired)
     if (Object.keys(set).length) ops.push({ kind: 'patch', id, set })
+  }
+
+  /**
+   * Same as upsert, but for a singleton (siteCopy / settings) also keeps its
+   * unpublished draft, if one exists, in step -- so publishing that draft
+   * later can't silently drop an imported field. Never creates a draft: a
+   * missing draft means no op and no skip (Fix round 3).
+   */
+  function upsertSingleton(id: string, type: string, desiredRaw: Record<string, unknown>) {
+    upsert(id, type, desiredRaw)
+    const draftId = `drafts.${id}`
+    const draft = input.drafts[draftId]
+    if (!draft) return
+    const desired = present(desiredRaw)
+    const set = fieldRuleSet(draftId, draft, desired)
+    if (Object.keys(set).length) ops.push({ kind: 'patch', id: draftId, set })
   }
 
   // siteCopy singleton
   const sc = s.siteCopy
-  upsert('siteCopy', 'siteCopy', {
+  upsertSingleton('siteCopy', 'siteCopy', {
     hero: present({ image: image(sc.hero.imageUrl, sc.hero.imageAlt), heading: sc.hero.heading, subheading: sc.hero.subheading }),
     about: {
       heading: sc.about.heading,
@@ -113,7 +147,7 @@ export function planImport(input: PlanInput): Plan {
   })
 
   // settings.contact
-  upsert(input.settingsId, 'settings', { contact: { ...s.contact } })
+  upsertSingleton(input.settingsId, 'settings', { contact: { ...s.contact } })
 
   s.news.forEach((n, i) =>
     upsert(`wix-news-${n.key}`, 'newsItem', {
@@ -122,12 +156,14 @@ export function planImport(input: PlanInput): Plan {
     })
   )
 
-  s.media.forEach((m, i) =>
+  s.media.forEach((m, i) => {
+    if (!m.url && !m.videoUrl)
+      reports.push(`media ${m.key}: no link or video — imported as a text row; add the video in Studio`)
     upsert(`wix-media-${m.key}`, 'mediaAppearance', {
       orderRank: rankAt(i), title: m.title, outlet: m.outlet, date: m.date, url: m.url,
       video: file(m.videoUrl), poster: image(m.posterUrl),
     })
-  )
+  })
 
   for (const p of s.projects) {
     if (p.sanityId && !existing[p.sanityId]) {
