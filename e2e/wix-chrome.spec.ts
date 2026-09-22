@@ -28,15 +28,40 @@ test.describe('mobile 390', () => {
     await page.goto('/')
     await expect(page.locator('[data-wix="nav"]')).toBeHidden()
     expect(await css(page, '[data-wix="site-title-mobile"]', 'font-size')).toBe('19px')
-    await page.getByRole('button', { name: 'Open menu' }).click()
-    const dialog = page.getByRole('dialog')
+    const menuButton = page.getByRole('button', { name: 'Open menu' })
+    // Once the dialog is open, HeadlessUI marks the rest of the page inert
+    // for assistive tech, which drops the trigger button out of the
+    // accessibility tree (and so out of getByRole) even though its DOM node
+    // -- and its aria-expanded attribute -- are untouched. #mobile-menu-button
+    // reads the attribute directly, bypassing that AX-tree filtering.
+    const menuButtonNode = page.locator('#mobile-menu-button')
+    await expect(menuButton).toHaveAttribute('aria-expanded', 'false')
+    await menuButton.click()
+    const dialog = page.getByRole('dialog', { name: 'Menu' })
     await expect(dialog).toBeVisible()
+    await expect(menuButtonNode).toHaveAttribute('aria-expanded', 'true')
     expect(await dialog.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(191, 191, 191)')
     await page.keyboard.press('Escape')
     await expect(dialog).toBeHidden()
-    await page.getByRole('button', { name: 'Open menu' }).click()
+    await menuButton.click()
     await dialog.getByRole('link', { name: 'Team' }).click()
     await expect(page).toHaveURL(/\/team$/)
     await expect(dialog).toBeHidden()
+  })
+
+  test('menu traps focus (M8)', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Open menu' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Menu' })
+    await expect(dialog).toBeVisible()
+    // Tab through every focusable element in the dialog, plus a few extra
+    // presses -- focus must never land on anything outside it (the focus
+    // trap keeps Tab cycling within the panel).
+    const focusableCount = await dialog.locator('button, a[href]').count()
+    for (let i = 0; i < focusableCount + 3; i++) {
+      await page.keyboard.press('Tab')
+      const active = await page.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null)
+      expect(active).toBe(true)
+    }
   })
 })

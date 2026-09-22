@@ -28,7 +28,10 @@ export function MobileMenu() {
     <>
       <button
         type="button"
+        id="mobile-menu-button"
         aria-label="Open menu"
+        aria-expanded={open}
+        aria-controls="mobile-menu-dialog"
         onClick={() => setOpen(true)}
         className="flex size-[44px] flex-col items-center justify-center gap-[5px]"
       >
@@ -41,8 +44,16 @@ export function MobileMenu() {
           positioning, full-viewport sizing and the full-screen `bg-menu`
           fill must live here, not only on DialogPanel. A `relative` wrapper
           with only a `fixed` child has no box of its own and reads as
-          hidden. */}
-      <Dialog open={open} onClose={setOpen} className="fixed inset-0 z-50 bg-menu md:hidden">
+          hidden. aria-label names the dialog itself (M8) -- without it, a
+          screen reader announces only "dialog", with nothing distinguishing
+          it from any other dialog on the page. */}
+      <Dialog
+        id="mobile-menu-dialog"
+        open={open}
+        onClose={setOpen}
+        aria-label="Menu"
+        className="fixed inset-0 z-50 bg-menu md:hidden"
+      >
         <DialogPanel className="size-full overflow-y-auto">
           <button
             type="button"
