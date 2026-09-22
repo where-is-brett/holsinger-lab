@@ -83,22 +83,19 @@ without network.
 
 ## Also outstanding
 
-**Open `/` at 768–1024px and check the desktop nav does not wrap.** Carried over
-from Phase 1 and still not done. It is `flex-wrap` at a fixed
-`h-[var(--nav-height)]` with no `overflow-hidden`; a second row fitted at 76px
-but does not at 52px. Whether it wraps depends on how many menu items the CMS
-holds. axe, the token guards and every existing spec are structurally blind to
-it — it needs a human eye, and Phase 3 rebuilds this nav anyway, so settle it
-early.
+**The desktop-nav wrap check is settled**, guarded by `e2e/nav-wrap.spec.ts`.
 
 ## What Phase 3 is
 
 From the plan, in the order the plan gives:
 
-1. Rebuild `Layout` and the navbars on `SiteNav` / `MobileHeader` / `SiteFooter`.
+1. **Done.** Rebuild `Layout` and the navbars on `SiteNav` / `MobileHeader` /
+   `SiteFooter`. See `docs/redesign-experiment/phase-3-decisions.md`.
 2. Build Publications index, `/publications/[slug]`, People, Research, Resources
    and Home from the primitives.
-3. Re-derive the `:root[data-theme='warm']` presets against the new palette.
+3. **Done early**, cherry-picked alongside step 1. Re-derive the
+   `:root[data-theme='warm']` presets against the new palette. See
+   `docs/redesign-experiment/phase-3-decisions.md`.
 4. Retire `project`: remove the type, migrate `home.showcaseProjects`, delete
    `/projects/[slug]`, add `redirects()` to `next.config.mjs` (it has none today)
    for the five existing project URLs, and update the `body.type` switch in
