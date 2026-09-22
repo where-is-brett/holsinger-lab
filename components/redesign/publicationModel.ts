@@ -1,5 +1,11 @@
+import { formatApaCitation } from 'lib/citation'
+import type { PublicationPayload } from 'types'
+
 export interface Publication {
+  id: string
+  href: string | null
   year: string
+  dateLabel: string
   title: string
   authorsPre: string
   authorsPI: string
@@ -7,7 +13,7 @@ export interface Publication {
   journal: string
   /** volume(issue) · pages, e.g. "11(1) · 74" */
   ref: string
-  linkKind: 'DOI' | 'URL'
+  linkKind: 'DOI' | 'URL' | ''
   /** printed verbatim -- identifiers are case-sensitive */
   linkLabel: string
   linkLabelShort?: string
@@ -15,6 +21,8 @@ export interface Publication {
   type: string
   topics: string[]
   cite: string
+  abstract: string[]
+  resources: { id: string; title: string; kind: string | null }[]
 }
 
 const PI_SURNAME = 'Holsinger'
@@ -49,4 +57,39 @@ export function deriveLink(doi: string | null, url: string | null) {
 export function shortenLabel(label: string, max = 32) {
   if (label.length <= max) return label
   return `${label.slice(0, max - 1)}…`
+}
+
+export function formatRef(volume: number | null, issue: number | null, pages: string | null): string {
+  const vol = volume !== null ? `${volume}${issue !== null ? `(${issue})` : ''}` : ''
+  return [vol, pages ?? ''].filter(Boolean).join(' · ')
+}
+
+const DATE_LABEL = new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+
+export function toPublication(p: PublicationPayload): Publication {
+  const title = (p.title ?? '').trim()
+  const authors = (p.author ?? '').trim()
+  const { pre, pi, post } = splitAuthors(authors)
+  const link = deriveLink(p.doi ?? null, p.url ?? null)
+  return {
+    id: p._id,
+    href: p.slug ? `/publications/${p.slug}` : null,
+    year: p.date ? p.date.slice(0, 4) : '',
+    dateLabel: p.date ? DATE_LABEL.format(new Date(`${p.date}T00:00:00Z`)) : '',
+    title,
+    authorsPre: pre,
+    authorsPI: pi,
+    authorsPost: post,
+    journal: (p.journal ?? '').trim(),
+    ref: formatRef(p.volume ?? null, p.issue ?? null, p.pages ?? null),
+    linkKind: link?.kind ?? '',
+    linkLabel: link?.label ?? '',
+    linkLabelShort: link ? shortenLabel(link.label, 26) : '',
+    linkHref: link?.href ?? '',
+    type: p.type ?? '',
+    topics: p.topics ?? [],
+    cite: formatApaCitation(p),
+    abstract: (p.abstract ?? '').split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean),
+    resources: (p.resources ?? []).map((r) => ({ id: r._id, title: r.title ?? '', kind: r.kind ?? null })),
+  }
 }

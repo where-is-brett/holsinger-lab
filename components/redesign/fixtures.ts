@@ -26,7 +26,10 @@ function make(
   // runtime concern.
   if (!link) throw new Error(`fixture ${title} has neither DOI nor URL`)
   return {
+    id: doi ?? link.href,
+    href: null,
     year,
+    dateLabel: '',
     title,
     authorsPre: a.pre,
     authorsPI: a.pi,
@@ -40,6 +43,8 @@ function make(
     type,
     topics,
     cite: `${authors} (${year}). ${title} ${journal} ${ref}. ${link.href}`,
+    abstract: [],
+    resources: [],
   }
 }
 

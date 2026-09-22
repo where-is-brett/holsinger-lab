@@ -1,6 +1,7 @@
+import type { PublicationPayload } from 'types'
 import { describe, expect, it } from 'vitest'
 
-import { deriveLink, shortenLabel, splitAuthors } from './publicationModel'
+import { deriveLink, formatRef, shortenLabel, splitAuthors, toPublication } from './publicationModel'
 
 describe('splitAuthors', () => {
   it('splits around the PI so the name can be emphasised', () => {
@@ -61,5 +62,97 @@ describe('shortenLabel', () => {
     const out = shortenLabel('10.1016/j.ygeno.2019.07.018.extra.long.suffix', 24)
     expect(out.endsWith('…')).toBe(true)
     expect(out.length).toBeLessThanOrEqual(24)
+  })
+})
+
+function payload(over: Partial<PublicationPayload> = {}): PublicationPayload {
+  return {
+    _id: 'p1',
+    title: ' Chromobox protein homolog 7 suppresses glioblastoma. ',
+    author: 'Ni K., Holsinger R.M.D., Jiao J.',
+    journal: 'Cell Death Discovery',
+    volume: 11,
+    issue: 1,
+    pages: '74',
+    abstract: 'First paragraph.\n\nSecond paragraph.\n\n\n',
+    url: 'https://doi.org/10.1038/s41420-025-02362-7',
+    doi: '10.1038/s41420-025-02362-7',
+    date: '2025-02-23',
+    slug: 'chromobox-2025',
+    type: null,
+    topics: ['Neuro-oncology & biomarkers'],
+    featured: null,
+    resources: [],
+    ...over,
+  } as PublicationPayload
+}
+
+describe('formatRef', () => {
+  it.each([
+    [11, 1, '74', '11(1) · 74'],
+    [23, null, '11037', '23 · 11037'],
+    [null, null, '38–42', '38–42'],
+    [12, 2, null, '12(2)'],
+    [null, null, null, ''],
+  ])('%s/%s/%s -> %s', (v, i, p, out) => {
+    expect(formatRef(v as number | null, i as number | null, p as string | null)).toBe(out)
+  })
+})
+
+describe('toPublication', () => {
+  it('maps a DOI paper', () => {
+    const pub = toPublication(payload())
+    expect(pub.id).toBe('p1')
+    expect(pub.title).toBe('Chromobox protein homolog 7 suppresses glioblastoma.')
+    expect(pub.year).toBe('2025')
+    expect(pub.dateLabel).toBe('23 February 2025')
+    expect(pub.href).toBe('/publications/chromobox-2025')
+    expect(pub.ref).toBe('11(1) · 74')
+    expect(pub.linkKind).toBe('DOI')
+    expect(pub.linkLabel).toBe('10.1038/s41420-025-02362-7')
+    expect(pub.linkHref).toBe('https://doi.org/10.1038/s41420-025-02362-7')
+    expect(pub.authorsPI).toBe('Holsinger R.M.D.')
+    expect(pub.type).toBe('')
+    expect(pub.topics).toEqual(['Neuro-oncology & biomarkers'])
+    expect(pub.abstract).toEqual(['First paragraph.', 'Second paragraph.'])
+    expect(pub.cite).toContain('https://doi.org/10.1038/s41420-025-02362-7')
+  })
+
+  it('falls back to the URL and keeps the href whole', () => {
+    const url = 'https://www.jneuro.com/abstract/diagnostic-conundrums-in-cerebellar-cryptic-arteriovenous-malformations-37612.html'
+    const pub = toPublication(payload({ doi: null, url }))
+    expect(pub.linkKind).toBe('URL')
+    expect(pub.linkHref).toBe(url)
+    expect(pub.linkLabel).toBe(url.replace('https://www.', ''))
+    expect(pub.linkLabelShort!.length).toBeLessThanOrEqual(26)
+  })
+
+  it('renders no link at all when neither exists', () => {
+    const pub = toPublication(payload({ doi: null, url: null }))
+    expect([pub.linkKind, pub.linkLabel, pub.linkHref]).toEqual(['', '', ''])
+    expect(pub.cite).not.toMatch(/https?:/)
+  })
+
+  it('tolerates missing optional data', () => {
+    const pub = toPublication(
+      payload({ slug: null, date: null, abstract: null, topics: null, volume: null, issue: null, pages: null } as Partial<PublicationPayload>)
+    )
+    expect(pub.href).toBeNull()
+    expect(pub.year).toBe('')
+    expect(pub.dateLabel).toBe('')
+    expect(pub.abstract).toEqual([])
+    expect(pub.topics).toEqual([])
+    expect(pub.ref).toBe('')
+  })
+
+  it('passes the type through when set', () => {
+    expect(toPublication(payload({ type: 'Review' })).type).toBe('Review')
+  })
+
+  it('maps linked resources', () => {
+    const pub = toPublication(
+      payload({ resources: [{ _id: 'r1', title: 'ES chamber', kind: 'hardware' }] } as Partial<PublicationPayload>)
+    )
+    expect(pub.resources).toEqual([{ id: 'r1', title: 'ES chamber', kind: 'hardware' }])
   })
 })

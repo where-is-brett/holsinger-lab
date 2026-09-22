@@ -1,9 +1,9 @@
 'use client'
 
+import { assignBibtexCiteKeys } from 'lib/citation'
 import { useMemo, useState } from 'react'
 import type { PublicationPayload } from 'types'
 
-import { assignBibtexCiteKeys } from 'lib/citation'
 import { filterPublications, getAvailableYears } from './filterPublications'
 import { groupByYear } from './groupByYear'
 import Publication from './Publication'

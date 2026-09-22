@@ -1,9 +1,9 @@
 'use client'
 import { LaunchIcon } from '@sanity/icons/Launch'
+import { formatApaCitation, formatBibtexCitation } from 'lib/citation'
 import { useState } from 'react'
 import type { PublicationPayload } from 'types'
 
-import { formatApaCitation, formatBibtexCitation } from 'lib/citation'
 import { CopyButton } from './CopyButton'
 import { Toggle, ToggleContent } from './Toggle'
 
