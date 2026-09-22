@@ -19,10 +19,18 @@
 // and nothing about what the pages render.
 //
 // Usage:
-//   npm run css:proof                 -- write to the default output path
-//   npm run css:proof -- --out FILE   -- write somewhere else
-//   npm run css:proof -- --grep TEXT  -- print only matching lines, and exit
-//                                        non-zero when there are none
+//   npm run css:proof                    -- write to the default output path
+//   npm run css:proof -- --out FILE      -- write somewhere else
+//   npm run css:proof -- --entry FILE    -- proof a different entry stylesheet
+//   npm run css:proof -- --grep TEXT     -- print only matching lines, and exit
+//                                           non-zero when there are none
+//
+// Entry stylesheet: this branch (redesign/wix-site) replaces the page layer
+// with a Wix-styled site whose root layout (app/layout.tsx) imports
+// `styles/wix.css`, not the old redesign's `styles/index.css` -- so that is
+// what this proofs by default here, matching what Next's own build actually
+// compiles on this branch. `--entry` overrides it (e.g. to check the other
+// stylesheet, or from a branch where the entry differs).
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
@@ -32,13 +40,14 @@ import tailwindcss from '@tailwindcss/postcss'
 import postcss from 'postcss'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const ENTRY = resolve(root, 'styles/index.css')
-const DEFAULT_OUT = resolve(root, 'node_modules/.cache/css-proof/index.css')
 
 function arg(flag) {
   const i = process.argv.indexOf(flag)
   return i === -1 ? undefined : process.argv[i + 1]
 }
+
+const ENTRY = resolve(root, arg('--entry') ?? 'styles/wix.css')
+const DEFAULT_OUT = resolve(root, 'node_modules/.cache/css-proof/wix.css')
 
 const out = arg('--out') ? resolve(root, arg('--out')) : DEFAULT_OUT
 const needle = arg('--grep')

@@ -25,11 +25,18 @@ import siteCopy from 'schemas/singletons/siteCopy'
 
 const title = process.env.NEXT_PUBLIC_SANITY_PROJECT_TITLE || 'HOLSINGER LAB'
 
+// This branch (redesign/wix-site) has no route for `page` documents (see
+// lib/sanity.links.ts) -- every previewable type here resolves to one of the
+// site's fixed list-style routes instead of a per-document page.
 export const PREVIEWABLE_DOCUMENT_TYPES: string[] = [
   home.name,
-  page.name,
-  project.name,
   settings.name,
+  siteCopy.name,
+  project.name,
+  profile.name,
+  publication.name,
+  newsItem.name,
+  mediaAppearance.name,
 ]
 
 export default defineConfig({

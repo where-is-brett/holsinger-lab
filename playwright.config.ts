@@ -3,14 +3,16 @@ import path from 'node:path'
 
 import { defineConfig, devices } from '@playwright/test'
 
-// e2e/support/sanity.ts reads live dataset facts (via lib/sanity.api.ts) so
-// assertions can be derived from the actual dataset instead of hardcoded.
-// Those env vars are public (see .github/workflows/ci.yml), and CI sets them
-// directly at the job level -- but locally, unlike `next build`/`next start`
-// (which load `.env.local` themselves), the Playwright test process itself
-// never reads `.env.local`. This loads it here, once, before any spec file
-// is required, without a `dotenv` dependency. Existing env vars (CI's, or
-// anything the shell already set) always win.
+// Several NEXT_PUBLIC_SANITY_* / WIX_FIXTURE env vars steer both the build
+// this config's webServer runs (see below) and the specs themselves (e.g.
+// `process.env.WIX_FIXTURE` gates fixture-only assertions in
+// e2e/wix-team.spec.ts). Those vars are public (see .github/workflows/ci.yml),
+// and CI sets them directly at the job level -- but locally, unlike
+// `next build`/`next start` (which load `.env.local` themselves), the
+// Playwright test process itself never reads `.env.local`. This loads it
+// here, once, before any spec file is required, without a `dotenv`
+// dependency. Existing env vars (CI's, or anything the shell already set)
+// always win.
 const envLocalPath = path.resolve(__dirname, '.env.local')
 if (existsSync(envLocalPath)) {
   for (const line of readFileSync(envLocalPath, 'utf-8').split('\n')) {

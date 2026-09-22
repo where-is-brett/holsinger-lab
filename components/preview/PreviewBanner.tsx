@@ -7,7 +7,7 @@ export function PreviewBanner({ loading }: PreviewBannerProps) {
     <div
       className={`${
         loading ? 'animate-pulse' : ''
-      } bg-surface-inverse p-3 text-center text-text-inverse`}
+      } bg-black p-3 text-center text-white`}
     >
       {'Previewing draft content. '}
       {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- a full

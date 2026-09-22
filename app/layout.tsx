@@ -1,183 +1,38 @@
-import 'styles/index.css'
+import 'styles/wix.css'
 
 import { PreviewBanner } from 'components/preview/PreviewBanner'
-import { JsonLd } from 'components/shared/JsonLd'
-import { resolveBranding } from 'lib/branding'
-import { resolveIconUrl } from 'lib/icons'
-import {
-  buildOrganizationJsonLd,
-  resolveOrganizationLogoUrl,
-} from 'lib/json-ld'
-import { resolveBrandStyle, resolveViewportColors } from 'lib/layout-branding'
-import { sanityFetch, SanityLive } from 'lib/sanity.live'
-import { settingsQuery } from 'lib/sanity.queries'
-import { fetchSettingsSafely } from 'lib/settings'
-import { siteUrl } from 'lib/site'
-import type { Metadata, Viewport } from 'next'
-import { IBM_Plex_Mono, PT_Serif } from 'next/font/google'
-import localFont from 'next/font/local'
+import { SanityLive } from 'lib/sanity.live'
+import { wixFetch } from 'lib/wix/fetch'
+import { siteNameQuery } from 'lib/wix/queries'
+import type { Metadata } from 'next'
+import { Bodoni_Moda, Lato, Montserrat, Playfair_Display, Raleway } from 'next/font/google'
 import { draftMode } from 'next/headers'
+import { stegaClean } from 'next-sanity'
 import { VisualEditing } from 'next-sanity/visual-editing'
-import { cache } from 'react'
-import type { Image } from 'sanity'
 
-const mono = IBM_Plex_Mono({
-  variable: '--font-mono',
-  subsets: ['latin'],
-  weight: ['500', '700'],
-})
-
-const serif = PT_Serif({
-  variable: '--font-serif',
-  style: ['normal', 'italic'],
-  subsets: ['latin'],
-  weight: ['400', '700'],
-})
-
-const antarcticanMono = localFont({
-  src: [
-    {
-      path: '../fonts/antarctican-mono/AntarcticanMono-Medium.woff2',
-      weight: '500',
-    },
-    {
-      path: '../fonts/antarctican-mono/AntarcticanMono-SemiBold.woff2',
-      weight: '600',
-    },
-    {
-      path: '../fonts/antarctican-mono/AntarcticanMono-Book.woff2',
-      weight: 'normal',
-    },
-    {
-      path: '../fonts/antarctican-mono/AntarcticanMono-Bold.woff2',
-      weight: 'bold',
-    },
-  ],
-  variable: '--font-antarctican-mono',
-})
-
-const arianaPro = localFont({
-  src: [
-    {
-      path: '../fonts/ariana-pro/ArianaPro-Book.woff2',
-      weight: '300',
-    },
-    {
-      path: '../fonts/ariana-pro/ArianaPro-Black.woff2',
-      weight: '900',
-    },
-    {
-      path: '../fonts/ariana-pro/ArianaPro-Medium.woff2',
-      weight: '500',
-    },
-    {
-      path: '../fonts/ariana-pro/ArianaPro-Bold.woff2',
-      weight: '700',
-    },
-    {
-      path: '../fonts/ariana-pro/ArianaPro-Regular.woff2',
-      weight: '400',
-    },
-    {
-      path: '../fonts/ariana-pro/ArianaPro-Thin.woff2',
-      weight: '100',
-    },
-  ],
-  variable: '--font-ariana-pro',
-})
+const playfair = Playfair_Display({ variable: '--wf-playfair', subsets: ['latin'], weight: ['400', '700'], style: ['normal', 'italic'] })
+const lato = Lato({ variable: '--wf-lato', subsets: ['latin'], weight: ['300', '700'], style: ['normal', 'italic'] })
+const raleway = Raleway({ variable: '--wf-raleway', subsets: ['latin'], weight: ['400'] })
+const bodoni = Bodoni_Moda({ variable: '--wf-bodoni', subsets: ['latin'], weight: ['400'], style: ['italic'] })
+const montserrat = Montserrat({ variable: '--wf-montserrat', subsets: ['latin'], weight: ['400'] })
 
 export const revalidate = 60
 
-/**
- * Cached per request, so `generateMetadata` and the component below share one
- * fetch. `stega: false` is required, not cosmetic: siteName reaches <title>,
- * Open Graph tags and JSON-LD, and stega encodes invisible characters into
- * strings during draft-mode sessions (Phase 2D's recorded lesson).
- */
-const getSettings = cache(() =>
-  fetchSettingsSafely(() => sanityFetch({ query: settingsQuery, stega: false }))
-)
-
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSettings()
-  const { siteName } = resolveBranding(settings)
-  const icon = settings.icon as Image | null | undefined
-
+  const data = await wixFetch<string>(siteNameQuery, { stega: false })
+  const siteName = stegaClean(data ?? 'Holsinger Lab')
   return {
-    metadataBase: new URL(siteUrl),
-    applicationName: siteName,
-    icons: {
-      icon: [
-        {
-          url: resolveIconUrl(icon, 32) ?? '/favicon/favicon-32x32.png',
-          sizes: '32x32',
-          type: 'image/png',
-        },
-        {
-          url: resolveIconUrl(icon, 16) ?? '/favicon/favicon-16x16.png',
-          sizes: '16x16',
-          type: 'image/png',
-        },
-      ],
-      // /favicon.ico is requested by browsers at a fixed path outside
-      // Next's metadata system. Generating a real .ico requires ICO
-      // container encoding, not worth the complexity here -- this stays
-      // the static legacy fallback while the CMS-driven PNGs above (which
-      // browsers prefer when both are present) do the real work.
-      shortcut: '/favicon/favicon.ico',
-      apple: {
-        url: resolveIconUrl(icon, 180) ?? '/favicon/apple-touch-icon.png',
-        sizes: '180x180',
-      },
-    },
+    title: { default: siteName, template: `%s | ${siteName}` },
+    // Preview deploy of a candidate design -- never index it.
+    robots: { index: false, follow: false },
   }
 }
 
-export async function generateViewport(): Promise<Viewport> {
-  const { light, dark } = resolveViewportColors(await getSettings())
-  return {
-    themeColor: [
-      { media: '(prefers-color-scheme: light)', color: light },
-      { media: '(prefers-color-scheme: dark)', color: dark },
-    ],
-  }
-}
-
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const { isEnabled: isDraftMode } = await draftMode()
-  const settings = await getSettings()
-  const { siteName } = resolveBranding(settings)
-  const { dataTheme, style: brandStyle } = resolveBrandStyle(settings)
-
   return (
-    <html
-      lang="en"
-      data-theme={dataTheme}
-      className={`${mono.variable} ${antarcticanMono.variable} ${serif.variable} ${arianaPro.variable}`}
-    >
-      {brandStyle ? (
-        <style
-          // The value is built entirely from hex strings this codebase
-          // generated -- buildBrandStyle emits nothing but `#rrggbb` into a
-          // fixed template, and lib/theme.test.ts asserts it contains no
-          // angle brackets. No CMS text reaches this string.
-          dangerouslySetInnerHTML={{ __html: brandStyle }}
-        />
-      ) : null}
-      <body className="bg-surface text-text">
-        <JsonLd
-          data={buildOrganizationJsonLd({
-            name: siteName,
-            url: siteUrl,
-            logo: resolveOrganizationLogoUrl(
-              settings.logo as Image | null | undefined
-            ),
-          })}
-        />
+    <html lang="en" className={`${playfair.variable} ${lato.variable} ${raleway.variable} ${bodoni.variable} ${montserrat.variable}`}>
+      <body className="bg-white text-black">
         {isDraftMode && <PreviewBanner />}
         {children}
         <SanityLive />

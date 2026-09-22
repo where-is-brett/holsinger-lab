@@ -50,7 +50,8 @@ describe('POST /api/revalidate', () => {
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 
-  it('revalidates the page path for a page webhook', async () => {
+  it('revalidates every Wix route regardless of webhook type', async () => {
+    vi.mocked(getAllPaths).mockResolvedValue(['/', '/research', '/news', '/publications', '/team', '/media', '/contact'])
     vi.mocked(parseBody).mockResolvedValue({
       isValidSignature: true,
       body: { type: 'page', slug: 'about' },
@@ -59,86 +60,32 @@ describe('POST /api/revalidate', () => {
     const response = await POST(request())
     const json = await response.json()
 
-    expect(revalidatePath).toHaveBeenCalledWith('/about')
-    expect(revalidatePath).toHaveBeenCalledTimes(1)
-    expect(json.success).toBe(true)
-  })
-
-  it('returns 400 without revalidating when a page webhook is missing a slug', async () => {
-    vi.mocked(parseBody).mockResolvedValue({
-      isValidSignature: true,
-      body: { type: 'page', slug: undefined },
-    })
-
-    const response = await POST(request())
-    const json = await response.json()
-
-    expect(response.status).toBe(400)
-    expect(revalidatePath).not.toHaveBeenCalled()
-    expect(json.success).toBe(false)
-  })
-
-  it('revalidates the project path and the homepage for a project webhook', async () => {
-    vi.mocked(parseBody).mockResolvedValue({
-      isValidSignature: true,
-      body: { type: 'project', slug: 'my-project' },
-    })
-
-    await POST(request())
-
-    expect(revalidatePath).toHaveBeenCalledWith('/projects/my-project')
     expect(revalidatePath).toHaveBeenCalledWith('/')
-    expect(revalidatePath).toHaveBeenCalledTimes(2)
-  })
-
-  it('returns 400 without revalidating when a project webhook is missing a slug', async () => {
-    vi.mocked(parseBody).mockResolvedValue({
-      isValidSignature: true,
-      body: { type: 'project', slug: undefined },
-    })
-
-    const response = await POST(request())
-
-    expect(response.status).toBe(400)
-    expect(revalidatePath).not.toHaveBeenCalled()
-  })
-
-  it('revalidates /publications for a publication webhook, ignoring slug', async () => {
-    vi.mocked(parseBody).mockResolvedValue({
-      isValidSignature: true,
-      body: { type: 'publication', slug: undefined },
-    })
-
-    await POST(request())
-
+    expect(revalidatePath).toHaveBeenCalledWith('/research')
+    expect(revalidatePath).toHaveBeenCalledWith('/news')
     expect(revalidatePath).toHaveBeenCalledWith('/publications')
-    expect(revalidatePath).toHaveBeenCalledTimes(1)
-  })
-
-  it('revalidates /people for a profile webhook, ignoring slug', async () => {
-    vi.mocked(parseBody).mockResolvedValue({
-      isValidSignature: true,
-      body: { type: 'profile', slug: undefined },
-    })
-
-    await POST(request())
-
-    expect(revalidatePath).toHaveBeenCalledWith('/people')
-    expect(revalidatePath).toHaveBeenCalledTimes(1)
+    expect(revalidatePath).toHaveBeenCalledWith('/team')
+    expect(revalidatePath).toHaveBeenCalledWith('/media')
+    expect(revalidatePath).toHaveBeenCalledWith('/contact')
+    expect(revalidatePath).toHaveBeenCalledTimes(7)
+    expect(json.success).toBe(true)
+    expect(json.message).toBe('Revalidated 7 pages (type "page").')
   })
 
   it('revalidates every known path for an unrecognized type', async () => {
-    vi.mocked(getAllPaths).mockResolvedValue(['/', '/about', undefined])
+    vi.mocked(getAllPaths).mockResolvedValue(['/', '/about'])
     vi.mocked(parseBody).mockResolvedValue({
       isValidSignature: true,
       body: { type: undefined, slug: undefined },
     })
 
-    await POST(request())
+    const response = await POST(request())
+    const json = await response.json()
 
     expect(revalidatePath).toHaveBeenCalledWith('/')
     expect(revalidatePath).toHaveBeenCalledWith('/about')
     expect(revalidatePath).toHaveBeenCalledTimes(2)
+    expect(json.message).toBe('Revalidated 2 pages (type "undefined").')
   })
 
   it('returns 500 without leaking the error when parseBody throws', async () => {
