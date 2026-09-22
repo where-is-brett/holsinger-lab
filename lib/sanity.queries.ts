@@ -252,6 +252,7 @@ export const researchProjectsQuery = groq`
     title,
     "slug": slug.current,
     overview,
+    description,
     coverImage{
       ...,
       asset->{

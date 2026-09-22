@@ -423,9 +423,11 @@ export default function Gallery() {
         <Heading>Research screen</Heading>
         {/* Task 2: production has zero `defined(researchOrder)` projects
             today (spec §2), so this fixture is the only place the
-            populated Research screen -- five projects, four covers at
-            varying aspect ratios plus one with none, a long unbreakable
-            overview token, one with no tags and one with no start date --
+            populated Research screen -- six projects, four covers at
+            varying aspect ratios plus two with none, a long unbreakable
+            overview token, one with no tags, one with no start date, and
+            one description-only project (fix round 3's overview/
+            description fallback, researchModel.ts's `resolveBody`) --
             actually renders. */}
         <div className="border border-rule">
           <Research

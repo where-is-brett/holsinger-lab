@@ -1353,7 +1353,7 @@ export type SupportPageQueryResult = {
 
 // Source: lib/sanity.queries.ts
 // Variable: researchProjectsQuery
-// Query: *[_type == "project" && defined(researchOrder)] | order(researchOrder asc) {    _id,    title,    "slug": slug.current,    overview,    coverImage{      ...,      asset->{        _id,        metadata{ dimensions{ width, height, aspectRatio } }      }    },    "start": duration.start,    tags,    category,  }
+// Query: *[_type == "project" && defined(researchOrder)] | order(researchOrder asc) {    _id,    title,    "slug": slug.current,    overview,    description,    coverImage{      ...,      asset->{        _id,        metadata{ dimensions{ width, height, aspectRatio } }      }    },    "start": duration.start,    tags,    category,  }
 export type ResearchProjectsQueryResult = Array<{
   _id: string
   title: string | null
@@ -1372,6 +1372,39 @@ export type ResearchProjectsQueryResult = Array<{
     _type: 'block'
     _key: string
   }> | null
+  description: Array<
+    | ({
+        _key: string
+      } & Timeline)
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'normal'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | {
+        asset?: SanityImageAssetReference
+        media?: unknown
+        hotspot?: SanityImageHotspot
+        crop?: SanityImageCrop
+        caption?: string
+        alt?: string
+        _type: 'image'
+        _key: string
+      }
+  > | null
   coverImage: {
     asset: {
       _id: string
@@ -1551,7 +1584,7 @@ declare module '@sanity/client' {
     '\n  *[_type == "resource"] | order(title asc) [0] {\n    \n  _id,\n  title,\n  kind,\n  summary,\n  howToObtain,\n  publication->{\n    _id,\n    title,\n    date,\n    doi,\n    url,\n    journal,\n    volume,\n    issue,\n    pages,\n    "slug": slug.current,\n  },\n\n  }\n': HomeResourceQueryResult
     '\n  *[_type == "project" && slug.current == "maestro"][0]{\n    _id,\n    title,\n    overview,\n    site,\n  }\n': MaestroProjectQueryResult
     '\n  *[_type == "page" && slug.current == "support-our-research"][0]{\n    title,\n    "slug": slug.current,\n  }\n': SupportPageQueryResult
-    '\n  *[_type == "project" && defined(researchOrder)] | order(researchOrder asc) {\n    _id,\n    title,\n    "slug": slug.current,\n    overview,\n    coverImage{\n      ...,\n      asset->{\n        _id,\n        metadata{ dimensions{ width, height, aspectRatio } }\n      }\n    },\n    "start": duration.start,\n    tags,\n    category,\n  }\n': ResearchProjectsQueryResult
+    '\n  *[_type == "project" && defined(researchOrder)] | order(researchOrder asc) {\n    _id,\n    title,\n    "slug": slug.current,\n    overview,\n    description,\n    coverImage{\n      ...,\n      asset->{\n        _id,\n        metadata{ dimensions{ width, height, aspectRatio } }\n      }\n    },\n    "start": duration.start,\n    tags,\n    category,\n  }\n': ResearchProjectsQueryResult
     '\n  *[_type == "resource"] | order(title asc) {\n    \n  _id,\n  title,\n  kind,\n  summary,\n  howToObtain,\n  publication->{\n    _id,\n    title,\n    date,\n    doi,\n    url,\n    journal,\n    volume,\n    issue,\n    pages,\n    "slug": slug.current,\n  },\n\n  }\n': ResourcesQueryResult
     '\n  *[_type == "roleGroup"] | order(orderRank) {\n    _id,\n    title,\n  }\n': RoleGroupQueryResult
     '\n  *[_type == "profile"] | order(orderRank) {\n    _id,\n    image,\n    orderRank,\n    name,\n    role,\n    roleDetail,\n    roleGroup->{\n      _id,\n      title,\n    },\n    email,\n    phone,\n    bio,\n    "slug": slug.current,\n    hasPage,\n    fullBio,\n  }\n': ProfileQueryResult
