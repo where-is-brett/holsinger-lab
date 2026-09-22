@@ -25,6 +25,48 @@ describe('SITE_NAV', () => {
   })
 })
 
+describe('liveNavItems with visibility flags', () => {
+  it('calling with no argument is unchanged', () => {
+    expect(liveNavItems().map((i) => i.id)).toEqual(['home', 'pubs', 'people', 'contact'])
+  })
+
+  it('showPublications: false hides exactly pubs', () => {
+    expect(liveNavItems({ showPublications: false }).map((i) => i.id)).toEqual([
+      'home', 'people', 'contact',
+    ])
+  })
+
+  it('showPeople: false hides exactly people', () => {
+    expect(liveNavItems({ showPeople: false }).map((i) => i.id)).toEqual([
+      'home', 'pubs', 'contact',
+    ])
+  })
+
+  it('showContactForm: false hides exactly contact', () => {
+    expect(liveNavItems({ showContactForm: false }).map((i) => i.id)).toEqual([
+      'home', 'pubs', 'people',
+    ])
+  })
+
+  it.each([
+    ['null', { showPublications: null, showPeople: null, showContactForm: null }],
+    ['undefined', { showPublications: undefined, showPeople: undefined, showContactForm: undefined }],
+    ['empty object', {}],
+  ])('%s hides nothing', (_label, flags) => {
+    expect(liveNavItems(flags).map((i) => i.id)).toEqual(['home', 'pubs', 'people', 'contact'])
+  })
+
+  it('all three false leaves only Home', () => {
+    expect(
+      liveNavItems({
+        showPublications: false,
+        showPeople: false,
+        showContactForm: false,
+      }).map((i) => i.id)
+    ).toEqual(['home'])
+  })
+})
+
 describe('currentNavId', () => {
   const items = liveNavItems()
   it.each([

@@ -75,9 +75,12 @@ screens step.
    `menuItems` field cannot express the IA's fixed six plus per-item "does the route
    exist yet" gating, and code review of the nav should not require a Studio diff.
    *Amended:* this does not retire `menuItems`, `showPublications`, `showPeople` or
-   `showContactForm` — they stay in the schema, untouched, simply unread by the
-   redesign chrome — because a parallel Wix-lookalike track (`redesign/wix`) builds
-   on the same schema and dataset and may still read them. For the same reason,
+   `showContactForm` — they stay in the schema, untouched — because a parallel
+   Wix-lookalike track (`redesign/wix`) builds on the same schema and dataset and
+   may still read them. `menuItems` stays unread by the redesign chrome, but
+   resolved 2026-09-22 (command centre, on Brett's behalf): the three show* flags
+   are read for nav visibility only, so the header never links to a 404'd route —
+   see "Known limits, carried forward" below. For the same reason,
    nothing here plans or pre-empts the `project` type's retirement.
 2. **Wordmark text comes from `resolveBranding`; `siteName` at `lg` and up.**
    Reason: the CMS is the source of truth for the lab's name. *Amended:* `shortName`
@@ -153,17 +156,14 @@ at merge time, but only if that branch has also edited those specific files.
 
 ## Known limits, carried forward
 
-- **The nav ignores `showPublications` / `showPeople` / `showContactForm`.**
-  Those flags still make `/publications`, `/people` and `/contact` return 404
-  when set to false, but the new chrome keeps linking to them regardless, and
-  their Studio descriptions promise the page "disappears from the site
-  entirely" — a promise the redesign chrome no longer keeps. The command
-  centre's amendment (decision 1) kept these fields unread by the redesign
-  because the `redesign/wix` track may still read them. This is an open
-  decision for Brett: either wire the three flags into `liveNavItems` (about 5
-  lines plus unit tests, no schema change), or accept the current behaviour.
-  Relatedly, the `menuItems` Studio description is now inert, since the nav no
-  longer reads `menuItems` at all — noted here as a handover follow-up, not
+- **Resolved 2026-09-22, by the command centre on Brett's behalf: `showPublications` /
+  `showPeople` / `showContactForm` are read for nav visibility only.** `liveNavItems`
+  now hides `pubs`, `people` and `contact` when their flag is exactly `false`,
+  mirroring the `=== false` 404 gate each route already applies, so the header
+  never links to a route that 404s. The schema is untouched — no field was added,
+  removed or renamed — and `menuItems` is still not read.
+  Relatedly, the `menuItems` Studio description is still inert, since the nav
+  still does not read `menuItems` at all — noted here as a handover follow-up, not
   fixed in this branch.
 - In draft mode, the `PreviewBanner` sits above the sticky header, so the outer
   band and the panel band misalign by about 45px. Editors only.
@@ -178,7 +178,7 @@ at merge time, but only if that branch has also edited those specific files.
 
 | Command               | Baseline (Task 4, pre-existing)  | Now                                                    |
 | ---------------------- | --------------------------------- | ------------------------------------------------------- |
-| `npm test`             | 351 passed, 41 files              | 369 passed, 42 files (+22 `navModel`, −4 obsolete `logo-contract`) |
+| `npm test`             | 351 passed, 41 files              | 377 passed, 42 files (+30 `navModel`, −4 obsolete `logo-contract`) |
 | `npm run type-check`   | clean                             | clean                                                    |
 | `npm run lint`         | 0 errors, 4 warnings              | 0 errors, 4 warnings                                     |
 | `npm run typegen`      | clean, 16 queries, 36 schema types | not re-run — no query or schema changed                 |

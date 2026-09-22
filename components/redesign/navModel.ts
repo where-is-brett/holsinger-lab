@@ -1,8 +1,10 @@
 // The site's primary navigation, owned in code from the agreed IA
 // (docs/redesign-experiment/design-system/agreed-ia.md §1) rather than read
-// from the CMS. `settings.menuItems` / `showPublications` / `showPeople` /
-// `showContactForm` stay in the schema untouched -- a parallel track on the
-// same dataset may still read them -- but the redesign chrome does not.
+// from the CMS. `settings.showPublications` / `showPeople` / `showContactForm`
+// are read for nav visibility only, mirroring the `=== false` 404 gates each
+// route already applies, so the header never links to a route that 404s.
+// `settings.menuItems` stays in the schema untouched and is still not read --
+// a parallel track on the same dataset may still read it.
 //
 // Named navModel, not siteNav: `siteNav.ts` beside `SiteNav.tsx` collides on
 // a case-insensitive filesystem (see publicationRow.ts / PublicationRow.tsx).
@@ -37,12 +39,31 @@ export const SITE_NAV: readonly (NavItem & { live: boolean })[] = [
   { id: 'contact', label: 'Contact', href: '/contact', live: true },
 ]
 
-export function liveNavItems(): NavItem[] {
-  return SITE_NAV.filter((item) => item.live).map(({ id, label, href }) => ({
-    id,
-    label,
-    href,
-  }))
+export interface NavVisibilityFlags {
+  showPublications?: boolean | null
+  showPeople?: boolean | null
+  showContactForm?: boolean | null
+}
+
+/** Maps a nav item to the settings flag that can hide it, mirroring each
+ * route's own `=== false` 404 gate. */
+const HIDE_FLAG: Partial<Record<NavId, keyof NavVisibilityFlags>> = {
+  pubs: 'showPublications',
+  people: 'showPeople',
+  contact: 'showContactForm',
+}
+
+export function liveNavItems(flags?: NavVisibilityFlags): NavItem[] {
+  return SITE_NAV.filter((item) => item.live)
+    .filter((item) => {
+      const flagKey = HIDE_FLAG[item.id]
+      return flagKey === undefined ? true : flags?.[flagKey] !== false
+    })
+    .map(({ id, label, href }) => ({
+      id,
+      label,
+      href,
+    }))
 }
 
 /**

@@ -26,7 +26,11 @@ export default function Layout({
   return (
     <div className="flex min-h-screen flex-col bg-surface text-text">
       <SiteChrome
-        items={liveNavItems()}
+        items={liveNavItems({
+          showPublications: settings?.showPublications,
+          showPeople: settings?.showPeople,
+          showContactForm: settings?.showContactForm,
+        })}
         wordmark={{ long: siteName, short: shortName }}
         logo={logo}
       />
