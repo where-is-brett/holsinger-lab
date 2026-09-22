@@ -271,22 +271,46 @@ function TheLabBlock({
 }) {
   return (
     <div className={LAB_GRID}>
+      {/* Fix round 2, point 1: the whole portrait-plus-name row is now the
+          one `Link` (`group`), not just the name text beside a plain
+          portrait `div` -- `IMAGE_FILTER`'s `group-hover:`/
+          `group-focus-visible:` halves only ever match `.group:hover &`/
+          `.group:focus-visible &`, which needs the *group element itself*
+          (not a descendant) to be hovered/focused. With the name as its
+          own separate `<Link>` inside a plain `div`, neither pseudo-class
+          selector could ever match anything -- hovering the portrait
+          hovered the outer `div` (no `group` class), and focusing the name
+          focused the inner `Link` (also no `group` class), so the
+          grayscale reveal was permanently inert regardless of mouse or
+          keyboard. Making the `Link` itself the `group` (and wrapping the
+          portrait inside it, same shape as PersonCard.tsx's own `href`
+          branch) means hovering or keyboard-focusing the one real
+          interactive element is exactly what triggers the reveal, and
+          focus-visible reaches it because the focusable element and the
+          group element are now the same node. The "Principal investigator"
+          label moves above the row (still outside the `Link` -- only the
+          name is the identifier per the task brief, "the name (linked)")
+          rather than beside the portrait only, so this is additive to the
+          existing "min-w-0 column" shape below, not a redesign of it. */}
       {showPiPanel && labHead && (
-        <div className="flex min-w-0 items-center gap-5">
-          <PiPortrait64
-            name={labHead.name ?? ''}
-            img={
-              labHead.image
-                ? (urlForImage(labHead.image as SanityImage)?.width(128).height(128).fit('crop').url() ?? undefined)
-                : undefined
-            }
-          />
-          <div className="min-w-0">
-            <div className={`${LABEL} mb-2.5`}>Principal investigator</div>
-            <Link href={resolveLabHeadHref(labHead)} className="block text-[24px] font-semibold tracking-[-0.01em] break-words">
+        <div className="min-w-0">
+          <div className={`${LABEL} mb-2.5`}>Principal investigator</div>
+          <Link
+            href={resolveLabHeadHref(labHead)}
+            className="group flex min-w-0 items-center gap-5"
+          >
+            <PiPortrait64
+              name={labHead.name ?? ''}
+              img={
+                labHead.image
+                  ? (urlForImage(labHead.image as SanityImage)?.width(128).height(128).fit('crop').url() ?? undefined)
+                  : undefined
+              }
+            />
+            <span className="min-w-0 break-words text-[24px] font-semibold tracking-[-0.01em]">
               {labHead.name}
-            </Link>
-          </div>
+            </span>
+          </Link>
         </div>
       )}
       {/* Fix round 1, point 6 ruling: the members line renders only when

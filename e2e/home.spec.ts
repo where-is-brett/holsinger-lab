@@ -87,6 +87,23 @@ async function fetchLiveMembers(): Promise<{ profiles: LiveProfile[]; roleGroups
   return { profiles, roleGroups }
 }
 
+// Fix round 2, point 2: `toContainText(String(n))` is a substring check --
+// "14" satisfies an expected "4", "23" satisfies an expected "3", and so
+// on, which a live member count changing over time could silently start
+// passing for the wrong reason. Reads the exact leading digit run out of
+// the "N — PEOPLE →" link's own text and compares it numerically instead,
+// the same approach the gallery test below (`countText`) already uses.
+async function readMemberCount(block: Locator): Promise<number> {
+  return block
+    .locator('a')
+    .first()
+    .evaluate((node) => {
+      const match = node.textContent?.match(/\d+/)
+      if (!match) throw new Error('no digit found in member-count link text')
+      return Number(match[0])
+    })
+}
+
 test.describe('/', () => {
   test('never 404s', async ({ page }) => {
     const response = await page.goto('/')
@@ -199,7 +216,7 @@ test.describe('/', () => {
     }
     const block = page.getByTestId('home-member-count')
     await expect(block).toBeVisible()
-    await expect(block).toContainText(String(expected))
+    expect(await readMemberCount(block)).toBe(expected)
   })
 
   // Fix round 1, IMPORTANT 1: cross-checks Home's own rendered count
@@ -233,7 +250,7 @@ test.describe('/', () => {
     await page.goto('/')
     const homeBlock = page.getByTestId('home-member-count')
     test.skip((await homeBlock.count()) === 0, "Home's member-count block isn't rendered under current settings")
-    await expect(homeBlock).toContainText(String(peopleCount))
+    expect(await readMemberCount(homeBlock)).toBe(peopleCount)
   })
 
   test('the PI panel is present exactly when labHead is set and showLabHeadOnHome !== false', async ({
@@ -301,19 +318,8 @@ test.describe('/preview/components gallery: home', () => {
     await expect(b.getByTestId('home-pi-panel')).toHaveCount(0)
     await expect(b.getByTestId('home-member-count')).toBeVisible()
 
-    const countText = (el: Locator) =>
-      el
-        .getByTestId('home-member-count')
-        .locator('a')
-        .first()
-        .evaluate((node) => {
-          const match = node.textContent?.match(/\d+/)
-          if (!match) throw new Error('no digit found in member-count link text')
-          return Number(match[0])
-        })
-
-    const countA = await countText(a)
-    const countB = await countText(b)
+    const countA = await readMemberCount(a.getByTestId('home-member-count'))
+    const countB = await readMemberCount(b.getByTestId('home-member-count'))
     expect(countB).toBe(countA + 1)
   })
 })
