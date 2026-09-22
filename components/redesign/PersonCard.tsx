@@ -92,11 +92,12 @@ export function PortraitFrame({
 }
 
 export function PersonCard({ name, role, detail, img, initials, href }: PersonCardProps) {
-  // Cards render at roughly a third of the content column on desktop and
-  // half the viewport on mobile -- matching the measured-not-guessed sizing
-  // convention Profile.tsx documents for the same People grid (ImageBox's
-  // `size` prop there).
-  const sizes = '(min-width: 768px) 25vw, 50vw'
+  // Matches CARD_GRID's own breakpoints (components/redesign/screens/People.tsx):
+  // grid-cols-2 below md (each card ~50vw of the viewport), md:grid-cols-3
+  // (~30vw, not the naive 33vw -- the grid sits inside the page's own side
+  // gutters, same reasoning Profile.tsx's `size` prop documented for the old
+  // People grid), lg:grid-cols-6 (~15vw, not 16.6vw, for the same reason).
+  const sizes = '(min-width: 1024px) 15vw, (min-width: 768px) 30vw, 50vw'
 
   // When `href` is set, the whole card is a link and needs exactly one
   // accessible name. The portrait <img>'s `alt={name}` and the link would

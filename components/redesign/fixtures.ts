@@ -330,6 +330,20 @@ const ALUMNI: ProfilePayload[] = Array.from({ length: 22 }, (_, index) =>
 const UNGROUPED: ProfilePayload[] = [
   profile({ _id: 'fixture-ungrouped-1', name: 'Sam Okafor', role: 'Lab Manager' }),
   profile({ _id: 'fixture-ungrouped-2', name: 'Robin Delacroix', role: 'Volunteer' }),
+  // Fix round 1 (IMPORTANT 2): the lab head's shape as an ordinary profile
+  // document, mirroring the real production PI -- `roleGroup: null` (no
+  // roleGroup card of her own), same `_id`/name/role/hasPage/slug as
+  // PEOPLE_LAB_HEAD_FIXTURE. Without this entry, instance (a) never actually
+  // exercised excludeLabHead (there was nobody in the fixture "grid" to
+  // exclude in the first place), and instance (b) never proved she
+  // reappears as an ordinary card once the spotlight is off.
+  profile({
+    _id: PEOPLE_LAB_HEAD_FIXTURE._id,
+    name: PEOPLE_LAB_HEAD_FIXTURE.name ?? '',
+    role: PEOPLE_LAB_HEAD_FIXTURE.role,
+    hasPage: PEOPLE_LAB_HEAD_FIXTURE.hasPage,
+    slug: PEOPLE_LAB_HEAD_FIXTURE.slug,
+  }),
 ]
 
 export const PEOPLE_ROLE_GROUPS_FIXTURE: RoleGroupPayload[] = [

@@ -67,7 +67,12 @@ const BIO_COMPONENTS: PortableTextComponents = {
 }
 
 const PROFILE_LINK_LABEL = 'mt-5 inline-block font-mono text-[12px] font-medium tracking-[0.1em] text-link uppercase'
-const EMAIL_LINK = 'mt-5 block font-mono text-[12.5px] text-link normal-case!'
+// No `normal-case!`: nothing on the ancestor chain sets `text-transform:
+// uppercase` for this element (unlike PublicationPage.tsx's IDENTIFIER,
+// which guards against `.hl-identifier`'s global `text-transform: none
+// !important` rule being needed against an uppercase ancestor) -- fix round
+// 1 removed it as dead weight.
+const EMAIL_LINK = 'mt-5 block font-mono text-[12.5px] text-link'
 
 const SECTION_HEADING_ROW = 'mb-5 flex items-baseline gap-3.5 border-t border-rule pt-[18px]'
 const SECTION_TITLE = `${LABEL_BASE} text-text-faint`
@@ -155,9 +160,20 @@ function MembersBlock({ sections }: { sections: RoleGroupSection<ProfilePayload>
         <div key={section.id} data-testid="people-section">
           {section.title && (
             <div className={SECTION_HEADING_ROW}>
-              <span data-testid="people-section-title" className={SECTION_TITLE}>
+              {/* Fix round 1: a real `h2`, not a `span` -- screen-reader users
+                  navigate a page's headings list, and a role-group title
+                  ("Research Scientist", "Lab Alumni", ...) is exactly the
+                  kind of section landmark that belongs in it. Same visual
+                  style as before (SECTION_TITLE is unchanged); Tailwind's
+                  Preflight already zeroes `h2`'s default margin, so no
+                  layout shift. Heading order stays valid: this sits under
+                  the page's own `h1`/PageTitle and the spotlight's `h2`
+                  (labHead name), never skipping a level, and repeated `h2`s
+                  at the same level (one per section) are not a heading-order
+                  violation. */}
+              <h2 data-testid="people-section-title" className={SECTION_TITLE}>
                 {section.title}
-              </span>
+              </h2>
               <span className={SECTION_COUNT}>{section.profiles.length}</span>
             </div>
           )}
@@ -190,7 +206,12 @@ function AlumniBlock({ alumni }: { alumni: ProfilePayload[] }) {
           const href = cardHref(profile)
           const name = profile.name ?? ''
           return (
-            <span key={profile._id}>
+            // `data-name` (fix round 1): a name can itself contain ", " (a
+            // suffix like "Smith, Jr."), so an e2e test reading this
+            // paragraph's rendered text and splitting on ", " could
+            // misparse it. `data-name` on each entry gives a test the exact
+            // name string directly, with no parsing.
+            <span key={profile._id} data-testid="alumni-name" data-name={name}>
               {index > 0 && ', '}
               {href ? (
                 <Link href={href} className={ALUMNI_LINK}>

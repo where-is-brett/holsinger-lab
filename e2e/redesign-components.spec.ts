@@ -218,7 +218,7 @@ test.describe('redesign component gallery', () => {
     // of hers.
     const jiyooRole = section.getByText('Ungergraduate student - Diagnostic Radiography')
     await expect(jiyooRole).toBeVisible()
-    const jiyooCard = jiyooRole.locator('xpath=ancestor::div[contains(@class, "group")][1]')
+    const jiyooCard = jiyooRole.locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " group ")][1]')
     await expect(jiyooCard.getByText('JC')).toBeVisible()
     await expect(jiyooCard.getByText('[ NO PORTRAIT ON FILE ]')).toBeVisible()
     await expect(jiyooCard.locator('img')).toHaveCount(0)
@@ -239,7 +239,7 @@ test.describe('redesign component gallery', () => {
     const section = page.getByTestId('gallery-person-card')
     const roleLine = section.getByText('PhD Student', { exact: true })
     await expect(roleLine).toBeVisible()
-    const card = roleLine.locator('xpath=ancestor::div[contains(@class, "group")][1]')
+    const card = roleLine.locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " group ")][1]')
     // The role line and a would-be detail line share the exact same class
     // string (PersonCard.tsx), so the card has at most one such line when
     // there is no detail -- assert there is exactly one, not the role text
@@ -321,8 +321,14 @@ test.describe('redesign component gallery', () => {
     page,
   }) => {
     const instance = page.getByTestId('gallery-people-a')
-    const text = await instance.getByTestId('people-alumni').locator('p').innerText()
-    const names = text.split(', ').filter(Boolean)
+    // Read each entry's own `data-name` rather than the paragraph's
+    // `innerText().split(', ')` -- a name can itself contain ", " (see
+    // AlumniBlock's own comment), so parsing the rendered text back apart
+    // is not a safe inverse of how it was joined.
+    const names = await instance
+      .getByTestId('people-alumni')
+      .getByTestId('alumni-name')
+      .evaluateAll((els) => els.map((el) => el.getAttribute('data-name')))
     expect(names).toHaveLength(22)
     expect(names[0]).toBe('Alumni 1 Lastname1')
     expect(names[21]).toBe('Alumni 22 Lastname22')
@@ -336,13 +342,19 @@ test.describe('redesign component gallery', () => {
     await expect(instance.getByText('Visiting Intern — Vietnam')).toBeVisible()
   })
 
-  test('People gallery (b): no spotlight when labHead is unset', async ({ page }) => {
+  test('People gallery (b): no spotlight when labHead is unset, and the PI-equivalent profile reappears as an ordinary card', async ({
+    page,
+  }) => {
     const instance = page.getByTestId('gallery-people-b')
     await expect(instance.getByTestId('people-spotlight')).toHaveCount(0)
-    // With no spotlight, the PI-equivalent fixture profile isn't part of
-    // instance (b)'s profiles at all -- (b) reuses the same PEOPLE_PROFILES_FIXTURE,
-    // which never included the lab head as a profile document, so nothing
-    // vanishes and no assertion on a missing card is needed here.
+    // (b) reuses the same PEOPLE_PROFILES_FIXTURE as (a), which now includes
+    // a profile document shaped like the real PI (roleGroup: null, same
+    // _id/name as PEOPLE_LAB_HEAD_FIXTURE -- fix round 1). With the
+    // spotlight off, excludeLabHead never runs, so she must render as an
+    // ordinary card exactly once, not zero and not twice.
+    await expect(
+      instance.locator('[data-testid="person-card"][data-name="Dr Ilse Van Der Berg"]')
+    ).toHaveCount(1)
   })
 
   test('People gallery: no page overflow at 320px', async ({ page }) => {

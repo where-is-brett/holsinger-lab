@@ -42,6 +42,22 @@ async function fetchLiveData() {
   return { profiles, roleGroups, settings }
 }
 
+// Fix round 1 (IMPORTANT 1): whether the spotlight renders, and which
+// profiles the grid/alumni computation should even see, must be derived
+// together -- once settings.labHead is set, the PI (the only `roleGroup:
+// null` profile in production today) is excluded from `gridProfiles` before
+// grouping, which can turn a populated "Other" section into an empty one
+// that the page correctly omits. Computing `showSpotlight` in one test and
+// feeding ALL profiles (lab head included) into computeSections in another
+// produced a mismatch. Every test below goes through this one helper.
+function deriveGridProfiles(profiles: LiveProfile[], settings: LiveSettings | null) {
+  const showSpotlight = Boolean(settings?.labHeadId) && settings?.showLabHeadOnPeople !== false
+  const labHeadId = settings?.labHeadId ?? null
+  const gridProfiles =
+    showSpotlight && labHeadId ? profiles.filter((p) => p._id !== labHeadId) : profiles
+  return { showSpotlight, gridProfiles }
+}
+
 // Mirrors components/redesign/peopleModel.ts's groupByRoleGroup/splitAlumni
 // exactly -- one bucket per roleGroup (orderRank order) plus a trailing
 // "Other" catch-all, alumni buckets pulled out into a flat ordered list.
@@ -64,16 +80,23 @@ function computeSections(profiles: LiveProfile[], roleGroups: LiveRoleGroup[]) {
   return { members, alumni }
 }
 
+// Reads each alumni entry's own `data-name` rather than the paragraph's
+// rendered text -- a name can itself contain ", " (e.g. a "Smith, Jr."
+// suffix), so splitting `innerText()` on ", " is not a safe inverse of how
+// AlumniBlock joins names for display.
+async function alumniNames(page: import('@playwright/test').Page) {
+  return page
+    .getByTestId('people-alumni')
+    .getByTestId('alumni-name')
+    .evaluateAll((els) => els.map((el) => el.getAttribute('data-name')))
+}
+
 test.describe('/people', () => {
   test('every profile renders exactly once -- as a card, an alumni name, or the spotlight', async ({
     page,
   }) => {
     const { profiles, roleGroups, settings } = await fetchLiveData()
-    const showSpotlight = Boolean(settings?.labHeadId) && settings?.showLabHeadOnPeople !== false
-    const labHeadId = settings?.labHeadId ?? null
-
-    const gridProfiles =
-      showSpotlight && labHeadId ? profiles.filter((p) => p._id !== labHeadId) : profiles
+    const { showSpotlight, gridProfiles } = deriveGridProfiles(profiles, settings)
     const { members, alumni } = computeSections(gridProfiles, roleGroups)
 
     await page.goto('/people')
@@ -81,11 +104,7 @@ test.describe('/people', () => {
     const cardNames = await page.getByTestId('person-card').evaluateAll((els) =>
       els.map((el) => el.getAttribute('data-name'))
     )
-    const alumniSection = page.getByTestId('people-alumni')
-    const alumniNames =
-      (await alumniSection.count()) > 0
-        ? (await alumniSection.locator('p').innerText()).split(', ').filter(Boolean)
-        : []
+    const renderedAlumniNames = await alumniNames(page)
     const spotlightName = (await page.getByTestId('people-spotlight').count()) > 0
       ? await page.getByTestId('people-spotlight').getAttribute('data-name')
       : null
@@ -94,7 +113,7 @@ test.describe('/people', () => {
     expect(cardNames.sort()).toEqual(expectedCardNames.sort())
 
     const expectedAlumniNames = alumni.map((p) => p.name)
-    expect(alumniNames).toEqual(expectedAlumniNames)
+    expect(renderedAlumniNames).toEqual(expectedAlumniNames)
 
     if (showSpotlight) {
       expect(spotlightName).toBe(settings!.labHeadName)
@@ -104,15 +123,20 @@ test.describe('/people', () => {
 
     // Every profile the page is meant to show renders exactly once, across
     // the three surfaces combined.
-    const allRendered = [...cardNames, ...alumniNames, ...(spotlightName ? [spotlightName] : [])]
+    const allRendered = [
+      ...cardNames,
+      ...renderedAlumniNames,
+      ...(spotlightName ? [spotlightName] : []),
+    ]
     expect(allRendered.length).toBe(profiles.length)
   })
 
   test('member section headings appear in roleGroup orderRank order, alumni excluded', async ({
     page,
   }) => {
-    const { profiles, roleGroups } = await fetchLiveData()
-    const { members } = computeSections(profiles, roleGroups)
+    const { profiles, roleGroups, settings } = await fetchLiveData()
+    const { gridProfiles } = deriveGridProfiles(profiles, settings)
+    const { members } = computeSections(gridProfiles, roleGroups)
     const expectedTitles = members.map((s) => s.title).filter((t): t is string => Boolean(t))
 
     await page.goto('/people')
@@ -121,33 +145,47 @@ test.describe('/people', () => {
   })
 
   test('alumni names appear in the alumni paragraph, in the group order', async ({ page }) => {
-    const { profiles, roleGroups } = await fetchLiveData()
-    const { alumni } = computeSections(profiles, roleGroups)
+    const { profiles, roleGroups, settings } = await fetchLiveData()
+    const { gridProfiles } = deriveGridProfiles(profiles, settings)
+    const { alumni } = computeSections(gridProfiles, roleGroups)
     test.skip(alumni.length === 0, 'no Lab Alumni group in this dataset')
 
     await page.goto('/people')
-    const text = await page.getByTestId('people-alumni').locator('p').innerText()
-    const names = text.split(', ').filter(Boolean)
+    const names = await alumniNames(page)
     expect(names).toEqual(alumni.map((p) => p.name))
   })
 
   test('the spotlight is present exactly when labHead is set and showLabHeadOnPeople is not false', async ({
     page,
   }) => {
-    const { settings } = await fetchLiveData()
-    const showSpotlight = Boolean(settings?.labHeadId) && settings?.showLabHeadOnPeople !== false
+    const { profiles, settings } = await fetchLiveData()
+    const { showSpotlight } = deriveGridProfiles(profiles, settings)
 
     await page.goto('/people')
     const count = await page.getByTestId('people-spotlight').count()
     expect(count).toBe(showSpotlight ? 1 : 0)
   })
 
-  test("the meta's member count equals the number of rendered cards", async ({ page }) => {
+  test("the meta's member count and group count match what's rendered", async ({ page }) => {
+    const { profiles, roleGroups, settings } = await fetchLiveData()
+    const { showSpotlight, gridProfiles } = deriveGridProfiles(profiles, settings)
+    const { members } = computeSections(gridProfiles, roleGroups)
+    const expectedN = members.reduce((total, s) => total + s.profiles.length, 0)
+    // The untitled-section rule (People.tsx's own `g` comment): a trailing
+    // ungrouped section counts as a group only when it has a title --
+    // computeSections already nulls the catch-all's title when it's the
+    // only section left, so counting titled sections handles both cases.
+    const expectedG = members.filter((s) => s.title).length
+
     await page.goto('/people')
     const cardCount = await page.getByTestId('person-card').count()
     const meta = await page.getByText(/CURRENT MEMBER/).innerText()
     const n = Number(meta.match(/(\d+)\s+CURRENT MEMBER/)![1])
+    const g = Number(meta.match(/(\d+)\s+GROUPS?/)![1])
     expect(n).toBe(cardCount)
+    expect(n).toBe(expectedN)
+    expect(g).toBe(expectedG)
+    expect(meta.startsWith('LAB HEAD + ')).toBe(showSpotlight)
   })
 
   test.describe('no horizontal overflow', () => {
