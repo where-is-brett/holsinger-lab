@@ -245,6 +245,23 @@ test.describe('redesign component gallery', () => {
     await expect(img).toBeVisible()
     const filter = await img.evaluate((el) => getComputedStyle(el).filter)
     expect(filter).toBe('none')
+
+    // Coordinator's fix round 2: also check the *linked* card (Élodie
+    // Ñúñez's -- `href` set, `PersonCard`'s own `group`/`group-hover:`/
+    // `group-focus-visible:` branch), since a reveal is most plausible to
+    // get reintroduced exactly there, where a `group` wrapper already
+    // exists for the name's own colour reveal (a future edit could too
+    // easily bolt a `group-hover:grayscale-0`-style pair back onto the
+    // image, matching the name's pattern, without anyone noticing it
+    // reintroduces a hidden-at-rest state). Unhovered, unfocused, its
+    // portrait's computed `filter` must be `none` too. The linked card's
+    // image is `alt=""` (decorative -- PersonCard.tsx's own `href` branch,
+    // asserted separately below), so it's found via the link's accessible
+    // name, not `getByRole('img', ...)`.
+    const linkedImg = section.getByRole('link', { name: 'Élodie Ñúñez' }).locator('img')
+    await expect(linkedImg).toBeVisible()
+    const linkedFilter = await linkedImg.evaluate((el) => getComputedStyle(el).filter)
+    expect(linkedFilter).toBe('none')
   })
 
   test('PersonCard: detail renders as a second mono line under role, only when present', async ({

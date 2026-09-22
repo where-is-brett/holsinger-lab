@@ -410,9 +410,18 @@ working directory for the full ledger.
   colour reveal (name → link colour) triggers on keyboard focus (`group-focus-visible:`
   pairs mirroring every `group-hover:` one), not just mouse hover. **Deviation from the
   vendored design system (fix/research-description-fallback, Brett's review):** the design
-  system at `docs/redesign-experiment/design-system/components/people/PersonCard.jsx`
-  specifies portraits as greyscale at rest, lifting to full colour only on hover/focus.
-  Brett's instruction overrides that: portraits render in full colour at rest everywhere,
+  system specifies portraits as greyscale at rest, lifting to full colour only on
+  hover/focus — the actual CSS rule is
+  `docs/redesign-experiment/design-system/components/components.css:36-40` (`.hl-portrait {
+  filter: grayscale(1) contrast(1.04); ... } .hl-person:hover .hl-portrait { filter: none;
+  }`), echoed in prose by
+  `docs/redesign-experiment/design-system/components/people/PersonCard.d.ts` ("4:5 portrait
+  (grayscale at rest, colour on hover, 160ms)") and
+  `docs/redesign-experiment/design-system/components/people/PersonCard.prompt.md`
+  ("grayscale 4:5 portrait that colourizes on hover"); `PersonCard.jsx` itself carries no
+  greyscale styling of its own (it just applies the `.hl-portrait`/`.hl-person` classes the
+  CSS file above styles). Brett's instruction overrides that: portraits render in full colour
+  at rest everywhere,
   with no greyscale state at all. `PersonCard.tsx`'s exported class was renamed
   `IMAGE_FILTER` → `PORTRAIT_IMAGE_CLASS` and reduced to a bare `object-cover` (no
   `grayscale`/`contrast-[1.04]`, no `transition-[filter]`, no `group-hover:`/

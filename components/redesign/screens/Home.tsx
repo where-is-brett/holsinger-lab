@@ -290,11 +290,16 @@ function TheLabBlock({
           `div` -- wrapping the portrait inside it (same shape as
           PersonCard.tsx's own `href` branch) keeps hovering or
           keyboard-focusing the one real interactive element consistent with
-          every other linked portrait in this direction, even though this
-          portrait no longer carries a colour reveal of its own (Brett's
-          review, fix/research-description-fallback -- portraits render in
-          full colour at rest everywhere, no grayscale-to-colour transition
-          left to trigger). The "Principal investigator"
+          every other linked portrait in this direction. The portrait itself
+          no longer carries a colour reveal (Brett's review,
+          fix/research-description-fallback -- portraits render in full
+          colour at rest everywhere, no grayscale-to-colour transition left
+          to trigger), but the `group` is still load-bearing: the name
+          `span` below keeps its own `group-hover:text-link`/
+          `group-focus-visible:text-link` reveal, matching PersonCard.tsx's
+          own name `div` (the coordinator's fix round 2 caught this reveal
+          going dead when the portrait's half was removed without adding the
+          name's -- restored here). The "Principal investigator"
           label moves above the row (still outside the `Link` -- only the
           name is the identifier per the task brief, "the name (linked)")
           rather than beside the portrait only, so this is additive to the
@@ -314,7 +319,7 @@ function TheLabBlock({
                   : undefined
               }
             />
-            <span className="min-w-0 break-words text-[24px] font-semibold tracking-[-0.01em]">
+            <span className="min-w-0 break-words text-[24px] font-semibold tracking-[-0.01em] transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease) group-hover:text-link group-focus-visible:text-link">
               {labHead.name}
             </span>
           </Link>
