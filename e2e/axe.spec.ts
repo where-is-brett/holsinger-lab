@@ -86,6 +86,22 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
           const results = await new AxeBuilder({ page }).analyze()
           expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
         })
+
+        // Task 3: a person detail page (/people/[slug]) -- the slug is a
+        // real one fetched from the live dataset, not hardcoded, same
+        // reasoning as the publication detail page above.
+        test('a person detail page has no unexpected accessibility violations', async ({
+          page,
+        }) => {
+          const slug = await e2eClient.fetch<string | null>(
+            `*[_type == "profile" && hasPage == true && defined(slug.current)][0].slug.current`
+          )
+          test.skip(!slug, 'no profile with hasPage=true exists in live data yet')
+
+          await page.goto(`/people/${slug}`)
+          const results = await new AxeBuilder({ page }).analyze()
+          expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
+        })
       })
     }
   })

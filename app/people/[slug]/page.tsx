@@ -1,5 +1,5 @@
 import { toPlainText } from '@portabletext/react'
-import { PersonBio } from 'components/pages/people/PersonBio'
+import { PersonPage } from 'components/redesign/screens/PersonPage'
 import { JsonLd } from 'components/shared/JsonLd'
 import Layout from 'components/shared/Layout'
 import { resolveBranding } from 'lib/branding'
@@ -97,9 +97,9 @@ export default async function PersonSlugPage({ params }: Props) {
   })
 
   return (
-    <Layout settings={settings}>
+    <Layout settings={settings} childrenStyles="px-0">
       {personJsonLd && <JsonLd data={personJsonLd} />}
-      <PersonBio person={profile} layout="page" />
+      <PersonPage person={profile} />
     </Layout>
   )
 }

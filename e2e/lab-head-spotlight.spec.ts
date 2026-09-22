@@ -56,41 +56,65 @@ test('an unknown person slug 404s', async ({ page }) => {
   expect(response?.status()).toBe(404)
 })
 
-test('a profile with hasPage enabled renders a 200 page; otherwise its slug 404s', async ({
+test('every profile with hasPage enabled renders its name as the h1, with a back link to /people', async ({
   page,
 }) => {
-  // Derived from the live dataset: finds any published profile with
-  // hasPage == true and a slug, and proves it renders. If none exist yet
-  // (as in live data at the time this test was written), this instead
-  // proves the negative -- that a profile without hasPage set does not get
-  // a page -- so the test always exercises real, current data rather than
-  // skipping outright.
-  const [withPage, withoutPage] = await Promise.all([
-    e2eClient.fetch<{ slug: string; name: string } | null>(
-      `*[_type == "profile" && hasPage == true && defined(slug.current)][0]{ "slug": slug.current, name }`
-    ),
-    e2eClient.fetch<{ slug: string } | null>(
-      `*[_type == "profile" && hasPage != true && defined(slug.current)][0]{ "slug": slug.current }`
-    ),
-  ])
+  // Task 3: derived from the live dataset -- every profile with hasPage ==
+  // true, not just the first one -- so this holds whether the dataset has
+  // Damian Holsinger alone (today) or a whole preview-dataset roster of
+  // hasPage profiles (constraints.md, "every e2e assertion must hold for
+  // any valid dataset").
+  const withPages = await e2eClient.fetch<{ slug: string; name: string }[]>(
+    `*[_type == "profile" && hasPage == true && defined(slug.current)]{ "slug": slug.current, name }`
+  )
 
-  if (withPage) {
-    const response = await page.goto(`/people/${withPage.slug}`)
+  test.skip(withPages.length === 0, 'no profile with hasPage=true exists in live data yet')
+
+  for (const profile of withPages) {
+    const response = await page.goto(`/people/${profile.slug}`)
     expect(response?.status()).toBe(200)
     await expect(
-      page.getByRole('heading', { level: 1, name: withPage.name, exact: true })
+      page.getByRole('heading', { level: 1, name: profile.name, exact: true })
     ).toBeVisible()
-  } else {
-    test.info().annotations.push({
-      type: 'skip-reason',
-      description:
-        'No profile with hasPage=true exists in live data yet -- asserting the negative instead.',
-    })
-  }
 
-  if (withoutPage) {
-    const response = await page.goto(`/people/${withoutPage.slug}`)
-    expect(response?.status()).toBe(404)
+    const backLink = page.getByRole('link', { name: '← All people' })
+    await expect(backLink).toBeVisible()
+    await expect(backLink).toHaveAttribute('href', '/people')
+  }
+})
+
+test('a profile without hasPage enabled 404s', async ({ page }) => {
+  // Derived from the live dataset: proves the negative -- a profile without
+  // hasPage set does not get a page.
+  const withoutPage = await e2eClient.fetch<{ slug: string } | null>(
+    `*[_type == "profile" && hasPage != true && defined(slug.current)][0]{ "slug": slug.current }`
+  )
+
+  test.skip(!withoutPage, 'every profile in this dataset has hasPage set')
+
+  const response = await page.goto(`/people/${withoutPage!.slug}`)
+  expect(response?.status()).toBe(404)
+})
+
+test('no /people/[slug] page overflows horizontally at 320/375px', async ({ page }) => {
+  // Same "every real record, not just one" reasoning as
+  // e2e/publication-page.spec.ts's own overflow test -- a content-dependent
+  // defect (a long unbreakable token in the name or bio) can only be caught
+  // by checking every live hasPage profile.
+  const withPages = await e2eClient.fetch<{ slug: string }[]>(
+    `*[_type == "profile" && hasPage == true && defined(slug.current)]{ "slug": slug.current }`
+  )
+  test.skip(withPages.length === 0, 'no profile with hasPage=true exists in live data yet')
+
+  for (const width of [320, 375]) {
+    await page.setViewportSize({ width, height: 900 })
+    for (const profile of withPages) {
+      await page.goto(`/people/${profile.slug}`)
+      const fits = await page.evaluate(
+        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+      )
+      expect(fits, `/people/${profile.slug} overflows at ${width}px`).toBe(true)
+    }
   }
 })
 
