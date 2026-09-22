@@ -15,7 +15,7 @@ export function NavLinks() {
             key={href}
             href={href}
             aria-current={active ? 'page' : undefined}
-            className={`px-[16px] font-raleway text-[14px]/[25.06px] ${active ? 'text-nav-active' : 'text-black'} hover:opacity-70`}
+            className={`px-[12px] font-raleway text-[14px]/[25.06px] ${active ? 'text-nav-active' : 'text-black'} hover:opacity-70`}
           >
             {label}
           </Link>

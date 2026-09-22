@@ -10,7 +10,7 @@ export async function SiteHeader() {
   return (
     <header>
       <div className="hidden md:block">
-        <div className="wix-col pt-[40px] pb-[15px]">
+        <div className="wix-col pt-[47px] pb-[15px]">
           <p data-wix="site-title" className="text-center font-playfair text-[32px]/[43.2px]">
             <Link href="/">{siteName}</Link>
           </p>
