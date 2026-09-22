@@ -103,6 +103,7 @@ export const settingsQuery = groq`
       image,
       name,
       role,
+      roleDetail,
       email,
       phone,
       bio,
@@ -200,6 +201,7 @@ export const profileQuery = groq`
     orderRank,
     name,
     role,
+    roleDetail,
     roleGroup->{
       _id,
       title,
@@ -219,6 +221,7 @@ export const profileBySlugQuery = groq`
     image,
     name,
     role,
+    roleDetail,
     email,
     phone,
     bio,

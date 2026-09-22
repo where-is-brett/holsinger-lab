@@ -139,9 +139,12 @@ citation and one copy control, and nothing else calls them (ruling below).
 
 ### 4.2 `FacetBand` changes (primitive)
 
-- **Sticky only from `lg`,** at `top: var(--nav-height)`: `lg:sticky lg:top-(--nav-height)`.
-  It is static below `lg`, because on a phone three wrapped chip groups plus density would
-  pin half the screen.
+- **Sticky only at min-width 64rem AND min-height 56rem,** at `top: var(--nav-height)`:
+  `[@media(min-width:64rem)_and_(min-height:56rem)]:sticky
+  [@media(min-width:64rem)_and_(min-height:56rem)]:top-(--nav-height)`. It is static
+  otherwise, because width alone isn't enough on a short landscape viewport — on a phone,
+  three wrapped chip groups plus density would pin half the screen (PR A's final-review
+  ruling).
   - The source's `top: 0` assumed a non-sticky header. This site's header is sticky
     (step 1, decision 4), which is the case the source's own comment anticipates.
 - **An empty `groups` entry (no chips) is not rendered.** The Type group vanishes until the

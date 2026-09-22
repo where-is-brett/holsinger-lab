@@ -1,10 +1,15 @@
 import Image from 'next/image'
+import Link from 'next/link'
 
 export interface PersonCardProps {
   name: string
   role: string
+  /** Optional second mono line under `role`, verbatim, shown only when non-empty (spec §5, ruling 3). */
+  detail?: string | null
   img?: string
   initials?: string
+  /** Real route: when set, the whole card links to it (`/people/<slug>` when `hasPage`). */
+  href?: string | null
 }
 
 // Ported from
@@ -37,49 +42,110 @@ const FOOTPRINT_FALLBACK =
 const STRIPE_BG =
   'repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in oklab, var(--sem-text) 4.5%, transparent) 12px 13px)'
 
-export function PersonCard({ name, role, img, initials }: PersonCardProps) {
-  return (
-    <div className="group">
-      {img ? (
-        <div className={FOOTPRINT_IMAGE}>
-          <Image
-            src={img}
-            alt={name}
-            fill
-            // Cards render at roughly a third of the content column on
-            // desktop and half the viewport on mobile -- matching the
-            // measured-not-guessed sizing convention Profile.tsx documents
-            // for the same People grid (ImageBox's `size` prop there).
-            sizes="(min-width: 768px) 25vw, 50vw"
-            // Grayscale at rest, releasing to colour on hover over the
-            // 160ms reveal token. `grayscale`/`contrast-[1.04]` are Tailwind
-            // filter utilities: unlike `transition-*` utilities (which each
-            // overwrite the *whole* transition-property/-duration/-easing
-            // triad), every filter utility composes into ONE shared `filter`
-            // declaration via CSS custom properties, so stacking
-            // `grayscale` and `contrast-[1.04]` here is safe and not an
-            // instance of the same-property trap documented in tokens.ts.
-            // Only one transition-* utility (`filter`) sits on this
-            // element, so it isn't at risk either.
-            className="object-cover grayscale contrast-[1.04] transition-[filter] duration-(--sem-motion-reveal) ease-(--sem-ease) group-hover:grayscale-0 group-hover:contrast-100"
-          />
-        </div>
-      ) : (
-        <div className={FOOTPRINT_FALLBACK} style={{ backgroundImage: STRIPE_BG }}>
-          <span className="font-mono text-[26px] leading-none font-medium text-text-muted">
-            {initials}
-          </span>
-          <span className="font-mono text-[8.5px] leading-[1.4] tracking-[0.08em] text-text-faint">
-            [ NO PORTRAIT ON FILE ]
-          </span>
-        </div>
-      )}
-      <div className="mt-2.5 text-[15px] leading-none font-semibold tracking-[-0.005em] transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease) group-hover:text-link">
-        {name}
-      </div>
-      {/* `role` is free text from the CMS -- printed verbatim, including any
-          misspelling in the source data. Never corrected here. */}
-      <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] text-text-faint">{role}</div>
+// Carried Task 1 review minor (c): a linked card's colour reveal (grayscale
+// portrait, name colour) is mouse-only without these -- `group-focus-visible:`
+// pairs mirror each `group-hover:` one exactly, so keyboard focus (Tab onto
+// the wrapping Link, PersonCard's `href` branch below) gets the identical
+// reveal a mouse hover does. Each pair targets a distinct pseudo-class
+// selector (`.group:hover &`, `.group:focus-visible &`), never the same
+// selector twice, so this is additive, not a same-property collision.
+const IMAGE_FILTER =
+  'object-cover grayscale contrast-[1.04] transition-[filter] duration-(--sem-motion-reveal) ease-(--sem-ease) group-hover:grayscale-0 group-hover:contrast-100 group-focus-visible:grayscale-0 group-focus-visible:contrast-100'
+
+/**
+ * The image / initials-fallback footprint, extracted verbatim from
+ * `PersonCard` so the lab-head spotlight (spec §5, ruling 2 -- "the initials
+ * treatment") can reuse the exact same portrait anatomy at a different
+ * `sizes`. `sizes` is a required prop rather than a default: the two known
+ * call sites (this grid, the spotlight) render at different fractions of
+ * the viewport, and there is no "usually correct" default worth guessing --
+ * see PersonCard's own `sizes` comment for how this grid's value was
+ * measured.
+ */
+export function PortraitFrame({
+  name,
+  img,
+  initials,
+  sizes,
+  className,
+}: {
+  name: string
+  img?: string
+  initials?: string
+  sizes: string
+  className?: string
+}) {
+  return img ? (
+    <div className={`${FOOTPRINT_IMAGE} ${className ?? ''}`}>
+      <Image src={img} alt={name} fill sizes={sizes} className={IMAGE_FILTER} />
+    </div>
+  ) : (
+    <div className={`${FOOTPRINT_FALLBACK} ${className ?? ''}`} style={{ backgroundImage: STRIPE_BG }}>
+      <span className="font-mono text-[26px] leading-none font-medium text-text-muted">
+        {initials}
+      </span>
+      <span className="font-mono text-[8.5px] leading-[1.4] tracking-[0.08em] text-text-faint">
+        [ NO PORTRAIT ON FILE ]
+      </span>
     </div>
   )
+}
+
+export function PersonCard({ name, role, detail, img, initials, href }: PersonCardProps) {
+  // Matches CARD_GRID's own breakpoints (components/redesign/screens/People.tsx):
+  // grid-cols-2 below md (each card ~50vw of the viewport), md:grid-cols-3
+  // (~30vw, not the naive 33vw -- the grid sits inside the page's own side
+  // gutters, same reasoning Profile.tsx's `size` prop documented for the old
+  // People grid), lg:grid-cols-6 (~15vw, not 16.6vw, for the same reason).
+  const sizes = '(min-width: 1024px) 15vw, (min-width: 768px) 30vw, 50vw'
+
+  // When `href` is set, the whole card is a link. The portrait <img>'s
+  // `alt={name}` would otherwise duplicate the name text rendered right
+  // below it inside the same link, so the image's `alt` is emptied here
+  // (decorative -- the name text below it already carries the content).
+  // Final-review fix wave: the link no longer carries `aria-label={name}`
+  // -- that collapsed the link's accessible name to just the name, hiding
+  // the role and detail text from screen-reader users navigating by link.
+  // With `alt=""` on the image and no `aria-label`, the link's accessible
+  // name is computed from its own visible text content (name, role, and
+  // detail when present) -- exactly what a sighted user sees, with no
+  // double announcement of the name. Without `href` there's no link to
+  // collide with, so the image keeps its own `alt=name`.
+  const portraitName = href ? '' : name
+
+  const body = (
+    <>
+      <PortraitFrame name={portraitName} img={img} initials={initials} sizes={sizes} />
+      {/* `break-words` on all three lines (final-review fix wave): none of
+          them wrapped before, and a long unhyphenated token -- a surname
+          ("Priya Balasubramaniam") or a parenthesised roleDetail
+          ("(Neuroscience/Pharmacology)") -- overflows the ~111px card
+          width the base 2-column grid gives each card at 320px. The
+          gallery fixture now carries both shapes in the grid's rightmost
+          column (fixtures.ts) so the /preview/components 320px overflow
+          check actually exercises this. */}
+      <div className="mt-2.5 text-[15px] leading-none font-semibold tracking-[-0.005em] break-words transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease) group-hover:text-link group-focus-visible:text-link">
+        {name}
+      </div>
+      {/* `role` and `detail` are free text from the CMS -- printed verbatim,
+          including any misspelling in the source data. Never corrected
+          here. */}
+      <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] break-words text-text-faint">{role}</div>
+      {detail && (
+        <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] break-words text-text-faint">
+          {detail}
+        </div>
+      )}
+    </>
+  )
+
+  if (href) {
+    return (
+      <Link href={href} className="group block">
+        {body}
+      </Link>
+    )
+  }
+
+  return <div className="group">{body}</div>
 }

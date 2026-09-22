@@ -7,6 +7,10 @@ import { applyFacets, countBy, toggleFacet } from 'components/redesign/facets'
 import {
   LINKED_PUB,
   NO_LINK_PUB,
+  PEOPLE_PROFILES_FIXTURE,
+  PEOPLE_ROLE_GROUPS_FIXTURE,
+  PEOPLE_SETTINGS_WITH_LAB_HEAD,
+  PEOPLE_SETTINGS_WITHOUT_LAB_HEAD,
   PUBLICATION_PAGE_FIXTURE,
   SAMPLE_PEOPLE,
   SAMPLE_PUBLICATIONS,
@@ -19,6 +23,7 @@ import { PersonCard } from 'components/redesign/PersonCard'
 import type { Publication } from 'components/redesign/publicationModel'
 import { PublicationRow } from 'components/redesign/PublicationRow'
 import { ResourceBlock } from 'components/redesign/ResourceBlock'
+import { People } from 'components/redesign/screens/People'
 import { PublicationPage } from 'components/redesign/screens/PublicationPage'
 import { SectionRail } from 'components/redesign/SectionRail'
 import { SiteFooter } from 'components/redesign/SiteFooter'
@@ -244,8 +249,40 @@ export default function Gallery() {
         <Heading>Person card</Heading>
         <div className="grid max-w-md grid-cols-2 gap-8">
           {SAMPLE_PEOPLE.map((p) => (
-            <PersonCard key={p.name} name={p.name} role={p.role} img={p.img} initials={p.initials} />
+            <PersonCard
+              key={p.name}
+              name={p.name}
+              role={p.role}
+              detail={p.detail}
+              img={p.img}
+              initials={p.initials}
+              href={p.href}
+            />
           ))}
+        </div>
+      </section>
+
+      <section data-testid="gallery-people">
+        <Heading>People screen</Heading>
+
+        <SubHeading>(a) Lab head set, no portrait, two-paragraph bio, hasPage</SubHeading>
+        <div className="mb-8 border border-rule" data-testid="gallery-people-a">
+          <People
+            settings={PEOPLE_SETTINGS_WITH_LAB_HEAD}
+            profiles={PEOPLE_PROFILES_FIXTURE}
+            roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+            headingLevel="h2"
+          />
+        </div>
+
+        <SubHeading>(b) Lab head unset -- same people, no spotlight</SubHeading>
+        <div className="border border-rule" data-testid="gallery-people-b">
+          <People
+            settings={PEOPLE_SETTINGS_WITHOUT_LAB_HEAD}
+            profiles={PEOPLE_PROFILES_FIXTURE}
+            roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+            headingLevel="h2"
+          />
         </div>
       </section>
 

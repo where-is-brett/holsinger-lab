@@ -17,6 +17,7 @@ const GALLERY_SECTIONS = [
   'publication-row',
   'facet-band',
   'person-card',
+  'people',
   'site-nav',
   'site-nav-long',
   'mobile-header',
@@ -209,11 +210,161 @@ test.describe('redesign component gallery', () => {
     const section = page.getByTestId('gallery-person-card')
     await expect(section.getByRole('img', { name: 'Haochen Wu' })).toBeVisible()
     // The fallback case: no <img>, initials + "NO PORTRAIT ON FILE" instead.
-    await expect(section.getByText('JC')).toBeVisible()
-    await expect(section.getByText('[ NO PORTRAIT ON FILE ]')).toBeVisible()
-    // The misspelling in the source data ("Ungergraduate") is reproduced
-    // verbatim -- never silently corrected.
-    await expect(section.getByText('Ungergraduate student - Diagnostic Radiography')).toBeVisible()
+    // Several fixture cards use the fallback, so this is scoped to Jiyoo
+    // Choi's card specifically -- found via her unique role text, then
+    // walked up to the card's own wrapping div -- rather than asserting on
+    // the page-wide (non-unique) "NO PORTRAIT ON FILE" / "JC" text alone,
+    // which could pass even if a different card's fallback rendered instead
+    // of hers.
+    const jiyooRole = section.getByText('Ungergraduate student - Diagnostic Radiography')
+    await expect(jiyooRole).toBeVisible()
+    const jiyooCard = jiyooRole.locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " group ")][1]')
+    await expect(jiyooCard.getByText('JC')).toBeVisible()
+    await expect(jiyooCard.getByText('[ NO PORTRAIT ON FILE ]')).toBeVisible()
+    await expect(jiyooCard.locator('img')).toHaveCount(0)
+  })
+
+  test('PersonCard: detail renders as a second mono line under role, only when present', async ({
+    page,
+  }) => {
+    const section = page.getByTestId('gallery-person-card')
+    await expect(section.getByText('Honours Student')).toBeVisible()
+    await expect(section.getByText('Diagnostic Radiography', { exact: true })).toBeVisible()
+  })
+
+  test('PersonCard: detail is omitted entirely when roleDetail is not set', async ({ page }) => {
+    // Negative half of the above (carried Task 1 review minor (b)): Haochen
+    // Wu's fixture entry has no `detail`, so his card must render only the
+    // one role line -- no second mono line under it at all.
+    const section = page.getByTestId('gallery-person-card')
+    const roleLine = section.getByText('PhD Student', { exact: true })
+    await expect(roleLine).toBeVisible()
+    const card = roleLine.locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " group ")][1]')
+    // The role line and a would-be detail line share the exact same class
+    // string (PersonCard.tsx), so the card has at most one such line when
+    // there is no detail -- assert there is exactly one, not the role text
+    // repeated on a second line.
+    await expect(card.locator('.font-mono.text-\\[10\\.5px\\]')).toHaveCount(1)
+  })
+
+  test('PersonCard: the linked card gets the same colour reveal on keyboard focus as on hover', async ({
+    page,
+  }) => {
+    // Carried Task 1 review minor (c): group-focus-visible: pairs mirror
+    // group-hover: on both the portrait filter and the name colour, so
+    // keyboard users get the identical reveal a mouse hover gives.
+    const section = page.getByTestId('gallery-person-card')
+    const link = section.getByRole('link', { name: 'Élodie Ñúñez' })
+    await link.focus()
+    await expect(link).toBeFocused()
+    const nameColor = await link
+      .locator('div', { hasText: 'Élodie Ñúñez' })
+      .first()
+      .evaluate((el) => getComputedStyle(el).color)
+    const linkTokenColor = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--sem-link').trim()
+    )
+    // The name's focused colour must not equal its own un-focused (default
+    // text) colour -- i.e. the reveal actually fired on focus, not just on
+    // hover. A direct comparison against --sem-link (which may be a further
+    // color-mix/oklab function, not a literal computed rgb string) would be
+    // fragile, so this instead confirms the focus state is distinguishable
+    // from a fresh unfocused card's name colour.
+    expect(linkTokenColor.length).toBeGreaterThan(0)
+    const blurredColor = await section
+      .getByText('Haochen Wu', { exact: true })
+      .evaluate((el) => getComputedStyle(el).color)
+    expect(nameColor).not.toBe(blurredColor)
+  })
+
+  test('PersonCard: href wraps the card in a next/link with one accessible name', async ({
+    page,
+  }) => {
+    const section = page.getByTestId('gallery-person-card')
+    // Exactly one accessible name reaches the link -- found via that single
+    // name, not two (link + image) both announcing "Élodie Ñúñez".
+    const link = section.getByRole('link', { name: 'Élodie Ñúñez' })
+    await expect(link).toHaveAttribute('href', '/people/elodie-nunez')
+    // The portrait <img> inside is alt="" (decorative), so it carries no
+    // accessible name of its own to collide with the link's aria-label.
+    await expect(link.locator('img')).toHaveAttribute('alt', '')
+  })
+
+  test('People gallery (a): spotlight shows the initials frame, name, both bio paragraphs, no email, and a Full profile link', async ({
+    page,
+  }) => {
+    const instance = page.getByTestId('gallery-people-a')
+    const spotlight = instance.getByTestId('people-spotlight')
+    await expect(spotlight).toBeVisible()
+    // No portrait on the fixture lab head -- the initials fallback renders
+    // instead of an <img>.
+    await expect(spotlight.locator('img')).toHaveCount(0)
+    // initialsOf('Dr Ilse Van Der Berg') -- final-review fix wave: a leading
+    // honorific ("Dr") is now skipped when more words remain, so this is
+    // "Ilse" + "Berg" ("IB"), not "Dr" + "Berg" ("DB").
+    await expect(spotlight.getByText('IB')).toBeVisible()
+    await expect(
+      spotlight.getByRole('heading', { level: 2, name: 'Dr Ilse Van Der Berg', exact: true })
+    ).toBeVisible()
+    await expect(spotlight.getByText(/leads the laboratory/)).toBeVisible()
+    await expect(spotlight.getByText(/trained across three continents/)).toBeVisible()
+    // No email on file for this fixture.
+    await expect(spotlight.locator('a[href^="mailto:"]')).toHaveCount(0)
+    await expect(instance.getByRole('link', { name: 'Full profile →' })).toBeVisible()
+    // The lab head is excluded from the Members grid once the spotlight
+    // renders (excludeLabHead) -- her name must not also appear as a card.
+    await expect(
+      instance.locator('[data-testid="person-card"][data-name="Dr Ilse Van Der Berg"]')
+    ).toHaveCount(0)
+  })
+
+  test('People gallery (a): the alumni paragraph lists all 22 names, comma-separated', async ({
+    page,
+  }) => {
+    const instance = page.getByTestId('gallery-people-a')
+    // Read each entry's own `data-name` rather than the paragraph's
+    // `innerText().split(', ')` -- a name can itself contain ", " (see
+    // AlumniBlock's own comment), so parsing the rendered text back apart
+    // is not a safe inverse of how it was joined.
+    const names = await instance
+      .getByTestId('people-alumni')
+      .getByTestId('alumni-name')
+      .evaluateAll((els) => els.map((el) => el.getAttribute('data-name')))
+    expect(names).toHaveLength(22)
+    expect(names[0]).toBe('Alumni 1 Lastname1')
+    expect(names[21]).toBe('Alumni 22 Lastname22')
+  })
+
+  test('People gallery (a): intern cards show their role text verbatim, including the country', async ({
+    page,
+  }) => {
+    const instance = page.getByTestId('gallery-people-a')
+    await expect(instance.getByText('Visiting Intern — Germany')).toBeVisible()
+    await expect(instance.getByText('Visiting Intern — Vietnam')).toBeVisible()
+  })
+
+  test('People gallery (b): no spotlight when labHead is unset, and the PI-equivalent profile reappears as an ordinary card', async ({
+    page,
+  }) => {
+    const instance = page.getByTestId('gallery-people-b')
+    await expect(instance.getByTestId('people-spotlight')).toHaveCount(0)
+    // (b) reuses the same PEOPLE_PROFILES_FIXTURE as (a), which now includes
+    // a profile document shaped like the real PI (roleGroup: null, same
+    // _id/name as PEOPLE_LAB_HEAD_FIXTURE -- fix round 1). With the
+    // spotlight off, excludeLabHead never runs, so she must render as an
+    // ordinary card exactly once, not zero and not twice.
+    await expect(
+      instance.locator('[data-testid="person-card"][data-name="Dr Ilse Van Der Berg"]')
+    ).toHaveCount(1)
+  })
+
+  test('People gallery: no page overflow at 320px', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 900 })
+    await page.goto('/preview/components')
+    const fits = await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+    )
+    expect(fits).toBe(true)
   })
 
   test('interactive Tag hit area clears the 44px accessibility floor', async ({ page }, testInfo) => {

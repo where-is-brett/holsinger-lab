@@ -1,5 +1,6 @@
-import People from 'components/pages/people/People'
+import { People } from 'components/redesign/screens/People'
 import { JsonLd } from 'components/shared/JsonLd'
+import Layout from 'components/shared/Layout'
 import { resolveBranding } from 'lib/branding'
 import { buildPersonListJsonLd } from 'lib/json-ld'
 import { buildMetadata } from 'lib/metadata'
@@ -72,9 +73,9 @@ export default async function PeoplePage() {
   }
 
   return (
-    <>
+    <Layout settings={settings} childrenStyles="px-0">
       <JsonLd data={buildPersonListJsonLd(profiles)} />
       <People settings={settings} profiles={profiles} roleGroups={roleGroups} />
-    </>
+    </Layout>
   )
 }

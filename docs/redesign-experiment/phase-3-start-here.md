@@ -104,8 +104,10 @@ From the plan, in the order the plan gives:
    Resources and Home from the primitives. Delivered as three PRs — see
    `docs/superpowers/specs/2026-09-22-redesign-phase-3-screens-design.md`. **PR A
    (Publications) is done**, on branch `redesign/phase-3-publications`; see
-   `docs/redesign-experiment/phase-3-decisions.md`, "Step 2 — PR A (Publications)".
-   PRs B (People) and C (Research, Resources, Home) are open.
+   `docs/redesign-experiment/phase-3-decisions.md`, "Step 2 — PR A (Publications)". **PR B
+   (People) is done, pending review**, on branch `redesign/phase-3-people`; see
+   `docs/redesign-experiment/phase-3-decisions.md`, "Step 2 — PR B (People)". PR C (Research,
+   Resources, Home) is open.
 3. **Done early**, cherry-picked alongside step 1. Re-derive the
    `:root[data-theme='warm']` presets against the new palette. See
    `docs/redesign-experiment/phase-3-decisions.md`.
