@@ -9,9 +9,12 @@
 //   npm run import:wix -- --dataset production --commit --backup ./backups/production-<date>.tar.gz --confirm-production
 //
 // Never deletes. Never blanks a field. Fields edited in Studio since the last
-// import are reported and left alone (see scripts/wix/plan.ts).
+// import are reported and left alone (see scripts/wix/plan.ts). Patches (and
+// the ledger write) are revision-guarded: if a document changed in Studio
+// while this run was fetching/uploading, the whole commit fails rather than
+// silently overwriting that edit -- re-run to re-plan against the new state.
 
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 
 import { createClient } from '@sanity/client'
 
@@ -20,6 +23,23 @@ import { type CurrentDoc, type Ledger, LEDGER_ID, planImport } from './wix/plan.
 import { ROLE_GROUP_TITLES, type RoleGroupTitle, validateSnapshot, type WixSnapshot } from './wix/snapshot.ts'
 
 const args = process.argv.slice(2)
+
+// Strict argument parsing: only these four flags are recognised, no "=" form,
+// and a flag's value may not itself look like another flag (a missing value
+// silently swallowing the next flag is worse than a loud rejection).
+const VALUE_FLAGS = new Set(['--dataset', '--backup'])
+const BOOLEAN_FLAGS = new Set(['--commit', '--confirm-production'])
+for (let i = 0; i < args.length; i++) {
+  const a = args[i]
+  if (a.includes('=')) throw new Error(`Unsupported "--flag=value" form: "${a}". Use "--flag value" (space-separated) instead.`)
+  if (!VALUE_FLAGS.has(a) && !BOOLEAN_FLAGS.has(a)) throw new Error(`Unknown argument: "${a}". Allowed: --dataset <name>, --commit, --backup <path>, --confirm-production.`)
+  if (VALUE_FLAGS.has(a)) {
+    const v = args[i + 1]
+    if (v === undefined || v.startsWith('--')) throw new Error(`"${a}" needs a value (got ${v === undefined ? 'nothing' : `"${v}"`}).`)
+    i++ // consume the value so it isn't parsed as its own argument
+  }
+}
+
 const flag = (n: string) => args.includes(n)
 const opt = (n: string) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : undefined }
 
@@ -29,7 +49,15 @@ if (!dataset) throw new Error('Pass --dataset <name> or set NEXT_PUBLIC_SANITY_D
 if (commit && dataset === 'production') {
   if (!flag('--confirm-production')) throw new Error('Production commit needs --confirm-production (Brett-approved runs only).')
   const backup = opt('--backup')
-  if (!backup || !existsSync(backup)) throw new Error('Production commit needs --backup <path to an existing dataset export>.')
+  if (!backup) throw new Error('Production commit needs --backup <path to an existing dataset export>.')
+  let backupOk = false
+  try {
+    const st = statSync(backup)
+    backupOk = st.isFile() && st.size > 0
+  } catch {
+    backupOk = false
+  }
+  if (!backupOk) throw new Error(`Production commit needs --backup <path> to point at an existing, non-empty file (got "${backup}").`)
 }
 const token = commit ? process.env.SANITY_API_WRITE_TOKEN : process.env.SANITY_API_READ_TOKEN
 if (!token) throw new Error(commit ? 'Set SANITY_API_WRITE_TOKEN to commit.' : 'Set SANITY_API_READ_TOKEN (the ledger is not publicly readable).')
@@ -37,6 +65,9 @@ if (!token) throw new Error(commit ? 'Set SANITY_API_WRITE_TOKEN to commit.' : '
 const client = createClient({ projectId, dataset, apiVersion, token, useCdn: false, perspective: 'raw' })
 
 async function main() {
+  // Printed before any upload or network write, so a bad run is visible immediately.
+  console.log(`\nDataset: ${dataset}   Mode: ${commit ? 'COMMIT' : 'dry run'}\n`)
+
   const snapshot = JSON.parse(readFileSync(new URL('../data/wix/snapshot.json', import.meta.url), 'utf8')) as WixSnapshot
   const problems = validateSnapshot(snapshot)
   if (problems.length) throw new Error(`Snapshot invalid:\n${problems.join('\n')}`)
@@ -64,7 +95,7 @@ async function main() {
   const docs = await client.fetch<CurrentDoc[]>(`*[_id in $ids]`, { ids })
   const existing = Object.fromEntries(docs.map((d) => [d._id, d]))
   const drafts = await client.fetch<string[]>(`*[_id in $ids]._id`, { ids: ids.map((i) => `drafts.${i}`) })
-  const ledgerDoc = await client.fetch<{ entries?: Ledger } | null>(`*[_id == $id][0]`, { id: LEDGER_ID })
+  const ledgerDoc = await client.fetch<{ _rev?: string; entries?: Ledger } | null>(`*[_id == $id][0]`, { id: LEDGER_ID })
 
   // Assets: uploaded only on --commit. Sanity dedupes by content hash, so re-runs add nothing.
   const urls = [
@@ -85,7 +116,6 @@ async function main() {
 
   const plan = planImport({ snapshot, existing, settingsId, roleGroupIds, assetIds, ledger: ledgerDoc?.entries ?? {} })
 
-  console.log(`\nDataset: ${dataset}   Mode: ${commit ? 'COMMIT' : 'dry run'}\n`)
   for (const op of plan.ops) {
     if (op.kind === 'create') console.log(`CREATE ${op.doc._type} ${op.doc._id}  ${String(op.doc.title ?? op.doc.name ?? '')}`)
     else console.log(`PATCH  ${op.id}  ${Object.entries(op.set).map(([k, v]) => `${k}=${JSON.stringify(v).slice(0, 80)}`).join('  ')}`)
@@ -93,9 +123,23 @@ async function main() {
   for (const s of plan.skipped) console.log(`SKIP   ${s.id}.${s.field}  (${s.reason})`)
   for (const r of plan.reports) console.log(`NOTE   ${r}`)
   for (const d of drafts) console.log(`WARN   unpublished draft exists for ${d} — the published document is patched; the draft is left as is`)
+
+  // spec §9: every Sanity-only doc of a type the snapshot could own, not just
+  // publications/profiles -- projects and standalone pages count too.
   const sanityOnly = await client.fetch<{ _type: string; title: string }[]>(
-    `*[_type in ["publication","profile"] && !(_id in $ids) && !(_id in path("drafts.**"))]{_type, "title": coalesce(title, name)}`, { ids })
-  for (const r of sanityOnly) console.log(`KEEP   ${r._type} "${r.title}" is not on Wix — left untouched (spec §9)`)
+    `*[_type in ["publication","profile","project","page"] && !(_id in $ids) && !(_id in path("drafts.**"))]{_type, "title": coalesce(title, name)} | order(_type asc, title asc)`,
+    { ids }
+  )
+  const sanityOnlyByType = new Map<string, string[]>()
+  for (const r of sanityOnly) {
+    const list = sanityOnlyByType.get(r._type) ?? []
+    list.push(r.title)
+    sanityOnlyByType.set(r._type, list)
+  }
+  for (const [type, titles] of sanityOnlyByType) {
+    console.log(`KEEP   ${type} — ${titles.length} not on Wix, left untouched (spec §9):`)
+    for (const title of titles) console.log(`         "${title}"`)
+  }
   console.log(`\n${plan.ops.length} ops, ${plan.skipped.length} skipped, ${urls.length} assets`)
 
   if (!commit) { console.log('\nDry run only. Re-run with --commit to apply.'); process.exit(0) }
@@ -103,11 +147,28 @@ async function main() {
   const tx = client.transaction()
   for (const op of plan.ops) {
     if (op.kind === 'create') tx.createIfNotExists(op.doc)
-    else tx.patch(op.id, (p) => p.set(op.set))
+    else tx.patch(op.id, (p) => p.ifRevisionId(existing[op.id]._rev as string).set(op.set))
   }
-  tx.createOrReplace({ _id: LEDGER_ID, _type: 'wixImportLedger', entries: plan.ledger, updatedAt: new Date().toISOString() })
-  const result = await tx.commit()
-  console.log(`Committed transaction ${result.transactionId}`)
+  if (ledgerDoc) {
+    tx.patch(LEDGER_ID, (p) => p.ifRevisionId(ledgerDoc._rev as string).set({ entries: plan.ledger, updatedAt: new Date().toISOString() }))
+  } else {
+    // A concurrent first run creating the same ledger doc should fail loudly,
+    // not silently clobber -- createOrReplace would clobber, create won't.
+    tx.create({ _id: LEDGER_ID, _type: 'wixImportLedger', entries: plan.ledger, updatedAt: new Date().toISOString() })
+  }
+
+  try {
+    const result = await tx.commit()
+    console.log(`Committed transaction ${result.transactionId}`)
+  } catch (e) {
+    const err = e as { statusCode?: number; message?: string }
+    const isRevisionMismatch = err.statusCode === 409 || /revision/i.test(err.message ?? '')
+    if (isRevisionMismatch) {
+      console.error('Content changed during the run — nothing was written. Re-run to re-plan.')
+      process.exit(1)
+    }
+    throw e
+  }
 }
 
 main().catch((e) => {
