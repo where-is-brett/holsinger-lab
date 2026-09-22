@@ -155,4 +155,17 @@ describe('toPublication', () => {
     )
     expect(pub.resources).toEqual([{ id: 'r1', title: 'ES chamber', kind: 'hardware' }])
   })
+
+  it('drops resources with an empty or whitespace-only title', () => {
+    const pub = toPublication(
+      payload({
+        resources: [
+          { _id: 'r1', title: '', kind: 'hardware' },
+          { _id: 'r2', title: '   ', kind: 'dataset' },
+          { _id: 'r3', title: 'ES chamber', kind: 'hardware' },
+        ],
+      } as Partial<PublicationPayload>)
+    )
+    expect(pub.resources).toEqual([{ id: 'r3', title: 'ES chamber', kind: 'hardware' }])
+  })
 })

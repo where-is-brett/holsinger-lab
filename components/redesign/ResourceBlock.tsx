@@ -28,8 +28,25 @@ const STRIPE_BG =
   'repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in oklab, var(--sem-text) 4.5%, transparent) 12px 13px)'
 
 export function ResourceBlock({ title, meta = [], figureLabel }: ResourceBlockProps) {
+  // Fix round 1: the two-track grid (a 1fr text column plus a fixed
+  // 340px-wide figure track) was unconditional and unprefixed, so it
+  // reserved the figure track (and squeezed the text into whatever was
+  // left) at every width, including mobile, even when there is no
+  // `figureLabel` to put in it. Now: a plain block (single
+  // column, no `figureLabel` needed) at every width when there's no figure,
+  // and the two-track grid only `lg:` and only when `figureLabel` is set --
+  // below `lg`, or with no figure, the figure branch below doesn't render
+  // at all, so a single column is correct either way. Each of `display` and
+  // `grid-template-columns` is set by at most one class here (this ternary
+  // picks one string or the other, never both), so there's no same-property
+  // collision at any breakpoint.
+  const twoColumn = Boolean(figureLabel)
   return (
-    <div className="grid grid-cols-[1fr_340px] items-start gap-x-(--spacing-gutter-lg)">
+    <div
+      className={
+        twoColumn ? 'lg:grid lg:grid-cols-[1fr_340px] lg:items-start lg:gap-x-(--spacing-gutter-lg)' : ''
+      }
+    >
       <div>
         {/* `text-heading` carries its own line-height/letter-spacing
             companions from styles/index.css's `@theme inline` block -- left

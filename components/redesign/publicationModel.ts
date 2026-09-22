@@ -90,6 +90,11 @@ export function toPublication(p: PublicationPayload): Publication {
     topics: p.topics ?? [],
     cite: formatApaCitation(p),
     abstract: (p.abstract ?? '').split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean),
-    resources: (p.resources ?? []).map((r) => ({ id: r._id, title: r.title ?? '', kind: r.kind ?? null })),
+    // An untitled resource (empty/whitespace-only title) has nothing to
+    // link to or label in the Resource block, so it's dropped rather than
+    // rendered as a blank ResourceBlock (fix round 1).
+    resources: (p.resources ?? [])
+      .map((r) => ({ id: r._id, title: (r.title ?? '').trim(), kind: r.kind ?? null }))
+      .filter((r) => r.title !== ''),
   }
 }

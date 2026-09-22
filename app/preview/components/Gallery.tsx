@@ -4,7 +4,13 @@ import { Button } from 'components/redesign/Button'
 import { CopyCitation } from 'components/redesign/CopyCitation'
 import { FacetBand, type FacetChipSpec } from 'components/redesign/FacetBand'
 import { applyFacets, countBy, toggleFacet } from 'components/redesign/facets'
-import { LINKED_PUB, NO_LINK_PUB, SAMPLE_PEOPLE, SAMPLE_PUBLICATIONS } from 'components/redesign/fixtures'
+import {
+  LINKED_PUB,
+  NO_LINK_PUB,
+  PUBLICATION_PAGE_FIXTURE,
+  SAMPLE_PEOPLE,
+  SAMPLE_PUBLICATIONS,
+} from 'components/redesign/fixtures'
 import { FormField } from 'components/redesign/FormField'
 import { MobileBand, MobileHeader, MobileNavRows } from 'components/redesign/MobileHeader'
 import { FOOTER_FALLBACK, SITE_NAV } from 'components/redesign/navModel'
@@ -13,6 +19,7 @@ import { PersonCard } from 'components/redesign/PersonCard'
 import type { Publication } from 'components/redesign/publicationModel'
 import { PublicationRow } from 'components/redesign/PublicationRow'
 import { ResourceBlock } from 'components/redesign/ResourceBlock'
+import { PublicationPage } from 'components/redesign/screens/PublicationPage'
 import { SectionRail } from 'components/redesign/SectionRail'
 import { SiteFooter } from 'components/redesign/SiteFooter'
 import { SiteNav } from 'components/redesign/SiteNav'
@@ -322,6 +329,27 @@ export default function Gallery() {
             onChange={(e) => setMessage(e.target.value)}
           />
           <FormField label="Disabled" disabled value="Locked" />
+        </div>
+      </section>
+
+      <section data-testid="gallery-publication-page">
+        <Heading>Publication page</Heading>
+        {/* Task 5 fix round 1: the only place `PublicationPage` actually
+            renders outside a real `/publications/[slug]` route, proving
+            (a) `ResourceBlock`'s Resource rail with a fixture that has one
+            -- the live dataset has zero `resource` documents today, so
+            without this the block would ship unrendered on real content --
+            and (b) `Cite & access` falls back to a full-width citation
+            column when there is no canonical link (`PUBLICATION_PAGE_FIXTURE`
+            has neither a DOI nor a URL). `PublicationPage` renders its own
+            `<h1>`; axe's default ruleset only requires at least one `<h1>`
+            per page (`page-has-heading-one`) and only flags a heading level
+            jumping forward by more than one, never a later heading
+            returning to `h1` -- so a second `<h1>` here does not trip axe,
+            and no extra scoping/exclusion is needed (verified empirically:
+            see the fix-round-1 report). */}
+        <div className="border border-rule">
+          <PublicationPage pub={PUBLICATION_PAGE_FIXTURE} />
         </div>
       </section>
 

@@ -23,6 +23,7 @@ const GALLERY_SECTIONS = [
   'site-footer',
   'form-field',
   'resource-block',
+  'publication-page',
 ]
 
 test.describe('redesign component gallery', () => {
@@ -44,9 +45,24 @@ test.describe('redesign component gallery', () => {
       const el = ids.nth(i)
       const text = (await el.innerText()).replace('…', '')
       const href = await el.getAttribute('href')
-      // The rendered label must not have been case-transformed, and the href
-      // must carry the full identifier even when the label is truncated.
-      expect(href).toContain(text.replace(/^https?:\/\//, '').replace(/^www\./, ''))
+      // The rendered label must not have been case-transformed. `href`
+      // containment only applies to identifiers that are *links to that
+      // identifier* (a DOI/URL anchor, always an absolute `http(s)` URL) --
+      // fix round 1 adds two `data-identifier` cases this doesn't cover:
+      // the citation box's cite string (plain text, no `href` at all -- per
+      // the Task 5 brief, "a bordered box with the cite text
+      // (data-identifier, mono)") and ResourceBlock's `MORE` meta entry
+      // (per the same brief: `{ label: 'MORE', value: 'Resources', href:
+      // '/resources' }` -- a same-site navigational link whose label is a
+      // human word, not the href repeated back). Both are legitimately
+      // `data-identifier` (verbatim, never-uppercased text) without being
+      // "the href must contain the label" identifiers -- distinguished
+      // here by `href` starting with `/` (same-site nav) vs `http` (an
+      // actual DOI/URL identifier).
+      if (href !== null && !href.startsWith('/')) {
+        // the href must carry the full identifier even when the label is truncated.
+        expect(href).toContain(text.replace(/^https?:\/\//, '').replace(/^www\./, ''))
+      }
       expect(await el.evaluate((n) => getComputedStyle(n).textTransform)).not.toBe('uppercase')
     }
   })
@@ -258,6 +274,81 @@ test.describe('redesign component gallery', () => {
     const countBefore = await page.getByTestId('tag-click-count').innerText()
     await page.mouse.click(visualBox!.x + visualBox!.width / 2, clickY)
     await expect(page.getByTestId('tag-click-count')).not.toHaveText(countBefore)
+  })
+
+  test('publication page: Resource rail links to /resources', async ({ page }) => {
+    const section = page.getByTestId('gallery-publication-page')
+    const link = section.getByRole('link', { name: 'Resources' })
+    await expect(link).toBeVisible()
+    await expect(link).toHaveAttribute('href', '/resources')
+  })
+
+  test('publication page: citation box takes the full width when there is no canonical link', async ({
+    page,
+  }) => {
+    // PUBLICATION_PAGE_FIXTURE has neither a DOI nor a URL, so the Cite &
+    // access grid should collapse to a single column (fix round 1) and the
+    // citation box should span the same width as its containing block,
+    // rather than sitting in a 1fr track sized for two columns.
+    await page.setViewportSize({ width: 1280, height: 900 })
+    const section = page.getByTestId('gallery-publication-page')
+    const wrapperBox = await section.getByTestId('pub-cite-access').boundingBox()
+    const citationBox = await section.getByTestId('pub-citation-box').boundingBox()
+    expect(wrapperBox).not.toBeNull()
+    expect(citationBox).not.toBeNull()
+    expect(citationBox!.width).toBeGreaterThan(wrapperBox!.width * 0.95)
+  })
+
+  // Fix round 1 note: this is scoped to the new `gallery-publication-page`
+  // section rather than a whole-page `document.documentElement.scrollWidth`
+  // check. Investigating the latter surfaced a genuine, *pre-existing*
+  // horizontal-overflow defect in the gallery's own `PageTitle`/`FacetBand`
+  // sections (from Task 4, unrelated to ResourceBlock or PublicationPage --
+  // confirmed present on the real production `/publications` route too, not
+  // just this gallery), which no test caught before because no prior test
+  // checked 375px on this page. Fixing that is a separate, out-of-scope
+  // change (touches two shared components used by production routes); it's
+  // flagged as a follow-up rather than silently expanded into this fix
+  // round. This test instead proves the actual thing under test: that
+  // ResourceBlock/PublicationPage's own mobile fix holds, by checking that
+  // no *unclipped* element inside the new section pushes past the
+  // viewport (an `overflow-x-auto` descendant, like the Tag row fix below,
+  // is expected to have interior overflow -- that's the point of giving it
+  // a scrollbar instead of blowing out the page -- so only elements with no
+  // clipping ancestor count as real page-overflow contributors). The real
+  // `/publications/[slug]` production route gets its own whole-page 375px
+  // check across every live paper in e2e/publication-page.spec.ts, which is
+  // unaffected by the gallery-only PageTitle/FacetBand issue and does pass.
+  test('publication page: no unclipped overflow at 375px', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 })
+    await page.goto('/preview/components')
+
+    const overflowing = await page.evaluate(() => {
+      const docWidth = document.documentElement.clientWidth
+      const section = document.querySelector('[data-testid="gallery-publication-page"]')
+      if (!section) return null
+      function isClipped(el: Element) {
+        let node = el.parentElement
+        while (node) {
+          const overflowX = getComputedStyle(node).overflowX
+          if (overflowX === 'auto' || overflowX === 'scroll' || overflowX === 'hidden' || overflowX === 'clip') {
+            return true
+          }
+          node = node.parentElement
+        }
+        return false
+      }
+      const offenders: string[] = []
+      section.querySelectorAll('*').forEach((el) => {
+        const rect = el.getBoundingClientRect()
+        if (rect.right > docWidth + 1 && !isClipped(el)) {
+          offenders.push(el.tagName)
+        }
+      })
+      return offenders
+    })
+
+    expect(overflowing).toEqual([])
   })
 
   test('has no detectable accessibility violations (light)', async ({ page }) => {

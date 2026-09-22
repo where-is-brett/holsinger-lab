@@ -29,7 +29,17 @@ function PaperBlock({ pub }: { pub: Publication }) {
       >
         ← All publications
       </Link>
-      <h1 className="mt-[26px] max-w-[1060px] text-[2.3125rem] leading-[1.22] font-semibold tracking-[-0.012em] text-pretty">
+      {/* Fix round 1: at 375px, SectionRail's content column narrows to
+          roughly 233px, and a single long word (e.g. "Neuroprotective") set
+          at this heading's large 2.3125rem font-size can be wider than
+          that column on its own -- normal word-wrapping only breaks at
+          spaces, so without `break-words` (`overflow-wrap: break-word`)
+          that one word pushes past the column and (like the Tag row above)
+          inflates the page's horizontal scroll width. `break-words` sets a
+          different CSS property (`overflow-wrap`) than `text-pretty`
+          (`text-wrap`), so this is additive, not a same-property
+          collision. */}
+      <h1 className="mt-[26px] max-w-[1060px] text-[2.3125rem] leading-[1.22] font-semibold tracking-[-0.012em] text-pretty break-words">
         {pub.title}
       </h1>
       <p className="mt-5 max-w-[900px] text-[16px] leading-[1.6] text-text-muted">
@@ -41,7 +51,18 @@ function PaperBlock({ pub }: { pub: Publication }) {
         {[pub.journal, pub.ref, pub.dateLabel].filter(Boolean).join(' · ')}
       </div>
       {(pub.type || pub.topics.length > 0) && (
-        <div className="mt-5 flex flex-wrap gap-2">
+        // Fix round 1: `flex-wrap` moves an *overflowing set* of tags onto a
+        // new line, but Tag's own chip is `whitespace-nowrap` (tokens.ts:
+        // fixed geometry, deliberately) -- a single long topic (e.g.
+        // "Metabolism, oxidative stress & neuroprotection", a real title in
+        // schemas/lib/topics) is wider on its own than a mobile content
+        // column, and flex items have the same implicit
+        // `min-width: auto` floor as grid items, so that one chip would
+        // still push past the row's width even after SectionRail.tsx's
+        // min-w-0 fix stops the page-wide blowout. `overflow-x-auto`
+        // contains that pathological case to a local horizontal scroll on
+        // this row, instead of it visually overflowing into the page.
+        <div className="mt-5 flex flex-wrap gap-2 overflow-x-auto">
           {pub.type && <Tag>{pub.type}</Tag>}
           {pub.topics.map((topic) => (
             <Tag key={topic}>{topic}</Tag>
@@ -68,9 +89,19 @@ function AbstractBlock({ pub }: { pub: Publication }) {
 }
 
 function CiteAndAccessBlock({ pub }: { pub: Publication }) {
+  // Fix round 1: the two-track grid used to be unconditional, so with no
+  // canonical link (linkHref === '') the citation column -- the only child
+  // -- sat in the grid's first 1fr track instead of spanning the full
+  // width. The grid (and the citation column's stacked-spacing reset) now
+  // only apply when there's a link to show beside it; with none, this is a
+  // plain block and the citation column takes the full content width.
+  const hasLink = pub.linkHref !== ''
   return (
-    <div className="lg:grid lg:grid-cols-[1fr_1.2fr] lg:items-start lg:gap-x-(--spacing-gutter-lg)">
-      {pub.linkHref !== '' && (
+    <div
+      data-testid="pub-cite-access"
+      className={hasLink ? 'lg:grid lg:grid-cols-[1fr_1.2fr] lg:items-start lg:gap-x-(--spacing-gutter-lg)' : ''}
+    >
+      {hasLink && (
         <div>
           <div className={LABEL}>Canonical link — {pub.linkKind}</div>
           <a
@@ -85,10 +116,21 @@ function CiteAndAccessBlock({ pub }: { pub: Publication }) {
           </div>
         </div>
       )}
-      <div className={pub.linkHref !== '' ? 'mt-8 lg:mt-0' : ''}>
+      <div className={hasLink ? 'mt-8 lg:mt-0' : ''}>
         <div className={LABEL}>Formatted citation</div>
-        <div className="mt-[14px] border border-rule px-[22px] py-5">
-          <div className="font-mono text-[12.5px] leading-[1.75] normal-case!" data-identifier>
+        <div className="mt-[14px] border border-rule px-[22px] py-5" data-testid="pub-citation-box">
+          {/* Fix round 1: `pub.cite` (lib/citation.ts's `formatApaCitation`)
+              ends with a bare DOI/publisher URL -- a single unbreakable
+              ~40-50 character token with no spaces. At this box's narrow
+              mobile width that URL alone is wider than the column, so
+              (same mechanism as the `<h1>` above) `break-words` is needed
+              to let it wrap rather than force a page-wide horizontal
+              scroll. */}
+          <div
+            className="font-mono text-[12.5px] leading-[1.75] break-words normal-case!"
+            data-identifier
+            data-testid="pub-cite-text"
+          >
             {pub.cite}
           </div>
           <div className="mt-4">

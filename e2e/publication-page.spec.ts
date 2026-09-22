@@ -20,15 +20,15 @@ function slugFromHref(href: string): string {
 }
 
 test.describe('/publications/[slug]', () => {
-  test('the first row navigates to a paper that renders title, abstract, canonical link and citation', async ({
-    page,
-  }) => {
+  test('a DOI paper renders title, abstract, canonical link and citation', async ({ page }) => {
     await page.goto('/publications')
-    const firstRow = page.locator('[data-testid="pub-row"]').first()
-    const rowTitle = (await firstRow.getByTestId('pub-title').textContent())!.trim()
-    const identifierLink = firstRow.locator('[data-identifier]').first()
-    const identifierHref = await identifierLink.getAttribute('href')
-    const href = await firstRow.getByTestId('pub-title').getAttribute('href')
+    const doiRow = page.locator('[data-testid="pub-row"][data-link-kind="DOI"]').first()
+    const hasDoiRow = (await doiRow.count()) > 0
+    test.skip(!hasDoiRow, 'no DOI publication in this dataset')
+
+    const rowTitle = (await doiRow.getByTestId('pub-title').textContent())!.trim()
+    const identifierHref = await doiRow.locator('[data-identifier]').first().getAttribute('href')
+    const href = await doiRow.getByTestId('pub-title').getAttribute('href')
     expect(href).toBeTruthy()
 
     await page.goto(href!)
@@ -42,11 +42,9 @@ test.describe('/publications/[slug]', () => {
       await expect(abstractRail).toHaveCount(0)
     }
 
-    if (identifierHref) {
-      const canonicalLink = page.locator('a[data-identifier][href]').first()
-      await expect(canonicalLink).toHaveAttribute('href', identifierHref)
-      await expect(canonicalLink).toHaveText(identifierHref)
-    }
+    const canonicalLink = page.locator('a[data-identifier][href]').first()
+    await expect(canonicalLink).toHaveAttribute('href', identifierHref!)
+    await expect(canonicalLink).toHaveText(identifierHref!)
 
     const citationBox = page.locator('[data-identifier]', { hasText: rowTitle })
     await expect(citationBox).toContainText(rowTitle)
@@ -87,12 +85,14 @@ test.describe('/publications/[slug]', () => {
 
     await page.goto(href!)
 
+    const citationText = (await page.getByTestId('pub-cite-text').textContent())!.trim()
+
     const copyButton = page.getByRole('button', { name: 'COPY CITATION' })
     await copyButton.click()
     await expect(copyButton).toHaveText(/COPIED/)
 
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
-    expect(clipboardText.length).toBeGreaterThan(0)
+    expect(clipboardText).toBe(citationText)
   })
 
   test('an unknown slug 404s', async ({ page }) => {
@@ -125,5 +125,27 @@ test.describe('/publications/[slug]', () => {
 
     expect(scholarlyArticle['@context']).toBe('https://schema.org')
     expect(scholarlyArticle.headline).toBe(h1Text)
+  })
+
+  // Fix round 1: every live paper, not just one, because the defect this
+  // guards against (a single long, unbreakable token -- a long topic title,
+  // or the bare DOI/URL baked into the citation string -- blowing out the
+  // page at a narrow width) is content-dependent, and the only way to catch
+  // it for "any valid CMS content" (constraints.md) is to check every real
+  // record rather than pick one.
+  test('no publication detail page overflows horizontally at 375px', async ({ page }) => {
+    const slugs = await e2eClient.fetch<string[]>(
+      `*[_type == "publication" && defined(slug.current)].slug.current`
+    )
+    test.skip(slugs.length === 0, 'no publication has a slug in this dataset')
+
+    await page.setViewportSize({ width: 375, height: 800 })
+    for (const slug of slugs) {
+      await page.goto(`/publications/${slug}`)
+      const fits = await page.evaluate(
+        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+      )
+      expect(fits, `/publications/${slug} overflows at 375px`).toBe(true)
+    }
   })
 })
