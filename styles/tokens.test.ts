@@ -492,7 +492,13 @@ describe('every preset passes the contrast guards', () => {
       it(`${name} / ${scheme}`, () => {
         const t = readResolved(selector, scheme)
 
-        for (const token of ['--sem-text', '--sem-text-muted']) {
+        // --sem-text-faint is read against BOTH surfaces for the same reason
+        // the base token was darkened: PublicationRow's row hover swaps
+        // bg-surface under faint runs for bg-surface-raised. The warm preset
+        // sat at 4.455:1 on raised in dark mode, inheriting base's value
+        // against a lighter surface -- a miss no assertion covered, because
+        // this loop stopped at --sem-text-muted.
+        for (const token of ['--sem-text', '--sem-text-muted', '--sem-text-faint']) {
           expect(contrast(t[token], t['--sem-surface']), `${token} on surface`).toBeGreaterThanOrEqual(4.5)
           expect(contrast(t[token], t['--sem-surface-raised']), `${token} on raised`).toBeGreaterThanOrEqual(4.5)
         }
@@ -502,6 +508,10 @@ describe('every preset passes the contrast guards', () => {
         expect(
           contrast(t['--sem-text-inverse'], t['--sem-surface-inverse']),
           'inverse text on inverse surface'
+        ).toBeGreaterThanOrEqual(4.5)
+        expect(
+          contrast(t['--sem-text-inverse-muted'], t['--sem-surface-inverse']),
+          'inverse muted text on inverse surface'
         ).toBeGreaterThanOrEqual(4.5)
       })
     }
