@@ -88,6 +88,7 @@ export function PageTitle({ title, meta, accentMeta = false, headingLevel = 'h1'
              never two utilities for the same property at the same
              breakpoint (constraints.md). */
           <span
+            data-testid="page-title-meta"
             className={`min-w-0 font-mono text-[12px] leading-none font-normal tracking-[0.1em] uppercase md:flex-shrink-0 ${
               accentMeta ? 'text-link' : 'text-text-faint'
             }`}

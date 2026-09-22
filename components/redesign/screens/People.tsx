@@ -251,11 +251,10 @@ export function People({
   const { members, alumni } = splitAlumni(sections)
 
   const n = memberCount(members)
-  // "The trailing ungrouped section counts as a group only if it has a
-  // title" -- groupByRoleGroup already nulls the catch-all's title when it's
-  // the only section left, so counting titled sections handles both cases:
-  // a real roleGroup's title, and the "Other" catch-all's title when it sits
-  // alongside at least one other section.
+  // Spec §5.3 ruling: the trailing ungrouped catch-all is always unheaded
+  // (groupByRoleGroup gives it `title: null` unconditionally) and never
+  // counted as a group -- counting titled sections here is what keeps it
+  // out of `g` without any special-casing of the 'other' id.
   const g = members.filter((section) => section.title).length
   const meta = formatMeta({ showSpotlight, n, g })
 

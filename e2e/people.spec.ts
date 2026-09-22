@@ -60,20 +60,19 @@ function deriveGridProfiles(profiles: LiveProfile[], settings: LiveSettings | nu
 
 // Mirrors components/redesign/peopleModel.ts's groupByRoleGroup/splitAlumni
 // exactly -- one bucket per roleGroup (orderRank order) plus a trailing
-// "Other" catch-all, alumni buckets pulled out into a flat ordered list.
+// unheaded catch-all, alumni buckets pulled out into a flat ordered list.
+// Spec §5.3 ruling: the catch-all is never titled "Other" -- `title` is
+// unconditionally `null`, whether or not it sits alongside named sections
+// (it must never be counted in the meta's group count either).
 function computeSections(profiles: LiveProfile[], roleGroups: LiveRoleGroup[]) {
   type Bucket = { id: string; title: string | null; profiles: LiveProfile[] }
   const buckets: Bucket[] = roleGroups.map((g) => ({ id: g._id, title: g.title, profiles: [] }))
-  const other: Bucket = { id: 'other', title: 'Other', profiles: [] }
+  const other: Bucket = { id: 'other', title: null, profiles: [] }
   for (const profile of profiles) {
     const bucket = buckets.find((b) => b.id === profile.roleGroupId)
     ;(bucket ?? other).profiles.push(profile)
   }
-  const nonEmpty = [...buckets, other].filter((b) => b.profiles.length > 0)
-  const sections =
-    nonEmpty.length === 1 && nonEmpty[0].id === 'other'
-      ? [{ ...nonEmpty[0], title: null as string | null }]
-      : nonEmpty
+  const sections = [...buckets, other].filter((b) => b.profiles.length > 0)
 
   const members = sections.filter((s) => !isAlumniGroup(s.title))
   const alumni = sections.filter((s) => isAlumniGroup(s.title)).flatMap((s) => s.profiles)
@@ -171,15 +170,18 @@ test.describe('/people', () => {
     const { showSpotlight, gridProfiles } = deriveGridProfiles(profiles, settings)
     const { members } = computeSections(gridProfiles, roleGroups)
     const expectedN = members.reduce((total, s) => total + s.profiles.length, 0)
-    // The untitled-section rule (People.tsx's own `g` comment): a trailing
-    // ungrouped section counts as a group only when it has a title --
-    // computeSections already nulls the catch-all's title when it's the
-    // only section left, so counting titled sections handles both cases.
+    // The untitled-section rule (People.tsx's own `g` comment, spec §5.3):
+    // the trailing ungrouped catch-all is always unheaded and never counts
+    // as a group -- counting titled sections here keeps it out of `g`.
     const expectedG = members.filter((s) => s.title).length
 
     await page.goto('/people')
     const cardCount = await page.getByTestId('person-card').count()
-    const meta = await page.getByText(/CURRENT MEMBER/).innerText()
+    // Scoped to PageTitle's own meta span (data-testid, PageTitle.tsx) --
+    // a page-wide getByText(/CURRENT MEMBER/) risks matching more than one
+    // element, or the wrong one, if that phrase ever appears elsewhere on
+    // the page.
+    const meta = await page.getByTestId('page-title-meta').innerText()
     const n = Number(meta.match(/(\d+)\s+CURRENT MEMBER/)![1])
     const g = Number(meta.match(/(\d+)\s+GROUPS?/)![1])
     expect(n).toBe(cardCount)

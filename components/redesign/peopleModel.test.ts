@@ -15,7 +15,7 @@ const LAB_HEAD = { _id: 'rg-lab-head', title: 'Lab Head' }
 const ALUMNI = { _id: 'rg-alumni', title: 'Alumni' }
 
 describe('groupByRoleGroup', () => {
-  it('suppresses the "Other" heading when it is the only section', () => {
+  it('gives the trailing ungrouped catch-all no title (spec §5.3) when it is the only section', () => {
     const profiles = [
       { _id: '1', roleGroup: null },
       { _id: '2', roleGroup: null },
@@ -66,19 +66,19 @@ describe('groupByRoleGroup', () => {
     expect(groupByRoleGroup([], [])).toEqual([])
   })
 
-  it('suppresses the "Other" heading when roleGroups is empty but profiles are not', () => {
+  it('gives the trailing ungrouped catch-all no title when roleGroups is empty but profiles are not', () => {
     const profiles = [{ _id: '1', roleGroup: null }]
     const result = groupByRoleGroup(profiles, [])
     expect(result).toEqual([{ id: 'other', title: null, profiles: [{ _id: '1', roleGroup: null }] }])
   })
 
-  it('keeps the "Other" title when it appears alongside a named section', () => {
+  it('gives the trailing ungrouped catch-all no title even alongside a named section (spec §5.3 -- never "Other")', () => {
     const profiles = [
       { _id: '1', roleGroup: PHD },
       { _id: '2', roleGroup: null },
     ]
     const result = groupByRoleGroup(profiles, [PHD])
-    expect(result.find((s) => s.id === 'other')?.title).toBe('Other')
+    expect(result.find((s) => s.id === 'other')?.title).toBeNull()
   })
 })
 
@@ -139,6 +139,17 @@ describe('initialsOf', () => {
     ['Élodie Ñúñez', 'ÉÑ'],
     ['', ''],
     ['Fritz A. Graham', 'FG'],
+    // Final-review fix wave additions below.
+    ['Dr Johnny Chan (DDS)', 'JC'],
+    ['Prof. Jane Doe', 'JD'],
+    // Decomposed Unicode: each accented letter is a base letter plus a
+    // separate combining-mark code point (U+0301 COMBINING ACUTE ACCENT,
+    // U+0303 COMBINING TILDE), not the single precomposed code point the
+    // other 'Élodie Ñúñez' case above uses. `.normalize('NFC')` must compose
+    // these back together before initials are taken, or the accents are
+    // silently dropped.
+    ['Élodie Ñúñez', 'ÉÑ'],
+    ['Dr', 'D'],
   ])('initialsOf(%j) === %j', (input, expected) => {
     expect(initialsOf(input)).toBe(expected)
   })

@@ -295,7 +295,7 @@ const RESEARCH_SCIENTISTS: ProfilePayload[] = [
 ]
 
 // 10 members, no photos, every role carrying a country -- proves the "text
-// prints verbatim" rule holds for a long, data-driven role string, and 3 with
+// prints verbatim" rule holds for a long, data-driven role string, and 4 with
 // a roleDetail (spec §5 ruling 3 -- shown when present, omitted otherwise).
 const INTERN_COUNTRIES = [
   'Germany',
@@ -309,12 +309,28 @@ const INTERN_COUNTRIES = [
   'Chile',
   'Vietnam',
 ]
+// Final-review fix wave (PersonCard wrapping): at the grid's base 2-column
+// layout (`grid-cols-2`, below `md`) the odd indices below sit in the
+// rightmost column -- index 1 and index 5 are placed there deliberately,
+// not on a left-column index where a long token would never reach the
+// viewport edge at 320px. Index 1 carries a long unhyphenated surname (the
+// name line's `break-words`); index 5 carries a long parenthesised
+// roleDetail (the detail line's `break-words`). Neither disturbs the
+// pre-existing index-0/2 roleDetail pair (both left column).
+const INTERN_NAME_OVERRIDES: Record<number, string> = {
+  1: 'Priya Balasubramaniam',
+}
+const INTERN_DETAIL_OVERRIDES: Record<number, string> = {
+  5: '(Neuroscience/Pharmacology)',
+}
 const INTERNS: ProfilePayload[] = INTERN_COUNTRIES.map((country, index) =>
   profile({
     _id: `fixture-intern-${index + 1}`,
-    name: `Intern ${index + 1} Surname${index + 1}`,
+    name: INTERN_NAME_OVERRIDES[index] ?? `Intern ${index + 1} Surname${index + 1}`,
     role: `Visiting Intern — ${country}`,
-    roleDetail: index < 3 ? `${['Neuroscience', 'Biochemistry', 'Genetics'][index]} placement` : null,
+    roleDetail:
+      INTERN_DETAIL_OVERRIDES[index] ??
+      (index < 3 ? `${['Neuroscience', 'Biochemistry', 'Genetics'][index]} placement` : null),
     roleGroup: INTERNS_GROUP,
   })
 )

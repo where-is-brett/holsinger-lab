@@ -99,26 +99,40 @@ export function PersonCard({ name, role, detail, img, initials, href }: PersonCa
   // People grid), lg:grid-cols-6 (~15vw, not 16.6vw, for the same reason).
   const sizes = '(min-width: 1024px) 15vw, (min-width: 768px) 30vw, 50vw'
 
-  // When `href` is set, the whole card is a link and needs exactly one
-  // accessible name. The portrait <img>'s `alt={name}` and the link would
-  // otherwise both announce the name, so the image's `alt` is emptied here
-  // (decorative -- the name text below it already carries the content) and
-  // the name moves onto the link itself via `aria-label`. Without `href`
-  // there's no link to collide with, so the image keeps its own `alt=name`.
+  // When `href` is set, the whole card is a link. The portrait <img>'s
+  // `alt={name}` would otherwise duplicate the name text rendered right
+  // below it inside the same link, so the image's `alt` is emptied here
+  // (decorative -- the name text below it already carries the content).
+  // Final-review fix wave: the link no longer carries `aria-label={name}`
+  // -- that collapsed the link's accessible name to just the name, hiding
+  // the role and detail text from screen-reader users navigating by link.
+  // With `alt=""` on the image and no `aria-label`, the link's accessible
+  // name is computed from its own visible text content (name, role, and
+  // detail when present) -- exactly what a sighted user sees, with no
+  // double announcement of the name. Without `href` there's no link to
+  // collide with, so the image keeps its own `alt=name`.
   const portraitName = href ? '' : name
 
   const body = (
     <>
       <PortraitFrame name={portraitName} img={img} initials={initials} sizes={sizes} />
-      <div className="mt-2.5 text-[15px] leading-none font-semibold tracking-[-0.005em] transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease) group-hover:text-link group-focus-visible:text-link">
+      {/* `break-words` on all three lines (final-review fix wave): none of
+          them wrapped before, and a long unhyphenated token -- a surname
+          ("Priya Balasubramaniam") or a parenthesised roleDetail
+          ("(Neuroscience/Pharmacology)") -- overflows the ~111px card
+          width the base 2-column grid gives each card at 320px. The
+          gallery fixture now carries both shapes in the grid's rightmost
+          column (fixtures.ts) so the /preview/components 320px overflow
+          check actually exercises this. */}
+      <div className="mt-2.5 text-[15px] leading-none font-semibold tracking-[-0.005em] break-words transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease) group-hover:text-link group-focus-visible:text-link">
         {name}
       </div>
       {/* `role` and `detail` are free text from the CMS -- printed verbatim,
           including any misspelling in the source data. Never corrected
           here. */}
-      <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] text-text-faint">{role}</div>
+      <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] break-words text-text-faint">{role}</div>
       {detail && (
-        <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] text-text-faint">
+        <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] break-words text-text-faint">
           {detail}
         </div>
       )}
@@ -127,7 +141,7 @@ export function PersonCard({ name, role, detail, img, initials, href }: PersonCa
 
   if (href) {
     return (
-      <Link href={href} aria-label={name} className="group block">
+      <Link href={href} className="group block">
         {body}
       </Link>
     )

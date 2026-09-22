@@ -331,8 +331,8 @@ then the Type facet hides itself, and two e2e tests skip with a reason.
 
 ## Step 2 — PR B (People)
 
-Branch `redesign/phase-3-people`, off `redesign/phase-3-publications`. Spec:
-`docs/superpowers/specs/2026-09-22-redesign-phase-3-screens-design.md` (§4, §5). Four tasks,
+Branch `redesign/phase-3-people`, off `redesign/integration` at `2c0758c`. Spec:
+`docs/superpowers/specs/2026-09-22-redesign-phase-3-screens-design.md` (§1, §2, §5). Four tasks,
 each controller-reviewed to clean before the next started; see `progress.md` in the SDD
 working directory for the full ledger.
 
@@ -341,7 +341,7 @@ working directory for the full ledger.
 - **The spotlight rules.** `shouldShowLabHeadSpotlight` and `excludeLabHead` (carried from
   the old `People.tsx`, now merged into `components/redesign/peopleModel.ts`) gate a single
   block at the top of `/people`: **unset** (`settings.labHead` not set — today's production
-  state) renders no spotlight and the lab head sits in the grid as an ordinary card if she
+  state) renders no spotlight and the lab head sits in the grid as an ordinary card if he
   also has a profile document; **set** renders the `SPOTLIGHT_GRID` block (`PortraitFrame` at
   4:5, name, `fullBio`/`bio` via `PortableBody`, mailto identifier, `Full profile →` when
   `hasPage`) and excludes that profile from the member grid below; **no portrait** falls back
@@ -387,7 +387,7 @@ working directory for the full ledger.
   instances pass `headingLevel="h2"`, matching the level of the gallery's own per-section
   headings.
 - **`PageTitle`'s meta span gained `min-w-0`,** paired with the existing `md:flex-shrink-0`.
-  People's longer meta string (`"LAB HEAD + n MEMBERS · g GROUPS"` vs. Publications' shorter
+  People's longer meta string (`"LAB HEAD + n CURRENT MEMBERS · g GROUPS"` vs. Publications' shorter
   one) overflowed at 320/375px — the meta span had no minimum-width override, so it could not
   shrink below its own content's width inside the flex row.
 - **The member group titles are real `<h2>`s,** not `<span>`s, so they show up in a screen
@@ -404,17 +404,51 @@ working directory for the full ledger.
   floor on its own) alongside the existing `md:grid-cols-[220px_1fr]`, plus `min-w-0` on the
   text column as belt-and-braces, matching the existing convention of guarding every
   grid/flex item that holds unpredictable CMS text.
-- **`PersonCard`:** a linked card puts its accessible name on the `Link` via `aria-label`
-  rather than on the portrait image, and the image's `alt` is emptied (`alt=""`, decorative)
-  — otherwise the image's own `alt={name}` and the link would both announce the name.
-  Unlinked cards keep `alt={name}` on the image, since there's no link to collide with. The
-  colour reveal (grayscale portrait → full colour, name → link colour) also triggers on
-  keyboard focus (`group-focus-visible:` pairs mirroring every `group-hover:` one), not just
-  mouse hover. `sizes` gained an `lg` step (`(min-width: 1024px) 15vw, (min-width: 768px)
-  30vw, 50vw`) matching `CARD_GRID`'s actual `grid-cols-2`/`md:grid-cols-3`/`lg:grid-cols-6`
+- **`PersonCard`:** a linked card's portrait image gets `alt=""` (decorative), since the name
+  text rendered right below it inside the same link already carries the content. Unlinked
+  cards keep `alt={name}` on the image, since there's no link to collide with. The colour
+  reveal (grayscale portrait → full colour, name → link colour) also triggers on keyboard
+  focus (`group-focus-visible:` pairs mirroring every `group-hover:` one), not just mouse
+  hover. `sizes` gained an `lg` step (`(min-width: 1024px) 15vw, (min-width: 768px) 30vw,
+  50vw`) matching `CARD_GRID`'s actual `grid-cols-2`/`md:grid-cols-3`/`lg:grid-cols-6`
   breakpoints — the previous two-step value was carried over from the old `Profile.tsx`'s
   3-up desktop grid and under/over-declared the served image width against the new 6-up
   layout.
+
+### Final-review fix wave (2026-09-23)
+
+- **Ruling: the trailing ungrouped catch-all is unheaded (spec §5.3).** `groupByRoleGroup`
+  now gives the catch-all `title: null` unconditionally — never a literal "Other" heading —
+  whether or not it sits alongside named role-group sections, and it is never counted in the
+  meta's group count. Previously the catch-all's title was only nulled when it was the *only*
+  section; alongside a named section it rendered as a real "Other" heading and counted toward
+  `g`, which the spec ruling does not allow. `components/redesign/screens/People.tsx`,
+  `components/redesign/peopleModel.ts` (and its unit tests), and `e2e/people.spec.ts`'s own
+  `computeSections` mirror all updated to match; the gallery fixture (`fixtures.ts`) already
+  exercises this shape (an ungrouped entry alongside three named role groups).
+- **Ruling: `PersonCard`'s link no longer carries `aria-label={name}`.** With the image's
+  `alt=""` still in place, an `aria-label` on the `Link` collapsed its accessible name down to
+  just the person's name, hiding the role and roleDetail text from screen-reader users
+  navigating by link — the sighted experience (name, role, detail all visible inside the same
+  link) and the accessible one now match. `e2e/redesign-components.spec.ts`'s
+  `getByRole('link', { name: 'Élodie Ñúñez' })` locators are unaffected: Playwright's default
+  `exact: false` substring match still finds the link once its accessible name grows to
+  include the role text.
+- **`PersonCard`'s name/role/detail lines gained `break-words`.** None of the three wrapped
+  before; a long unhyphenated token — a surname ("Priya Balasubramaniam") or a parenthesised
+  `roleDetail` ("(Neuroscience/Pharmacology)") — overflowed the ~111px card width the base
+  2-column grid gives each card at 320px. The gallery fixture (`fixtures.ts`) now carries both
+  shapes in the grid's rightmost column so `/preview/components`'s existing 320px overflow
+  check actually exercises this (confirmed red before the fix, green after — see
+  `final-fix-report.md`).
+- **`initialsOf` hardening.** `.normalize('NFC')` first (a decomposed name's accents no longer
+  get silently dropped), a leading honorific (`Dr`, `Dr.`, `Prof`, `Prof.`, `Professor`,
+  case-insensitive) is skipped when more words remain, and a word that doesn't start with a
+  Unicode letter (`\p{L}`) — e.g. a parenthesised qualifier like "(DDS)" — is ignored when
+  picking the first/last word.
+- **`e2e/people.spec.ts`'s meta assertion scoped to `PageTitle`'s own meta span**, via a new
+  `data-testid="page-title-meta"` on it (`PageTitle.tsx`), replacing a page-wide
+  `getByText(/CURRENT MEMBER/)` that risked matching more than the intended element.
 
 ### Carried forward to PR C
 

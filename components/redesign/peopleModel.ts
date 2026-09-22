@@ -11,9 +11,18 @@ interface RoleGroup {
 
 /**
  * Groups `profiles` by `roleGroup`, in the order `roleGroups` is given
- * (already ordered by the caller's query), with an "Other" catch-all last
+ * (already ordered by the caller's query), with an unheaded catch-all last
  * for unset or dangling (deleted-group) references. Sections with zero
  * members are omitted.
+ *
+ * Final-review ruling (spec §5.3): the trailing catch-all is *never*
+ * titled "Other" -- `title` is unconditionally `null`, whether or not it
+ * sits alongside named sections. A literal "Other" heading reads as if the
+ * lab had a real role group by that name, which it doesn't; the catch-all
+ * is simply "everyone with no roleGroup set", and gets no heading and no
+ * count of its own. Callers that derive a group count from titled sections
+ * (People.tsx's `g`) get this for free: an untitled section never
+ * contributes to that count.
  */
 export function groupByRoleGroup<T extends { roleGroup?: RoleGroup | null }>(
   profiles: T[],
@@ -24,7 +33,7 @@ export function groupByRoleGroup<T extends { roleGroup?: RoleGroup | null }>(
     title: group.title,
     profiles: [],
   }))
-  const other: RoleGroupSection<T> = { id: 'other', title: 'Other', profiles: [] }
+  const other: RoleGroupSection<T> = { id: 'other', title: null, profiles: [] }
 
   for (const profile of profiles) {
     const match = sections.find((section) => section.id === profile.roleGroup?._id)
@@ -35,20 +44,7 @@ export function groupByRoleGroup<T extends { roleGroup?: RoleGroup | null }>(
     }
   }
 
-  const nonEmpty = [...sections, other].filter(
-    (section) => section.profiles.length > 0
-  )
-
-  // When the catch-all is the only section, a heading reading literally
-  // "Other" looks like a label for the whole page rather than a real
-  // category -- suppress it. Named sections are unaffected, and the moment
-  // the lab creates its first Role Group, a second section returns and
-  // headings come back.
-  if (nonEmpty.length === 1 && nonEmpty[0].id === 'other') {
-    return [{ ...nonEmpty[0], title: null }]
-  }
-
-  return nonEmpty
+  return [...sections, other].filter((section) => section.profiles.length > 0)
 }
 
 /**
@@ -80,6 +76,13 @@ export function shouldShowLabHeadSpotlight(settings: {
   return Boolean(settings.labHead) && settings.showLabHeadOnPeople !== false
 }
 
+// Leading honorifics to skip when computing initials (final-review fix
+// wave), matched case-insensitively against the whole first word (so both
+// "Dr" and "Dr." match "dr"/"dr."). Only stripped when a name has more
+// words after it -- "Dr" alone (no surname on file) has nothing else to
+// fall back to, so it stays and supplies the one initial.
+const HONORIFICS = new Set(['dr', 'dr.', 'prof', 'prof.', 'professor'])
+
 /**
  * First letter of the first word plus first letter of the last word,
  * uppercased. A single word gives one letter; empty/null/whitespace-only
@@ -87,12 +90,33 @@ export function shouldShowLabHeadSpotlight(settings: {
  * hyphenated word ("Mary-Jane") counts as one word. `Array.from` splits on
  * code points rather than UTF-16 code units, so a non-BMP first character
  * (e.g. an emoji) stays whole rather than being sliced in half.
+ *
+ * Final-review fix wave, three refinements:
+ * - `.normalize('NFC')` first, so a decomposed name (a base letter plus a
+ *   separate combining-mark code point, e.g. "e" + U+0301) composes back
+ *   into one code point before `Array.from` takes "the first one" -- on
+ *   decomposed input, taking the first code point of an unnormalized string
+ *   would grab the bare base letter and silently drop its accent.
+ * - A leading honorific ("Dr", "Dr.", "Prof", "Prof.", "Professor",
+ *   case-insensitive) is skipped when the name has more words after it, so
+ *   "Dr Johnny Chan" gives "JC", not "DC".
+ * - A word that doesn't start with a letter (a parenthesised qualifier like
+ *   "(DDS)") is ignored when picking the first/last word, via `\p{L}`
+ *   (Unicode "Letter" category, not an ASCII-only check) on the word's
+ *   first code point.
  */
 export function initialsOf(name: string | null | undefined): string {
   if (!name) {
     return ''
   }
-  const words = name.trim().split(/\s+/).filter(Boolean)
+  let words = name.normalize('NFC').trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0) {
+    return ''
+  }
+  if (words.length > 1 && HONORIFICS.has(words[0].toLowerCase())) {
+    words = words.slice(1)
+  }
+  words = words.filter((word) => /\p{L}/u.test(Array.from(word)[0] ?? ''))
   if (words.length === 0) {
     return ''
   }

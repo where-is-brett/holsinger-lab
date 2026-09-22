@@ -299,9 +299,10 @@ test.describe('redesign component gallery', () => {
     // No portrait on the fixture lab head -- the initials fallback renders
     // instead of an <img>.
     await expect(spotlight.locator('img')).toHaveCount(0)
-    // initialsOf('Dr Ilse Van Der Berg') -- first letter of the first word
-    // plus first letter of the last word ("Dr" + "Berg").
-    await expect(spotlight.getByText('DB')).toBeVisible()
+    // initialsOf('Dr Ilse Van Der Berg') -- final-review fix wave: a leading
+    // honorific ("Dr") is now skipped when more words remain, so this is
+    // "Ilse" + "Berg" ("IB"), not "Dr" + "Berg" ("DB").
+    await expect(spotlight.getByText('IB')).toBeVisible()
     await expect(
       spotlight.getByRole('heading', { level: 2, name: 'Dr Ilse Van Der Berg', exact: true })
     ).toBeVisible()
