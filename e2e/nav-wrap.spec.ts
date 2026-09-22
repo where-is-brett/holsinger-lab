@@ -29,26 +29,28 @@ for (const width of WIDTHS) {
 
     test('the live header is one row, nav-height tall, wordmark unclipped', async ({ page }) => {
       await page.goto('/')
+      await page.evaluate(() => document.fonts.ready)
       const expected = await navHeightPx(page)
       const m = await page.evaluate(() => {
         const header = document.querySelector('[data-testid="site-header"] [data-testid="site-nav"]')!
         const links = [...header.querySelectorAll('nav a')]
-        const spans = [...header.querySelectorAll('[data-testid^="site-wordmark-"]')].filter(
-          (s) => getComputedStyle(s).display !== 'none'
-        )
         return {
           height: header.getBoundingClientRect().height,
           tops: [...new Set(links.map((a) => Math.round(a.getBoundingClientRect().top)))],
-          clipped: spans.some((s) => s.scrollWidth > s.clientWidth),
         }
       })
       expect(m.height).toBeCloseTo(expected, 0)
       expect(m.tops).toHaveLength(1)
-      expect(m.clipped).toBe(false)
+      // Clipping is asserted only on the long-siteName fixture below. The
+      // live CMS leaves `siteName` unset today, so a `scrollWidth >
+      // clientWidth` check here would pass for the wrong reason and would
+      // turn CI red the day a real Settings edit made `truncate` do the job
+      // it is designed to do.
     })
 
     test('the long-siteName fixture fits the viewport', async ({ page }) => {
       await page.goto('/preview/components')
+      await page.evaluate(() => document.fonts.ready)
       const m = await page.evaluate(() => {
         const header = document.querySelector('[data-testid="gallery-site-nav-long"] [data-testid="site-nav"]')!
         const cs = getComputedStyle(header)
@@ -64,11 +66,12 @@ for (const width of WIDTHS) {
             parseFloat(cs.columnGap) +
             parseFloat(cs.paddingLeft) +
             parseFloat(cs.paddingRight),
+          clientWidth: document.documentElement.clientWidth,
           tops: [...new Set([...nav.querySelectorAll('a')].map((a) => Math.round(a.getBoundingClientRect().top)))],
         }
       })
       expect(m.which).toBe(width >= 1024 ? 'site-wordmark-long' : 'site-wordmark-short')
-      expect(m.needed).toBeLessThanOrEqual(width)
+      expect(m.needed).toBeLessThanOrEqual(m.clientWidth)
       expect(m.tops).toHaveLength(1)
     })
   })

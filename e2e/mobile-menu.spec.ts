@@ -175,6 +175,13 @@ test.describe('mobile menu accessibility contract', () => {
     // Desktop Chrome project doesn't have.
     test.use({ hasTouch: true })
 
+    // A real tap, not a click, is the point of this test: Headless UI's
+    // `useOutsideClick` calls `preventDefault` on `touchend` for anything
+    // outside `DialogPanel`, which suppresses the synthesized click that
+    // would otherwise follow. That is why the wordmark has to live inside
+    // the panel -- a mouse-click version of this test would pass even if it
+    // did not.
+
     test('tapping the wordmark inside the open sheet navigates home and closes', async ({
       page,
     }) => {

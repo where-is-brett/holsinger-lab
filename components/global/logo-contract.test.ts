@@ -12,9 +12,10 @@ const logo = () => readFileSync('components/global/Logo.tsx', 'utf8')
 // media-dim.test.ts. Rendered behaviour is covered by Playwright instead.
 describe('Logo contract', () => {
   it('gives every render mode the fixed accessible name "logo"', () => {
-    // e2e/server-rendered-nav.spec.ts locates the header logo by this exact
-    // accessible name. Making it dynamic (e.g. the site name) would make
-    // every logo-locating test depend on live CMS content.
+    // A fixed name, rather than one derived from live content (e.g. the
+    // site name), keeps any locator that finds the logo independent of what
+    // the CMS currently holds -- so a Settings edit can never break or
+    // silently redirect a test that is looking for the header logo.
     expect(logo()).toMatch(/alt="logo"/)
     expect(logo()).toMatch(/aria-label="logo"/)
   })
