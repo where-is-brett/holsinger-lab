@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { toBlocks } from './blocks.ts'
 import { type CurrentDoc, planImport, type PlanInput, stableHash } from './plan.ts'
 import { rankAt } from './rank.ts'
-import type { WixSnapshot } from './snapshot.ts'
+import type { RoleGroupTitle, WixSnapshot } from './snapshot.ts'
 
 const GROUPS = {
   'Research Scientist': 'rg-rs',
@@ -140,5 +140,121 @@ describe('rankAt', () => {
     expect(ranks[0]).toMatch(/^0\|[0-9a-z]{6}:$/)
     // Below every existing production rank ("0|100008:" is the lowest today).
     expect(ranks[59] < '0|100000:').toBe(true)
+  })
+})
+
+describe('planImport: guards (fix round 1)', () => {
+  it('reports and skips a matched profile sanityId that is missing from existing', () => {
+    const snap = snapshot()
+    snap.people.push({
+      key: 'ghost', sanityId: 'p-ghost', name: 'Ghost Person', role: 'Alum',
+      roleDetail: null, group: 'Lab Alumni', imageUrl: null,
+    })
+    const plan = planImport(input({ snapshot: snap }))
+    expect(createFor(plan, 'p-ghost')).toBeUndefined()
+    expect(patchFor(plan, 'p-ghost')).toBeUndefined()
+    expect(plan.reports).toContain('profile p-ghost: matched id not found — skipped')
+  })
+
+  it('reports and skips a matched project sanityId that is missing from existing', () => {
+    const snap = snapshot()
+    snap.projects.push({
+      key: 'ghost-project', sanityId: 'proj-ghost', researchOrder: 1,
+      title: 'Ghost Project', paragraphs: [], imageUrl: null, imageAlt: '',
+    })
+    const plan = planImport(input({ snapshot: snap }))
+    expect(createFor(plan, 'proj-ghost')).toBeUndefined()
+    expect(patchFor(plan, 'proj-ghost')).toBeUndefined()
+    expect(plan.reports).toContain('project proj-ghost: matched id not found — skipped')
+  })
+
+  it('never recreates a wix-* document that was deleted in Studio since the last import', () => {
+    const first = planImport(input())
+    expect(createFor(first, 'wix-profile-mh')).toBeDefined()
+    // 'wix-profile-mh' is now missing from `existing` (deleted in Studio), but the ledger
+    // still remembers we created it.
+    const second = planImport(input({ ledger: first.ledger }))
+    expect(createFor(second, 'wix-profile-mh')).toBeUndefined()
+    expect(second.skipped).toContainEqual({ id: 'wix-profile-mh', field: '*', reason: 'deleted-since-import' })
+  })
+
+  it('throws instead of silently dropping an image whose asset was never uploaded', () => {
+    const snap = snapshot()
+    snap.people[0].imageUrl = 'https://static.wixstatic.com/media/pic1'
+    expect(() => planImport(input({ snapshot: snap, assetIds: {} }))).toThrow('asset not uploaded')
+  })
+
+  it('throws instead of silently dropping the hero image on a run where the asset mapping is missing', () => {
+    const snap = snapshot()
+    snap.siteCopy.hero.imageUrl = 'https://static.wixstatic.com/media/hero1'
+    const withAsset = input({
+      snapshot: snap,
+      assetIds: { 'https://static.wixstatic.com/media/hero1': 'image-hero-1' },
+    })
+    // First run succeeds and would set siteCopy.hero.image.
+    const first = planImport(withAsset)
+    expect(createFor(first, 'siteCopy')?.doc.hero).toMatchObject({ image: { asset: { _ref: 'image-hero-1' } } })
+    // A later run where the asset mapping is missing (upload failed / not re-supplied) must
+    // throw rather than silently produce a patch that drops the image field.
+    expect(() => planImport({ ...withAsset, assetIds: {} })).toThrow('asset not uploaded')
+  })
+
+  it('throws when a role group title has no id in roleGroupIds', () => {
+    const incomplete = { ...GROUPS } as Partial<Record<RoleGroupTitle, string>>
+    delete incomplete['Lab Alumni']
+    expect(() =>
+      planImport(input({ roleGroupIds: incomplete as Record<RoleGroupTitle, string> }))
+    ).toThrow('role group not found')
+  })
+
+  it('treats a field cleared in Studio after import as an edit, not untouched ground (Ruling 6a)', () => {
+    const first = planImport(input())
+    const after: Record<string, CurrentDoc> = { ...input().existing }
+    for (const op of first.ops) {
+      if (op.kind === 'create') after[op.doc._id] = op.doc
+      else after[op.id] = { ...after[op.id], ...op.set }
+    }
+    after['p-jc'] = { ...after['p-jc'], name: null } // cleared in Studio
+    const second = planImport(input({ existing: after, ledger: first.ledger }))
+    expect(patchFor(second, 'p-jc')?.set?.name).toBeUndefined()
+    expect(second.skipped).toContainEqual({ id: 'p-jc', field: 'name', reason: 'edited-since-import' })
+    expect(second.ledger['p-jc#name']).toBe(first.ledger['p-jc#name'])
+  })
+
+  it('keeps skipping an edited field across a third run even when the Wix value itself changes', () => {
+    const first = planImport(input())
+    const afterEdit: Record<string, CurrentDoc> = { ...input().existing }
+    for (const op of first.ops) {
+      if (op.kind === 'create') afterEdit[op.doc._id] = op.doc
+      else afterEdit[op.id] = { ...afterEdit[op.id], ...op.set }
+    }
+    afterEdit['p-jc'] = { ...afterEdit['p-jc'], name: 'Dr Johnny Chan DDS' } // edited in Studio
+    const second = planImport(input({ existing: afterEdit, ledger: first.ledger }))
+    expect(second.skipped).toContainEqual({ id: 'p-jc', field: 'name', reason: 'edited-since-import' })
+
+    // Third run: Wix's own value for the field changes too, but the Studio edit still wins.
+    const snap3 = snapshot()
+    snap3.people[0].name = 'Dr Johnny Chan II'
+    const third = planImport(input({ snapshot: snap3, existing: afterEdit, ledger: second.ledger }))
+    expect(patchFor(third, 'p-jc')?.set?.name).toBeUndefined()
+    expect(third.skipped).toContainEqual({ id: 'p-jc', field: 'name', reason: 'edited-since-import' })
+    expect(third.ledger['p-jc#name']).toBe(first.ledger['p-jc#name'])
+  })
+
+  it('reports every differing publication field, not only the title (Ruling 6b)', () => {
+    const withDiffs = input({
+      existing: {
+        ...input().existing,
+        'pub-old': {
+          _id: 'pub-old', _type: 'publication', title: 'Old',
+          journal: 'Old Journal Name', volume: 99, doi: '10.1/x',
+        },
+      },
+    })
+    const plan = planImport(withDiffs)
+    expect(plan.reports).toContain('publication pub-old: journal differs (Sanity "Old Journal Name" vs Wix "J") — not written')
+    expect(plan.reports).toContain('publication pub-old: volume differs (Sanity "99" vs Wix "1") — not written')
+    // Title matches here, so it must not be reported.
+    expect(plan.reports.some((r) => r.startsWith('publication pub-old: title differs'))).toBe(false)
   })
 })
