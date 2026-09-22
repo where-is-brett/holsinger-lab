@@ -7,9 +7,9 @@ test('/people renders, and the spotlight matches settings.labHead / showLabHeadO
 }) => {
   // Derived from the live dataset rather than the "no lab head is set"
   // assumption this test previously hardcoded -- mirrors
-  // components/pages/people/shouldShowLabHeadSpotlight.ts, so it holds
-  // whether or not the upcoming Studio migration has set settings.labHead
-  // yet.
+  // components/redesign/peopleModel.ts's shouldShowLabHeadSpotlight, so it
+  // holds whether or not the upcoming Studio migration has set
+  // settings.labHead yet.
   const settings = await e2eClient.fetch<{
     labHeadId: string | null
     labHeadName: string | null
@@ -43,9 +43,8 @@ test('/people renders, and the spotlight matches settings.labHead / showLabHeadO
 // write token or staging dataset in this environment (Global Constraints),
 // so this specific off-state can't be exercised against the live dataset;
 // the on-state (spotlight matches the live grouping-independent grid) is
-// covered above and in the "People role grouping" test in
-// e2e/publications-interactive.spec.ts, both of which already run against
-// whatever settings.labHead currently is.
+// covered above and in e2e/people.spec.ts's own tests, all of which already
+// run against whatever settings.labHead currently is.
 test.skip('/people has no spotlight and no grid entry when showLabHeadOnPeople is off', async ({
   page,
 }) => {

@@ -4,6 +4,18 @@ export interface PageTitleProps {
   title: string
   meta?: string
   accentMeta?: boolean
+  /**
+   * The route-level `PageTitle` is always a real page's `<h1>` -- the
+   * default. `headingLevel="h2"` exists only for a page that renders more
+   * than one `PageTitle` at once and isn't itself a route (the People
+   * gallery fixture, /preview/components: axe's `landmark-unique` doesn't
+   * apply to headings, but a page with three `<h1>`s -- the gallery's own,
+   * plus one per People instance -- reads as three separate top-level
+   * documents to assistive tech, which is exactly what the gallery, a single
+   * preview page, is not (task 2 brief, "Headings ... must not collide for
+   * axe"). Every real route still gets the semantically-correct `<h1>`.
+   */
+  headingLevel?: 'h1' | 'h2'
 }
 
 // Sits on the same [rail | content] grid as SectionRail (RAIL_GRID, from
@@ -16,7 +28,8 @@ export interface PageTitleProps {
 // vertical rule running down the page, so their column widths must stay
 // byte-identical or that rule jogs sideways at the PageTitle/SectionRail
 // seam on mobile. One export is what makes that guarantee enforceable.
-export function PageTitle({ title, meta, accentMeta = false }: PageTitleProps) {
+export function PageTitle({ title, meta, accentMeta = false, headingLevel = 'h1' }: PageTitleProps) {
+  const Heading = headingLevel
   return (
     <div className={RAIL_GRID}>
       <div className="border-r border-rule" />
@@ -47,7 +60,7 @@ export function PageTitle({ title, meta, accentMeta = false }: PageTitleProps) {
             still refused to shrink to fit its row even with `break-words`
             set, because `min-width: auto` was still winning over the
             container's available space. */}
-        <h1 className="m-0 min-w-0 text-title leading-none break-words">{title}</h1>
+        <Heading className="m-0 min-w-0 text-title leading-none break-words">{title}</Heading>
         {meta && (
           /* PageTitle.jsx specifies 400 12px/1 mono at 0.1em tracking in
              --sem-text-faint (or --sem-link when accentMeta) -- this
@@ -56,8 +69,26 @@ export function PageTitle({ title, meta, accentMeta = false }: PageTitleProps) {
              tracking and colour). The vendored source wins per the task's
              decision #3, so this is composed by hand rather than using the
              META token from tokens.ts. */
+          /* Task 2 fix: a longer meta string (People's "LAB HEAD + N CURRENT
+             MEMBERS · G GROUPS", vs. Publications' shorter "N RECORDS · Y")
+             overflowed the viewport below `md`. Below `md`, PageTitle's flex
+             row wraps onto two lines (`flex-wrap` above), and this span
+             becomes the sole occupant of its own row -- but `flex-shrink-0`
+             refused to let it shrink to that row's actual width, and with no
+             `min-w-0` its automatic minimum stayed its own unbroken
+             max-content size, so it kept its full intrinsic width and
+             overflowed regardless of the viewport (same flexbox min-size
+             gotcha as the `<h1>` above, and SectionRail.tsx's content
+             column). `min-w-0` (unprefixed) lets it shrink and wrap at word
+             boundaries below `md`; `md:flex-shrink-0` restores the desktop
+             row layout's "meta never shrinks, stays right-aligned" behaviour
+             from `md` up, where the row is wide enough that this never
+             triggers. `flex-shrink` and `min-width` each get exactly one
+             unprefixed declaration (or none) and one `md:` declaration --
+             never two utilities for the same property at the same
+             breakpoint (constraints.md). */
           <span
-            className={`flex-shrink-0 font-mono text-[12px] leading-none font-normal tracking-[0.1em] uppercase ${
+            className={`min-w-0 font-mono text-[12px] leading-none font-normal tracking-[0.1em] uppercase md:flex-shrink-0 ${
               accentMeta ? 'text-link' : 'text-text-faint'
             }`}
           >

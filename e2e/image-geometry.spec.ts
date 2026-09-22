@@ -98,8 +98,14 @@ test('no element renders a literal "undefined" CSS class', async ({ page }) => {
 })
 
 test('image frames are dimmed in dark mode only', async ({ browser }) => {
+  // Phase 3 PR B rebuilt /people on the redesign primitives (PersonCard's
+  // own `next/image` + Tailwind filter, not ImageBox/ImageContainer), so it
+  // no longer renders a `.media-frame` element at all -- this now targets
+  // '/' (Home, still on the pre-redesign system via FeatureRow's ImageBox,
+  // and explicitly out of this PR's scope per constraints.md) so the
+  // dark-dim mechanism itself stays covered by a route that still uses it.
   const dark = await browser.newPage({ colorScheme: 'dark' })
-  await dark.goto('/people')
+  await dark.goto('/')
   const darkFilter = await dark
     .locator('.media-frame')
     .first()
@@ -108,7 +114,7 @@ test('image frames are dimmed in dark mode only', async ({ browser }) => {
   await dark.close()
 
   const light = await browser.newPage({ colorScheme: 'light' })
-  await light.goto('/people')
+  await light.goto('/')
   const lightFilter = await light
     .locator('.media-frame')
     .first()
@@ -117,17 +123,13 @@ test('image frames are dimmed in dark mode only', async ({ browser }) => {
   await light.close()
 })
 
-test('the People grayscale treatment survives the dark-mode dim', async ({
-  browser,
-}) => {
-  // Regression guard: applying the dim to the <img> instead of the wrapper
-  // silently replaced this grayscale, because `filter` is one property.
-  const page = await browser.newPage({ colorScheme: 'dark' })
-  await page.goto('/people')
-  const imgFilter = await page
-    .locator('.media-frame img')
-    .first()
-    .evaluate((el) => getComputedStyle(el).filter)
-  expect(imgFilter).toContain('grayscale')
-  await page.close()
-})
+// "the People grayscale treatment survives the dark-mode dim" (a regression
+// guard for Profile.tsx's ImageBox `classesWrapper="... [&_img]:grayscale
+// ..."` combined with ImageBox's own `.media-frame` dark-mode dim) is
+// removed, not repointed: Phase 3 PR B deleted Profile.tsx, and PersonCard's
+// replacement grayscale-on-hover treatment (PersonCard.tsx's IMAGE_FILTER)
+// is a Tailwind utility on the `next/image` element itself, never combined
+// with `.media-frame`/ImageBox at all -- the specific two-styles-on-one-
+// `filter`-property collision this test guarded against can no longer
+// happen anywhere in the codebase (grep confirms `grayscale` now only
+// appears in PersonCard.tsx, and never alongside `media-frame`).

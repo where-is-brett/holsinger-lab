@@ -1,3 +1,6 @@
+import type { ProfilePayload, RoleGroupPayload, SettingsPayload } from 'types'
+import { fallbackSettings } from 'types'
+
 import type { Publication } from './publicationModel'
 import { deriveLink, shortenLabel, splitAuthors } from './publicationModel'
 
@@ -185,3 +188,174 @@ export const SAMPLE_PEOPLE: {
     href: '/people/elodie-nunez',
   },
 ]
+
+// The same real fixture image as SAMPLE_PEOPLE, reshaped as the plain
+// reference `Image` shape every People-related query produces (see
+// lib/sanity.image.test.ts's own reference-shaped case). Reused rather than
+// invented so the People gallery exercises the exact same asset id.
+// Typed loosely (not against `ProfilePayload['image']`/`Image`): those are
+// two independently-generated structural types (the profile query's own
+// item shape vs the `sanity` package's general `Image`), and this one
+// literal needs to satisfy both call sites below (a fixture profile's
+// `image`, consumed by `urlForImage(profile.image as Image)` in
+// People.tsx). The `_ref`/`_type` shape itself is what
+// lib/sanity.image.test.ts proves urlForImage actually accepts.
+const PEOPLE_IMAGE = {
+  _type: 'image',
+  asset: {
+    _ref: 'image-8804e1e4206e971126b4ea1593388981dda21fb7-827x1157-jpg',
+    _type: 'reference',
+  },
+} as const
+
+function portableParagraph(key: string, text: string) {
+  return {
+    _type: 'block' as const,
+    _key: key,
+    style: 'normal' as const,
+    markDefs: [],
+    children: [{ _type: 'span' as const, _key: `${key}-s`, text, marks: [] }],
+  }
+}
+
+// Task 2 brief gallery fixture, instance (a): "Lab head set, no portrait, no
+// email, a two-paragraph portable-text fullBio, hasPage: true." Proves the
+// initials fallback and the Full profile -> link render even without a
+// portrait or an email on file.
+export const PEOPLE_LAB_HEAD_FIXTURE: NonNullable<SettingsPayload['labHead']> = {
+  _id: 'fixture-lab-head',
+  image: null,
+  name: 'Dr Ilse Van Der Berg',
+  role: 'Principal Investigator',
+  roleDetail: null,
+  email: null,
+  phone: null,
+  bio: null,
+  slug: 'ilse-van-der-berg',
+  hasPage: true,
+  fullBio: [
+    portableParagraph(
+      'bio-p1',
+      'Dr Van Der Berg leads the laboratory’s work on molecular mechanisms of neurodegeneration, with a focus on how ' +
+        'chronic metabolic stress alters glial support of neuronal circuits over the course of ageing.'
+    ),
+    portableParagraph(
+      'bio-p2',
+      'Before joining the University of Sydney she trained across three continents, and continues to collaborate widely ' +
+        'on cross-institutional projects spanning basic and translational neuroscience.'
+    ),
+  ],
+}
+
+function profile(overrides: Partial<ProfilePayload> & { _id: string; name: string }): ProfilePayload {
+  return {
+    image: null,
+    orderRank: overrides._id,
+    role: null,
+    roleDetail: null,
+    roleGroup: null,
+    email: null,
+    phone: null,
+    bio: null,
+    slug: null,
+    hasPage: false,
+    fullBio: null,
+    ...overrides,
+  } as ProfilePayload
+}
+
+const RESEARCH_SCIENTIST_GROUP = { _id: 'fixture-role-research-scientist', title: 'Research Scientist' }
+const INTERNS_GROUP = { _id: 'fixture-role-interns', title: 'International Interns' }
+const ALUMNI_GROUP = { _id: 'fixture-role-alumni', title: 'Lab Alumni' }
+
+const RESEARCH_SCIENTISTS: ProfilePayload[] = [
+  profile({
+    _id: 'fixture-rs-1',
+    name: 'Dr Priya Natarajan',
+    role: 'Research Scientist',
+    image: PEOPLE_IMAGE,
+    roleGroup: RESEARCH_SCIENTIST_GROUP,
+    hasPage: true,
+    slug: 'priya-natarajan',
+  }),
+  profile({
+    _id: 'fixture-rs-2',
+    name: 'Dr Marcus Ferreira',
+    role: 'Research Scientist',
+    image: PEOPLE_IMAGE,
+    roleGroup: RESEARCH_SCIENTIST_GROUP,
+  }),
+]
+
+// 10 members, no photos, every role carrying a country -- proves the "text
+// prints verbatim" rule holds for a long, data-driven role string, and 3 with
+// a roleDetail (spec §5 ruling 3 -- shown when present, omitted otherwise).
+const INTERN_COUNTRIES = [
+  'Germany',
+  'Canada',
+  'Singapore',
+  'Brazil',
+  'South Korea',
+  'Kenya',
+  'Netherlands',
+  'India',
+  'Chile',
+  'Vietnam',
+]
+const INTERNS: ProfilePayload[] = INTERN_COUNTRIES.map((country, index) =>
+  profile({
+    _id: `fixture-intern-${index + 1}`,
+    name: `Intern ${index + 1} Surname${index + 1}`,
+    role: `Visiting Intern — ${country}`,
+    roleDetail: index < 3 ? `${['Neuroscience', 'Biochemistry', 'Genetics'][index]} placement` : null,
+    roleGroup: INTERNS_GROUP,
+  })
+)
+
+// 22 members, no photos -- rendered as the inline comma-separated Alumni
+// run (spec §5 ruling 3), not a card grid.
+const ALUMNI: ProfilePayload[] = Array.from({ length: 22 }, (_, index) =>
+  profile({
+    _id: `fixture-alumni-${index + 1}`,
+    name: `Alumni ${index + 1} Lastname${index + 1}`,
+    role: 'Lab Alumni',
+    roleGroup: ALUMNI_GROUP,
+    // Every third alumnus links to their own page, proving AlumniBlock's
+    // per-name hasPage branch without making every name a link.
+    hasPage: index % 3 === 0,
+    slug: index % 3 === 0 ? `alumni-${index + 1}` : null,
+  })
+)
+
+const UNGROUPED: ProfilePayload[] = [
+  profile({ _id: 'fixture-ungrouped-1', name: 'Sam Okafor', role: 'Lab Manager' }),
+  profile({ _id: 'fixture-ungrouped-2', name: 'Robin Delacroix', role: 'Volunteer' }),
+]
+
+export const PEOPLE_ROLE_GROUPS_FIXTURE: RoleGroupPayload[] = [
+  RESEARCH_SCIENTIST_GROUP,
+  INTERNS_GROUP,
+  ALUMNI_GROUP,
+]
+
+export const PEOPLE_PROFILES_FIXTURE: ProfilePayload[] = [
+  ...RESEARCH_SCIENTISTS,
+  ...INTERNS,
+  ...ALUMNI,
+  ...UNGROUPED,
+]
+
+export const PEOPLE_SETTINGS_WITH_LAB_HEAD: SettingsPayload = {
+  ...fallbackSettings,
+  labHead: PEOPLE_LAB_HEAD_FIXTURE,
+  showLabHeadOnPeople: true,
+}
+
+// Instance (b): "Lab head unset, and the same people." -- proves the
+// spotlight is genuinely omitted, and the PI does not silently vanish from
+// the grid (excludeLabHead only runs when shouldShowLabHeadSpotlight is
+// true).
+export const PEOPLE_SETTINGS_WITHOUT_LAB_HEAD: SettingsPayload = {
+  ...fallbackSettings,
+  labHead: null,
+}

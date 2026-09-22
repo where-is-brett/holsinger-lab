@@ -42,8 +42,15 @@ const FOOTPRINT_FALLBACK =
 const STRIPE_BG =
   'repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in oklab, var(--sem-text) 4.5%, transparent) 12px 13px)'
 
+// Carried Task 1 review minor (c): a linked card's colour reveal (grayscale
+// portrait, name colour) is mouse-only without these -- `group-focus-visible:`
+// pairs mirror each `group-hover:` one exactly, so keyboard focus (Tab onto
+// the wrapping Link, PersonCard's `href` branch below) gets the identical
+// reveal a mouse hover does. Each pair targets a distinct pseudo-class
+// selector (`.group:hover &`, `.group:focus-visible &`), never the same
+// selector twice, so this is additive, not a same-property collision.
 const IMAGE_FILTER =
-  'object-cover grayscale contrast-[1.04] transition-[filter] duration-(--sem-motion-reveal) ease-(--sem-ease) group-hover:grayscale-0 group-hover:contrast-100'
+  'object-cover grayscale contrast-[1.04] transition-[filter] duration-(--sem-motion-reveal) ease-(--sem-ease) group-hover:grayscale-0 group-hover:contrast-100 group-focus-visible:grayscale-0 group-focus-visible:contrast-100'
 
 /**
  * The image / initials-fallback footprint, extracted verbatim from
@@ -102,7 +109,7 @@ export function PersonCard({ name, role, detail, img, initials, href }: PersonCa
   const body = (
     <>
       <PortraitFrame name={portraitName} img={img} initials={initials} sizes={sizes} />
-      <div className="mt-2.5 text-[15px] leading-none font-semibold tracking-[-0.005em] transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease) group-hover:text-link">
+      <div className="mt-2.5 text-[15px] leading-none font-semibold tracking-[-0.005em] transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease) group-hover:text-link group-focus-visible:text-link">
         {name}
       </div>
       {/* `role` and `detail` are free text from the CMS -- printed verbatim,
