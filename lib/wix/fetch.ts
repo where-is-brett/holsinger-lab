@@ -75,12 +75,22 @@ async function loadFixtureDocs(): Promise<Record<string, unknown>[]> {
  * already forces dynamic rendering, so a time-based fetch revalidate would be
  * meaningless there regardless.
  *
- * Note this doesn't fully close the staleness gap outside draft mode either:
- * a fetch-level revalidate only takes effect on an ISR regeneration, which
- * only happens after the page-level `revalidate = 60` (RootLayout /
- * app/(site)/*) has elapsed -- so the real bound on preview staleness is "at
- * most about 60s", not this constant. See Step 3 of the freshness-reconcile
- * task for the manifest numbers that actually verified that bound. Passing
+ * VERIFIED (Step 3 of the freshness-reconcile task, not assumed): a real
+ * `VERCEL_ENV=preview NEXT_PUBLIC_SANITY_DATASET=wix-preview npm run build
+ * --webpack` and a read of the resulting `.next/prerender-manifest.json`
+ * shows `initialRevalidateSeconds: 30` -- this constant, not 60 -- on all 7
+ * Wix routes (`/`, `/contact`, `/media`, `/news`, `/publications`,
+ * `/research`, `/team`), even though every one of those routes' own
+ * `page.tsx` (and `app/layout.tsx`) still exports `export const revalidate
+ * = 60`. Next computes a route's effective ISR window as the MINIMUM of its
+ * static `revalidate` export and every fetch-level `next.revalidate` value
+ * encountered while rendering it (a fetch-level revalidate can only shorten
+ * a route's window, never lengthen it) -- so this 30s constant, not the
+ * page-level 60, is what actually bounds preview staleness for an anonymous
+ * visitor. An earlier draft of this comment claimed the opposite ("the real
+ * bound is 'at most about 60s', not this constant") on the assumption that a
+ * fetch-level revalidate only takes effect *after* the page-level window
+ * elapses; the manifest disproves that. Passing
  * `tags` here (defaulted to `[]` when the caller doesn't supply any, same
  * shape as `lib/sanity.live.ts`'s `previewSanityFetch`) doesn't make
  * `<SanityLive />` (rendered in RootLayout) live on this path -- it still
