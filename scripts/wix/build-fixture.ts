@@ -110,6 +110,20 @@ export function buildFixtureDocs(
     })
   }
 
+  // In production, a matched profile's `imageUrl` is null because Sanity
+  // already owns that field -- the import never touches it, so the existing
+  // (real) portrait survives untouched. In fixture mode there is no real
+  // Sanity document behind a matched profile, so without this it would have
+  // no portrait at all and would never render as an alumni photo card. Give
+  // every sanityId-matched person a deterministic placeholder portrait, in
+  // the same image shape the planner uses for a real one.
+  const placeholderPortrait = (sanityId: string, alt?: string) =>
+    present({
+      _type: 'image',
+      asset: ref(`image-${createHash('sha1').update(sanityId).digest('hex').slice(0, 24)}-400x500-jpg`),
+      alt: alt || undefined,
+    })
+
   const plan = planImport({
     snapshot,
     existing,
@@ -168,7 +182,7 @@ export function buildFixtureDocs(
       roleDetail: p.roleDetail,
       roleGroup: ref(roleGroupIds[p.group]),
       orderRank: rankAt(i),
-      image: image(p.imageUrl, p.name),
+      image: image(p.imageUrl, p.name) ?? placeholderPortrait(p.sanityId, p.name),
     })
     docsById.set(p.sanityId, doc)
   })
