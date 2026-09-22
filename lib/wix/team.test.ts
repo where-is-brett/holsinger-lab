@@ -46,6 +46,20 @@ describe('groupTeam', () => {
     expect(g.current.map((x) => x._id)).toEqual(['haochen', 'johnny'])
   })
 
+  it('excludes a stega-encoded "Lab Head" role (draft mode encodes string fields, FU1)', () => {
+    // Same zero-width characters next-sanity's stega encoding inserts into
+    // string fields in draft mode -- see lib/wix/format.test.ts. A raw
+    // `p.role === 'Lab Head'` comparison would miss this.
+    const stega = '\u200b\u200c\u200d\u2060'
+    const withRole: TeamProfile[] = [
+      p('haochen', 'PhD Candidate'),
+      { ...p('pi2', null), role: `Lab Head${stega}` },
+      p('johnny', 'Research Scientist'),
+    ]
+    const g = groupTeam(withRole, null)
+    expect(g.current.map((x) => x._id)).toEqual(['haochen', 'johnny'])
+  })
+
   it('the labHeadId path still wins when both an id and a "Lab Head" role are present', () => {
     const withRole: TeamProfile[] = [
       p('haochen', 'PhD Candidate'),
