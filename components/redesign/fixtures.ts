@@ -1,4 +1,10 @@
-import type { ProfilePayload, ResourcePayload, RoleGroupPayload, SettingsPayload } from 'types'
+import type {
+  ProfilePayload,
+  ResearchProjectPayload,
+  ResourcePayload,
+  RoleGroupPayload,
+  SettingsPayload,
+} from 'types'
 import { fallbackSettings } from 'types'
 
 import type { Publication } from './publicationModel'
@@ -521,5 +527,153 @@ export const RESOURCES_FIXTURE: ResourcePayload[] = [
       pages: null,
       slug: 'novel-object-recognition-pipeline',
     },
+  },
+]
+
+// Task 2 (Research): production has zero `defined(researchOrder)` projects
+// today (spec §2) -- the coming Wix import sets it on 4 (FMT, Glial, and
+// two new ones), with cover aspect ratios "about 0.90, 1.05, 1.40, 1.41 and
+// 2.05" (task brief). Five projects here: four with covers at four of
+// those ratios (0.90, 1.05, 1.40, 2.05) plus one with no cover at all, so
+// the populated screen's "with cover" / "without cover" branches (and the
+// no-placeholder-box rule) are both exercised. Also, spread across those
+// five: one overview with a long unbreakable token (the 320px overflow
+// guard), one with no tags (SectionRail's "Project" label fallback,
+// researchKicker's tag-less branch) and one with no `start` date
+// (researchKicker's category-only branch) -- matching the task brief's
+// fixture requirements one-for-one, reusing the existing `portableParagraph`
+// helper above rather than a new one.
+//
+// Covers are real placeholder PNGs at `/public/fixtures` (task brief: "a
+// plain placeholder served from /public if one exists" -- none did, so
+// these four were added, each genuinely sized at its labelled aspect ratio
+// -- see Research.tsx's `coverAsset` for why a real Sanity asset can't
+// fabricate this: `urlForImage` never resizes/crops a cover off its native
+// upload size, so one real photo can't stand in for four different
+// ratios). The `/`-prefixed asset id is what routes these through the
+// local-file branch instead of the Sanity CDN.
+// `project.overview`'s schema allows no annotations (no `link` mark), so
+// TypeGen types its blocks' `markDefs` as `null | undefined` only, never an
+// array -- unlike `portableParagraph` above (shared with `resource`'s
+// `howToObtain`, which does allow a `link` annotation and so types
+// `markDefs` as an array). Omitting the field entirely (not `[]`) keeps
+// this satisfying `ResearchProjectPayload['overview']` without a cast.
+function overviewParagraph(key: string, text: string) {
+  return {
+    _type: 'block' as const,
+    _key: key,
+    style: 'normal' as const,
+    children: [{ _type: 'span' as const, _key: `${key}-s`, text, marks: [] }],
+  }
+}
+
+function researchCover(path: string, width: number, height: number) {
+  return {
+    _type: 'image' as const,
+    asset: {
+      _id: path,
+      metadata: {
+        dimensions: { width, height, aspectRatio: width / height },
+      },
+    },
+  }
+}
+
+export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectPayload[] = [
+  {
+    _id: 'fixture-research-1',
+    title: 'Involvement of gut microbiota in Alzheimer’s disease',
+    slug: 'gut-microbiota-alzheimers',
+    overview: [
+      overviewParagraph(
+        'research-1-p1',
+        'The gut microbiome has been implicated in numerous neurodegenerative diseases. We were the ' +
+          'first to demonstrate that modulation of the gut microbiome of Alzheimer’s disease mice results ' +
+          'in improved cognition and pathology.'
+      ),
+    ],
+    coverImage: researchCover('/fixtures/research-cover-090.png', 180, 200),
+    start: '2023-04-01T00:00:00.000Z',
+    tags: ['Gut', 'Brain', 'Microbiome'],
+    category: 'Non-pharmacological interventions',
+  },
+  // Long unbreakable token in the overview (task brief) -- same class of
+  // 320px overflow this repo guards elsewhere (ResourceBlock.tsx's DOI,
+  // PortableBody's BIO_PARAGRAPH email) -- here a single long compound
+  // identifier with no spaces or hyphens for the browser to wrap on.
+  {
+    _id: 'fixture-research-2',
+    title: 'Glial activity as a marker of disease',
+    slug: 'glial-activity-marker',
+    overview: [
+      overviewParagraph(
+        'research-2-p1',
+        'Astrocytes and microglia play an important role in maintaining a homeostatic brain environment. ' +
+          'The assay reference for this cohort is ' +
+          'GSE000000-glial-activation-cohort-2018-2024-longitudinal-imaging-dataset-full-identifier, ' +
+          'held alongside the published dataset.'
+      ),
+    ],
+    coverImage: researchCover('/fixtures/research-cover-105.png', 210, 200),
+    start: '2018-01-01T00:00:00.000Z',
+    tags: ['Astrocytes', 'Microglia'],
+    category: null,
+  },
+  // No tags -- SectionRail's label falls back to "Project", and
+  // researchKicker's tag-line half is empty (kicker is category-only, since
+  // there's no `start` here either -- see fixture 4 for the start-only
+  // partner case).
+  {
+    _id: 'fixture-research-3',
+    title: 'MAESTRO: multi-site cohort infrastructure',
+    slug: 'maestro-cohort-infrastructure',
+    overview: [
+      overviewParagraph(
+        'research-3-p1',
+        'A shared infrastructure project coordinating cohort recruitment and data harmonisation across ' +
+          'collaborating sites.'
+      ),
+    ],
+    coverImage: researchCover('/fixtures/research-cover-140.png', 280, 200),
+    start: null,
+    tags: [],
+    category: 'Cohort infrastructure',
+  },
+  // No `start` date -- researchKicker's "Since {year}" half is empty, so
+  // the kicker is tags-only (paired with fixture 3's category-only case
+  // above).
+  {
+    _id: 'fixture-research-4',
+    title: 'Metabolic stress signalling in ageing glia',
+    slug: 'metabolic-stress-ageing-glia',
+    overview: [
+      overviewParagraph(
+        'research-4-p1',
+        'Investigating how chronic metabolic stress alters glial support of neuronal circuits over the ' +
+          'course of healthy ageing.'
+      ),
+    ],
+    coverImage: researchCover('/fixtures/research-cover-205.png', 410, 200),
+    start: null,
+    tags: ['Metabolism', 'Ageing'],
+    category: 'Metabolism, oxidative stress & neuroprotection',
+  },
+  // No cover -- the narrative must take the full content width, with no
+  // placeholder box (task brief point 2).
+  {
+    _id: 'fixture-research-5',
+    title: 'Novel biomarkers of early cognitive decline',
+    slug: 'novel-biomarkers-cognitive-decline',
+    overview: [
+      overviewParagraph(
+        'research-5-p1',
+        'Identifying candidate blood-based biomarkers that track cognitive decline before clinical ' +
+          'symptoms are apparent.'
+      ),
+    ],
+    coverImage: null,
+    start: '2024-09-01T00:00:00.000Z',
+    tags: ['Biomarkers'],
+    category: 'Neuro-oncology & biomarkers',
   },
 ]

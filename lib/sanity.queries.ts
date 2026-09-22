@@ -75,6 +75,7 @@ export const settingsQuery = groq`
     showContactForm,
     showLabHeadOnHome,
     showLabHeadOnPeople,
+    contact{ email },
     menuItems[]->{
       _type,
       "slug": slug.current,
@@ -166,6 +167,30 @@ export const publicationPaths = groq`
 export const featuredPublicationsQuery = groq`
   *[_type == "publication" && featured == true] | order(date desc) {
     ${publicationFields}
+  }
+`
+
+// Spec §2 / §6, Task 2 brief: the Research page lists projects that carry a
+// `researchOrder`, in that order. Production has zero such projects today
+// (a coming Wix import sets it on four); the screen's populated state is
+// exercised against the `gallery-research` fixture until then, same
+// situation as Task 1's `resourcesQuery`.
+export const researchProjectsQuery = groq`
+  *[_type == "project" && defined(researchOrder)] | order(researchOrder asc) {
+    _id,
+    title,
+    "slug": slug.current,
+    overview,
+    coverImage{
+      ...,
+      asset->{
+        _id,
+        metadata{ dimensions{ width, height, aspectRatio } }
+      }
+    },
+    "start": duration.start,
+    tags,
+    category,
   }
 `
 

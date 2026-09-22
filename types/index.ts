@@ -6,6 +6,7 @@ import type {
   ProfileQueryResult,
   ProjectBySlugQueryResult,
   PublicationsQueryResult,
+  ResearchProjectsQueryResult,
   ResourcesQueryResult,
   RoleGroupQueryResult,
   SettingsQueryResult,
@@ -42,6 +43,8 @@ export type PublicationPayload = PublicationsQueryResult[number]
 
 export type ResourcePayload = ResourcesQueryResult[number]
 
+export type ResearchProjectPayload = ResearchProjectsQueryResult[number]
+
 export type ProfilePayload = ProfileQueryResult[number]
 export type ProfileBySlugPayload = NonNullable<ProfileBySlugQueryResult>
 export type LabHeadPayload = NonNullable<SettingsPayload['labHead']>
@@ -69,6 +72,7 @@ export const fallbackSettings: SettingsPayload = {
   showContactForm: null,
   showLabHeadOnHome: null,
   showLabHeadOnPeople: null,
+  contact: null,
   labHead: null,
   footer: [],
   ogImage: null,

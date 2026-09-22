@@ -32,7 +32,7 @@ export interface NavItem {
 export const SITE_NAV: readonly (NavItem & { live: boolean })[] = [
   { id: 'home', label: 'Home', href: '/', live: true },
   { id: 'pubs', label: 'Publications', href: '/publications', live: true },
-  { id: 'research', label: 'Research', href: '/research', live: false },
+  { id: 'research', label: 'Research', href: '/research', live: true },
   { id: 'resources', label: 'Resources', href: '/resources', live: true },
   { id: 'people', label: 'People', href: '/people', live: true },
   { id: 'lab', label: 'Lab', href: '/lab', live: false },

@@ -12,6 +12,7 @@ import {
   PEOPLE_SETTINGS_WITH_LAB_HEAD,
   PEOPLE_SETTINGS_WITHOUT_LAB_HEAD,
   PUBLICATION_PAGE_FIXTURE,
+  RESEARCH_PROJECTS_FIXTURE,
   RESOURCES_FIXTURE,
   SAMPLE_PEOPLE,
   SAMPLE_PUBLICATIONS,
@@ -26,6 +27,7 @@ import { PublicationRow } from 'components/redesign/PublicationRow'
 import { ResourceBlock } from 'components/redesign/ResourceBlock'
 import { People } from 'components/redesign/screens/People'
 import { PublicationPage } from 'components/redesign/screens/PublicationPage'
+import { Research } from 'components/redesign/screens/Research'
 import { Resources } from 'components/redesign/screens/Resources'
 import { SectionRail } from 'components/redesign/SectionRail'
 import { SiteFooter } from 'components/redesign/SiteFooter'
@@ -406,6 +408,23 @@ export default function Gallery() {
           ]}
           figureLabel="Figure preview unavailable"
         />
+      </section>
+
+      <section data-testid="gallery-research">
+        <Heading>Research screen</Heading>
+        {/* Task 2: production has zero `defined(researchOrder)` projects
+            today (spec §2), so this fixture is the only place the
+            populated Research screen -- five projects, four covers at
+            varying aspect ratios plus one with none, a long unbreakable
+            overview token, one with no tags and one with no start date --
+            actually renders. */}
+        <div className="border border-rule">
+          <Research
+            projects={RESEARCH_PROJECTS_FIXTURE}
+            email="lab@example.org"
+            showContactForm
+          />
+        </div>
       </section>
 
       <section data-testid="gallery-resources">

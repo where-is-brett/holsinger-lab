@@ -25,6 +25,7 @@ const GALLERY_SECTIONS = [
   'form-field',
   'resource-block',
   'publication-page',
+  'research',
   'resources',
 ]
 

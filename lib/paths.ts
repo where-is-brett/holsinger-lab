@@ -14,7 +14,7 @@ import type {
 } from 'sanity.types'
 
 export const getAllPaths = async (
-  staticPaths: string[] = ['/', '/publications', '/resources', '/contact', '/people']
+  staticPaths: string[] = ['/', '/publications', '/research', '/resources', '/contact', '/people']
 ) => {
   const client = getClient()
   const pages = await client.fetch<PagePathsResult>(pagePaths)

@@ -19,6 +19,7 @@ describe('SITE_NAV', () => {
     expect(liveNavItems().map((i) => [i.label, i.href])).toEqual([
       ['Home', '/'],
       ['Publications', '/publications'],
+      ['Research', '/research'],
       ['Resources', '/resources'],
       ['People', '/people'],
       ['Contact', '/contact'],
@@ -28,24 +29,26 @@ describe('SITE_NAV', () => {
 
 describe('liveNavItems with visibility flags', () => {
   it('calling with no argument is unchanged', () => {
-    expect(liveNavItems().map((i) => i.id)).toEqual(['home', 'pubs', 'resources', 'people', 'contact'])
+    expect(liveNavItems().map((i) => i.id)).toEqual([
+      'home', 'pubs', 'research', 'resources', 'people', 'contact',
+    ])
   })
 
   it('showPublications: false hides exactly pubs', () => {
     expect(liveNavItems({ showPublications: false }).map((i) => i.id)).toEqual([
-      'home', 'resources', 'people', 'contact',
+      'home', 'research', 'resources', 'people', 'contact',
     ])
   })
 
   it('showPeople: false hides exactly people', () => {
     expect(liveNavItems({ showPeople: false }).map((i) => i.id)).toEqual([
-      'home', 'pubs', 'resources', 'contact',
+      'home', 'pubs', 'research', 'resources', 'contact',
     ])
   })
 
   it('showContactForm: false hides exactly contact', () => {
     expect(liveNavItems({ showContactForm: false }).map((i) => i.id)).toEqual([
-      'home', 'pubs', 'resources', 'people',
+      'home', 'pubs', 'research', 'resources', 'people',
     ])
   })
 
@@ -55,18 +58,18 @@ describe('liveNavItems with visibility flags', () => {
     ['empty object', {}],
   ])('%s hides nothing', (_label, flags) => {
     expect(liveNavItems(flags).map((i) => i.id)).toEqual([
-      'home', 'pubs', 'resources', 'people', 'contact',
+      'home', 'pubs', 'research', 'resources', 'people', 'contact',
     ])
   })
 
-  it('all three false leaves only Home and Resources (Resources has no hide flag)', () => {
+  it('all three false leaves Home, Research and Resources (neither has a hide flag)', () => {
     expect(
       liveNavItems({
         showPublications: false,
         showPeople: false,
         showContactForm: false,
       }).map((i) => i.id)
-    ).toEqual(['home', 'resources'])
+    ).toEqual(['home', 'research', 'resources'])
   })
 })
 
@@ -77,6 +80,7 @@ describe('currentNavId', () => {
     ['/publications', 'pubs'],
     ['/publications/', 'pubs'],
     ['/publications/some-paper-2024', 'pubs'],
+    ['/research', 'research'],
     ['/resources', 'resources'],
     ['/people/jane-doe', 'people'],
     ['/contact', 'contact'],
