@@ -1,10 +1,15 @@
+import { readFileSync } from 'node:fs'
+
 import { describe, expect, it } from 'vitest'
 
 import { publicationSlug } from '../../schemas/lib/publicationSlug.ts'
+import { validateSlugFormat } from '../../schemas/lib/slug.ts'
 import { toBlocks } from './blocks.ts'
 import { type CurrentDoc, planImport, type PlanInput, stableHash } from './plan.ts'
 import { rankAt } from './rank.ts'
 import type { RoleGroupTitle, WixSnapshot } from './snapshot.ts'
+
+const SLUG_MAX_LENGTH = 96
 
 const GROUPS = {
   'Research Scientist': 'rg-rs',
@@ -338,6 +343,37 @@ describe('planImport: created publications get a slug (Wix-freshness FU6)', () =
     expect(patch?.set).toEqual({ title: 'Corrected Title' })
     expect(patch?.set).not.toHaveProperty('slug')
   })
+})
+
+describe('publicationSlug output satisfies the real field validation (slug is required() as of PR #33)', () => {
+  // `publication.slug` is `Rule.required().custom(validateSlugFormat)` in
+  // schemas/documents/publication.ts -- not merely a nice-to-have. Without a
+  // valid slug, a publication this importer creates is an INVALID document
+  // in Studio and can't be published. This pins the two real committed
+  // publications' generated slugs against the actual field validator and
+  // its actual maxLength, not a hand-rolled regex copy, so a change to
+  // either the schema's rule or publicationSlug's truncation budget that
+  // breaks this is caught here rather than discovered in Studio.
+  const realSnapshot: WixSnapshot = JSON.parse(
+    readFileSync(new URL('../../data/wix/snapshot.json', import.meta.url), 'utf8')
+  )
+  const newPublications = realSnapshot.publications.filter((p) => p.sanityId === null)
+
+  it('the committed snapshot still has exactly the two publications this test is pinning', () => {
+    // Guards against this test silently checking nothing (or the wrong
+    // count) if the snapshot changes.
+    expect(newPublications.map((p) => p.key).sort()).toEqual(['bdnf-mrna-therapy', 'non-coding-rna'])
+  })
+
+  it.each(newPublications.map((p) => [p.key, p.title, p.date] as const))(
+    'the slug generated for %s passes validateSlugFormat and fits maxLength 96',
+    (_key, title, date) => {
+      const slug = publicationSlug(title, date)
+      expect(slug.length).toBeGreaterThan(0)
+      expect(slug.length).toBeLessThanOrEqual(SLUG_MAX_LENGTH)
+      expect(validateSlugFormat({ current: slug })).toBe(true)
+    }
+  )
 })
 
 describe('planImport: singleton drafts kept in step (Fix round 3)', () => {
