@@ -484,9 +484,9 @@ All three screens are honest about missing data rather than hiding themselves or
   `0 ACTIVE PROJECTS` and one `SectionRail` saying "Research projects will be listed here
   soon." — also the live case today (`researchOrder` is unset on every project).
 - **Home's five blocks** (Identity, Recent work, Resources, Outreach/MAESTRO, The lab) are each
-  omitted independently when their own data is missing — no block renders an empty shell. Only
-  Identity and (per the members-line ruling below) parts of The lab render against live data
-  today; Recent work, Resources and the PI panel currently have data and do render live.
+  omitted independently when their own data is missing — no block renders an empty shell. On
+  live data today, the blocks that render are Identity, Recent work, MAESTRO, and The lab
+  (member count plus Support) — there is no Resources block and no PI panel today.
 
 None of this is simulated — every state above is what the live dataset actually produces today;
 the populated states are proven only by gallery fixtures (`/preview/components`).
@@ -658,5 +658,5 @@ one revert had settled it for good.
 | `npm test`          | 413 passed, 39 files                                                    | **466 passed**, 39 files                                                    |
 | `npm run lint`      | 0 errors, 4 warnings                                                    | 0 errors, 4 warnings                                                        |
 | `npm run typegen`   | 16 queries / 40 schema types                                             | **22 queries / 40 schema types**                                             |
-| `npm run build`     | 43 static pages, including 19 `/publications/[slug]` and 1 `/people/[slug]` | **45 static pages**, adding `/research`, `/resources` and `/support-our-research` |
+| `npm run build`     | 43 static pages, including 19 `/publications/[slug]` and 1 `/people/[slug]` | **45 static pages**, adding `/research` and `/resources` (`/support-our-research` is a pre-existing `page` route, not one this PR adds) |
 | `npm run test:e2e`  | 166 passed / 5 skipped                                                   | **211 passed / 6 skipped**                                                   |

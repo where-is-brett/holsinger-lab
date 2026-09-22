@@ -470,7 +470,7 @@ export default function Gallery() {
         <Heading>Resources screen</Heading>
         {/* Task 1: production carries zero `resource` documents today (spec
             §2), so this fixture is the only place the populated Resources
-            screen -- two resources, one with a linked publication's SOURCE/
+            screen -- four resources, one with a linked publication's SOURCE/
             DOI meta, one with a portable-text `howToObtain` link -- actually
             renders. */}
         <div className="border border-rule">

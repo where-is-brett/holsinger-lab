@@ -4,11 +4,21 @@ import { expect, test } from '@playwright/test'
 // `npm run build` during this plan's research on 2026-08-10) — /tutorial and
 // /projects/publication-highlights represent the two dynamic route families
 // ([slug] and projects/[slug]) alongside the four static content routes.
+//
+// `/research` and `/resources` (PR C, final-review fix wave) join the list
+// too, even though the live dataset renders their empty states (zero
+// `defined(researchOrder)` projects, zero `resource` documents -- see
+// docs/redesign-experiment/phase-3-decisions.md's "Empty states" section):
+// this test only checks the shell (200 status, a title, visible nav), which
+// an empty-state page satisfies exactly like a populated one, so no
+// per-route special-casing is needed.
 const CONTENT_ROUTES = [
   '/',
   '/contact',
   '/people',
   '/publications',
+  '/research',
+  '/resources',
   '/tutorial',
   '/projects/publication-highlights',
 ]

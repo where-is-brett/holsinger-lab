@@ -186,28 +186,35 @@ export const publicationCountQuery = groq`
   count(*[_type == "publication"])
 `
 
+// The projection shared by every resource query, so the list and the
+// home-page highlight cannot drift apart -- same pattern as
+// `publicationFields` above.
+const resourceFields = `
+  _id,
+  title,
+  kind,
+  summary,
+  howToObtain,
+  publication->{
+    _id,
+    title,
+    date,
+    doi,
+    url,
+    journal,
+    volume,
+    issue,
+    pages,
+    "slug": slug.current,
+  },
+`
+
 // Home's "Resources" block (Task 3 brief / spec §6): the first resource, in
 // the same order as `resourcesQuery` (title asc) -- one document, not the
 // full list.
 export const homeResourceQuery = groq`
   *[_type == "resource"] | order(title asc) [0] {
-    _id,
-    title,
-    kind,
-    summary,
-    howToObtain,
-    publication->{
-      _id,
-      title,
-      date,
-      doi,
-      url,
-      journal,
-      volume,
-      issue,
-      pages,
-      "slug": slug.current,
-    },
+    ${resourceFields}
   }
 `
 
@@ -260,23 +267,7 @@ export const researchProjectsQuery = groq`
 
 export const resourcesQuery = groq`
   *[_type == "resource"] | order(title asc) {
-    _id,
-    title,
-    kind,
-    summary,
-    howToObtain,
-    publication->{
-      _id,
-      title,
-      date,
-      doi,
-      url,
-      journal,
-      volume,
-      issue,
-      pages,
-      "slug": slug.current,
-    },
+    ${resourceFields}
   }
 `
 

@@ -56,6 +56,10 @@ export async function POST(request: NextRequest) {
       case 'publication':
         revalidatePath(`/publications`)
         revalidatePath('/publications/[slug]', 'page')
+        // Task 3 (Home): Home renders the five most recent publications and
+        // the "All N publications ->" count -- a `publication` edit
+        // revalidates `/` too, not just /publications and its own page.
+        revalidatePath(`/`)
         return NextResponse.json({
           success: true,
           message: `Revalidated "${type}" with slug "publications"`,

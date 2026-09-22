@@ -22,7 +22,7 @@ import { PublicationRow } from '../PublicationRow'
 import { ResourceBlock } from '../ResourceBlock'
 import { buildResourceMeta } from '../resourceModel'
 import { SectionRail } from '../SectionRail'
-import { LABEL, STRIPE_BG } from '../tokens'
+import { LABEL, PUBLICATION_GRID, STRIPE_BG } from '../tokens'
 
 // Composition follows
 // docs/redesign-experiment/design-system/ui_kits/site/Home.jsx (task brief
@@ -116,8 +116,7 @@ const IDENTITY_GRID_SOLO = 'mt-[38px] grid grid-cols-1'
 
 // -- Block 2: Recent work ------------------------------------------------
 
-const COLUMN_HEAD =
-  'hidden lg:grid lg:grid-cols-[64px_1fr_230px_250px] lg:gap-x-[28px] pb-3 font-mono text-[11px] leading-none font-medium tracking-[0.12em] text-text-faint uppercase'
+const COLUMN_HEAD = `hidden ${PUBLICATION_GRID} pb-3 font-mono text-[11px] leading-none font-medium tracking-[0.12em] text-text-faint uppercase`
 
 function RecentWorkBlock({ publications, count }: { publications: Publication[]; count: number }) {
   return (
