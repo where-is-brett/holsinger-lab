@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 
+import { publicationSlug } from '../../schemas/lib/publicationSlug.ts'
 import { toBlocks } from './blocks.ts'
 import { rankAt } from './rank.ts'
 import { ROLE_GROUP_TITLES, type RoleGroupTitle, type WixSnapshot } from './snapshot.ts'
@@ -22,6 +23,14 @@ export interface PlanInput {
   settingsId: string
   roleGroupIds: Record<RoleGroupTitle, string>
   assetIds: Record<string, string>
+  /**
+   * Every publication slug already present in the dataset (`slug.current`
+   * for docs that have one). `planImport` is pure and can't query, so the
+   * CLI gathers this with one read-only GROQ query, the same way
+   * `roleGroupIds` is gathered. Used only to keep a newly-generated slug
+   * (schemas/lib/publicationSlug.ts) from colliding with an existing one.
+   */
+  existingSlugs: ReadonlySet<string>
   ledger: Ledger
   /**
    * Unpublished drafts of the singleton docs (siteCopy, settings), keyed by
@@ -311,11 +320,35 @@ export function planImport(input: PlanInput): Plan {
 
   // Publications: create new ones; for matched ones only fill a missing DOI.
   // Every other publication difference is reported, never written.
+  //
+  // A created publication also gets a slug (schemas/lib/publicationSlug.ts),
+  // in the same title+year format the backfill script uses -- without one
+  // the schema's slug field is unset and the paper gets no
+  // /publications/<slug> page. Matched publications are untouched: their
+  // slug is either already set or is a job for the backfill script, not
+  // this importer.
+  //
+  // A collision (with an existing slug, or with another publication created
+  // in this same run) is never auto-suffixed: two papers landing on the same
+  // title+year slug is a content problem -- a duplicate record, an erratum,
+  // a preprint plus its published version -- that a human needs to look at,
+  // exactly per the backfill script's precedent.
+  const claimedSlugs = new Map<string, string>()
   for (const p of s.publications) {
     if (p.sanityId === null) {
+      const slug = publicationSlug(p.title, p.date)
+      if (slug) {
+        if (input.existingSlugs.has(slug))
+          throw new Error(`publication ${p.key}: generated slug "${slug}" already exists in the dataset`)
+        const clash = claimedSlugs.get(slug)
+        if (clash)
+          throw new Error(`publication ${p.key}: generated slug "${slug}" collides with publication ${clash} in this same import`)
+        claimedSlugs.set(slug, p.key)
+      }
       upsert(`wix-publication-${p.key}`, 'publication', {
         title: p.title, author: p.authors, journal: p.journal, date: p.date,
         volume: p.volume, issue: p.issue, pages: p.pages, doi: p.doi, type: p.type,
+        ...(slug ? { slug: { _type: 'slug', current: slug } } : {}),
       })
       continue
     }

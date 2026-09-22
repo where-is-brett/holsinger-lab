@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { publicationSlug } from '../../schemas/lib/publicationSlug.ts'
 import { toBlocks } from './blocks.ts'
 import { type CurrentDoc, planImport, type PlanInput, stableHash } from './plan.ts'
 import { rankAt } from './rank.ts'
@@ -45,7 +46,7 @@ function input(over: Partial<PlanInput> = {}): PlanInput {
     'pub-old': { _id: 'pub-old', _type: 'publication', title: 'Old (Sanity wording)', doi: null },
     settings: { _id: 'settings', _type: 'settings' },
   }
-  return { snapshot: snapshot(), existing, settingsId: 'settings', roleGroupIds: { ...GROUPS }, assetIds: {}, ledger: {}, drafts: {}, assetsResolved: true, ...over }
+  return { snapshot: snapshot(), existing, settingsId: 'settings', roleGroupIds: { ...GROUPS }, assetIds: {}, existingSlugs: new Set<string>(), ledger: {}, drafts: {}, assetsResolved: true, ...over }
 }
 
 const patchFor = (plan: ReturnType<typeof planImport>, id: string) =>
@@ -79,9 +80,10 @@ describe('planImport: first run', () => {
     expect(patchFor(plan, 'pub-old')?.set).toEqual({ doi: '10.1/x' })
     expect(plan.reports).toContain('publication pub-old: title differs (Sanity "Old (Sanity wording)" vs Wix "Old") — not written')
   })
-  it('creates new publications', () => {
+  it('creates new publications with a generated slug', () => {
     expect(createFor(plan, 'wix-publication-new')?.doc).toMatchObject({
       _type: 'publication', title: 'New', author: 'B', journal: 'bioRxiv', date: '2026-04-19', pages: '04.19.719519', type: 'Article',
+      slug: { _type: 'slug', current: publicationSlug('New', '2026-04-19') },
     })
   })
   it('never deletes and never blanks a field', () => {
@@ -271,6 +273,27 @@ describe('planImport: guards (fix round 1)', () => {
     const plan = planImport(withType)
     expect(plan.reports).toContain('publication pub-old: type differs (Sanity "Review" vs Wix "Article") — not written')
     expect(patchFor(plan, 'pub-old')?.set?.type).toBeUndefined()
+  })
+})
+
+describe('planImport: created publications get a slug (Wix-freshness FU6)', () => {
+  it('throws when the generated slug already exists in the dataset', () => {
+    const slug = publicationSlug('New', '2026-04-19')
+    expect(() => planImport(input({ existingSlugs: new Set([slug]) }))).toThrow(
+      `publication new: generated slug "${slug}" already exists in the dataset`
+    )
+  })
+
+  it('throws when two created publications would generate the same slug', () => {
+    const snap = snapshot()
+    snap.publications.push({
+      key: 'new-2', sanityId: null, title: 'New', authors: 'C', journal: 'bioRxiv', date: '2026-04-19',
+      volume: null, issue: null, pages: '04.19.999999', doi: '10.64898/2026.04.19.999999', type: 'Article',
+    })
+    const slug = publicationSlug('New', '2026-04-19')
+    expect(() => planImport(input({ snapshot: snap }))).toThrow(
+      `publication new-2: generated slug "${slug}" collides with publication new in this same import`
+    )
   })
 })
 
