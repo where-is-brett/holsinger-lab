@@ -9,6 +9,7 @@
     "backfill:publication-dois": "node scripts/backfill-publication-dois.ts",
     "backfill:publication-slugs": "node scripts/backfill-publication-slugs.ts",
     "backfill:publication-topics": "node scripts/backfill-publication-topics.ts",
+    "backfill:publication-types": "node scripts/backfill-publication-types.ts",
     "create:pi-profile": "node scripts/create-pi-profile.ts",
     "build": "next build",
     "css:proof": "node scripts/css-proof.mjs",
