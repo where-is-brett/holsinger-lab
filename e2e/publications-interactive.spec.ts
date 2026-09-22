@@ -2,89 +2,217 @@ import { expect, test } from '@playwright/test'
 
 import { e2eClient } from './support/sanity'
 
-test.describe('publications search and filter', () => {
-  test('search narrows the list to matching publications', async ({ page }) => {
-    await page.goto('/publications')
-    const initialCount = await page.locator('h2.font-ariana').count()
-    expect(initialCount).toBeGreaterThan(0)
+// Fetches the same field shape the page derives its counts/filters from, so
+// assertions stay correct as the dataset grows or the Phase 3B type/DOI
+// backfills continue -- never a hardcoded count of "19" or "10" outside the
+// one test that explicitly says it's pinning the live dataset.
+async function fetchPublications() {
+  return e2eClient.fetch<{ _id: string; doi: string | null; type: string | null }[]>(
+    `*[_type == "publication"]{ _id, doi, type }`
+  )
+}
 
-    await page.getByLabel('Search publications').fill('amyloid')
-    await expect(async () => {
-      const filteredCount = await page.locator('h2.font-ariana').count()
-      expect(filteredCount).toBeGreaterThan(0)
-      expect(filteredCount).toBeLessThan(initialCount)
-    }).toPass()
+test.describe('publications index', () => {
+  test('one row per record, and the meta reflects the row count', async ({ page }) => {
+    await page.goto('/publications')
+    const main = page.locator('main')
+    const rows = main.locator('[data-testid="pub-row"]')
+    const rowCount = await rows.count()
+    expect(rowCount).toBeGreaterThan(0)
+
+    const meta = page.getByText(/^\d+ RECORDS · /)
+    await expect(meta).toBeVisible()
+    const metaText = (await meta.textContent())!
+    const n = Number(metaText.match(/^(\d+)/)![1])
+    expect(n).toBe(rowCount)
   })
 
-  test('a query matching nothing shows the empty-state message', async ({ page }) => {
-    await page.goto('/publications')
-    await page.getByLabel('Search publications').fill('zzzzznomatch')
-    await expect(page.getByText('No publications match your search.')).toBeVisible()
-  })
-
-  test('the year filter narrows the list to one year', async ({ page }) => {
-    await page.goto('/publications')
-    // Exact match: the page also has a `<nav aria-label="Jump to year">`
-    // landmark, and Playwright's default getByLabel matching is a
-    // case-insensitive substring match, so a plain getByLabel('Year') is a
-    // strict-mode violation (it resolves both the <select>'s "Year" label
-    // and the nav's "Jump to year" aria-label, since "year" ⊂ "Jump to
-    // year"). Exact matching disambiguates to just the <select>.
-    const select = page.getByLabel('Year', { exact: true })
-    const options = await select.locator('option').allTextContents()
-    const aYear = options.find((o) => o !== 'All years')
-    expect(aYear).toBeTruthy()
-
-    await select.selectOption({ label: aYear as string })
-    await expect(page.getByRole('heading', { level: 2, name: aYear as string })).toBeVisible()
-  })
-
-  test('a jump-nav link points at the matching year section id', async ({ page }) => {
-    await page.goto('/publications')
-    const jumpNav = page.getByRole('navigation', { name: 'Jump to year' })
-    const firstLink = jumpNav.getByRole('link').first()
-    const href = await firstLink.getAttribute('href')
-    expect(href).toMatch(/^#year-/)
-    const targetId = (href as string).slice(1)
-    await expect(page.locator(`#${targetId}`)).toBeAttached()
-  })
-})
-
-test.describe('citation copy', () => {
-  test('Copy APA shows a confirmation after click', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-write'])
-    await page.goto('/publications')
-    await page.getByRole('button', { name: 'Citation' }).first().click()
-    const copyButton = page.getByRole('button', { name: 'Copy APA' }).first()
-    await copyButton.click()
-    await expect(copyButton).toHaveText('Copied!')
-  })
-})
-
-test.describe('DOI links degrade gracefully', () => {
-  test('every publication with a doi renders its DOI link, and every publication without one renders none', async ({
+  test('clicking a Year chip filters the rows, and clicking it again restores the full list', async ({
     page,
   }) => {
-    // Derived from the live dataset rather than a hardcoded split (see
-    // components/pages/publications/Publication.tsx: `{doi && <a
-    // href={\`https://doi.org/${doi}\`}>DOI: {doi}</a>}`), so this keeps
-    // holding as an upcoming import adds DOIs and papers.
-    const publications = await e2eClient.fetch<{ _id: string; doi: string | null }[]>(
-      `*[_type == "publication"]{ _id, doi }`
-    )
-    const withDoi = publications.filter(
-      (publication) => typeof publication.doi === 'string' && publication.doi.length > 0
+    await page.goto('/publications')
+    const main = page.locator('main')
+    const rows = main.locator('[data-testid="pub-row"]')
+    const fullCount = await rows.count()
+
+    const yearLabel = page.getByText('Year', { exact: true })
+    const chipsContainer = yearLabel.locator('xpath=following-sibling::div[1]')
+    const firstChip = chipsContainer.getByRole('button').first()
+    const chipText = (await firstChip.textContent())!.trim()
+    const chipYear = chipText.match(/^\d+/)![0]
+
+    await firstChip.click()
+
+    await expect(page.getByText(/ OF \d+ RECORDS SHOWN$/)).toBeVisible()
+    const visibleCount = await rows.count()
+    expect(visibleCount).toBeGreaterThan(0)
+    expect(visibleCount).toBeLessThanOrEqual(fullCount)
+    const years = await rows.evaluateAll((els) => els.map((el) => el.getAttribute('data-year')))
+    for (const year of years) {
+      expect(year).toBe(chipYear)
+    }
+
+    await firstChip.click()
+    await expect(page.getByText(/^\d+ RECORDS · /)).toBeVisible()
+    expect(await rows.count()).toBe(fullCount)
+  })
+
+  test('the Type group, when present, filters likewise', async ({ page }) => {
+    await page.goto('/publications')
+    const typeLabel = page.getByText('Type', { exact: true })
+    const hasTypeGroup = (await typeLabel.count()) > 0
+    test.skip(
+      !hasTypeGroup,
+      "the page renders no Type group because the Phase 3B type backfill hasn't run against this dataset"
     )
 
+    const main = page.locator('main')
+    const rows = main.locator('[data-testid="pub-row"]')
+    const fullCount = await rows.count()
+
+    const chipsContainer = typeLabel.locator('xpath=following-sibling::div[1]')
+    const firstChip = chipsContainer.getByRole('button').first()
+    const chipText = (await firstChip.textContent())!.trim()
+    const chipType = chipText.replace(/\s*\d+$/, '')
+
+    await firstChip.click()
+    await expect(page.getByText(/ OF \d+ RECORDS SHOWN$/)).toBeVisible()
+    const types = await rows.evaluateAll((els) => els.map((el) => el.getAttribute('data-type')))
+    for (const type of types) {
+      expect(type).toBe(chipType)
+    }
+
+    await firstChip.click()
+    expect(await rows.count()).toBe(fullCount)
+  })
+
+  test('an impossible year+type combination shows the empty state, and Clear filters restores the list', async ({
+    page,
+  }) => {
+    await page.goto('/publications')
+    const typeLabel = page.getByText('Type', { exact: true })
+    const hasTypeGroup = (await typeLabel.count()) > 0
+    test.skip(
+      !hasTypeGroup,
+      "no Type group is rendered (type backfill hasn't run), so no year+type combination can be exercised"
+    )
+
+    const main = page.locator('main')
+    const rows = main.locator('[data-testid="pub-row"]')
+    const fullCount = await rows.count()
+    const pairs = await rows.evaluateAll((els) =>
+      els.map((el) => ({ year: el.getAttribute('data-year'), type: el.getAttribute('data-type') }))
+    )
+    const years = [...new Set(pairs.map((p) => p.year))]
+    const types = [...new Set(pairs.map((p) => p.type).filter(Boolean))]
+
+    let combo: { year: string; type: string } | null = null
+    outer: for (const year of years) {
+      for (const type of types) {
+        if (!pairs.some((p) => p.year === year && p.type === type)) {
+          combo = { year: year!, type: type! }
+          break outer
+        }
+      }
+    }
+    test.skip(!combo, 'every year+type combination present in the data is occupied')
+
+    const yearChip = page.getByText('Year', { exact: true }).locator('xpath=following-sibling::div[1]').getByRole('button', {
+      name: new RegExp(`^${combo!.year}\\b`),
+    })
+    const typeChip = typeLabel.locator('xpath=following-sibling::div[1]').getByRole('button', {
+      name: new RegExp(`^${combo!.type}\\b`),
+    })
+    await yearChip.click()
+    await typeChip.click()
+
+    await expect(page.getByText('No records match these filters.')).toBeVisible()
+    const clearButton = page.getByRole('button', { name: 'Clear filters' })
+    await clearButton.click()
+    expect(await rows.count()).toBe(fullCount)
+  })
+
+  test('the density toggle tightens rows so the title truncates on one line', async ({ page }) => {
+    await page.goto('/publications')
+    await page.getByRole('button', { name: 'COMPACT' }).click()
+
+    const firstTitle = page.locator('[data-testid="pub-row"]').first().getByTestId('pub-title')
+    const className = await firstTitle.getAttribute('class')
+    const whiteSpace = await firstTitle.evaluate((el) => getComputedStyle(el).whiteSpace)
+    expect((className ?? '').includes('truncate') || whiteSpace === 'nowrap').toBe(true)
+  })
+
+  test('copying the first row citation shows the copied state and puts the title on the clipboard', async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     await page.goto('/publications')
 
-    await expect(page.getByText(/^DOI: /)).toHaveCount(withDoi.length)
-    for (const publication of withDoi) {
-      await expect(
-        page.locator(`a[href="https://doi.org/${publication.doi}"]`, {
-          hasText: `DOI: ${publication.doi}`,
-        })
-      ).toHaveCount(1)
+    const firstRow = page.locator('[data-testid="pub-row"]').first()
+    const title = (await firstRow.getByTestId('pub-title').textContent())!.trim()
+    const copyButton = firstRow.getByRole('button', { name: 'COPY CITATION' })
+    await copyButton.click()
+    await expect(copyButton).toHaveText(/COPIED/)
+
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
+    expect(clipboardText).toContain(title)
+  })
+
+  test('every DOI/URL identifier is mutually exclusive and the two counts cover every row', async ({
+    page,
+  }) => {
+    await page.goto('/publications')
+    const main = page.locator('main')
+    const rows = main.locator('[data-testid="pub-row"]')
+    const total = await rows.count()
+    const doiCount = await main.locator('[data-testid="pub-row"][data-link-kind="DOI"]').count()
+    const urlCount = await main.locator('[data-testid="pub-row"][data-link-kind="URL"]').count()
+    expect(doiCount + urlCount).toBe(total)
+
+    const doiHrefLinks = await page
+      .locator('[data-identifier][href^="https://doi.org/"]')
+      .count()
+    expect(doiCount).toBe(doiHrefLinks)
+  })
+
+  // Pins the live dataset's DOI count rather than deriving it, unlike the
+  // self-consistent test above -- this exists only to mirror the old
+  // hardcoded-10 test's intent (documenting the Phase 3B DOI backfill), and
+  // should be updated or removed the next time that backfill runs.
+  test('pins the live dataset: 10 publications carry a DOI (Phase 3B backfill)', async ({
+    page,
+  }) => {
+    const publications = await fetchPublications()
+    const liveDoiCount = publications.filter((p) => typeof p.doi === 'string' && p.doi.length > 0)
+      .length
+    expect(liveDoiCount).toBe(10)
+
+    await page.goto('/publications')
+    const doiRows = page.locator('[data-testid="pub-row"][data-link-kind="DOI"]')
+    await expect(doiRows).toHaveCount(10)
+  })
+
+  // Task 5 wires up real detail routes once publication.slug is required
+  // (spec §4.5); today's 19 live records all lack a slug, so every title
+  // renders as inert text. Turned on in Task 5.
+  test.fixme('a row title navigates to its detail page', async ({ page }) => {
+    await page.goto('/publications')
+    const firstRow = page.locator('[data-testid="pub-row"]').first()
+    await firstRow.getByTestId('pub-title').click()
+    await expect(page).toHaveURL(/\/publications\/[^/]+$/)
+  })
+
+  test.describe('no horizontal overflow', () => {
+    for (const width of [768, 1023, 1024, 1280]) {
+      test(`at ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 })
+        await page.goto('/publications')
+        const fits = await page.evaluate(
+          () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+        )
+        expect(fits).toBe(true)
+      })
     }
   })
 })

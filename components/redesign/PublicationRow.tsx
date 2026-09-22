@@ -85,6 +85,7 @@ function Title({
     return (
       <Link
         href={href}
+        data-testid="pub-title"
         className={`${TITLE_HOVER} ${HIT_AREA} ${className} block`}
       >
         {pub.title}
@@ -95,6 +96,7 @@ function Title({
     return (
       <button
         type="button"
+        data-testid="pub-title"
         onClick={() => onOpen(pub)}
         className={`${TITLE_HOVER} ${HIT_AREA} ${className} block border-0 bg-transparent p-0 text-left`}
       >
@@ -102,7 +104,11 @@ function Title({
       </button>
     )
   }
-  return <span className={`${className} block`}>{pub.title}</span>
+  return (
+    <span data-testid="pub-title" className={`${className} block`}>
+      {pub.title}
+    </span>
+  )
 }
 
 // Shared "DOI 10.xxx" / "URL example.org/..." identifier line. `fontSize` is

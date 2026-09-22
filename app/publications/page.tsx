@@ -1,4 +1,5 @@
-import Publications from 'components/pages/publications/Publications'
+import { toPublication } from 'components/redesign/publicationModel'
+import { PublicationsIndex } from 'components/redesign/screens/PublicationsIndex'
 import { JsonLd } from 'components/shared/JsonLd'
 import Layout from 'components/shared/Layout'
 import { resolveBranding } from 'lib/branding'
@@ -68,9 +69,9 @@ export default async function PublicationsPage() {
   }
 
   return (
-    <Layout settings={settings}>
+    <Layout settings={settings} childrenStyles="px-0">
       <JsonLd data={buildScholarlyArticleListJsonLd(publications)} />
-      <Publications publications={publications} />
+      <PublicationsIndex publications={publications.map(toPublication)} />
     </Layout>
   )
 }

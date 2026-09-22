@@ -19,7 +19,12 @@ export function HomePage({ page, settings }: HomePageProps) {
   const showLabHeadCard = shouldShowLabHeadCard(settings) && Boolean(labHead)
 
   return (
-    <Layout settings={settings} childrenStyles={`px-0`}>
+    // Spelled out in full (not just `px-0`) since Layout.tsx no longer
+    // hardcodes `md:px-gutter-md lg:px-gutter-lg` alongside `childrenStyles`
+    // -- this reproduces HomePage's previous rendered padding exactly: no
+    // gutter below `md` (Header.tsx supplies its own mobile padding), then
+    // Layout's own gutter from `md` up, same as before Task 4's Layout fix.
+    <Layout settings={settings} childrenStyles="px-0 md:px-gutter-md lg:px-gutter-lg">
       <div className="mb-16 space-y-8">
         {/* Header */}
         {title && <Header centered title={title} description={overview} />}
