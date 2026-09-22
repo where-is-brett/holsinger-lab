@@ -111,7 +111,7 @@ export default defineType({
       title: 'Slug',
       type: 'slug',
       description:
-        'Used in this person\'s page URL: /people/<slug>. Required once "Give this person their own page" below is turned on.',
+        'Used in this person\'s page URL on the redesigned site: /people/<slug>. Required once "Give this person their own page" below is turned on. The classic site has no per-person pages — it lists everyone on its Team page instead.',
       options: {
         source: 'name',
         maxLength: 96,
@@ -139,7 +139,7 @@ export default defineType({
       type: 'boolean',
       initialValue: false,
       description:
-        'When on, this person gets their own page at /people/<slug>, using the slug above.',
+        'When on, this person gets their own page on the redesigned site at /people/<slug>, using the slug above. The classic site has no per-person pages — it lists everyone on its Team page instead.',
     }),
   ],
 })
