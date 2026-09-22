@@ -1,6 +1,6 @@
 # Wix lookalike on Sanity — design
 
-Date: 2026-09-22 · Branch: `redesign/wix` (off `origin/redesign/integration`) · Status: **draft for Brett's review**
+Date: 2026-09-22 · Branch: `redesign/wix` (off `origin/redesign/integration`) · Status: **approved by Brett 2026-09-22 (via the command centre), with the live-site impact amendment in §8**
 
 ## 1. Intent
 
@@ -263,6 +263,23 @@ Everything goes through `npm run typegen`. `app/api/revalidate/route.ts` learns 
   - Every production run happens only after Brett's explicit yes, relayed through the command
     centre.
   - **No deletes exist in the code path.**
+- **Live-site impact gate (Brett's amendment, 2026-09-22).** The live site
+  (holsingerlab.vercel.app, built from `main`) reads the same production dataset.
+  - Its People page lists every profile grouped by roleGroup (`lib/sanity.queries.ts:140` on
+    `main`), and it renders `project` documents at `/projects/[slug]`. So the import would
+    publicly change the live site: 22 new, mostly photo-less alumni and intern profiles, Wix
+    role wording, and retitled or added research projects.
+  - Before any `--commit` to production, produce a **live-impact report**:
+    1. Copy production to a temporary dataset (`sanity dataset copy production wix-impact-<date>`).
+    2. Run the import against the copy.
+    3. Render `main` locally against the copy and against production.
+    4. Deliver before/after screenshots of at least `/people`, every affected `/projects/*`
+       page and `/`, plus a before/after change list.
+  - The report goes to the command centre for Brett's explicit yes.
+  - Creating the temporary dataset is itself a project-level write, so it also needs Brett's
+    yes. The dataset is deleted after the decision, which is a delete Brett must confirm.
+  - If the impact is unacceptable, one option is a small filter on the `main` side. That
+    decision is Brett's. This track makes **no change to `main`**.
 - **Wix defects are corrected in the snapshot and flagged:** the duplicate Rene Buxton is
   imported once.
 
