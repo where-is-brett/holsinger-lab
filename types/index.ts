@@ -6,6 +6,7 @@ import type {
   ProfileQueryResult,
   ProjectBySlugQueryResult,
   PublicationsQueryResult,
+  ResourcesQueryResult,
   RoleGroupQueryResult,
   SettingsQueryResult,
 } from 'sanity.types'
@@ -38,6 +39,8 @@ export type SettingsPayload = NonNullable<SettingsQueryResult>
 export type MenuItem = NonNullable<SettingsPayload['menuItems']>[number]
 
 export type PublicationPayload = PublicationsQueryResult[number]
+
+export type ResourcePayload = ResourcesQueryResult[number]
 
 export type ProfilePayload = ProfileQueryResult[number]
 export type ProfileBySlugPayload = NonNullable<ProfileBySlugQueryResult>

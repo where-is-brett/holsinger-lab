@@ -182,6 +182,10 @@ export const resourcesQuery = groq`
       date,
       doi,
       url,
+      journal,
+      volume,
+      issue,
+      pages,
       "slug": slug.current,
     },
   }

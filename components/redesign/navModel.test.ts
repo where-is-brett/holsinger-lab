@@ -19,6 +19,7 @@ describe('SITE_NAV', () => {
     expect(liveNavItems().map((i) => [i.label, i.href])).toEqual([
       ['Home', '/'],
       ['Publications', '/publications'],
+      ['Resources', '/resources'],
       ['People', '/people'],
       ['Contact', '/contact'],
     ])
@@ -27,24 +28,24 @@ describe('SITE_NAV', () => {
 
 describe('liveNavItems with visibility flags', () => {
   it('calling with no argument is unchanged', () => {
-    expect(liveNavItems().map((i) => i.id)).toEqual(['home', 'pubs', 'people', 'contact'])
+    expect(liveNavItems().map((i) => i.id)).toEqual(['home', 'pubs', 'resources', 'people', 'contact'])
   })
 
   it('showPublications: false hides exactly pubs', () => {
     expect(liveNavItems({ showPublications: false }).map((i) => i.id)).toEqual([
-      'home', 'people', 'contact',
+      'home', 'resources', 'people', 'contact',
     ])
   })
 
   it('showPeople: false hides exactly people', () => {
     expect(liveNavItems({ showPeople: false }).map((i) => i.id)).toEqual([
-      'home', 'pubs', 'contact',
+      'home', 'pubs', 'resources', 'contact',
     ])
   })
 
   it('showContactForm: false hides exactly contact', () => {
     expect(liveNavItems({ showContactForm: false }).map((i) => i.id)).toEqual([
-      'home', 'pubs', 'people',
+      'home', 'pubs', 'resources', 'people',
     ])
   })
 
@@ -53,17 +54,19 @@ describe('liveNavItems with visibility flags', () => {
     ['undefined', { showPublications: undefined, showPeople: undefined, showContactForm: undefined }],
     ['empty object', {}],
   ])('%s hides nothing', (_label, flags) => {
-    expect(liveNavItems(flags).map((i) => i.id)).toEqual(['home', 'pubs', 'people', 'contact'])
+    expect(liveNavItems(flags).map((i) => i.id)).toEqual([
+      'home', 'pubs', 'resources', 'people', 'contact',
+    ])
   })
 
-  it('all three false leaves only Home', () => {
+  it('all three false leaves only Home and Resources (Resources has no hide flag)', () => {
     expect(
       liveNavItems({
         showPublications: false,
         showPeople: false,
         showContactForm: false,
       }).map((i) => i.id)
-    ).toEqual(['home'])
+    ).toEqual(['home', 'resources'])
   })
 })
 
@@ -74,6 +77,7 @@ describe('currentNavId', () => {
     ['/publications', 'pubs'],
     ['/publications/', 'pubs'],
     ['/publications/some-paper-2024', 'pubs'],
+    ['/resources', 'resources'],
     ['/people/jane-doe', 'people'],
     ['/contact', 'contact'],
   ])('%s -> %s', (path, id) => {

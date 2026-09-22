@@ -12,6 +12,7 @@ import {
   PEOPLE_SETTINGS_WITH_LAB_HEAD,
   PEOPLE_SETTINGS_WITHOUT_LAB_HEAD,
   PUBLICATION_PAGE_FIXTURE,
+  RESOURCES_FIXTURE,
   SAMPLE_PEOPLE,
   SAMPLE_PUBLICATIONS,
 } from 'components/redesign/fixtures'
@@ -25,6 +26,7 @@ import { PublicationRow } from 'components/redesign/PublicationRow'
 import { ResourceBlock } from 'components/redesign/ResourceBlock'
 import { People } from 'components/redesign/screens/People'
 import { PublicationPage } from 'components/redesign/screens/PublicationPage'
+import { Resources } from 'components/redesign/screens/Resources'
 import { SectionRail } from 'components/redesign/SectionRail'
 import { SiteFooter } from 'components/redesign/SiteFooter'
 import { SiteNav } from 'components/redesign/SiteNav'
@@ -404,6 +406,18 @@ export default function Gallery() {
           ]}
           figureLabel="Figure preview unavailable"
         />
+      </section>
+
+      <section data-testid="gallery-resources">
+        <Heading>Resources screen</Heading>
+        {/* Task 1: production carries zero `resource` documents today (spec
+            §2), so this fixture is the only place the populated Resources
+            screen -- two resources, one with a linked publication's SOURCE/
+            DOI meta, one with a portable-text `howToObtain` link -- actually
+            renders. */}
+        <div className="border border-rule">
+          <Resources resources={RESOURCES_FIXTURE} />
+        </div>
       </section>
     </main>
   )

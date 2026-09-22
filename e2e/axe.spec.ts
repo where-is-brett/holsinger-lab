@@ -17,6 +17,7 @@ const KNOWN_VIOLATIONS: Record<string, string[]> = {
   '/contact': [],
   '/people': [],
   '/publications': [],
+  '/resources': [],
   '/tutorial': ['heading-order'],
   '/projects/publication-highlights': [],
 }

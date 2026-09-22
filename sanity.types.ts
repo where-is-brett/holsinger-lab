@@ -1248,7 +1248,7 @@ export type FeaturedPublicationsQueryResult = Array<{
 
 // Source: lib/sanity.queries.ts
 // Variable: resourcesQuery
-// Query: *[_type == "resource"] | order(title asc) {    _id,    title,    kind,    summary,    howToObtain,    publication->{      _id,      title,      date,      doi,      url,      "slug": slug.current,    },  }
+// Query: *[_type == "resource"] | order(title asc) {    _id,    title,    kind,    summary,    howToObtain,    publication->{      _id,      title,      date,      doi,      url,      journal,      volume,      issue,      pages,      "slug": slug.current,    },  }
 export type ResourcesQueryResult = Array<{
   _id: string
   title: string | null
@@ -1278,6 +1278,10 @@ export type ResourcesQueryResult = Array<{
     date: string | null
     doi: string | null
     url: string | null
+    journal: string | null
+    volume: number | null
+    issue: number | null
+    pages: string | null
     slug: string | null
   } | null
 }>
@@ -1395,7 +1399,7 @@ declare module '@sanity/client' {
     '\n  *[_type == "publication" && slug.current == $slug][0]{\n    \n  _id,\n  title,\n  author,\n  journal,\n  volume,\n  issue,\n  pages,\n  abstract,\n  url,\n  doi,\n  date,\n  "slug": slug.current,\n  type,\n  topics,\n  featured,\n  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {\n    _id,\n    title,\n    kind,\n  },\n\n  }\n': PublicationBySlugQueryResult
     '\n  *[_type == "publication" && slug.current != null].slug.current\n': PublicationPathsResult
     '\n  *[_type == "publication" && featured == true] | order(date desc) {\n    \n  _id,\n  title,\n  author,\n  journal,\n  volume,\n  issue,\n  pages,\n  abstract,\n  url,\n  doi,\n  date,\n  "slug": slug.current,\n  type,\n  topics,\n  featured,\n  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {\n    _id,\n    title,\n    kind,\n  },\n\n  }\n': FeaturedPublicationsQueryResult
-    '\n  *[_type == "resource"] | order(title asc) {\n    _id,\n    title,\n    kind,\n    summary,\n    howToObtain,\n    publication->{\n      _id,\n      title,\n      date,\n      doi,\n      url,\n      "slug": slug.current,\n    },\n  }\n': ResourcesQueryResult
+    '\n  *[_type == "resource"] | order(title asc) {\n    _id,\n    title,\n    kind,\n    summary,\n    howToObtain,\n    publication->{\n      _id,\n      title,\n      date,\n      doi,\n      url,\n      journal,\n      volume,\n      issue,\n      pages,\n      "slug": slug.current,\n    },\n  }\n': ResourcesQueryResult
     '\n  *[_type == "roleGroup"] | order(orderRank) {\n    _id,\n    title,\n  }\n': RoleGroupQueryResult
     '\n  *[_type == "profile"] | order(orderRank) {\n    _id,\n    image,\n    orderRank,\n    name,\n    role,\n    roleDetail,\n    roleGroup->{\n      _id,\n      title,\n    },\n    email,\n    phone,\n    bio,\n    "slug": slug.current,\n    hasPage,\n    fullBio,\n  }\n': ProfileQueryResult
     '\n  *[_type == "profile" && slug.current == $slug && hasPage == true][0]{\n    _id,\n    image,\n    name,\n    role,\n    roleDetail,\n    email,\n    phone,\n    bio,\n    "slug": slug.current,\n    hasPage,\n    fullBio,\n  }\n': ProfileBySlugQueryResult

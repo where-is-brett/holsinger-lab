@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 export interface ResourceBlockMeta {
   label: string
   value: string
@@ -8,6 +10,12 @@ export interface ResourceBlockProps {
   title: string
   meta?: ResourceBlockMeta[]
   figureLabel?: string
+  /**
+   * An optional body rendered below the meta list -- Task 1's summary
+   * paragraph plus `howToObtain` portable text. Purely additive: omitting it
+   * reproduces this component's pre-Task-1 markup exactly.
+   */
+  children?: ReactNode
 }
 
 // Ported from
@@ -27,7 +35,7 @@ const IDENTIFIER = 'normal-case!'
 const STRIPE_BG =
   'repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in oklab, var(--sem-text) 4.5%, transparent) 12px 13px)'
 
-export function ResourceBlock({ title, meta = [], figureLabel }: ResourceBlockProps) {
+export function ResourceBlock({ title, meta = [], figureLabel, children }: ResourceBlockProps) {
   // Fix round 1: the two-track grid (a 1fr text column plus a fixed
   // 340px-wide figure track) was unconditional and unprefixed, so it
   // reserved the figure track (and squeezed the text into whatever was
@@ -46,6 +54,7 @@ export function ResourceBlock({ title, meta = [], figureLabel }: ResourceBlockPr
   const twoColumn = Boolean(figureLabel)
   return (
     <div
+      data-testid="resource-block"
       className={
         twoColumn ? 'lg:grid lg:grid-cols-[1fr_340px] lg:items-start lg:gap-x-(--spacing-gutter-lg)' : ''
       }
@@ -55,7 +64,9 @@ export function ResourceBlock({ title, meta = [], figureLabel }: ResourceBlockPr
             companions from styles/index.css's `@theme inline` block -- left
             unoverridden here so both apply, matching the source's explicit
             `lineHeight`/`letterSpacing` var references. */}
-        <div className="max-w-[640px] text-heading font-semibold">{title}</div>
+        <div data-testid="resource-block-title" className="max-w-[640px] text-heading font-semibold">
+          {title}
+        </div>
         <div className="mt-[26px] flex flex-col gap-2.5 font-mono text-[12.5px] leading-[1.5]">
           {meta.map((m) => (
             <div key={m.label}>
@@ -70,6 +81,7 @@ export function ResourceBlock({ title, meta = [], figureLabel }: ResourceBlockPr
             </div>
           ))}
         </div>
+        {children && <div className="mt-6">{children}</div>}
       </div>
       {figureLabel && (
         <div

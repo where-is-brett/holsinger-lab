@@ -1,4 +1,4 @@
-import type { ProfilePayload, RoleGroupPayload, SettingsPayload } from 'types'
+import type { ProfilePayload, ResourcePayload, RoleGroupPayload, SettingsPayload } from 'types'
 import { fallbackSettings } from 'types'
 
 import type { Publication } from './publicationModel'
@@ -396,3 +396,76 @@ export const PEOPLE_SETTINGS_WITHOUT_LAB_HEAD: SettingsPayload = {
   ...fallbackSettings,
   labHead: null,
 }
+
+// Task 1 (Resources): production carries zero `resource` documents today
+// (spec §2), so this is the only place the populated state renders at all.
+// Two resources -- one with a linked publication (exercising the SOURCE
+// meta line and its DOI link, and a portable-text `howToObtain` holding a
+// real link, per the task brief), one without (proving the SOURCE/DOI meta
+// rows are genuinely omitted rather than rendered blank).
+function portableLinkParagraph(
+  key: string,
+  pre: string,
+  linkText: string,
+  href: string,
+  post = ''
+) {
+  const linkKey = `${key}-link`
+  return {
+    _type: 'block' as const,
+    _key: key,
+    style: 'normal' as const,
+    markDefs: [{ _type: 'link' as const, _key: linkKey, href }],
+    children: [
+      { _type: 'span' as const, _key: `${key}-s1`, text: pre, marks: [] },
+      { _type: 'span' as const, _key: `${key}-s2`, text: linkText, marks: [linkKey] },
+      ...(post ? [{ _type: 'span' as const, _key: `${key}-s3`, text: post, marks: [] }] : []),
+    ],
+  }
+}
+
+export const RESOURCES_FIXTURE: ResourcePayload[] = [
+  {
+    _id: 'fixture-resource-1',
+    title: 'Electrical-stimulation cell-culture chamber',
+    kind: 'hardware',
+    summary:
+      'A custom chamber for delivering controlled electrical stimulation to cultured neurons over extended time courses.',
+    howToObtain: [
+      portableParagraph(
+        'resource-1-p1',
+        'Request access by emailing the lab, or build your own from the published design.'
+      ),
+      portableLinkParagraph(
+        'resource-1-p2',
+        'Design files and firmware are on ',
+        'GitHub',
+        'https://github.com/example/cell-culture-chamber',
+        '.'
+      ),
+    ],
+    publication: {
+      _id: 'fixture-resource-1-pub',
+      title: 'A chamber for chronic electrical stimulation of cultured neurons',
+      date: '2024-03-01',
+      doi: '10.1038/s41420-024-00000-1',
+      url: null,
+      journal: 'Journal of Neuroscience Methods',
+      volume: 401,
+      issue: 2,
+      pages: '110-118',
+      slug: 'chronic-stimulation-chamber',
+    },
+  },
+  {
+    _id: 'fixture-resource-2',
+    title: 'Neuronal culture medium protocol',
+    kind: 'protocol',
+    summary:
+      'Step-by-step preparation of the serum-free medium used for primary cortical neuron cultures in the lab.',
+    howToObtain: [
+      portableParagraph('resource-2-p1', 'Contact the lab manager for the current SOP document.'),
+    ],
+    publication: null,
+  },
+]
