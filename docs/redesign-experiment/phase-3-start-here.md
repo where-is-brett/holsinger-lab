@@ -46,6 +46,15 @@ npm run create:pi-profile
 npm run backfill:profile-role-groups    # needs the roleGroup docs to exist first
 ```
 
+**The `npm run` forms above do not work as written.** They call plain `node`,
+which does not load `.env.local`, so `lib/sanity.api.ts` throws on the missing
+project ID. Run each script directly instead:
+
+```bash
+node --env-file=.env.local scripts/<script>.ts            # dry run
+node --env-file=.env.local scripts/<script>.ts --commit   # write
+```
+
 **Read the topics dry run properly.** Its keyword table was written against the
 IA's shorthand ("TREM2 '22"), not against the real titles, because the session
 that wrote it could not reach the dataset. It prints every paper that matched no
