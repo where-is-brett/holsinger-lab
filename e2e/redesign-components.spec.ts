@@ -291,8 +291,10 @@ test.describe('redesign component gallery', () => {
     page,
   }) => {
     // Carried Task 1 review minor (c): group-focus-visible: pairs mirror
-    // group-hover: on both the portrait filter and the name colour, so
-    // keyboard users get the identical reveal a mouse hover gives.
+    // group-hover: on the name colour, so keyboard users get the identical
+    // reveal a mouse hover gives. (The portrait no longer has a filter
+    // reveal at all -- Brett's review, fix/research-description-fallback --
+    // so only the name's colour is exercised here now.)
     const section = page.getByTestId('gallery-person-card')
     const link = section.getByRole('link', { name: 'Élodie Ñúñez' })
     await link.focus()

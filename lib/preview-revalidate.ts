@@ -7,12 +7,21 @@
 // instead of waiting on a webhook that will never fire.
 //
 // This pure switch -- 30s on preview, the existing 60s everywhere else -- is
-// consumed from `lib/sanity.live.ts` as a `createClient({ fetch: { next:
-// { revalidate: previewRevalidateSeconds() } } })` client-level default; see
-// that file's own comment for why that's the one seam of the brief's three
-// options that this `next-sanity` version and Next's route-config AST
-// extraction actually support, and for the trail (types read, build error
-// hit) that got there.
+// consumed from `lib/sanity.live.ts`'s `previewSanityFetch`, a direct
+// `client.fetch(query, params, { ..., next: { revalidate:
+// previewRevalidateSeconds(), tags } })` call that bypasses `defineLive`'s
+// own `sanityFetch` for anonymous (non-draft-mode) requests on preview
+// deployments. An earlier attempt set this as a `createClient({ fetch: {
+// next: { revalidate } } } })` client-level default instead -- that looked
+// promising (the option genuinely exists and is honoured as a per-request
+// fallback) but never actually worked: `defineLive`'s real content request
+// hardcodes its own `next: { revalidate: false, tags }` override, which
+// replaces a client-level default wholesale rather than merging with it, so
+// the short window only ever reached a throwaway sync-tags request, never
+// the one whose data reaches the page. See `lib/sanity.live.ts`'s own
+// comment for the full trail (types read, that dead end, the build error
+// that ruled out a route-config export too, and the draft-mode carve-out
+// that came after this fix's first round shipped).
 //
 // Lives in its own module, not inline in `lib/sanity.live.ts`, so its test
 // needs no mocking: `lib/sanity.live.ts` imports `lib/sanity.api`, whose
@@ -25,13 +34,17 @@ const PRODUCTION_REVALIDATE_SECONDS = 60
 const PREVIEW_REVALIDATE_SECONDS = 30
 
 /**
- * The revalidate window (seconds) `lib/sanity.live.ts`'s Sanity client
- * should use as its default `fetch` `next.revalidate`: a short 30s window on
- * Vercel preview deployments (`VERCEL_ENV === 'preview'`), where the
- * production-only webhook never fires on-demand tag revalidation, and the
- * existing 60s window everywhere else (production, local dev, CI, where
- * `VERCEL_ENV` is unset) -- matching every route's own `export const
- * revalidate = 60`, so production behaviour is unchanged.
+ * The revalidate window (seconds) `lib/sanity.live.ts`'s `previewSanityFetch`
+ * passes as its own `next.revalidate` on the content request it issues
+ * directly: a short 30s window on Vercel preview deployments
+ * (`VERCEL_ENV === 'preview'`), where the production-only webhook never
+ * fires on-demand tag revalidation, and the existing 60s window everywhere
+ * else (production, local dev, CI, where `VERCEL_ENV` is unset) -- matching
+ * every route's own `export const revalidate = 60`, so production
+ * behaviour is unchanged. Only reached for anonymous (non-draft-mode)
+ * requests -- `previewSanityFetch` delegates to `defineLive`'s own
+ * `sanityFetch` whenever draft mode is enabled, so a Studio preview session
+ * never sees this shortened window at all, only the real thing.
  */
 export function previewRevalidateSeconds(
   vercelEnv: string | undefined = process.env.VERCEL_ENV

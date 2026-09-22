@@ -31,15 +31,17 @@ vi.mock('lib/sanity.api', () => ({
 // this branch's own `npm run build` and `npm run test:e2e` (both hit the
 // genuine `react-server` build, since Next itself sets that condition).
 // What this suite actually owns and must prove is the *routing decision* in
-// lib/sanity.live.ts: on preview, every request bypasses `defineLive`
-// entirely and goes through `previewSanityFetch`'s own `client.fetch` call
-// (real -- `next-sanity`'s plain `createClient` is NOT mocked, so the
-// `next.revalidate`/`next.tags` this test captures via a stubbed
-// `globalThis.fetch` are exactly what a real preview deployment's request
-// would carry); off preview, `sanityFetch` must be `defineLive`'s own
-// returned function, completely untouched -- proven by reference identity
-// against this mock's sentinel, which is a stronger guarantee than
-// replicating `defineLive`'s internal request shape would be (that shape is
+// lib/sanity.live.ts: on preview, with draft mode off, a request bypasses
+// `defineLive` entirely and goes through `previewSanityFetch`'s own
+// `client.fetch` call (real -- `next-sanity`'s plain `createClient` is NOT
+// mocked, so the `next.revalidate`/`next.tags` this test captures via a
+// stubbed `globalThis.fetch` are exactly what a real preview deployment's
+// request would carry); on preview *with draft mode on*, and off preview
+// entirely, `sanityFetch` must delegate the whole request to `defineLive`'s
+// own returned function, untouched -- proven by asserting the sentinel was
+// called with the caller's exact options and that no direct `client.fetch`
+// request went out, which is a stronger guarantee than replicating
+// `defineLive`'s internal request shape would be (that shape is
 // next-sanity's implementation detail, not this repo's contract).
 const fakeLiveSanityFetch = vi.fn(async () => ({ data: null, sourceMap: null, tags: [] }))
 vi.mock('next-sanity/live', () => ({
@@ -47,6 +49,15 @@ vi.mock('next-sanity/live', () => ({
     sanityFetch: fakeLiveSanityFetch,
     SanityLive: () => null,
   })),
+}))
+
+// `previewSanityFetch` checks `(await draftMode()).isEnabled` itself, first,
+// before ever touching `client.fetch` -- this mock is what lets each test
+// below control which branch fires. Defaults to disabled (the anonymous-
+// visitor case the fix targets); the draft-mode test overrides it per call.
+const draftModeMock = vi.fn(async () => ({ isEnabled: false }))
+vi.mock('next/headers', () => ({
+  draftMode: draftModeMock,
 }))
 
 // This is the request-layer proof the coordinator's fix round asked for --
@@ -96,6 +107,8 @@ describe('sanityFetch request-layer revalidate', () => {
   beforeEach(() => {
     vi.resetModules()
     fakeLiveSanityFetch.mockClear()
+    draftModeMock.mockReset()
+    draftModeMock.mockResolvedValue({ isEnabled: false })
   })
 
   afterEach(() => {
@@ -125,6 +138,27 @@ describe('sanityFetch request-layer revalidate', () => {
       expect(init.next?.tags).toEqual([])
     }
     expect(fakeLiveSanityFetch).not.toHaveBeenCalled()
+  })
+
+  it('delegates the whole request to defineLive\'s own sanityFetch when draft mode is enabled, even on preview', async () => {
+    // Fix round 2 correction: the first version of `previewSanityFetch`
+    // bypassed `defineLive` unconditionally on preview, which broke Studio
+    // preview sessions and click-to-edit entirely on preview deployments
+    // (published-forever content, no visual editing) rather than merely
+    // "lagging by 30s". Draft mode must route the *entire* request back to
+    // `liveSanityFetch`, with the caller's options passed through exactly,
+    // and no direct request should go out at all -- proven here by
+    // asserting zero `globalThis.fetch` calls alongside the delegation.
+    const calls = stubFetch()
+    draftModeMock.mockResolvedValue({ isEnabled: true })
+    const { sanityFetch } = await loadSanityLive('preview')
+
+    const options = { query: '*[_type == "resource"]', stega: true as const }
+    await sanityFetch(options)
+
+    expect(fakeLiveSanityFetch).toHaveBeenCalledTimes(1)
+    expect(fakeLiveSanityFetch).toHaveBeenCalledWith(options)
+    expect(calls.length).toBe(0)
   })
 
   it('delegates to defineLive\'s own sanityFetch, untouched, when VERCEL_ENV is production', async () => {

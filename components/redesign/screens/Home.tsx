@@ -310,6 +310,7 @@ function TheLabBlock({
           <Link
             href={resolveLabHeadHref(labHead)}
             className="group flex min-w-0 items-center gap-5"
+            data-testid="home-lab-head-link"
           >
             <PiPortrait64
               name={labHead.name ?? ''}

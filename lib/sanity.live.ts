@@ -1,5 +1,6 @@
 import { previewRevalidateSeconds } from 'lib/preview-revalidate'
 import { apiVersion, dataset, projectId, readToken, useCdn } from 'lib/sanity.api'
+import { draftMode } from 'next/headers'
 import { createClient } from 'next-sanity'
 import type { DefinedFetchType } from 'next-sanity/live'
 import { defineLive } from 'next-sanity/live'
@@ -61,48 +62,74 @@ export { SanityLive }
 // `fetch: { next: { revalidate } } }` config option is gone from
 // `createClient()` below.
 //
-// THE FIX: bypass `defineLive`'s `sanityFetch` entirely on preview and
-// issue the content query directly through the plain `client` above, with
-// an explicit `next: { revalidate: previewRevalidateSeconds(), tags }` this
-// time putting the short revalidate on the request that actually carries
-// the page's data. `isPreview` is read once per server instance (a runtime
-// value, not a static export, so none of the AST restriction above
-// applies), so every request in a preview deployment goes through
-// `previewSanityFetch`; every request everywhere else goes through
-// `defineLive`'s own `liveSanityFetch`, completely unchanged.
+// THE FIX: bypass `defineLive`'s `sanityFetch` entirely on preview, for
+// anonymous requests only, and issue the content query directly through
+// the plain `client` above, with an explicit `next: { revalidate:
+// previewRevalidateSeconds(), tags }` this time putting the short
+// revalidate on the request that actually carries the page's data.
+// `isPreview` is read once per server instance (a runtime value, not a
+// static export, so none of the AST restriction above applies).
 //
-// What preview gives up: `previewSanityFetch` doesn't replicate
-// `defineLive`'s cookie-resolved `perspective`/`variant`/`stega` defaults
-// (`resolveCookiePerspective`/`resolveCookieVariant`, and the
-// `serverToken && studioUrlDefined ? draftMode().isEnabled : false` stega
-// default) or its sync-tags round trip, and `<SanityLive />`'s live
-// EventSource connection still renders on preview but has nothing to act
-// on for content fetched this way, since `previewSanityFetch` never calls
-// `cacheTag`-equivalent bookkeeping the way the on-demand-revalidation path
-// expects. Concretely: Studio-driven draft/live-preview sessions and
-// Presentation Tool's real-time updates lose their immediacy on preview
-// deployments specifically -- a preview page now shows a draft or a just-
-// published edit within 30s instead of instantly. That's the accepted
-// trade named in the brief ("losing live updates there is acceptable").
-// What does NOT regress: every caller's own explicit `stega` option
-// (several call sites pass `stega: false` deliberately, e.g. any field
-// that reaches an href/meta tag verbatim) is forwarded through unchanged --
-// `stega: options.stega ?? false` only substitutes a default for callers
-// that omit it, exactly mirroring `defineLive`'s own eventual fallback to
-// `false` outside an active draft-mode session (the common case for a
-// public preview visit), never silently overriding an explicit `false` or
-// `true`.
+// FIX ROUND 2 CORRECTION: the first version of this fix bypassed
+// `defineLive` unconditionally on preview, including for draft-mode
+// requests -- and its own comment here claimed drafts merely "lag by 30s".
+// That was wrong: `previewSanityFetch` never resolved the draft-mode
+// perspective, passed no token, and forced `stega: false` on any caller
+// that omits it (e.g. app/page.tsx's `homePageQuery` fetch, where
+// `defineLive` would otherwise default `stega` to
+// `(await draftMode()).isEnabled`). A Studio preview session on a preview
+// deployment -- exactly where a non-technical editor like Damian would use
+// it, via the embedded Studio (`plugins/previewPane`,
+// `app/api/draft/route.ts`) and `app/layout.tsx`'s `draftMode()`-gated
+// `<PreviewBanner />`/`<VisualEditing />` -- would have rendered published
+// content forever and lost click-to-edit overlays entirely, not just
+// slowed down. `previewSanityFetch` now checks draft mode itself, first,
+// and delegates the *entire* request to `liveSanityFetch` (unmodified --
+// same cookie-resolved perspective/variant/stega, same token, same
+// `<SanityLive />` cache-tag bookkeeping) whenever it's on. Calling
+// `draftMode()` here unconditionally, even during static prerendering, is
+// safe and matches existing behaviour: `defineLive`'s own `sanityFetch`
+// already calls it via `resolveCookiePerspective`/`resolveCookieVariant`
+// whenever `serverToken` is set (true in this repo -- see
+// `SANITY_API_READ_TOKEN` in `.env.local`) on every call that omits an
+// explicit `perspective`, which is most of them -- and this repo's routes
+// still prerender as static/SSG (confirmed by `npm run build`'s own route
+// table), so Next's static generation already tolerates a Dynamic API call
+// here without forcing the route dynamic.
+//
+// So, on a preview deployment: draft-mode requests (Studio preview
+// sessions, Presentation Tool, click-to-edit) get exactly `defineLive`'s
+// live behaviour, unchanged -- real-time updates, the drafts perspective,
+// stega. Anonymous requests (a public visitor, or Damian checking the
+// preview URL without draft mode on) get the 30s revalidate window -- the
+// actual bug this fix targets, since a stale preview page is a problem for
+// anonymous visitors, not for an active Studio session that already
+// bypasses this path entirely.
+//
+// What does NOT regress on the anonymous path: every caller's own explicit
+// `stega` option (several call sites pass `stega: false` deliberately,
+// e.g. any field that reaches an href/meta tag verbatim) is forwarded
+// through unchanged -- `stega: options.stega ?? false` only substitutes a
+// default for callers that omit it. Outside an active draft-mode session
+// that default is correct: `defineLive` itself only ever defaults `stega`
+// to `true` when draft mode is on (the branch this wrapper now delegates
+// away entirely), so `false` is the right default for every anonymous
+// request regardless.
 const isPreview = process.env.VERCEL_ENV === 'preview'
 
-const previewSanityFetch: DefinedFetchType = (async ({
-  query,
-  params = {},
-  perspective,
-  variant,
-  stega,
-  tags = [],
-  requestTag = 'next-loader.fetch',
-}) => {
+const previewSanityFetch: DefinedFetchType = (async (options) => {
+  if ((await draftMode()).isEnabled) {
+    return liveSanityFetch(options)
+  }
+  const {
+    query,
+    params = {},
+    perspective,
+    variant,
+    stega,
+    tags = [],
+    requestTag = 'next-loader.fetch',
+  } = options
   const { result, resultSourceMap } = await client.fetch(query, await params, {
     filterResponse: false,
     perspective,
