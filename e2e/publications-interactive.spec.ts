@@ -2,14 +2,17 @@ import { expect, test } from '@playwright/test'
 
 import { e2eClient } from './support/sanity'
 
-// Fetches the same field shape the page derives its counts/filters from, so
-// assertions stay correct as the dataset grows or the Phase 3B type/DOI
-// backfills continue -- never a hardcoded count of "19" or "10" outside the
-// one test that explicitly says it's pinning the live dataset.
-async function fetchPublications() {
-  return e2eClient.fetch<{ _id: string; doi: string | null; type: string | null }[]>(
-    `*[_type == "publication"]{ _id, doi, type }`
-  )
+// The FacetBand root is the ancestor div carrying its `z-[5]` utility
+// (unique to that one element -- see components/redesign/FacetBand.tsx),
+// located from the always-present "Density" row label. Facet-group label
+// lookups are scoped inside it, not the whole page: the column-head row
+// (`hidden lg:grid`) also renders a plain "Year" span, and an unscoped
+// `getByText('Year', { exact: true })` would match both.
+function facetBand(page: import('@playwright/test').Page) {
+  return page
+    .getByText('Density', { exact: true })
+    .locator('xpath=ancestor::div[contains(@class, "z-[5]")]')
+    .first()
 }
 
 test.describe('publications index', () => {
@@ -20,7 +23,7 @@ test.describe('publications index', () => {
     const rowCount = await rows.count()
     expect(rowCount).toBeGreaterThan(0)
 
-    const meta = page.getByText(/^\d+ RECORDS · /)
+    const meta = page.getByText(/^\d+ RECORDS( · |$)/)
     await expect(meta).toBeVisible()
     const metaText = (await meta.textContent())!
     const n = Number(metaText.match(/^(\d+)/)![1])
@@ -35,7 +38,7 @@ test.describe('publications index', () => {
     const rows = main.locator('[data-testid="pub-row"]')
     const fullCount = await rows.count()
 
-    const yearLabel = page.getByText('Year', { exact: true })
+    const yearLabel = facetBand(page).getByText('Year', { exact: true })
     const chipsContainer = yearLabel.locator('xpath=following-sibling::div[1]')
     const firstChip = chipsContainer.getByRole('button').first()
     const chipText = (await firstChip.textContent())!.trim()
@@ -53,8 +56,8 @@ test.describe('publications index', () => {
     }
 
     await firstChip.click()
-    await expect(page.getByText(/^\d+ RECORDS · /)).toBeVisible()
-    expect(await rows.count()).toBe(fullCount)
+    await expect(page.getByText(/^\d+ RECORDS( · |$)/)).toBeVisible()
+    await expect(rows).toHaveCount(fullCount)
   })
 
   test('the Type group, when present, filters likewise', async ({ page }) => {
@@ -83,7 +86,7 @@ test.describe('publications index', () => {
     }
 
     await firstChip.click()
-    expect(await rows.count()).toBe(fullCount)
+    await expect(rows).toHaveCount(fullCount)
   })
 
   test('an impossible year+type combination shows the empty state, and Clear filters restores the list', async ({
@@ -117,9 +120,10 @@ test.describe('publications index', () => {
     }
     test.skip(!combo, 'every year+type combination present in the data is occupied')
 
-    const yearChip = page.getByText('Year', { exact: true }).locator('xpath=following-sibling::div[1]').getByRole('button', {
-      name: new RegExp(`^${combo!.year}\\b`),
-    })
+    const yearChip = facetBand(page)
+      .getByText('Year', { exact: true })
+      .locator('xpath=following-sibling::div[1]')
+      .getByRole('button', { name: new RegExp(`^${combo!.year}\\b`) })
     const typeChip = typeLabel.locator('xpath=following-sibling::div[1]').getByRole('button', {
       name: new RegExp(`^${combo!.type}\\b`),
     })
@@ -129,7 +133,7 @@ test.describe('publications index', () => {
     await expect(page.getByText('No records match these filters.')).toBeVisible()
     const clearButton = page.getByRole('button', { name: 'Clear filters' })
     await clearButton.click()
-    expect(await rows.count()).toBe(fullCount)
+    await expect(rows).toHaveCount(fullCount)
   })
 
   test('the density toggle tightens rows so the title truncates on one line', async ({ page }) => {
@@ -137,9 +141,13 @@ test.describe('publications index', () => {
     await page.getByRole('button', { name: 'COMPACT' }).click()
 
     const firstTitle = page.locator('[data-testid="pub-row"]').first().getByTestId('pub-title')
-    const className = await firstTitle.getAttribute('class')
-    const whiteSpace = await firstTitle.evaluate((el) => getComputedStyle(el).whiteSpace)
-    expect((className ?? '').includes('truncate') || whiteSpace === 'nowrap').toBe(true)
+    await expect
+      .poll(async () => {
+        const className = (await firstTitle.getAttribute('class')) ?? ''
+        const whiteSpace = await firstTitle.evaluate((el) => getComputedStyle(el).whiteSpace)
+        return className.includes('truncate') || whiteSpace === 'nowrap'
+      })
+      .toBe(true)
   })
 
   test('copying the first row citation shows the copied state and puts the title on the clipboard', async ({
@@ -174,23 +182,6 @@ test.describe('publications index', () => {
       .locator('[data-identifier][href^="https://doi.org/"]')
       .count()
     expect(doiCount).toBe(doiHrefLinks)
-  })
-
-  // Pins the live dataset's DOI count rather than deriving it, unlike the
-  // self-consistent test above -- this exists only to mirror the old
-  // hardcoded-10 test's intent (documenting the Phase 3B DOI backfill), and
-  // should be updated or removed the next time that backfill runs.
-  test('pins the live dataset: 10 publications carry a DOI (Phase 3B backfill)', async ({
-    page,
-  }) => {
-    const publications = await fetchPublications()
-    const liveDoiCount = publications.filter((p) => typeof p.doi === 'string' && p.doi.length > 0)
-      .length
-    expect(liveDoiCount).toBe(10)
-
-    await page.goto('/publications')
-    const doiRows = page.locator('[data-testid="pub-row"][data-link-kind="DOI"]')
-    await expect(doiRows).toHaveCount(10)
   })
 
   // Task 5 wires up real detail routes once publication.slug is required

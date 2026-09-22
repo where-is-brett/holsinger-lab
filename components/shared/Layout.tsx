@@ -14,24 +14,10 @@ export interface LayoutProps {
 export default function Layout({
   children,
   settings = fallbackSettings,
-  // The full responsive `padding-inline` triad lives in this one string
-  // (not `md:px-gutter-md lg:px-gutter-lg` hardcoded separately in `main`'s
-  // className below), so a caller's own `childrenStyles` is the *only*
-  // utility touching `padding-left`/`padding-right` on `main` at every
-  // breakpoint -- never a second, competing declaration a caller can't see
-  // or override. Before this, a caller passing `childrenStyles="px-0"` to
-  // opt out of Layout's gutter (as the redesign screens' own rails require
-  // -- spec §4.3, "the screens own their rails; Layout's gutter would
-  // double them") only ever cancelled the unprefixed default: the `md:`/
-  // `lg:` rules stayed hardcoded in `main`'s own className and silently
-  // re-applied from `md` up, because Tailwind's responsive utilities are
-  // generated after the base layer and so win at equal specificity
-  // regardless of each utility's position in the class string. That's
-  // exactly the "two Tailwind utilities setting the same CSS property on
-  // one element at the same breakpoint" trap the repo's own rule warns
-  // about (constraints.md) -- caught here by Task 4's `/publications`
-  // width-check e2e failing at exactly 1024px (`lg`'s breakpoint), where
-  // the reasserted gutter left no room for the ledger grid's fixed columns.
+  // Invariant: `childrenStyles` owns ALL of `main`'s horizontal padding at
+  // every breakpoint (nothing else sets it), so a caller's value fully
+  // replaces this default rather than competing with a separately-hardcoded
+  // `md:`/`lg:` rule -- see Task 4's report for the bug this fixed.
   childrenStyles = 'px-gutter md:px-gutter-md lg:px-gutter-lg',
 }: LayoutProps) {
   const { siteName, shortName } = resolveBranding(settings)
