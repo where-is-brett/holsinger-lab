@@ -29,9 +29,16 @@ const HEADER =
 // an ellipsis rather than growing the bar (spec decision 2). `min-w-0` lets
 // the flex item shrink below its content width; the nav is `shrink-0`, so
 // the links always win the space.
+//
+// `WORDMARK` deliberately omits `display` -- `truncate` needs a block box,
+// but each span already carries its own `display` pair below (`block
+// lg:hidden` / `hidden lg:block`). Folding a shared `block` into this base
+// string would set `display` a second time on the same span at the same
+// breakpoint (same-property rule); it happened to still work only because
+// `.hidden` is generated after `.block`, which is exactly the ordering
+// dependency the rule exists to avoid.
 const WORDMARK_LINK = 'min-w-0'
-const WORDMARK =
-  'block truncate font-mono text-[12px] leading-none font-medium tracking-[0.1em] uppercase'
+const WORDMARK = 'truncate font-mono text-[12px] leading-none font-medium tracking-[0.1em] uppercase'
 
 const NAV = 'flex shrink-0 gap-7 font-mono text-[12px] leading-none tracking-[0.08em] uppercase'
 
@@ -54,7 +61,7 @@ export function SiteNav({ items, current, wordmark, logo, label = 'Primary' }: S
         // shortName below lg, siteName from lg (spec decision 2, amended):
         // the full name does not fit beside the links at 768-1023px.
         <Link href="/" className={WORDMARK_LINK}>
-          <span data-testid="site-wordmark-short" title={wordmark.short} className={`${WORDMARK} lg:hidden`}>
+          <span data-testid="site-wordmark-short" title={wordmark.short} className={`${WORDMARK} block lg:hidden`}>
             {wordmark.short}
           </span>
           <span data-testid="site-wordmark-long" title={wordmark.long} className={`${WORDMARK} hidden lg:block`}>
