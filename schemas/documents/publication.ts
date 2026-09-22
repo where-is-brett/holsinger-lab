@@ -2,12 +2,11 @@ import { BookIcon } from '@sanity/icons/Book'
 import { isValidDoi } from 'lib/doi'
 import { defineArrayMember, defineField, defineType } from 'sanity'
 import { publicationSlug } from 'schemas/lib/publicationSlug'
+import { PUBLICATION_TYPES } from 'schemas/lib/publicationTypes'
 import { validateSlugFormat } from 'schemas/lib/slug'
 import { TOPIC_OPTIONS } from 'schemas/lib/topics'
 
-// The three publication types from the agreed IA section 2. Stored as the
-// displayed string, matching `topics` -- see schemas/lib/topics.ts for why.
-export const PUBLICATION_TYPES = ['Article', 'Review', 'Case report'] as const
+export { PUBLICATION_TYPES } from 'schemas/lib/publicationTypes'
 
 export default defineType({
   type: 'document',

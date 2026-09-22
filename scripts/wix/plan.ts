@@ -7,6 +7,15 @@ import { ROLE_GROUP_TITLES, type RoleGroupTitle, type WixSnapshot } from './snap
 export const LEDGER_ID = 'wix-import.ledger'
 export type Ledger = Record<string, string>
 export interface CurrentDoc { _id: string; _type: string; [field: string]: unknown }
+
+// Dry runs don't upload, so `assetIds` maps a url to a placeholder id of this
+// shape instead of a real Sanity asset id (see scripts/import-wix.ts). The
+// planner needs to recognise that shape so a dry run doesn't diff a
+// placeholder against the real, previously-uploaded asset and report a
+// phantom change every single run.
+export const PENDING_ASSET_PREFIX = 'pending:'
+const isPendingRef = (v: unknown): v is string => typeof v === 'string' && v.startsWith(PENDING_ASSET_PREFIX)
+
 export interface PlanInput {
   snapshot: WixSnapshot
   existing: Record<string, CurrentDoc>
@@ -21,6 +30,13 @@ export interface PlanInput {
    * document types' drafts are left alone (see plan §Fix round 3).
    */
   drafts: Record<string, CurrentDoc>
+  /**
+   * false on a dry run (assetIds holds `pending:…` placeholders, not real
+   * Sanity asset ids); true on --commit, once every url has been uploaded
+   * and assetIds holds real ids. See "Fix: dry runs must not report
+   * placeholder-only differences" below.
+   */
+  assetsResolved: boolean
 }
 export type Op =
   | { kind: 'create'; doc: CurrentDoc }
@@ -44,6 +60,51 @@ function present(fields: Record<string, unknown>): Record<string, unknown> {
 }
 const ref = (id: string) => ({ _type: 'reference', _ref: id })
 
+function isAssetObject(v: unknown): v is { _type: 'image' | 'file'; asset?: { _ref?: unknown } } {
+  return !!v && typeof v === 'object' && ((v as { _type?: unknown })._type === 'image' || (v as { _type?: unknown })._type === 'file')
+}
+
+/**
+ * Finds every dot-path (relative to the field's own root -- '' means the
+ * field value itself is the image/file object) at which `v` holds an
+ * image/file object whose asset ref is a dry-run placeholder. Doesn't look
+ * inside arrays: none of the imported image/file fields are array items.
+ */
+function findPendingAssetPaths(v: unknown, path = ''): string[] {
+  if (isAssetObject(v) && isPendingRef(v.asset?._ref)) return [path]
+  if (v && typeof v === 'object' && !Array.isArray(v))
+    return Object.entries(v as Record<string, unknown>).flatMap(([k, sub]) => findPendingAssetPaths(sub, path ? `${path}.${k}` : k))
+  return []
+}
+
+/**
+ * For comparison only -- never for writing. Replaces every placeholder asset
+ * ref in `desired` with the real ref at the same path in `current`, so a dry
+ * run can tell whether anything OTHER than the (never-comparable-in-a-dry-run)
+ * asset itself changed. `ok: false` means a placeholder has no matching real
+ * asset to compare against (current has no image there yet, e.g. a field
+ * that has never been imported) -- the caller treats the whole field as not
+ * comparable this run.
+ */
+function maskPendingAssets(desired: unknown, current: unknown): { ok: true; value: unknown } | { ok: false } {
+  if (isAssetObject(desired) && isPendingRef(desired.asset?._ref)) {
+    const curRef = (current as { asset?: { _ref?: unknown } } | undefined)?.asset?._ref
+    if (typeof curRef !== 'string' || isPendingRef(curRef)) return { ok: false }
+    return { ok: true, value: { ...desired, asset: { ...desired.asset, _ref: curRef } } }
+  }
+  if (desired && typeof desired === 'object' && !Array.isArray(desired)) {
+    const cur = current && typeof current === 'object' ? (current as Record<string, unknown>) : {}
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(desired as Record<string, unknown>)) {
+      const r = maskPendingAssets(v, cur[k])
+      if (!r.ok) return { ok: false }
+      out[k] = r.value
+    }
+    return { ok: true, value: out }
+  }
+  return { ok: true, value: desired }
+}
+
 export function planImport(input: PlanInput): Plan {
   const { snapshot: s, existing, roleGroupIds, assetIds } = input
   const ops: Op[] = []
@@ -59,13 +120,19 @@ export function planImport(input: PlanInput): Plan {
 
   const image = (url: string | null, alt?: string) => {
     if (!url) return undefined
-    if (!assetIds[url]) throw new Error(`asset not uploaded: ${url}`)
-    return present({ _type: 'image', asset: ref(assetIds[url]), alt: alt || undefined })
+    const assetId = assetIds[url]
+    if (!assetId) throw new Error(`asset not uploaded: ${url}`)
+    // A commit run has already uploaded every asset; if it ever sees a
+    // placeholder here that's a bug upstream, not a case to write through.
+    if (input.assetsResolved && isPendingRef(assetId)) throw new Error(`refusing to write a placeholder asset ref on a commit run: ${url}`)
+    return present({ _type: 'image', asset: ref(assetId), alt: alt || undefined })
   }
   const file = (url: string | null) => {
     if (!url) return undefined
-    if (!assetIds[url]) throw new Error(`asset not uploaded: ${url}`)
-    return { _type: 'file', asset: ref(assetIds[url]) }
+    const assetId = assetIds[url]
+    if (!assetId) throw new Error(`asset not uploaded: ${url}`)
+    if (input.assetsResolved && isPendingRef(assetId)) throw new Error(`refusing to write a placeholder asset ref on a commit run: ${url}`)
+    return { _type: 'file', asset: ref(assetId) }
   }
 
   /**
@@ -79,6 +146,26 @@ export function planImport(input: PlanInput): Plan {
     for (const [f, v] of Object.entries(desired)) {
       const cur = current[f]
       const lk = `${id}#${f}`
+
+      // Dry run: this field's desired value has an unresolved (placeholder)
+      // asset ref somewhere in it. The asset itself can never be compared
+      // until --commit uploads it, so never turn that alone into an op --
+      // just note it. If something else in the field *is* comparable (e.g.
+      // alt text) and differs, say so too, rather than silently staying
+      // quiet about it; the actual patch (asset included) still lands on
+      // --commit, same as always.
+      if (!input.assetsResolved) {
+        const pendingPaths = findPendingAssetPaths(v)
+        if (pendingPaths.length) {
+          const label = pendingPaths[0] ? `${id}.${f}.${pendingPaths[0]}` : `${id}.${f}`
+          reports.push(`${label}: asset not comparable in a dry run (upload happens on --commit)`)
+          const masked = maskPendingAssets(v, cur)
+          if (masked.ok && !equal(cur, masked.value))
+            reports.push(`${id}.${f}: differs beyond the placeholder asset — resolved together with it on --commit`)
+          continue
+        }
+      }
+
       if (equal(cur, v)) { ledger[lk] = stableHash(v); continue }
       const hasLedgerEntry = lk in input.ledger
       // A field cleared (or never touched) after our last import is "untouched" and Wix
@@ -197,7 +284,7 @@ export function planImport(input: PlanInput): Plan {
     if (p.sanityId === null) {
       upsert(`wix-publication-${p.key}`, 'publication', {
         title: p.title, author: p.authors, journal: p.journal, date: p.date,
-        volume: p.volume, issue: p.issue, pages: p.pages, doi: p.doi,
+        volume: p.volume, issue: p.issue, pages: p.pages, doi: p.doi, type: p.type,
       })
       continue
     }
