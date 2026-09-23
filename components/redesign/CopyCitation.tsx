@@ -6,7 +6,6 @@ import { CONTROL_BASE, HAIRLINE, MICRO_LABEL, PRESS } from './tokens'
 
 export interface CopyCitationProps {
   cite: string
-  compact?: boolean
   copiedLabel?: string
 }
 
@@ -50,7 +49,7 @@ export function copyFallbackMessage({ coarsePointer, mac }: { coarsePointer: boo
   return `Press ${mac ? '⌘C' : 'Ctrl+C'} to copy`
 }
 
-export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitationProps) {
+export function CopyCitation({ cite, copiedLabel }: CopyCitationProps) {
   const [copied, setCopied] = useState(false)
   // '', not null: keeps the aria-live region's rendered content a plain
   // string always, so React never toggles it in and out of the DOM --
@@ -131,11 +130,10 @@ export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitatio
   // Sentence case, not shouted caps: these literal strings are what the
   // accessible name and the rendered text actually are -- no CSS transform
   // uppercases them.
-  const restLabel = compact ? 'Cite' : 'Copy citation'
-  const doneLabel = compact ? '✓' : copiedLabel || '✓ Copied'
+  const restLabel = 'Copy citation'
+  const doneLabel = copiedLabel || '✓ Copied'
   const border = copied ? 'border border-link' : HAIRLINE
   const color = copied ? 'text-link' : 'text-text-muted'
-  const sizing = compact ? 'px-2 py-1' : 'px-3 py-2'
 
   return (
     <span className="inline-block align-top">
@@ -148,7 +146,7 @@ export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitatio
           // test or screen reader locating the control by name would otherwise
           // lose it the instant a copy succeeds.
           aria-label={restLabel}
-          className={`${SHAPE} ${border} ${color} ${sizing} ${PRESS}`}
+          className={`${SHAPE} ${border} ${color} px-3 py-2 ${PRESS}`}
         >
           {copied ? doneLabel : restLabel}
         </button>
@@ -173,9 +171,9 @@ export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitatio
           `break-words`: `cite` can end in a long DOI/URL with no natural
           break point, and this block must not overflow at 320px (matching
           IDENTIFIER's own `break-all` in PublicationRow.tsx for the same
-          reason). `whitespace-normal` overrides a `whitespace-nowrap`
-          ancestor (PublicationRow.tsx's compact density row), since this
-          block must wrap regardless of what density row it renders inside. */}
+          reason). `whitespace-normal` guards against any `whitespace-nowrap`
+          ancestor, so this block always wraps regardless of what row it
+          renders inside. */}
       {fallback && (
         <p
           ref={citationBlockRef}

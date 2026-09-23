@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { applyFacets, countBy, toggleFacet } from './facets'
+import { applyFacets, countBy } from './facets'
 import type { Publication } from './publicationModel'
 
 const pub = (over: Partial<Publication>): Publication => ({
@@ -34,20 +34,6 @@ describe('countBy', () => {
   it('counts every value of a multi-valued key', () => {
     const out = countBy([pub({ topics: ['Glia', 'Gut'] }), pub({ topics: ['Glia'] })], (p) => p.topics)
     expect(out).toEqual({ Glia: 2, Gut: 1 })
-  })
-})
-
-describe('toggleFacet', () => {
-  it('selects when nothing is selected', () => {
-    expect(toggleFacet(null, '2023')).toBe('2023')
-  })
-
-  it('clears when the same value is clicked again', () => {
-    expect(toggleFacet('2023', '2023')).toBeNull()
-  })
-
-  it('replaces when a different value is clicked', () => {
-    expect(toggleFacet('2023', '2020')).toBe('2020')
   })
 })
 

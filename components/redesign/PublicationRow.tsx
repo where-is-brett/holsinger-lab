@@ -6,7 +6,6 @@ import { HIT_AREA, META, PUBLICATION_GRID } from './tokens'
 
 export interface PublicationRowProps {
   pub: Publication
-  density?: 'comfortable' | 'compact'
   variant?: 'index' | 'home'
   /** stacked anatomy for <720px containers -- the grid must not squeeze */
   narrow?: boolean
@@ -120,7 +119,7 @@ function Title({
 
 // Shared "DOI 10.xxx" / "URL example.org/..." identifier line. `fontSize` is
 // a Tailwind arbitrary text size (matching the source's per-shape font
-// shorthand), and `label` lets compact substitute `linkLabelShort` while the
+// shorthand); `label` always carries the row's full `linkLabel`, while the
 // href always carries the full `linkHref`.
 // No identifier markup at all when there's nothing on file (spec §4.1) --
 // not even the "DOI "/"URL " label, which only ever accompanies a real link.
@@ -155,7 +154,6 @@ function tagLine(pub: Publication): string {
 
 export function PublicationRow({
   pub,
-  density = 'comfortable',
   variant = 'index',
   narrow = false,
   onOpen,
@@ -202,9 +200,9 @@ export function PublicationRow({
     )
   }
 
-  // Below, the responsive stacked-to-grid anatomy shared by `home` and both
-  // `index` densities (spec §4.1, Task 3 brief point 2): one DOM tree per
-  // variant, container classes switch to the ledger grid at `xl` (`GRID`),
+  // Below, the responsive stacked-to-grid anatomy shared by `home` and
+  // `index` (spec §4.1, Task 3 brief point 2): one DOM tree per variant,
+  // container classes switch to the ledger grid at `xl` (`GRID`),
   // and every element sets `display` at most once per breakpoint --
   // unprefixed for its stacked-anatomy role, `xl:` for its ledger-cell role
   // -- so no same-property pair can ever collide. The title element is
@@ -254,49 +252,6 @@ export function PublicationRow({
     )
   }
 
-  if (density === 'compact') {
-    return (
-      <div className={`${ROW} items-baseline py-[10px]`}>
-        <span className="hidden font-mono text-[12px] leading-[1.5] font-medium text-accent xl:block">
-          {pub.year}
-        </span>
-        <div className={`${KICKER} xl:hidden`}>
-          <span className="text-accent">{pub.year}</span>
-          <span className="text-text-faint" data-cms-verbatim>
-            {' '}
-            — {pub.journal} {pub.ref}
-          </span>
-        </div>
-        <Title
-          pub={pub}
-          href={href}
-          onOpen={onOpen}
-          className="mt-1.5 xl:mt-0 xl:truncate xl:pr-3 text-[14.5px] leading-[1.5] font-semibold tracking-[-0.005em]"
-        />
-        <span
-          className="hidden truncate font-mono text-[11.5px] leading-[1.6] text-text-muted xl:block"
-          data-cms-verbatim
-        >
-          {pub.journal} · {pub.ref}
-        </span>
-        {/* `relative` + `mt-1.5 xl:mt-0`: same title-hit-area protection and
-            stacked-rhythm reset as the `home` branch above -- this row is
-            the identifier/CopyCitation block for `compact`. */}
-        <span className="relative mt-1.5 flex items-baseline gap-2.5 whitespace-nowrap font-mono text-[11px] leading-[1.6] xl:mt-0">
-          {pub.linkHref !== '' && (
-            <span className="overflow-hidden text-ellipsis">
-              <span className="text-text-faint">{pub.linkKind} </span>
-              <a className={IDENTIFIER} href={pub.linkHref} data-identifier data-cms-verbatim>
-                {pub.linkLabelShort || pub.linkLabel}
-              </a>
-            </span>
-          )}
-          <CopyCitation cite={pub.cite} compact />
-        </span>
-      </div>
-    )
-  }
-
   return (
     <div className={`${ROW} items-start py-(--spacing-row)`}>
       <span className="hidden font-mono text-[13px] leading-[1.5] font-medium text-accent xl:block">
@@ -338,8 +293,8 @@ export function PublicationRow({
         {pub.ref}
       </div>
       {/* `relative` + `mt-1.5 xl:mt-0`: same title-hit-area protection and
-          stacked-rhythm reset as the `home`/`compact` branches above -- this
-          is the identifier/CopyCitation block for comfortable density. It
+          stacked-rhythm reset as the `home` branch above -- this is the
+          identifier/CopyCitation block for this row. It
           isn't always the element directly under the title (the authors
           and tag lines usually sit between them), but the tag line is
           conditional and titles vary in height, so this stays defensive

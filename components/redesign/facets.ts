@@ -11,11 +11,6 @@ export function countBy<T>(items: T[], pick: (item: T) => string | string[]): Re
   return out
 }
 
-/** Click selects; clicking the selected value again clears it. */
-export function toggleFacet(current: string | null, value: string): string | null {
-  return current === value ? null : value
-}
-
 export function applyFacets(
   pubs: Publication[],
   f: { year: string | null; type: string | null; topic: string | null },

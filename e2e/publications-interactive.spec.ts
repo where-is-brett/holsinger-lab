@@ -3,14 +3,6 @@ import { expect, test } from '@playwright/test'
 import { grantClipboardOrSkipWebkit, lastClipboardWrite, spyOnClipboardWrite } from './support/clipboard'
 import { e2eClient } from './support/sanity'
 
-// Located via `data-testid="facet-band"` (FacetBand.tsx). Facet-group label
-// lookups are scoped inside it, not the whole page: the column-head row
-// (`hidden xl:grid`) also renders a plain "Year" span, and an unscoped
-// `getByText('Year', { exact: true })` would match both.
-function facetBand(page: import('@playwright/test').Page) {
-  return page.getByTestId('facet-band')
-}
-
 test.describe('publications index', () => {
   test('one row per record, and the meta reflects the row count', async ({ page }) => {
     await page.goto('/publications')
@@ -26,74 +18,68 @@ test.describe('publications index', () => {
     expect(n).toBe(rowCount)
   })
 
-  test('clicking a Year chip filters the rows, and clicking it again restores the full list', async ({
-    page,
-  }) => {
+  test('selecting a Year filters the rows, and clearing it restores the full list', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
     await page.goto('/publications')
     const main = page.locator('main')
     const rows = main.locator('[data-testid="pub-row"]')
     const fullCount = await rows.count()
 
-    const yearLabel = facetBand(page).getByText('Year', { exact: true })
-    const chipsContainer = yearLabel.locator('xpath=following-sibling::div[1]')
-    const firstChip = chipsContainer.getByRole('button').first()
-    const chipText = (await firstChip.textContent())!.trim()
-    const chipYear = chipText.match(/^\d+/)![0]
-
-    await firstChip.click()
+    const year = page.getByTestId('filter-row').getByLabel('Year')
+    const value = await year.locator('option').nth(1).getAttribute('value')
+    await year.selectOption(value!)
 
     await expect(page.getByText(/ of \d+ publications shown$/)).toBeVisible()
     const visibleCount = await rows.count()
     expect(visibleCount).toBeGreaterThan(0)
     expect(visibleCount).toBeLessThanOrEqual(fullCount)
     const years = await rows.evaluateAll((els) => els.map((el) => el.getAttribute('data-year')))
-    for (const year of years) {
-      expect(year).toBe(chipYear)
+    for (const y of years) {
+      expect(y).toBe(value)
     }
 
-    await firstChip.click()
+    await year.selectOption('')
     await expect(page.getByText(/^\d+ publications?(, |$)/)).toBeVisible()
     await expect(rows).toHaveCount(fullCount)
   })
 
-  test('the Type group, when present, filters likewise', async ({ page }) => {
+  test('the Type select, when present, filters likewise', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
     await page.goto('/publications')
-    const typeLabel = page.getByText('Type', { exact: true })
-    const hasTypeGroup = (await typeLabel.count()) > 0
+    const typeSelect = page.getByTestId('filter-row').getByLabel('Type')
+    const hasTypeGroup = (await typeSelect.count()) > 0
     test.skip(
       !hasTypeGroup,
-      "the page renders no Type group because the Phase 3B type backfill hasn't run against this dataset"
+      "the page renders no Type select because the Phase 3B type backfill hasn't run against this dataset"
     )
 
     const main = page.locator('main')
     const rows = main.locator('[data-testid="pub-row"]')
     const fullCount = await rows.count()
 
-    const chipsContainer = typeLabel.locator('xpath=following-sibling::div[1]')
-    const firstChip = chipsContainer.getByRole('button').first()
-    const chipText = (await firstChip.textContent())!.trim()
-    const chipType = chipText.replace(/\s*\d+$/, '')
-
-    await firstChip.click()
+    const value = await typeSelect.locator('option').nth(1).getAttribute('value')
+    await typeSelect.selectOption(value!)
     await expect(page.getByText(/ of \d+ publications shown$/)).toBeVisible()
     const types = await rows.evaluateAll((els) => els.map((el) => el.getAttribute('data-type')))
-    for (const type of types) {
-      expect(type).toBe(chipType)
+    for (const t of types) {
+      expect(t).toBe(value)
     }
 
-    await firstChip.click()
+    await typeSelect.selectOption('')
     await expect(rows).toHaveCount(fullCount)
   })
 
   test('an impossible year+type combination shows the empty state, and Clear filters restores the list', async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
     await page.goto('/publications')
-    const typeLabel = page.getByText('Type', { exact: true })
-    const hasTypeGroup = (await typeLabel.count()) > 0
+    const row = page.getByTestId('filter-row')
+    const typeSelect = row.getByLabel('Type')
+    const hasTypeGroup = (await typeSelect.count()) > 0
     test.skip(
       !hasTypeGroup,
-      "no Type group is rendered (type backfill hasn't run), so no year+type combination can be exercised"
+      "no Type select is rendered (type backfill hasn't run), so no year+type combination can be exercised"
     )
 
     const main = page.locator('main')
@@ -116,15 +102,8 @@ test.describe('publications index', () => {
     }
     test.skip(!combo, 'every year+type combination present in the data is occupied')
 
-    const yearChip = facetBand(page)
-      .getByText('Year', { exact: true })
-      .locator('xpath=following-sibling::div[1]')
-      .getByRole('button', { name: new RegExp(`^${combo!.year}\\b`) })
-    const typeChip = typeLabel.locator('xpath=following-sibling::div[1]').getByRole('button', {
-      name: new RegExp(`^${combo!.type}\\b`),
-    })
-    await yearChip.click()
-    await typeChip.click()
+    await row.getByLabel('Year').selectOption(combo!.year)
+    await typeSelect.selectOption(combo!.type)
 
     await expect(page.getByText('No records match these filters.')).toBeVisible()
     const clearButton = page.getByRole('button', { name: 'Clear filters' })
@@ -132,18 +111,42 @@ test.describe('publications index', () => {
     await expect(rows).toHaveCount(fullCount)
   })
 
-  test('the density toggle tightens rows so the title truncates on one line', async ({ page }) => {
+  test('the first paper is visible without scrolling at 375x812', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/publications')
-    await page.getByRole('button', { name: 'Compact' }).click()
+    const title = page.locator('[data-testid="pub-row"]').first().getByTestId('pub-title')
+    const box = await title.boundingBox()
+    expect(box).not.toBeNull()
+    expect(await page.evaluate(() => window.scrollY)).toBe(0)
+    expect(box!.y + box!.height).toBeLessThanOrEqual(812)
+  })
 
-    const firstTitle = page.locator('[data-testid="pub-row"]').first().getByTestId('pub-title')
-    await expect
-      .poll(async () => {
-        const className = (await firstTitle.getAttribute('class')) ?? ''
-        const whiteSpace = await firstTitle.evaluate((el) => getComputedStyle(el).whiteSpace)
-        return className.includes('truncate') || whiteSpace === 'nowrap'
-      })
-      .toBe(true)
+  test('filter state is shared between the desktop row and the mobile sheet', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto('/publications')
+    const year = page.getByTestId('filter-row').getByLabel('Year')
+    const value = await year.locator('option').nth(1).getAttribute('value')
+    await year.selectOption(value!)
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.getByRole('button', { name: 'Filter (1)' }).click()
+    await expect(page.getByRole('dialog', { name: 'Filter publications' }).getByLabel('Year')).toHaveValue(value!)
+  })
+
+  test('the filters sit at the top of the Record section, under its full-width rule', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/publications')
+    const section = page.locator('section', { has: page.getByTestId('filter-bar') })
+    await expect(section.getByTestId('section-label')).toHaveText('Record')
+    const [sectionBox, rowBox, labelBox] = await Promise.all([
+      section.boundingBox(),
+      page.getByTestId('filter-row').boundingBox(),
+      section.getByTestId('section-label').boundingBox(),
+    ])
+    // The label lines up with the filter row, not floating above it.
+    expect(Math.abs(labelBox!.y - rowBox!.y)).toBeLessThanOrEqual(4)
+    // The top rule belongs to the section, which spans the page width.
+    expect(await section.evaluate((el) => getComputedStyle(el).borderTopWidth)).not.toBe('0px')
+    expect(sectionBox!.width).toBeGreaterThanOrEqual(1440 - 20)
   })
 
   test('copying the first row citation shows the copied state and puts the title on the clipboard', async ({
@@ -261,9 +264,7 @@ test.describe('publications index', () => {
 
   // The document-level check above cannot see a title that overflows its
   // own ledger cell without ever growing the page past the viewport, so
-  // this checks each row's cells directly. Density defaults to Comfortable
-  // on load, which is the shape this check targets; Compact truncates by
-  // design, so an ellipsis cell there is not a defect.
+  // this checks each row's cells directly.
   test.describe('publication ledger cells never overflow their own track', () => {
     for (const width of [1024, 1280, 1440]) {
       test(`at ${width}px`, async ({ page }) => {
@@ -287,4 +288,3 @@ test.describe('publications index', () => {
     }
   })
 })
-

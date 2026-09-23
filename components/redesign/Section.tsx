@@ -18,10 +18,10 @@ export interface SectionProps {
   borderTop?: boolean
   padTop?: string
   /**
-   * Lets a caller with its own vertical rhythm (e.g. `FacetBand`, which
-   * has its own padding and border) suppress `Section`'s default (`"0px"`)
-   * so the two don't stack into an unwanted gap. Every other call site
-   * keeps the default.
+   * Lets a caller with its own vertical rhythm (its own padding and
+   * border) override `Section`'s default padding-bottom so the two don't
+   * stack into an unwanted gap. No current call site needs this; kept for
+   * the next one that does.
    */
   padBottom?: string
   children: ReactNode

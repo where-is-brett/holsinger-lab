@@ -2,8 +2,7 @@
 
 import { Button } from 'components/redesign/Button'
 import { CopyCitation } from 'components/redesign/CopyCitation'
-import { FacetBand, type FacetChipSpec } from 'components/redesign/FacetBand'
-import { applyFacets, countBy, toggleFacet } from 'components/redesign/facets'
+import { applyFacets } from 'components/redesign/facets'
 import { FilterBar } from 'components/redesign/FilterBar'
 import { filterOptions, type Filters, NO_FILTERS } from 'components/redesign/filterModel'
 import {
@@ -118,40 +117,6 @@ export default function Gallery() {
   // -- Publication row: onOpen wiring -------------------------------------
   const [openedPub, setOpenedPub] = useState<Publication | null>(null)
 
-  // -- Facet band: live counts computed through countBy/toggleFacet/applyFacets
-  const [year, setYear] = useState<string | null>(null)
-  const [type, setType] = useState<string | null>(null)
-  const [topic, setTopic] = useState<string | null>(null)
-  const [density, setDensity] = useState<'Comfortable' | 'Compact'>('Comfortable')
-
-  const yearCounts = useMemo(() => countBy(SAMPLE_PUBLICATIONS, (p) => p.year), [])
-  const typeCounts = useMemo(() => countBy(SAMPLE_PUBLICATIONS, (p) => p.type), [])
-  const topicCounts = useMemo(() => countBy(SAMPLE_PUBLICATIONS, (p) => p.topics), [])
-
-  const filtered = useMemo(
-    () => applyFacets(SAMPLE_PUBLICATIONS, { year, type, topic }),
-    [year, type, topic],
-  )
-
-  const yearChips: FacetChipSpec[] = Object.entries(yearCounts).map(([label, count]) => ({
-    label,
-    count,
-    on: year === label,
-    onClick: () => setYear((cur) => toggleFacet(cur, label)),
-  }))
-  const typeChips: FacetChipSpec[] = Object.entries(typeCounts).map(([label, count]) => ({
-    label,
-    count,
-    on: type === label,
-    onClick: () => setType((cur) => toggleFacet(cur, label)),
-  }))
-  const topicChips: FacetChipSpec[] = Object.entries(topicCounts).map(([label, count]) => ({
-    label,
-    count,
-    on: topic === label,
-    onClick: () => setTopic((cur) => toggleFacet(cur, label)),
-  }))
-
   // -- Filter bar: FilterBar driven by local Filters state ------------------
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
   const filterOptionsValue = useMemo(() => filterOptions(SAMPLE_PUBLICATIONS, TOPIC_TITLES), [])
@@ -220,7 +185,6 @@ export default function Gallery() {
         <Heading>Copy citation</Heading>
         <div className="flex flex-wrap items-center gap-6">
           <CopyCitation cite={SAMPLE_PUBLICATIONS[0].cite} />
-          <CopyCitation cite={SAMPLE_PUBLICATIONS[1].cite} compact />
         </div>
       </section>
 
@@ -242,17 +206,10 @@ export default function Gallery() {
       <section data-testid="gallery-publication-row" className="col-start-2 px-6">
         <Heading>Publication row</Heading>
 
-        <SubHeading>Comfortable density</SubHeading>
+        <SubHeading>Default</SubHeading>
         <div className="mb-8" data-testid="publication-row-comfortable">
           {SAMPLE_PUBLICATIONS.map((p) => (
-            <PublicationRow key={p.title} pub={p} density="comfortable" onOpen={setOpenedPub} />
-          ))}
-        </div>
-
-        <SubHeading>Compact density</SubHeading>
-        <div className="mb-8">
-          {SAMPLE_PUBLICATIONS.map((p) => (
-            <PublicationRow key={p.title} pub={p} density="compact" onOpen={setOpenedPub} />
+            <PublicationRow key={p.title} pub={p} onOpen={setOpenedPub} />
           ))}
         </div>
 
@@ -317,42 +274,6 @@ export default function Gallery() {
         <Heading>Shouted-word probe</Heading>
         <p className="text-[11px] text-text-muted">CITE</p>
         <p className="text-[11px] text-text-muted">VIEW</p>
-      </section>
-
-      <section data-testid="gallery-facet-band" className="col-start-2 px-6">
-        <Heading>Facet band</Heading>
-        <FacetBand
-          groups={[
-            { label: 'Year', chips: yearChips },
-            { label: 'Type', chips: typeChips },
-            { label: 'Topic', chips: topicChips },
-          ]}
-          density={{
-            options: ['Comfortable', 'Compact'],
-            value: density,
-            onChange: (d) => setDensity(d as 'Comfortable' | 'Compact'),
-          }}
-          note={`${filtered.length} of ${SAMPLE_PUBLICATIONS.length} publications`}
-        />
-        <div className="mt-4">
-          <span className={META}>
-            Showing <span data-testid="facet-result-count">{filtered.length}</span> result
-            {filtered.length === 1 ? '' : 's'}
-          </span>
-          {/* Density control from FacetBand's onChange drives this row's live
-              PublicationRow density -- proof the wiring round-trips, not just
-              that the two static density sections above render. */}
-          <div className="mt-4">
-            {filtered.map((p) => (
-              <PublicationRow
-                key={p.title}
-                pub={p}
-                density={density === 'Compact' ? 'compact' : 'comfortable'}
-                onOpen={setOpenedPub}
-              />
-            ))}
-          </div>
-        </div>
       </section>
 
       <section data-testid="gallery-filter-bar" className="col-start-2 px-6">

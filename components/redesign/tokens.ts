@@ -49,9 +49,9 @@ export const HAIRLINE = 'border border-rule-strong'
  */
 export const SECTION_GRID = 'grid grid-cols-1 gap-2 lg:grid-cols-[10rem_minmax(0,1fr)] lg:items-start lg:gap-x-8 lg:gap-y-0'
 /**
- * The page's one asymmetric horizontal gutter, shared by `Section`,
- * `PageTitle` and `FacetBand` -- `md`, not `lg`, is this scheme's own
- * breakpoint, independent of `SECTION_GRID`'s `lg` column switch above.
+ * The page's one asymmetric horizontal gutter, shared by `Section` and
+ * `PageTitle` -- `md`, not `lg`, is this scheme's own breakpoint,
+ * independent of `SECTION_GRID`'s `lg` column switch above.
  */
 export const SECTION_GUTTER_X = 'px-(--spacing-gutter) md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)'
 /**
@@ -99,9 +99,9 @@ export const PRESS = 'hl-press active:scale-[0.97]'
  * element in the right paint tier for the pseudo to attach to; nothing
  * here animates.
  *
- * Was defined identically in Tag.tsx, FacetChip.tsx, and
- * PublicationRow.tsx (final-review fix wave); hoisted here as the one
- * place that knows the mechanism, per this file's own header comment.
+ * Was defined identically in Tag.tsx and PublicationRow.tsx (final-review
+ * fix wave); hoisted here as the one place that knows the mechanism, per
+ * this file's own header comment.
  */
 export const HIT_AREA =
   "relative before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']"

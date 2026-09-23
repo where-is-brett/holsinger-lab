@@ -17,7 +17,7 @@ const GALLERY_SECTIONS = [
   'page-title',
   'section',
   'publication-row',
-  'facet-band',
+  'filter-bar',
   'person-card',
   'people',
   'site-nav',
@@ -76,19 +76,6 @@ test.describe('redesign component gallery', () => {
     await button.click()
     await expect(page.getByText('✓ Copied')).toBeVisible()
     await expect(page.getByText('✓ Copied')).toBeHidden({ timeout: 4000 })
-  })
-
-  test('facet chips filter and clear, with live counts through countBy/applyFacets', async ({
-    page,
-  }) => {
-    const band = page.getByTestId('gallery-facet-band')
-    // Baseline: both SAMPLE_PUBLICATIONS pass with no facet selected.
-    await expect(band.getByTestId('facet-result-count')).toHaveText('2')
-    const chip = band.getByRole('button', { name: /^2025/ })
-    await chip.click()
-    await expect(band.getByTestId('facet-result-count')).toHaveText('1')
-    await chip.click()
-    await expect(band.getByTestId('facet-result-count')).toHaveText('2')
   })
 
   test('mobile tap targets clear 44px', async ({ page }) => {
@@ -546,13 +533,11 @@ test.describe('redesign component gallery', () => {
   //    `clientWidth`, while every per-element check inside the section
   //    reported zero offenders (see the fix-round-2 report).
   //
-  // The reliable check is therefore the whole-page one the controller asked
-  // for in round 1 to begin with -- it was blocked back then by a genuine,
-  // separate defect (`PageTitle`/`FacetBand`'s non-responsive gutters, and
-  // `PageTitle`'s `<h1>` missing its own flex-item `min-w-0`), which round 2
-  // has now fixed at the source (see `PageTitle.tsx`, `FacetBand.tsx`).
-  // `Tag`'s new `wrap` prop also replaced the tag row's `overflow-x-auto`
-  // entirely this round, so there is no longer any element on this page
+  // The reliable check is therefore the whole-page one: per-element checks
+  // inside a section can miss an ungrown, unpainted grid track that still
+  // widens the page (see `PageTitle.tsx`'s own `<h1>` `min-w-0` fix for the
+  // same class of defect). `Tag`'s `wrap` prop replaced the tag row's
+  // `overflow-x-auto` entirely, so there is no longer any element on this page
   // that's *meant* to have interior scroll/overflow either.
   test('no horizontal overflow at 375px', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 })
@@ -597,28 +582,6 @@ test.describe('redesign component gallery', () => {
         })
       )
       .toEqual([])
-  })
-
-  // Fix round 4: the two checks above run at first paint, where every
-  // year/type/topic chip is OFF -- no ON facet chip with a count exists on
-  // the page yet, so FacetChip's ON-state colour (`text-text-inverse-muted`)
-  // was never actually exercised by an axe pass, only its OFF state
-  // (`text-text-faint`). Clicking one chip here gives both states at once:
-  // the clicked chip goes ON (with its own count), its siblings stay OFF
-  // (with theirs) -- and re-running axe against `gallery-facet-band` (the
-  // whole page's own check already covers `gallery-home`'s new portrait
-  // instance, (c), added alongside this fix) is the regression coverage
-  // for both fixes in this round, independent of live Sanity content (the
-  // gallery fixture never changes with the dataset).
-  test('an ON facet chip (with a count) and an OFF facet chip (with a count) have no detectable accessibility violations', async ({
-    page,
-  }) => {
-    const band = page.getByTestId('gallery-facet-band')
-    await band.getByRole('button', { name: /^2025/ }).click()
-    await expect(band.getByRole('button', { name: /^2025/ })).toHaveAttribute('aria-pressed', 'true')
-
-    const results = await new AxeBuilder({ page }).include('[data-testid="gallery-facet-band"]').analyze()
-    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
   })
 
   test('filter bar: a Year select filters, and Clear restores', async ({ page }) => {
@@ -772,22 +735,6 @@ test.describe('redesign component gallery -- dark colour scheme', () => {
 
   test('has no detectable accessibility violations (dark)', async ({ page }) => {
     const results = await new AxeBuilder({ page }).analyze()
-    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
-  })
-
-  // Dark-mode twin of the light-scheme test above -- the ON-chip colour
-  // regression this round fixes (`--sem-text-muted` composited under
-  // `opacity-55`) failed AA in both colour schemes against live data
-  // (`e2e/axe.spec.ts`'s `/`/`/publications` failures at both light and
-  // dark), so both are checked here too.
-  test('an ON facet chip (with a count) and an OFF facet chip (with a count) have no detectable accessibility violations', async ({
-    page,
-  }) => {
-    const band = page.getByTestId('gallery-facet-band')
-    await band.getByRole('button', { name: /^2025/ }).click()
-    await expect(band.getByRole('button', { name: /^2025/ })).toHaveAttribute('aria-pressed', 'true')
-
-    const results = await new AxeBuilder({ page }).include('[data-testid="gallery-facet-band"]').analyze()
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
   })
 })

@@ -149,7 +149,7 @@ describe('shortenLabel', () => {
     expect(shortenLabel('10.3390/genes14101845', 32)).toBe('10.3390/genes14101845')
   })
 
-  it('truncates with a trailing ellipsis for compact rows', () => {
+  it('truncates a long label with a trailing ellipsis', () => {
     const out = shortenLabel('10.1016/j.ygeno.2019.07.018.extra.long.suffix', 24)
     expect(out.endsWith('…')).toBe(true)
     expect(out.length).toBeLessThanOrEqual(24)
