@@ -254,6 +254,20 @@ describe('researchCards', () => {
     expect(researchCards([], [{ title: '  ', summary: 'x' }])).toEqual([])
     expect(researchCards([], null)).toEqual([])
   })
+  it('drops every cover, not just the missing one, when any project in the set has none', () => {
+    const cover = { src: 'https://x/img.jpg', width: 100, height: 80, alt: 'x' }
+    const withCover = { ...view('p1', 'a', 'X.'), cover }
+    const withoutCover = { ...view('p2', 'b', 'Y.'), cover: null }
+    const cards = researchCards([withCover, withoutCover] as never, null)
+    expect(cards.map((c) => c.cover)).toEqual([null, null])
+  })
+  it('keeps every cover when every project in the set has one', () => {
+    const cover = { src: 'https://x/img.jpg', width: 100, height: 80, alt: 'x' }
+    const a = { ...view('p1', 'a', 'X.'), cover }
+    const b = { ...view('p2', 'b', 'Y.'), cover }
+    const cards = researchCards([a, b] as never, null)
+    expect(cards.map((c) => c.cover)).toEqual([cover, cover])
+  })
 })
 
 describe('peopleStrip', () => {

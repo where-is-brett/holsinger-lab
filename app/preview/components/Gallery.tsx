@@ -24,6 +24,7 @@ import {
   HOME_SITE_COPY_THEMES_FIXTURE,
   HOME_SUPPORT_PAGE_FIXTURE,
   LINKED_PUB,
+  MIXED_COVERS_RESEARCH_PROJECTS_FIXTURE,
   NO_LINK_PUB,
   PEOPLE_PROFILES_FIXTURE,
   PEOPLE_ROLE_GROUPS_FIXTURE,
@@ -713,6 +714,29 @@ export default function Gallery() {
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
               researchProjects={[]}
+              profiles={PEOPLE_PROFILES_FIXTURE}
+              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+
+          {/* A mixed row -- a covered card, a bare card, a covered card --
+              proving `researchCards`'s "covers show only when every card in
+              the set has one" rule: none of the three cards below renders a
+              cover. */}
+          <SubHeading>(g) research cards, one without a cover -- no card in the set shows a cover</SubHeading>
+          <div className="border border-rule" data-testid="gallery-home-mixed-covers">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={MIXED_COVERS_RESEARCH_PROJECTS_FIXTURE}
               profiles={PEOPLE_PROFILES_FIXTURE}
               roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}

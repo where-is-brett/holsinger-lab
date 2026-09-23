@@ -296,9 +296,12 @@ function ResearchCardView({ card }: { card: ReturnType<typeof researchCards>[num
     <article data-testid="home-research-card" className="min-w-0 border-t border-rule pt-5">
       {cover && (
         <div className="overflow-hidden">
+          {/* `alt=""` (decorative), not `cover.alt` -- the title right
+              below already labels the card, so a non-empty alt would
+              announce it twice to screen-reader users. */}
           <Image
             src={cover.src}
-            alt={cover.alt}
+            alt=""
             width={cover.width}
             height={cover.height}
             sizes="(min-width: 768px) 50vw, 100vw"

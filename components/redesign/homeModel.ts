@@ -166,13 +166,18 @@ export function researchCards(
   themes: { title?: string | null; summary?: string | null }[] | null | undefined
 ): ResearchCard[] {
   if (projects.length > 0) {
-    return projects.map((p) => ({
+    const cards = projects.map((p) => ({
       key: p.id,
       title: p.title,
       excerpt: firstSentence(plainText(p.body)),
       href: p.slug ? `/research#${p.slug}` : '/research',
       cover: p.cover,
     }))
+    // Covers show only when every card in the set has one -- a mixed row
+    // (one covered card beside a bare one) leaves a large uneven void next
+    // to the shorter card, so a single missing cover drops every card's
+    // cover rather than rendering that uneven grid.
+    return cards.some((c) => c.cover === null) ? cards.map((c) => ({ ...c, cover: null })) : cards
   }
   return (themes ?? []).flatMap((t, i) => {
     const title = t.title?.trim()

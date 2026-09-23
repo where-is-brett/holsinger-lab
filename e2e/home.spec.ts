@@ -1,4 +1,5 @@
 import { expect, type Locator, test } from '@playwright/test'
+import { HOME_SITE_COPY_THEMES_FIXTURE, MIXED_COVERS_RESEARCH_PROJECTS_FIXTURE } from 'components/redesign/fixtures'
 import { currentMemberCount, homeStatement, IA_TAGLINE, shouldShowLabHeadCard } from 'components/redesign/homeModel'
 import { resolveBranding } from 'lib/branding'
 
@@ -323,58 +324,84 @@ test.describe('/', () => {
   test('research cards come from researchOrder projects, else siteCopy themes, else no block', async ({
     page,
   }) => {
-    const projects = await e2eClient.fetch<{ title: string; slug: string | null }[]>(
+    const projects = await e2eClient.fetch<{ title: string | null; slug: string | null }[]>(
       `*[_type=="project" && defined(researchOrder)]|order(researchOrder asc){title, "slug": slug.current}`
     )
-    const themes = await e2eClient.fetch<{ title: string }[] | null>(
+    const rawThemes = await e2eClient.fetch<{ title: string | null }[] | null>(
       `*[_type=="siteCopy"][0].about.themes[defined(title) && title != ""]{title}`
     )
+    // `researchCards` (homeModel.ts) trims a theme's title before deciding
+    // whether it counts -- the query's own `title != ""` check doesn't
+    // catch a whitespace-only title, so this filters the same way the
+    // function does to avoid a count mismatch on that edge case.
+    const themes = (rawThemes ?? []).filter((t) => t.title?.trim())
     await page.goto('/')
     const cards = page.getByTestId('home-research-card')
     if (projects.length > 0) {
       await expect(cards).toHaveCount(projects.length)
       for (const [i, p] of projects.entries()) {
-        await expect(cards.nth(i).locator('h3')).toContainText(p.title.trim())
+        // A project with a null/blank title still renders a card (an empty
+        // one, per `researchCards`'s `title: p.title ?? ''`) -- only assert
+        // the text match when there's a real title to compare against.
+        if (p.title?.trim()) await expect(cards.nth(i).locator('h3')).toContainText(p.title.trim())
         if (p.slug) await expect(cards.nth(i).locator(`h3 a[href="/research#${p.slug}"]`)).toHaveCount(1)
       }
-    } else if ((themes ?? []).length > 0) {
-      await expect(cards).toHaveCount((themes ?? []).length)
+    } else if (themes.length > 0) {
+      await expect(cards).toHaveCount(themes.length)
       await expect(cards.locator('h3 a')).toHaveCount(0)
     } else {
       await expect(page.getByTestId('home-research')).toHaveCount(0)
     }
   })
 
-  test('/research#<slug> targets exist for every project card link, below the sticky header', async ({
-    page,
-  }) => {
+  test('/research#<slug> targets land at the sticky header edge, at 1280 and 375px', async ({ page }) => {
     await page.goto('/')
     const hrefs = await page
       .getByTestId('home-research-card')
       .locator('h3 a')
       .evaluateAll((as) => as.map((a) => a.getAttribute('href')))
     const anchors = hrefs.filter((h): h is string => Boolean(h?.includes('#')))
-    // Carried from Task 1 review: the anchor e2e must hold for any valid
-    // dataset -- production has no researchOrder projects today, so this
-    // dataset has no slugged card links to check.
+    // Holds for any valid dataset: one with no researchOrder projects has
+    // no slugged card links to check.
     test.skip(anchors.length === 0, 'no /research#<slug> card links in this dataset')
 
-    for (const href of anchors) {
-      await page.goto(href)
-      const id = href.split('#')[1]
-      const target = page.locator(`[id="${id}"]`)
-      await expect(target).toHaveCount(1)
-      const heading = target.getByTestId('research-project-title')
-      await expect(heading).toBeVisible()
-      const [headerBox, headingBox] = await Promise.all([
-        page.getByTestId('site-header').boundingBox(),
-        heading.boundingBox(),
-      ])
-      if (!headerBox || !headingBox) throw new Error('missing bounding box for header or target heading')
-      // The target heading's top must sit at or below the sticky header's
-      // own bottom edge -- otherwise the header would cover it after the
-      // anchor scroll.
-      expect(headingBox.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height - 1)
+    for (const width of [1280, 375]) {
+      await page.setViewportSize({ width, height: 900 })
+      for (const href of anchors) {
+        await page.goto(href)
+        const id = href.split('#')[1]
+        // Asserted on the anchor target itself (the `Section` carrying
+        // `id`), not the heading inside it -- the heading sits a further
+        // `padTop` below the section's own top, which is taller than the
+        // header on every breakpoint here, so a heading-based assertion
+        // would still pass with the section's `scroll-margin-top` removed
+        // entirely. The target's own top landing at the header's bottom
+        // edge (within a few px) is what actually proves the
+        // scroll-margin took effect.
+        const target = page.locator(`[id="${id}"]`)
+        await expect(target).toHaveCount(1)
+        const [headerBox, targetBox, scroll] = await Promise.all([
+          page.getByTestId('site-header').boundingBox(),
+          target.boundingBox(),
+          page.evaluate(() => ({
+            y: window.scrollY,
+            max: document.documentElement.scrollHeight - window.innerHeight,
+          })),
+        ])
+        if (!headerBox || !targetBox) throw new Error('missing bounding box for header or anchor target')
+        const headerBottom = headerBox.y + headerBox.height
+        expect(targetBox.y).toBeGreaterThanOrEqual(headerBottom - 1)
+        // The upper bound only holds when the browser could actually
+        // scroll the target all the way to the header's edge -- the last
+        // anchor on a short page can be within one viewport of the
+        // document's bottom, where the page has already hit its maximum
+        // scroll position before the target reaches the header. The lower
+        // bound above still holds unconditionally: the header never
+        // covers the target either way.
+        if (scroll.y < scroll.max - 1) {
+          expect(targetBox.y).toBeLessThanOrEqual(headerBottom + 4)
+        }
+      }
     }
   })
 
@@ -563,6 +590,17 @@ test.describe('/preview/components gallery: home', () => {
     await expect(page.getByTestId('gallery-home-a').getByTestId('home-research').locator('img')).not.toHaveCount(0)
   })
 
+  // Instance (g): one project in the set has no cover -- `researchCards`
+  // drops every card's cover, not just the bare one, so the row rhythm
+  // stays even instead of pairing a tall cover next to an empty void.
+  test('gallery-home-mixed-covers: no card renders a cover when one in the set has none', async ({ page }) => {
+    await page.goto('/preview/components')
+    const instance = page.getByTestId('gallery-home-mixed-covers')
+    const cards = instance.getByTestId('home-research-card')
+    await expect(cards).toHaveCount(MIXED_COVERS_RESEARCH_PROJECTS_FIXTURE.length)
+    await expect(instance.getByTestId('home-research').locator('img')).toHaveCount(0)
+  })
+
   // Instance (b): no researchOrder projects, so the cards fall back to
   // siteCopy.about.themes -- `researchCards` (homeModel.ts) strips a
   // theme summary's leading "- " marker, and the card is unlinked (plain
@@ -572,8 +610,9 @@ test.describe('/preview/components gallery: home', () => {
   }) => {
     await page.goto('/preview/components')
     const cards = page.getByTestId('gallery-home-b').getByTestId('home-research-card')
-    const count = await cards.count()
-    expect(count).toBeGreaterThan(0)
+    // The exact fixture count, not merely "some" -- a dropped theme would
+    // still satisfy `toBeGreaterThan(0)`.
+    await expect(cards).toHaveCount(HOME_SITE_COPY_THEMES_FIXTURE.about!.themes!.length)
     await expect(cards.locator('h3 a')).toHaveCount(0)
     const excerpts = await cards.locator('p').allTextContents()
     for (const excerpt of excerpts) {

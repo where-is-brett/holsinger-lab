@@ -808,9 +808,19 @@ export const TYPOGRAPHY_BUDGET_RESEARCH_PROJECT_FIXTURE: ResearchProjectView = r
 })
 
 // gallery-home-a's research cards: the first three `RESEARCH_PROJECTS_FIXTURE`
-// views (fixture-research-1/2/3), each already carrying a real cover -- "at
-// least one with a cover" (task brief), proven here by all three.
+// views (fixture-research-1/2/3), each already carrying a real cover, so
+// the covered-card layout is exercised.
 export const HOME_RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = RESEARCH_PROJECTS_FIXTURE.slice(0, 3)
+
+// A mixed row -- a covered card next to a bare one -- proving
+// `researchCards`'s "covers show only when every card has one" rule: with
+// entry 4 (no cover) in the middle, all three cards here must render with
+// no cover at all, not just that one.
+export const MIXED_COVERS_RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
+  RESEARCH_PROJECTS_FIXTURE[0],
+  RESEARCH_PROJECTS_FIXTURE[4],
+  RESEARCH_PROJECTS_FIXTURE[1],
+]
 
 // gallery-home-b's siteCopy: no researchOrder projects, so `researchCards`
 // (homeModel.ts) falls back to these themes. Each summary carries a leading
