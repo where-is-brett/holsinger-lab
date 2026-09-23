@@ -9,7 +9,7 @@ import { applyFacets, countBy, toggleFacet } from '../facets'
 import { PageTitle } from '../PageTitle'
 import type { Publication } from '../publicationModel'
 import { PublicationRow } from '../PublicationRow'
-import { SectionRail } from '../SectionRail'
+import { Section } from '../Section'
 import { LABEL, PUBLICATION_GRID } from '../tokens'
 
 // Fixed presentation order (spec §4.3 point 2) -- filtered to the values the
@@ -28,31 +28,14 @@ const NOTE =
 // no same-property collision at either breakpoint.
 const COLUMN_HEADS = `hidden ${PUBLICATION_GRID} pb-3`
 
-// ui_kit: `padding: "32px var(--spacing-gutter-lg) var(--spacing-stack-lg) var(--spacing-gutter-md)"`.
-// `pt`/`pb` don't vary by breakpoint in the source, so they're set once,
-// unprefixed. `pr`/`pl` do -- `px-(--spacing-gutter)` below `md` (a single
-// token for both sides, the same shorthand SiteFooter/MobileHeader already
-// use), overridden from `md` by the ui_kit's asymmetric `pr`/`pl` tokens.
-// Fix round 3: this switched at `lg`, while PageTitle and FacetBand switch
-// their matching gutters at `md` -- RAIL_GRID's own rail-width breakpoint
-// (38px rail below `md`, 88px from `md`) -- so from 768-1023px this list's
-// left edge sat at a different gutter than the page title and facet band
-// above it. Now `md`, so all three align through that range; COLUMN_HEADS
-// and the row grid itself still switch at `lg` (unchanged -- that's a
-// layout breakpoint, not a gutter one). Each of `padding-right` and
-// `padding-left` still gets exactly one unprefixed declaration and one
-// `md:` declaration -- a responsive pair per property, never two utilities
-// fighting for the same property at the same breakpoint (constraints.md).
-const RECORD_LIST_PADDING =
-  'pt-8 pb-(--spacing-stack-lg) px-(--spacing-gutter) md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)'
-
 function formatMeta(pubs: Publication[]): string {
   const years = pubs.map((p) => p.year).filter(Boolean)
   const n = pubs.length
-  if (years.length === 0) return `${n} RECORDS`
+  const label = n === 1 ? 'publication' : 'publications'
+  if (years.length === 0) return `${n} ${label}`
   const min = years.reduce((a, b) => (b < a ? b : a))
   const max = years.reduce((a, b) => (b > a ? b : a))
-  return min === max ? `${n} RECORDS · ${min}` : `${n} RECORDS · ${min}–${max}`
+  return min === max ? `${n} ${label}, ${min}` : `${n} ${label}, ${min}–${max}`
 }
 
 export function PublicationsIndex({ publications }: { publications: Publication[] }) {
@@ -88,12 +71,10 @@ export function PublicationsIndex({ publications }: { publications: Publication[
     <div>
       <PageTitle
         title="Publications"
-        meta={filtered ? `${rows.length} OF ${publications.length} RECORDS SHOWN` : formatMeta(publications)}
+        meta={filtered ? `${rows.length} of ${publications.length} publications shown` : formatMeta(publications)}
         accentMeta={filtered}
       />
       <FacetBand
-        num="01"
-        label="Filter"
         groups={[
           {
             label: 'Year',
@@ -130,40 +111,44 @@ export function PublicationsIndex({ publications }: { publications: Publication[
         }}
         note={NOTE}
       />
-      <SectionRail num="02" label="Record" borderTop={false} pad={false} padTop="32px">
-        <div className={RECORD_LIST_PADDING}>
-          <div className={`${COLUMN_HEADS} ${LABEL}`}>
-            <span>Year</span>
-            <span>Title · Authors · Tags</span>
-            <span>Journal</span>
-            <span>Link · Cite</span>
-          </div>
-          {rows.length === 0 ? (
-            <div className="flex flex-col items-start gap-4 py-8">
-              <p className="text-[14px] leading-[1.5] text-text-muted">
-                No records match these filters.
-              </p>
-              <Button onClick={clearAll}>Clear filters</Button>
-            </div>
-          ) : (
-            rows.map((pub) => (
-              <div
-                key={pub.id}
-                data-testid="pub-row"
-                data-year={pub.year}
-                data-type={pub.type}
-                data-link-kind={pub.linkKind}
-              >
-                <PublicationRow
-                  pub={pub}
-                  density={density === 'COMPACT' ? 'compact' : 'comfortable'}
-                  href={pub.href}
-                />
-              </div>
-            ))
-          )}
+      {/* Task 2: `labelHeading` true -- the record list has no heading of
+          its own (a column-head row and a list of rows), so `Record` is
+          this section's only one. `padTop="32px"` matches the ui_kit's own
+          `Record` block spacing (was `32px`, not the default
+          `--spacing-stack`/44px) -- `Section` now supplies the whole
+          gutter/padding box itself, so the old `RECORD_LIST_PADDING`
+          wrapper (an exact duplicate of `Section`'s own default padding,
+          just with a different top value) is gone. */}
+      <Section label="Record" labelHeading borderTop={false} padTop="32px">
+        <div className={`${COLUMN_HEADS} ${LABEL}`}>
+          <span>Year</span>
+          <span>Title · Authors · Tags</span>
+          <span>Journal</span>
+          <span>Link · Cite</span>
         </div>
-      </SectionRail>
+        {rows.length === 0 ? (
+          <div className="flex flex-col items-start gap-4 py-8">
+            <p className="text-[14px] leading-[1.5] text-text-muted">No records match these filters.</p>
+            <Button onClick={clearAll}>Clear filters</Button>
+          </div>
+        ) : (
+          rows.map((pub) => (
+            <div
+              key={pub.id}
+              data-testid="pub-row"
+              data-year={pub.year}
+              data-type={pub.type}
+              data-link-kind={pub.linkKind}
+            >
+              <PublicationRow
+                pub={pub}
+                density={density === 'COMPACT' ? 'compact' : 'comfortable'}
+                href={pub.href}
+              />
+            </div>
+          ))
+        )}
+      </Section>
     </div>
   )
 }

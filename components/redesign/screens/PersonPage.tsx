@@ -7,7 +7,7 @@ import { PageTitle } from '../PageTitle'
 import { initialsOf } from '../peopleModel'
 import { PortraitFrame } from '../PersonCard'
 import { PortableBody } from '../PortableBody'
-import { SectionRail } from '../SectionRail'
+import { Section } from '../Section'
 
 // Task brief §5 point 1: `meta` is `role`, plus ` · roleDetail` when set,
 // verbatim -- both CMS strings printed exactly as stored, never uppercased
@@ -98,7 +98,10 @@ export function PersonPage({ person }: { person: ProfileBySlugPayload }) {
   return (
     <div>
       <PageTitle title={person.name ?? ''} meta={metaOf(person)} />
-      <SectionRail num="01" label="Profile" borderTop={false}>
+      {/* Task 2: `labelHeading` true -- `ProfileBlock` has no heading of its
+          own (just a bio and identifier links), so `Profile` is this
+          section's only one. */}
+      <Section label="Profile" labelHeading borderTop={false}>
         {/* Copied from PublicationPage.tsx's own back-link styling -- same
             "← All ..." mono-caps label geometry, linking back to the index
             route this detail page belongs under. */}
@@ -111,7 +114,7 @@ export function PersonPage({ person }: { person: ProfileBySlugPayload }) {
         <div className="mt-[26px]">
           <ProfileBlock person={person} />
         </div>
-      </SectionRail>
+      </Section>
     </div>
   )
 }

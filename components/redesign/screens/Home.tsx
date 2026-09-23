@@ -21,7 +21,7 @@ import type { Publication } from '../publicationModel'
 import { PublicationRow } from '../PublicationRow'
 import { ResourceBlock } from '../ResourceBlock'
 import { buildResourceMeta } from '../resourceModel'
-import { SectionRail } from '../SectionRail'
+import { Section } from '../Section'
 import { LABEL, PUBLICATION_GRID, STRIPE_BG } from '../tokens'
 
 // Composition follows
@@ -429,9 +429,19 @@ export function Home({
   // support page) would otherwise render an empty rail.
   const showTheLab = showPiPanel || showMembersLine || Boolean(supportPage)
 
-  const blocks: Array<{ label: string; inverse?: boolean; content: ReactNode }> = [
+  // Task 2 (spec §1.3): the numbered rail (and its `num` array) is gone --
+  // each block below carries its own React `key` (the identity block has no
+  // visible `label` at all: it's the hero, not a labelled section, matching
+  // the task brief's Home label table, which lists only the other four).
+  // `labelHeading` is `true` for every block here because none of Home's
+  // non-hero content has an in-content heading of its own (RecentWorkBlock,
+  // ResourcesBlock, OutreachBlock and TheLabBlock all render plain
+  // `<div>`s/mono labels, never an `h1`/`h2`) -- see task-2-report.md's
+  // per-screen table for the full reasoning applied consistently across
+  // every screen in this direction.
+  const blocks: Array<{ key: string; label?: string; inverse?: boolean; content: ReactNode }> = [
     {
-      label: 'Identity',
+      key: 'identity',
       content: (
         <IdentityBlock home={home} siteName={siteName} settings={settings} headingLevel={headingLevel} />
       ),
@@ -439,18 +449,25 @@ export function Home({
   ]
   if (showRecentWork) {
     blocks.push({
+      key: 'recent-work',
       label: 'Recent work',
       content: <RecentWorkBlock publications={publications} count={publicationCount} />,
     })
   }
   if (showResources && resource) {
-    blocks.push({ label: 'Resources', content: <ResourcesBlock resource={resource} /> })
+    blocks.push({ key: 'resources', label: 'Resources', content: <ResourcesBlock resource={resource} /> })
   }
   if (showOutreach && maestro) {
-    blocks.push({ label: 'Outreach', inverse: true, content: <OutreachBlock maestro={maestro} /> })
+    blocks.push({
+      key: 'outreach',
+      label: 'Outreach',
+      inverse: true,
+      content: <OutreachBlock maestro={maestro} />,
+    })
   }
   if (showTheLab) {
     blocks.push({
+      key: 'the-lab',
       label: 'The lab',
       content: (
         <TheLabBlock
@@ -467,15 +484,9 @@ export function Home({
   return (
     <div>
       {blocks.map((block, index) => (
-        <SectionRail
-          key={block.label}
-          num={String(index + 1).padStart(2, '0')}
-          label={block.label}
-          inverse={block.inverse}
-          borderTop={index !== 0}
-        >
+        <Section key={block.key} label={block.label} labelHeading inverse={block.inverse} borderTop={index !== 0}>
           {block.content}
-        </SectionRail>
+        </Section>
       ))}
     </div>
   )

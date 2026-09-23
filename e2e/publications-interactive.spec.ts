@@ -23,7 +23,7 @@ test.describe('publications index', () => {
     const rowCount = await rows.count()
     expect(rowCount).toBeGreaterThan(0)
 
-    const meta = page.getByText(/^\d+ RECORDS( · |$)/)
+    const meta = page.getByText(/^\d+ publications?(, |$)/)
     await expect(meta).toBeVisible()
     const metaText = (await meta.textContent())!
     const n = Number(metaText.match(/^(\d+)/)![1])
@@ -46,7 +46,7 @@ test.describe('publications index', () => {
 
     await firstChip.click()
 
-    await expect(page.getByText(/ OF \d+ RECORDS SHOWN$/)).toBeVisible()
+    await expect(page.getByText(/ of \d+ publications shown$/)).toBeVisible()
     const visibleCount = await rows.count()
     expect(visibleCount).toBeGreaterThan(0)
     expect(visibleCount).toBeLessThanOrEqual(fullCount)
@@ -56,7 +56,7 @@ test.describe('publications index', () => {
     }
 
     await firstChip.click()
-    await expect(page.getByText(/^\d+ RECORDS( · |$)/)).toBeVisible()
+    await expect(page.getByText(/^\d+ publications?(, |$)/)).toBeVisible()
     await expect(rows).toHaveCount(fullCount)
   })
 
@@ -79,7 +79,7 @@ test.describe('publications index', () => {
     const chipType = chipText.replace(/\s*\d+$/, '')
 
     await firstChip.click()
-    await expect(page.getByText(/ OF \d+ RECORDS SHOWN$/)).toBeVisible()
+    await expect(page.getByText(/ of \d+ publications shown$/)).toBeVisible()
     const types = await rows.evaluateAll((els) => els.map((el) => el.getAttribute('data-type')))
     for (const type of types) {
       expect(type).toBe(chipType)

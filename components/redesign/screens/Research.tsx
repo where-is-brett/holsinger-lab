@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { PageTitle } from '../PageTitle'
 import { PortableBody } from '../PortableBody'
 import type { ResearchProjectView } from '../researchModel'
-import { SectionRail } from '../SectionRail'
+import { Section } from '../Section'
 
 // Composition follows
 // docs/redesign-experiment/design-system/ui_kits/site/Research.jsx (task
@@ -164,30 +164,31 @@ export function Research({
     <div>
       <PageTitle
         title="Research"
-        meta={`${n} ACTIVE PROJECT${n === 1 ? '' : 'S'}`}
+        meta={`${n} active project${n === 1 ? '' : 's'}`}
         headingLevel={headingLevel}
       />
       {n === 0 ? (
-        <SectionRail>
+        <Section>
           <p className="text-[14px] leading-[1.5] text-text-muted">
             Research projects will be listed here soon.
           </p>
-        </SectionRail>
+        </Section>
       ) : (
+        // Task 2: `labelHeading` is `false` here -- each project's own
+        // `Narrative` already renders a real
+        // `<h2 data-testid="research-project-title">` (the project title),
+        // so a second `<h2>` for the label would be a redundant heading.
         projects.map((project, index) => (
-          <SectionRail
-            key={project.id}
-            num={String(index + 1).padStart(2, '0')}
-            label={project.label}
-            borderTop={index !== 0}
-          >
+          <Section key={project.id} label={project.label} borderTop={index !== 0}>
             <Narrative project={project} />
-          </SectionRail>
+          </Section>
         ))
       )}
-      <SectionRail num={String(n + 1).padStart(2, '0')} label="Enquiries" inverse>
+      {/* `labelHeading`: true -- `Enquiries` has no heading of its own,
+          just a paragraph, so the label is this section's only landmark. */}
+      <Section label="Enquiries" labelHeading inverse>
         <Enquiries email={email} showContactForm={showContactForm} />
-      </SectionRail>
+      </Section>
     </div>
   )
 }

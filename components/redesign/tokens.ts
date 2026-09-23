@@ -16,19 +16,6 @@ export const META = 'font-mono text-meta text-text-muted'
 /** The system's only border treatment: 1px, square corners, no shadow. */
 export const HAIRLINE = 'border border-rule-strong'
 /**
- * The `[rail | content]` grid every page block shares. SectionRail and
- * PageTitle MUST use the same value or their rails misalign at the seam
- * between them -- the rail's right-edge rule is meant to read as one
- * continuous vertical line running down the page.
- *
- * Narrows to --spacing-rail-sm below `md`, widens to --spacing-rail from
- * `md` up. The vendored sources (SectionRail.jsx, PageTitle.jsx) both
- * hardcode `var(--spacing-rail) 1fr` at every viewport -- 88px is 23% of a
- * 390px mobile viewport, so neither source is mobile-aware. This
- * responsive narrowing is an addition on top of the port.
- */
-export const RAIL_GRID = 'grid grid-cols-[var(--spacing-rail-sm)_1fr] md:grid-cols-[var(--spacing-rail)_1fr]'
-/**
  * Press feedback. Paired with the motion tokens; reduced-motion neutralises it.
  *
  * Uses Tailwind 4's parenthesised custom-property shorthand, not the
@@ -98,10 +85,25 @@ export const STRIPE_BG =
  * grid track: 64px year, fluid title, 230px journal, 250px link-cite, 28px
  * column gap, `lg` only. Home's column head, PublicationRow's row grid and
  * PublicationsIndex's column heads MUST use the same value or the head row's
- * cells stop lining up with the rows underneath it -- same reasoning as
- * RAIL_GRID above. Was spelled out identically in Home.tsx, PublicationRow.tsx
+ * cells stop lining up with the rows underneath it -- same "one shared
+ * constant" reasoning as every other cross-component layout value in this
+ * file. Was spelled out identically in Home.tsx, PublicationRow.tsx
  * and PublicationsIndex.tsx (final-review fix wave); hoisted here as the one
  * place that knows the track, per this file's own header comment.
+ *
+ * Task 2 fix: the title track was a bare `1fr`, which carries an implicit
+ * `min-width: auto` -- it refuses to shrink below its widest unbroken
+ * child's min-content width, the same blowout Section.tsx's own content
+ * column, PageTitle.tsx's `<h1>` row and FacetBand.tsx's row grid all guard
+ * against. This stayed invisible while every row sat in a page column wide
+ * enough to give the title's longest word room to spare; Section.tsx's own
+ * narrower ~728px `lg` content column (a real ~160px label column plus a
+ * page gutter, replacing the old rail's effectively ungutted 88px) was
+ * narrow enough at exactly 1024px to expose it on a live long-title
+ * publication row (`e2e/home.spec.ts`'s "no horizontal overflow at
+ * 1024px"). `minmax(0,1fr)` sets the track's own minimum directly, so the
+ * title (already `text-pretty`, wrapping at spaces) shrinks to fit instead
+ * of forcing the whole row past the viewport.
  */
 export const PUBLICATION_GRID =
-  'lg:grid lg:grid-cols-[64px_1fr_230px_250px] lg:gap-x-[28px]'
+  'lg:grid lg:grid-cols-[64px_minmax(0,1fr)_230px_250px] lg:gap-x-[28px]'

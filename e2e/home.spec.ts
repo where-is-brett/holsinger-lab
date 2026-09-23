@@ -220,7 +220,7 @@ test.describe('/', () => {
   })
 
   // Fix round 1, IMPORTANT 1: cross-checks Home's own rendered count
-  // against /people's own rendered "N CURRENT MEMBERS" meta, rather than
+  // against /people's own rendered "N current members" meta, rather than
   // re-deriving the same rule a second time (which couldn't have caught
   // the original bug -- both implementations agreed with each other while
   // disagreeing with /people). Only compared when the two pages' lab-head
@@ -243,7 +243,7 @@ test.describe('/', () => {
     const peopleResponse = await page.goto('/people')
     test.skip(peopleResponse?.status() !== 200, '/people 404s under current settings (showPeople is false)')
     const peopleMeta = await page.getByTestId('page-title-meta').innerText()
-    const match = peopleMeta.match(/(\d+)\s+CURRENT MEMBERS?/)
+    const match = peopleMeta.match(/(\d+)\s+current members?/i)
     test.skip(!match, `/people's meta "${peopleMeta}" has no "N CURRENT MEMBER(S)" segment`)
     const peopleCount = Number(match![1])
 

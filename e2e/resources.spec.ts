@@ -54,7 +54,7 @@ test.describe('/resources', () => {
 
     await page.goto('/resources')
     const meta = await page.getByTestId('page-title-meta').innerText()
-    expect(meta).toBe(`${n} RESOURCE${n === 1 ? '' : 'S'}`)
+    expect(meta).toBe(`${n} resource${n === 1 ? '' : 's'}`)
   })
 
   test('each linked publication SOURCE link goes to /publications/<slug>', async ({ page }) => {

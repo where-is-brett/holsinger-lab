@@ -13,7 +13,7 @@ const GALLERY_SECTIONS = [
   'button',
   'copy-citation',
   'page-title',
-  'section-rail',
+  'section',
   'publication-row',
   'facet-band',
   'person-card',
@@ -353,7 +353,7 @@ test.describe('redesign component gallery', () => {
 
   // Carried assertion (Task 3 brief): the number of `people-section-title`
   // headings actually rendered must equal `g`, the group count baked into
-  // PageTitle's own meta string ("LAB HEAD + N CURRENT MEMBERS · G GROUPS")
+  // PageTitle's own meta string ("Lab head + N current members · G groups")
   // -- People.tsx's `g` is derived by counting titled member sections
   // (peopleModel.ts's `groupByRoleGroup`/`splitAlumni`), and this is the
   // one place that number is checked against what the DOM actually shows,
@@ -363,7 +363,7 @@ test.describe('redesign component gallery', () => {
   }) => {
     const instance = page.getByTestId('gallery-people-a')
     const meta = await instance.getByTestId('page-title-meta').innerText()
-    const match = meta.match(/(\d+)\s+GROUPS?/)
+    const match = meta.match(/(\d+)\s+groups?/i)
     expect(match, `meta "${meta}" has no "N GROUP(S)" segment`).not.toBeNull()
     const expectedGroups = Number(match![1])
     await expect(instance.getByTestId('people-section-title')).toHaveCount(expectedGroups)

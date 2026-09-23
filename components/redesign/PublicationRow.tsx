@@ -294,7 +294,11 @@ export function PublicationRow({
           — {pub.journal} {pub.ref}
         </span>
       </div>
-      <div className="mt-1.5 flex flex-col gap-[7px] lg:mt-0 lg:pr-3">
+      {/* `min-w-0`: belt-and-braces alongside PUBLICATION_GRID's own
+          `minmax(0,1fr)` fix (tokens.ts) -- this is also a flex *item*
+          (`flex flex-col`), which has its own separate implicit
+          `min-width: auto` independent of the grid track's. */}
+      <div className="min-w-0 mt-1.5 flex flex-col gap-[7px] lg:mt-0 lg:pr-3">
         <Title
           pub={pub}
           href={href}

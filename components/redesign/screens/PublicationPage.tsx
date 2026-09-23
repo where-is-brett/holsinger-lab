@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { CopyCitation } from '../CopyCitation'
 import type { Publication } from '../publicationModel'
 import { ResourceBlock } from '../ResourceBlock'
-import { SectionRail } from '../SectionRail'
+import { Section } from '../Section'
 import { Tag } from '../Tag'
 import { LABEL } from '../tokens'
 
@@ -185,28 +185,28 @@ function ResourceSectionBlock({ pub }: { pub: Publication }) {
 // when there's none, Resource when there are none -- both true for most of
 // today's dataset) leaves no gap in the numbering rather than a skipped "03".
 export function PublicationPage({ pub }: { pub: Publication }) {
-  const blocks: Array<{ label: string; content: ReactNode }> = [
+  // Task 2: `Paper`'s `Section` label stays a `<p>` -- `PaperBlock` already
+  // renders the page's real `<h1 data-testid="paper-title">`, so its label
+  // isn't the section's only heading. `Abstract`, `Cite and access` and
+  // `Resource` have no heading of their own (plain paragraphs / mono
+  // labels), so their labels are `<h2>`s.
+  const blocks: Array<{ label: string; labelHeading?: boolean; content: ReactNode }> = [
     { label: 'Paper', content: <PaperBlock pub={pub} /> },
   ]
   if (pub.abstract.length > 0) {
-    blocks.push({ label: 'Abstract', content: <AbstractBlock pub={pub} /> })
+    blocks.push({ label: 'Abstract', labelHeading: true, content: <AbstractBlock pub={pub} /> })
   }
-  blocks.push({ label: 'Cite & access', content: <CiteAndAccessBlock pub={pub} /> })
+  blocks.push({ label: 'Cite and access', labelHeading: true, content: <CiteAndAccessBlock pub={pub} /> })
   if (pub.resources.length > 0) {
-    blocks.push({ label: 'Resource', content: <ResourceSectionBlock pub={pub} /> })
+    blocks.push({ label: 'Resource', labelHeading: true, content: <ResourceSectionBlock pub={pub} /> })
   }
 
   return (
     <div>
       {blocks.map((block, index) => (
-        <SectionRail
-          key={block.label}
-          num={String(index + 1).padStart(2, '0')}
-          label={block.label}
-          borderTop={index !== 0}
-        >
+        <Section key={block.label} label={block.label} labelHeading={block.labelHeading} borderTop={index !== 0}>
           {block.content}
-        </SectionRail>
+        </Section>
       ))}
     </div>
   )

@@ -1,7 +1,6 @@
 'use client'
 
 import { FacetChip, type FacetChipProps } from './FacetChip'
-import { RAIL_GRID } from './tokens'
 
 // Field-for-field identical to FacetChipProps -- aliased rather than
 // redeclared so the two can't drift apart.
@@ -12,8 +11,6 @@ export interface FacetBandProps {
   density?: { options: string[]; value: string; onChange: (d: string) => void }
   note?: string
   sticky?: boolean
-  num?: string
-  label?: string
 }
 
 // Presentational only -- the parent owns filter state and counts; this
@@ -43,7 +40,7 @@ export interface FacetBandProps {
 // `grid-cols-[72px_minmax(0,1fr)]` on both, not a bare `1fr`: the `1fr`
 // track has an implicit `min-width: auto` and would otherwise refuse to
 // shrink below the widest chip row's min-content width (the same blowout
-// SectionRail.tsx's content column had before its round-1 fix). A separate
+// Section.tsx's content column guards against). A separate
 // `min-w-0` utility on the row div would have been inert here -- `min-w-0`
 // constrains a grid *item's* own min-width, not the width the grid formula
 // assigns to a *track*, and it's the track's implicit `min-width: auto`
@@ -63,31 +60,18 @@ const ROW_LABEL = 'font-mono text-[10px] leading-[2.6] tracking-[0.14em] text-te
 // relying on override order (same fix shape as ROW/ROW_CENTER above it).
 const DENSITY_ROW_LABEL = 'font-mono text-[10px] leading-none tracking-[0.14em] text-text-faint uppercase'
 
-// Duplicates SectionRail's rail-header block (accent num + vertical mono-
-// caps label) with its own padding (32px, not --spacing-stack) and its own
-// sticky/both-borders treatment, per the vendored source. Not extracted
-// into a shared component here -- see the task report for the extraction
-// recommendation; this port keeps the duplication rather than deciding
-// unilaterally to factor it out.
-export function FacetBand({
-  groups = [],
-  density,
-  note,
-  sticky = true,
-  num = '01',
-  label = 'Filter',
-}: FacetBandProps) {
+// Task 2 (spec §1.3): the "01 / Filter" rail label and its column are
+// gone -- PR 3 replaces this whole band; this task only removes the
+// numbering and rail so no screen is left broken between PRs. What used to
+// be the rail's content-column sibling is now this component's one and
+// only top-level element, carrying the same left/right page gutter (see
+// Section.tsx's GUTTER_X) and top/bottom padding it always had.
+export function FacetBand({ groups = [], density, note, sticky = true }: FacetBandProps) {
   const visibleGroups = groups.filter((g) => g.chips.length > 0)
   return (
     <div
-      className={`${sticky ? 'static [@media(min-width:64rem)_and_(min-height:56rem)]:sticky [@media(min-width:64rem)_and_(min-height:56rem)]:top-(--nav-height)' : 'static'} z-[5] bg-surface ${RAIL_GRID} border-t border-b border-rule`}
+      className={`${sticky ? 'static [@media(min-width:64rem)_and_(min-height:56rem)]:sticky [@media(min-width:64rem)_and_(min-height:56rem)]:top-(--nav-height)' : 'static'} z-[5] bg-surface border-t border-b border-rule min-w-0 flex flex-col gap-5 pt-8 px-(--spacing-gutter) pb-9 md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)`}
     >
-      <div className="flex flex-col items-center gap-[18px] border-r border-rule pt-8">
-        <span className="font-mono text-[13px] leading-none font-medium text-accent">{num}</span>
-        <span className="[writing-mode:vertical-rl] rotate-180 font-mono text-[10px] leading-none tracking-[0.22em] text-text-faint uppercase">
-          {label}
-        </span>
-      </div>
       {/* Groups gap is 20px (gap-5), not the source's 14px: the same hit-area
           intrusion that forced gap-y-5 inside a group also applies across
           groups -- a chip's 44px hit area still overhangs 7.5px per edge, so
@@ -100,52 +84,43 @@ export function FacetBand({
           intra-group gap (Task 8a review finding). The density row below
           doesn't need this: its border-t + pt-3 already add ~18.5px of real
           separation from the last group's chips. */}
-      {/* Fix round 2: same fix as PageTitle.tsx's content column -- `min-w-0`
-          stops this RAIL_GRID `1fr` track's implicit `min-width: auto` from
-          blowing out on a long chip row, and the `pr`/`pl` gutters (were
-          hardcoded to the desktop `--spacing-gutter-lg`/`-md` tokens at
-          every width) now use the single `--spacing-gutter` token below
-          `md`, switching to the asymmetric desktop tokens from `md` --
-          pixel-identical there to before. */}
-      <div className="min-w-0 flex flex-col gap-5 pt-8 px-(--spacing-gutter) pb-9 md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)">
-        {visibleGroups.map((g) => (
-          <div key={g.label} className={ROW}>
-            <span className={ROW_LABEL}>{g.label}</span>
-            {/* Vertical gap is 20px (gap-y-5), not the source's 8px: a 44px hit
-                area on a ~29px-tall chip overhangs 7.5px per edge, so two
-                wrapped rows' hit areas intrude 15px combined into the gap
-                between them. A 16px gap would leave only ~1px -- a rounding
-                error, not a margin -- so this uses 20px for 5px of real
-                clearance. Horizontal gap stays the source's 8px (gap-x-2):
-                horizontal overhang is bounded by inset-x-0, so it was never
-                at risk. See the task report for the full clearance math. */}
-            <div className="flex flex-wrap gap-x-2 gap-y-5">
-              {g.chips.map((c) => (
-                <FacetChip key={c.label} {...c} />
-              ))}
-            </div>
+      {visibleGroups.map((g) => (
+        <div key={g.label} className={ROW}>
+          <span className={ROW_LABEL}>{g.label}</span>
+          {/* Vertical gap is 20px (gap-y-5), not the source's 8px: a 44px hit
+              area on a ~29px-tall chip overhangs 7.5px per edge, so two
+              wrapped rows' hit areas intrude 15px combined into the gap
+              between them. A 16px gap would leave only ~1px -- a rounding
+              error, not a margin -- so this uses 20px for 5px of real
+              clearance. Horizontal gap stays the source's 8px (gap-x-2):
+              horizontal overhang is bounded by inset-x-0, so it was never
+              at risk. See the task report for the full clearance math. */}
+          <div className="flex flex-wrap gap-x-2 gap-y-5">
+            {g.chips.map((c) => (
+              <FacetChip key={c.label} {...c} />
+            ))}
           </div>
-        ))}
-        {density && (
-          <div className={`${ROW_CENTER} border-t border-rule pt-3`}>
-            <span className={DENSITY_ROW_LABEL}>Density</span>
-            {/* `flex-wrap` plus the same `gap-x-2 gap-y-5` hit-area clearance
-                as the chip groups above (see that comment for the 44px hit
-                area / 20px gap math) -- without it, COMPACT's options row
-                had nowhere to wrap to and clipped at 320px. */}
-            <div className="flex flex-wrap gap-x-2 gap-y-5">
-              {density.options.map((d) => (
-                <FacetChip key={d} label={d} on={density.value === d} onClick={() => density.onChange(d)} />
-              ))}
-            </div>
+        </div>
+      ))}
+      {density && (
+        <div className={`${ROW_CENTER} border-t border-rule pt-3`}>
+          <span className={DENSITY_ROW_LABEL}>Density</span>
+          {/* `flex-wrap` plus the same `gap-x-2 gap-y-5` hit-area clearance
+              as the chip groups above (see that comment for the 44px hit
+              area / 20px gap math) -- without it, COMPACT's options row
+              had nowhere to wrap to and clipped at 320px. */}
+          <div className="flex flex-wrap gap-x-2 gap-y-5">
+            {density.options.map((d) => (
+              <FacetChip key={d} label={d} on={density.value === d} onClick={() => density.onChange(d)} />
+            ))}
           </div>
-        )}
-        {note && (
-          <div className="font-mono text-[10px] leading-[1.5] tracking-[0.08em] text-text-faint uppercase">
-            {note}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+      {note && (
+        <div className="font-mono text-[10px] leading-[1.5] tracking-[0.08em] text-text-faint uppercase">
+          {note}
+        </div>
+      )}
     </div>
   )
 }

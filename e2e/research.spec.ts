@@ -94,7 +94,7 @@ test.describe('/research', () => {
 
     await page.goto('/research')
     const meta = await page.getByTestId('page-title-meta').innerText()
-    expect(meta).toBe(`${n} ACTIVE PROJECT${n === 1 ? '' : 'S'}`)
+    expect(meta).toBe(`${n} active project${n === 1 ? '' : 's'}`)
   })
 
   // Fix round 1 ruling 3: compares the rendered `<img>` box's own aspect

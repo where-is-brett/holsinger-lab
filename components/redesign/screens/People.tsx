@@ -16,7 +16,7 @@ import {
 } from '../peopleModel'
 import { PersonCard, PortraitFrame } from '../PersonCard'
 import { PortableBody } from '../PortableBody'
-import { SectionRail } from '../SectionRail'
+import { Section } from '../Section'
 import { LABEL, LABEL_BASE } from '../tokens'
 
 // Composition follows docs/redesign-experiment/design-system/ui_kits/site/People.jsx
@@ -226,9 +226,9 @@ function formatMeta({
   n: number
   g: number
 }): string {
-  const membersLabel = n === 1 ? 'CURRENT MEMBER' : 'CURRENT MEMBERS'
-  const groupsLabel = g === 1 ? 'GROUP' : 'GROUPS'
-  return `${showSpotlight ? 'LAB HEAD + ' : ''}${n} ${membersLabel} · ${g} ${groupsLabel}`
+  const membersLabel = n === 1 ? 'current member' : 'current members'
+  const groupsLabel = g === 1 ? 'group' : 'groups'
+  return `${showSpotlight ? 'Lab head + ' : ''}${n} ${membersLabel} · ${g} ${groupsLabel}`
 }
 
 export function People({
@@ -265,27 +265,28 @@ export function People({
   const g = members.filter((section) => section.title).length
   const meta = formatMeta({ showSpotlight, n, g })
 
-  const blocks: Array<{ label: string; content: ReactNode }> = []
+  // Task 2: `labelHeading` per block -- `Lab head` and `Members` already
+  // have their own in-content heading (`SpotlightBlock`'s labHead-name
+  // `<h2>`; each role group's own `<h2 data-testid="people-section-title">`
+  // inside `MembersBlock`), so their `Section` label stays a `<p>`.
+  // `Alumni` has none (`AlumniBlock` is just a mono label plus a
+  // paragraph), so its label is the section's only heading.
+  const blocks: Array<{ label: string; labelHeading?: boolean; content: ReactNode }> = []
   if (showSpotlight && labHead) {
     blocks.push({ label: 'Lab head', content: <SpotlightBlock labHead={labHead} /> })
   }
   blocks.push({ label: 'Members', content: <MembersBlock sections={members} /> })
   if (alumni.length > 0) {
-    blocks.push({ label: 'Alumni', content: <AlumniBlock alumni={alumni} /> })
+    blocks.push({ label: 'Alumni', labelHeading: true, content: <AlumniBlock alumni={alumni} /> })
   }
 
   return (
     <div>
       <PageTitle title="People" meta={meta} headingLevel={headingLevel} />
       {blocks.map((block, index) => (
-        <SectionRail
-          key={block.label}
-          num={String(index + 1).padStart(2, '0')}
-          label={block.label}
-          borderTop={index !== 0}
-        >
+        <Section key={block.label} label={block.label} labelHeading={block.labelHeading} borderTop={index !== 0}>
           {block.content}
-        </SectionRail>
+        </Section>
       ))}
     </div>
   )

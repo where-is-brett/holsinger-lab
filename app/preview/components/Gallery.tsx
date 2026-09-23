@@ -42,7 +42,7 @@ import { People } from 'components/redesign/screens/People'
 import { PublicationPage } from 'components/redesign/screens/PublicationPage'
 import { Research } from 'components/redesign/screens/Research'
 import { Resources } from 'components/redesign/screens/Resources'
-import { SectionRail } from 'components/redesign/SectionRail'
+import { Section } from 'components/redesign/Section'
 import { SiteFooter } from 'components/redesign/SiteFooter'
 import { SiteNav } from 'components/redesign/SiteNav'
 import { Tag } from 'components/redesign/Tag'
@@ -169,14 +169,14 @@ export default function Gallery() {
         <PageTitle title="Publications" meta="19 records" accentMeta />
       </section>
 
-      <section data-testid="gallery-section-rail">
-        <Heading>Section rail</Heading>
-        <SectionRail num="01" label="Overview">
+      <section data-testid="gallery-section">
+        <Heading>Section</Heading>
+        <Section label="Overview">
           <p className="max-w-prose text-[14px] text-text-muted">
-            The direction&apos;s structural signature: every screen composes this as a
-            [rail | content] grid.
+            The direction&apos;s structural signature: every screen composes a sentence-case label
+            beside (or, below `lg`, above) its content.
           </p>
-        </SectionRail>
+        </Section>
       </section>
 
       <section data-testid="gallery-publication-row">
@@ -229,8 +229,6 @@ export default function Gallery() {
         <Heading>Facet band</Heading>
         <FacetBand
           sticky={false}
-          num="02"
-          label="Filter"
           groups={[
             { label: 'Year', chips: yearChips },
             { label: 'Type', chips: typeChips },
