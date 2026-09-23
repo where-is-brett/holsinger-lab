@@ -157,8 +157,8 @@ export default function Gallery() {
   const filterOptionsValue = useMemo(() => filterOptions(SAMPLE_PUBLICATIONS, TOPIC_TITLES), [])
   const filterRows = useMemo(() => applyFacets(SAMPLE_PUBLICATIONS, filters), [filters])
 
-  // Review Focus 4: a sparse dataset with no `type` values (backfill not
-  // run) -- the Type select must not render, never render as "All"-only.
+  // A sparse dataset with no `type` values (backfill not run) -- the Type
+  // select must not render, never render as "All"-only.
   const SPARSE_PUBLICATIONS = useMemo(
     () => SAMPLE_PUBLICATIONS.map((p) => ({ ...p, type: '' })),
     [],
@@ -369,8 +369,8 @@ export default function Gallery() {
         </p>
       </section>
 
-      {/* Review Focus 4: no `type` values on any paper (backfill not run) --
-          the Type select must be absent, not an "All"-only select. */}
+      {/* No `type` values on any paper (backfill not run) -- the Type select
+          must be absent, not an "All"-only select. */}
       <section data-testid="gallery-filter-bar-sparse" className="col-start-2 px-6">
         <Heading>Filter bar -- sparse (no type values)</Heading>
         <FilterBar
@@ -378,7 +378,6 @@ export default function Gallery() {
           value={sparseFilters}
           onChange={setSparseFilters}
           resultCount={sparseFilterRows.length}
-          idPrefix="filter-sparse"
         />
       </section>
 
