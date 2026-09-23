@@ -16,6 +16,31 @@ export const META = 'font-mono text-meta text-text-muted'
 /** The system's only border treatment: 1px, square corners, no shadow. */
 export const HAIRLINE = 'border border-rule-strong'
 /**
+ * `Section`'s structural signature: from `lg` (1024px), a `[label |
+ * content]` grid with a narrow ~10rem label column, top-aligned, no
+ * vertical rule between the two (spec §1.3). Below `lg`, a single column.
+ *
+ * Task 2 fix round 1 (controller ruling): `PageTitle` reuses this same
+ * grid, with an empty label cell, so its `<h1>`/meta row lands in exactly
+ * the same content column `x` as every `Section`'s own content below it --
+ * without this, the title sat flush at the page's left gutter (`x=48` at
+ * 1024/1440px) while every section's content started at the label
+ * column's far edge (`x=240`), a visible jog between the title and the
+ * body of the page it titles. Hoisted here (not left as a private constant
+ * in `Section.tsx`) specifically so `PageTitle.tsx` can share the exact
+ * same value -- same "one shared constant" reasoning as `PUBLICATION_GRID`
+ * above: two independently-typed copies of a `10rem` column width can only
+ * ever be kept in sync by discipline, never by the type system.
+ */
+export const SECTION_GRID = 'grid grid-cols-1 gap-2 lg:grid-cols-[10rem_minmax(0,1fr)] lg:items-start lg:gap-x-8 lg:gap-y-0'
+/**
+ * The page's one asymmetric horizontal gutter, shared by `Section`,
+ * `PageTitle` and `FacetBand` (each now wrapped in a `Section` of its own
+ * -- Task 2 fix round 1) -- `md`, not `lg`, is this scheme's own
+ * breakpoint, independent of `SECTION_GRID`'s `lg` column switch above.
+ */
+export const SECTION_GUTTER_X = 'px-(--spacing-gutter) md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)'
+/**
  * Press feedback. Paired with the motion tokens; reduced-motion neutralises it.
  *
  * Uses Tailwind 4's parenthesised custom-property shorthand, not the
@@ -83,7 +108,8 @@ export const STRIPE_BG =
 /**
  * The publication ledger's 4-column `[year | title | journal | link-cite]`
  * grid track: 64px year, fluid title, 230px journal, 250px link-cite, 28px
- * column gap, `lg` only. Home's column head, PublicationRow's row grid and
+ * column gap, `xl` only (moved from `lg` in Task 2 fix round 1 -- see
+ * below). Home's column head, PublicationRow's row grid and
  * PublicationsIndex's column heads MUST use the same value or the head row's
  * cells stop lining up with the rows underneath it -- same "one shared
  * constant" reasoning as every other cross-component layout value in this
@@ -91,19 +117,32 @@ export const STRIPE_BG =
  * and PublicationsIndex.tsx (final-review fix wave); hoisted here as the one
  * place that knows the track, per this file's own header comment.
  *
- * Task 2 fix: the title track was a bare `1fr`, which carries an implicit
- * `min-width: auto` -- it refuses to shrink below its widest unbroken
- * child's min-content width, the same blowout Section.tsx's own content
- * column, PageTitle.tsx's `<h1>` row and FacetBand.tsx's row grid all guard
- * against. This stayed invisible while every row sat in a page column wide
- * enough to give the title's longest word room to spare; Section.tsx's own
- * narrower ~728px `lg` content column (a real ~160px label column plus a
- * page gutter, replacing the old rail's effectively ungutted 88px) was
- * narrow enough at exactly 1024px to expose it on a live long-title
- * publication row (`e2e/home.spec.ts`'s "no horizontal overflow at
- * 1024px"). `minmax(0,1fr)` sets the track's own minimum directly, so the
- * title (already `text-pretty`, wrapping at spaces) shrinks to fit instead
- * of forcing the whole row past the viewport.
+ * Task 2 fix round 0: the title track was a bare `1fr`, which carries an
+ * implicit `min-width: auto` -- it refuses to shrink below its widest
+ * unbroken child's min-content width, the same blowout Section.tsx's own
+ * content column, PageTitle.tsx's `<h1>` row and FacetBand.tsx's row grid
+ * all guard against. `minmax(0,1fr)` sets the track's own minimum directly,
+ * so the title (already `text-pretty`, wrapping at spaces) shrinks to fit
+ * instead of forcing the whole row past the viewport -- kept below.
+ *
+ * Task 2 fix round 1 (review): `minmax(0,1fr)` alone stopped the *page*
+ * from overflowing, but not the ledger from being unreadable. Section.tsx's
+ * own content column is ~728px at 1024px (a real ~160px label column plus
+ * a page gutter, replacing the old rail's effectively ungutted 88px, down
+ * from ~832px) -- at that width this grid's fixed tracks (64+230+250px)
+ * plus 3×28px gaps leave only ~100px for the title, well under its
+ * min-content floor for a real long title. The title no longer overflows
+ * the *page*, but it does overflow its own *cell*, one word per line at up
+ * to 698px tall, colliding with the journal column beside it (measured: a
+ * live DOI paper's title touching "Genes 14(10)" in the journal cell).
+ * Moving the whole grid's activation point to `xl` (1280px) gives the title
+ * track ~356px instead -- the squeeze clears by about 1090px, so `xl`
+ * (with a stacked layout below it, same anatomy) is comfortably past it
+ * with margin. `e2e/publications-interactive.spec.ts`'s and
+ * `e2e/home.spec.ts`'s new per-row `scrollWidth`-vs-`clientWidth` checks
+ * (comfortable density, 1024/1280/1440px) prove this directly, rather than
+ * relying on the page-level overflow gate, which cannot see a cell
+ * collision that never grows the document past the viewport.
  */
 export const PUBLICATION_GRID =
-  'lg:grid lg:grid-cols-[64px_minmax(0,1fr)_230px_250px] lg:gap-x-[28px]'
+  'xl:grid xl:grid-cols-[64px_minmax(0,1fr)_230px_250px] xl:gap-x-[28px]'

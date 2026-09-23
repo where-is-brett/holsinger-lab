@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 
+import { SECTION_GRID, SECTION_GUTTER_X } from './tokens'
+
 export interface SectionProps {
   label?: string
   /**
@@ -22,6 +24,16 @@ export interface SectionProps {
   id?: string
   borderTop?: boolean
   padTop?: string
+  /**
+   * Task 2 fix round 1: added so `FacetBand` (wrapped in a `Section
+   * label="Filter"`, per the controller's ruling on the brief's Filter
+   * label) can suppress `Section`'s own vertical rhythm (`"0px"`) and keep
+   * owning its own -- `FacetBand` already has real internal padding
+   * (chip-row spacing, its own border) that would otherwise stack with
+   * `Section`'s, inserting an unwanted gap between it and the "Record"
+   * list directly below it. Every other call site keeps the default.
+   */
+  padBottom?: string
   children: ReactNode
 }
 
@@ -39,16 +51,10 @@ export interface SectionProps {
 // *first* column (the label's own 10rem track) rather than the wider
 // content track, visibly narrowing it. Explicitly pinning the content to
 // column 2 keeps its width the same whether or not a label renders.
-const GRID = 'grid grid-cols-1 gap-2 lg:grid-cols-[10rem_minmax(0,1fr)] lg:items-start lg:gap-x-8 lg:gap-y-0'
-// Same asymmetric page gutter every other content column in this direction
-// uses (PageTitle.tsx's content row, the former SectionRail content div,
-// FacetBand's own content div, PublicationsIndex's now-removed
-// RECORD_LIST_PADDING) -- `md`, not `lg`, is this scheme's own breakpoint,
-// independent of the `lg` breakpoint that switches the label/content
-// layout above. Applied once, to the whole section, since both the label
-// and the content column now share one page-edge inset rather than the
-// label sitting in its own unguttered rail track.
-const GUTTER_X = 'px-(--spacing-gutter) md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)'
+//
+// `SECTION_GRID`/`SECTION_GUTTER_X` live in tokens.ts, not here, so
+// `PageTitle.tsx` can share the exact same grid (Task 2 fix round 1 --
+// see tokens.ts's own comment on `SECTION_GRID`).
 const LABEL_CLASS = 'font-sans text-[0.8125rem] leading-none font-medium lg:col-start-1'
 
 /**
@@ -65,6 +71,7 @@ export function Section({
   id,
   borderTop = true,
   padTop = 'var(--spacing-stack)',
+  padBottom = 'var(--spacing-stack-lg)',
   children,
 }: SectionProps) {
   // An inverse band is separated by its own background, so a top rule would
@@ -75,7 +82,11 @@ export function Section({
   const LabelTag = labelHeading ? 'h2' : 'p'
 
   return (
-    <section id={id} className={`${GRID} ${GUTTER_X} pb-(--spacing-stack-lg) ${surface} ${rule}`} style={{ paddingTop: padTop }}>
+    <section
+      id={id}
+      className={`${SECTION_GRID} ${SECTION_GUTTER_X} ${surface} ${rule}`}
+      style={{ paddingTop: padTop, paddingBottom: padBottom }}
+    >
       {label && (
         <LabelTag
           data-testid="section-label"

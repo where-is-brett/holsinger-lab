@@ -155,7 +155,27 @@ export function splitAlumni<T>(
   return { members, alumni }
 }
 
-/** Total profiles across `sections` -- used for the "N CURRENT MEMBERS" meta. */
+/** Total profiles across `sections` -- used for the "N current members" meta. */
 export function memberCount<T>(sections: RoleGroupSection<T>[]): number {
   return sections.reduce((total, section) => total + section.profiles.length, 0)
+}
+
+/**
+ * `PageTitle`'s `/people` meta line, sentence case (Task 2, spec §1.3):
+ * "Lab head + 3 current members · 2 groups". Moved out of `People.tsx`
+ * (Task 2 fix round 1, review Minor 6) so its singular/plural branches get
+ * direct unit coverage instead of only the e2e's regex-based cross-check.
+ */
+export function formatPeopleMeta({
+  showSpotlight,
+  n,
+  g,
+}: {
+  showSpotlight: boolean
+  n: number
+  g: number
+}): string {
+  const membersLabel = n === 1 ? 'current member' : 'current members'
+  const groupsLabel = g === 1 ? 'group' : 'groups'
+  return `${showSpotlight ? 'Lab head + ' : ''}${n} ${membersLabel} · ${g} ${groupsLabel}`
 }

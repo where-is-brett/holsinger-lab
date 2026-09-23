@@ -14,11 +14,12 @@ import { e2eClient } from './support/sanity'
 const LABEL = '[data-testid="section-label"]'
 
 // (a) Layout: from `lg` (1024px) a label and its section's content share
-// one grid row (Section.tsx's `[10rem_minmax(0,1fr)]` grid); below `lg`
-// the label sits above the content as a stacked block, and the content's
-// left edge lines up with the label's own left edge (both inset by the
-// same page gutter -- Section.tsx's GUTTER_X, applied once to the whole
-// section rather than separately to a rail column and a content column).
+// one grid row (tokens.ts's `SECTION_GRID`, `[10rem_minmax(0,1fr)]`); below
+// `lg` the label sits above the content as a stacked block, and the
+// content's left edge lines up with the label's own left edge (both inset
+// by the same page gutter -- tokens.ts's `SECTION_GUTTER_X`, applied once
+// to the whole section rather than separately to a rail column and a
+// content column).
 //
 // The content wrapper isn't given its own `data-testid` (Section.tsx keeps
 // its markup minimal) -- it's always the label's one sibling element inside
@@ -159,6 +160,10 @@ test.describe('Section label never a bare number', () => {
       ),
       e2eClient.fetch<string | null>(`*[_type == "publication" && defined(slug.current)][0].slug.current`),
     ])
+    // Minor 8 (Task 2 fix round 1 review): checked immediately after the
+    // slug fetch, before any assertion -- an empty dataset then reports a
+    // real skip, not a vacuous pass from two `if` blocks that never ran.
+    test.skip(!personSlug && !pubSlug, 'no profile with its own page and no publication with a slug in this dataset')
     if (personSlug) {
       await page.goto(`/people/${personSlug}`)
       expect(await findNumericLabels(page)).toEqual([])
@@ -167,6 +172,41 @@ test.describe('Section label never a bare number', () => {
       await page.goto(`/publications/${pubSlug}`)
       expect(await findNumericLabels(page)).toEqual([])
     }
-    test.skip(!personSlug && !pubSlug, 'no profile with its own page and no publication with a slug in this dataset')
+  })
+})
+
+// Task 2 fix round 1 (controller ruling 3): from `lg`, `PageTitle`'s `<h1>`
+// and meta must sit in the same content column every `Section` below them
+// uses -- before this fix `PageTitle` used the page's own left gutter
+// directly (x=48 at 1440px) while a labelless `Section` (Home's Identity
+// block) pinned its own content to `lg:col-start-2` (x=240), so the title
+// visibly jogged sideways relative to the page's own body copy. `PageTitle`
+// now shares `Section`'s `SECTION_GRID`/`SECTION_GUTTER_X` (tokens.ts) with
+// an empty label cell, so this checks the fix holds on every route that
+// renders both a `PageTitle` and at least one `Section` below it.
+test.describe('PageTitle aligns with the content column', () => {
+  const ROUTES = ['/publications', '/people', '/research', '/resources']
+
+  test('at 1440px, page-title-heading and the first section content share a left edge', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    for (const route of ROUTES) {
+      const response = await page.goto(route)
+      if (response && response.status() === 404) continue // e.g. /people when showPeople is false
+      const result = await page.evaluate(() => {
+        const heading = document.querySelector('[data-testid="page-title-heading"]')
+        const section = document.querySelector('section')
+        const content = section?.querySelector(':scope > .lg\\:col-start-2')
+        if (!heading || !content) return null
+        return {
+          headingLeft: heading.getBoundingClientRect().left,
+          contentLeft: content.getBoundingClientRect().left,
+        }
+      })
+      if (!result) continue // no Section on this route today (e.g. /resources with zero resources still has one -- see Section's empty-state call -- but guard anyway)
+      expect(
+        Math.abs(result.headingLeft - result.contentLeft),
+        `${route}: heading left ${result.headingLeft} vs content left ${result.contentLeft}`
+      ).toBeLessThanOrEqual(1)
+    }
   })
 })

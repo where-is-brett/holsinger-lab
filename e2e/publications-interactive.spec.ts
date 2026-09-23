@@ -236,10 +236,10 @@ test.describe('publications index', () => {
   test.describe('no horizontal overflow', () => {
     // 375/390 added in fix round 2: PageTitle.tsx and FacetBand.tsx had
     // non-responsive gutters (fixed `pr`/`pl` gutter tokens at every width)
-    // and neither RAIL_GRID content column had its own `min-w-0`, so this
-    // page genuinely overflowed at real phone widths (measured 621px
-    // scrollWidth vs a 375px viewport before the fix) -- previously
-    // uncaught because this describe block only ever checked >=768px.
+    // and neither content column had its own `min-w-0`, so this page
+    // genuinely overflowed at real phone widths (measured 621px scrollWidth
+    // vs a 375px viewport before the fix) -- previously uncaught because
+    // this describe block only ever checked >=768px.
     for (const width of [320, 375, 390, 768, 1023, 1024, 1280]) {
       test(`at ${width}px`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 })
@@ -248,6 +248,36 @@ test.describe('publications index', () => {
           () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
         )
         expect(fits).toBe(true)
+      })
+    }
+  })
+
+  // Task 2 fix round 1 (review Important 1): the document-level check
+  // above cannot see a title that overflows its own ledger cell without
+  // ever growing the page past the viewport -- see `e2e/home.spec.ts`'s
+  // identical check and `tokens.ts`'s `PUBLICATION_GRID` comment for the
+  // full root cause. Density defaults to COMFORTABLE on load, which is the
+  // shape this check targets; COMPACT truncates by design (`lg:truncate`),
+  // so a `text-overflow: ellipsis` cell there is not a defect.
+  test.describe('publication ledger cells never overflow their own track', () => {
+    for (const width of [1024, 1280, 1440]) {
+      test(`at ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 })
+        await page.goto('/publications')
+        const overflowing = await page.evaluate(() => {
+          const rows = document.querySelectorAll('[data-testid="pub-row"]')
+          const found: { tag: string; text: string; overflowPx: number }[] = []
+          for (const row of rows) {
+            for (const el of row.querySelectorAll('*')) {
+              const overflowPx = el.scrollWidth - el.clientWidth
+              if (overflowPx > 1) {
+                found.push({ tag: el.tagName, text: (el.textContent ?? '').slice(0, 60), overflowPx })
+              }
+            }
+          }
+          return found
+        })
+        expect(overflowing, JSON.stringify(overflowing)).toEqual([])
       })
     }
   })

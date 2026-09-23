@@ -63,7 +63,7 @@ function PaperBlock({ pub }: { pub: Publication }) {
         // topic tag (Tag's chip is `whitespace-nowrap` by default --
         // tokens.ts, fixed geometry -- so one long enough label, e.g. the
         // real topic "Metabolism, oxidative stress & neuroprotection",
-        // pushes past the row's width even after SectionRail.tsx's min-w-0
+        // pushes past the row's width even after Section.tsx's min-w-0
         // fix stops the page-wide blowout). Round 2: that scrollable region
         // had nothing focusable inside it (axe's
         // `scrollable-region-focusable`) and looked visually cut off on a
@@ -181,9 +181,9 @@ function ResourceSectionBlock({ pub }: { pub: Publication }) {
   )
 }
 
-// Blocks numbered in render order (spec §4.4), so an omitted block (Abstract
-// when there's none, Resource when there are none -- both true for most of
-// today's dataset) leaves no gap in the numbering rather than a skipped "03".
+// Blocks render as an ordered list of `Section`s (spec §4.4); an omitted
+// block (Abstract when there's none, Resource when there are none -- both
+// true for most of today's dataset) simply isn't pushed.
 export function PublicationPage({ pub }: { pub: Publication }) {
   // Task 2: `Paper`'s `Section` label stays a `<p>` -- `PaperBlock` already
   // renders the page's real `<h1 data-testid="paper-title">`, so its label

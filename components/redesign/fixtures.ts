@@ -563,7 +563,7 @@ export const RESOURCES_FIXTURE: ResourcePayload[] = [
 // the populated screen's "with cover" / "without cover" branches (and the
 // no-placeholder-box rule) are both exercised. Also, spread across those
 // five: one overview with a long unbreakable token (the 320px overflow
-// guard), one with no tags (SectionRail's "Project" label fallback,
+// guard), one with no tags (Section's "Project" label fallback,
 // researchKicker's tag-less branch) and one with no `start` date
 // (researchKicker's category-only branch) -- matching the task brief's
 // fixture requirements one-for-one, reusing the existing `portableParagraph`
@@ -666,7 +666,7 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
     // 630×600 = 1.05.
     cover: researchCoverView(630, 600, 'Glial activity as a marker of disease'),
   }),
-  // No tags -- SectionRail's label falls back to "Project", and
+  // No tags -- Section's label falls back to "Project", and
   // researchKicker's tag-line half is empty (kicker is category-only, since
   // there's no `start` here either -- see fixture 4 for the start-only
   // partner case).

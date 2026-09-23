@@ -1,7 +1,7 @@
 import type { ResourcePayload } from 'types'
 import { describe, expect, it } from 'vitest'
 
-import { buildResourceMeta, formatSource } from './resourceModel'
+import { buildResourceMeta, formatSource, groupByKind, kindLabel } from './resourceModel'
 
 describe('formatSource', () => {
   it('joins journal, ref and year with " · "', () => {
@@ -20,6 +20,29 @@ describe('formatSource', () => {
 
   it('returns "" when journal, ref and year are all missing', () => {
     expect(formatSource('', '', '')).toBe('')
+  })
+})
+
+describe('kindLabel', () => {
+  it('sentence-cases each known kind', () => {
+    expect(kindLabel('hardware')).toBe('Hardware')
+    expect(kindLabel('protocol')).toBe('Protocol')
+    expect(kindLabel('software')).toBe('Software')
+    expect(kindLabel('dataset')).toBe('Dataset')
+  })
+
+  it('starts with an upper-case letter for every known kind', () => {
+    for (const kind of ['hardware', 'protocol', 'software', 'dataset']) {
+      const label = kindLabel(kind)
+      expect(label[0]).toBe(label[0].toUpperCase())
+    }
+  })
+
+  it('falls back to "Resource" for null, undefined or an unrecognised kind', () => {
+    expect(kindLabel(null)).toBe('Resource')
+    expect(kindLabel(undefined)).toBe('Resource')
+    expect(kindLabel('unknown-kind')).toBe('Resource')
+    expect(kindLabel('')).toBe('Resource')
   })
 })
 
@@ -134,5 +157,35 @@ describe('buildResourceMeta', () => {
 
   it('adds no SOURCE/DOI/URL rows when there is no linked publication', () => {
     expect(buildResourceMeta(resource({ publication: null }))).toEqual([{ label: 'KIND', value: 'hardware' }])
+  })
+})
+
+describe('groupByKind', () => {
+  it('groups resources sharing a kind into one entry, in first-seen order', () => {
+    const groups = groupByKind([
+      resource({ _id: 'r1', kind: 'hardware' }),
+      resource({ _id: 'r2', kind: 'protocol' }),
+      resource({ _id: 'r3', kind: 'hardware' }),
+    ])
+    expect(groups.map((g) => g.kind)).toEqual(['hardware', 'protocol'])
+    expect(groups[0].resources.map((r) => r._id)).toEqual(['r1', 'r3'])
+    expect(groups[1].resources.map((r) => r._id)).toEqual(['r2'])
+  })
+
+  it("each group's label is the sentence-case kindLabel", () => {
+    const groups = groupByKind([resource({ kind: 'dataset' })])
+    expect(groups[0].label).toBe('Dataset')
+  })
+
+  it('groups a null kind under its own entry, labelled "Resource"', () => {
+    const groups = groupByKind([resource({ kind: null }), resource({ kind: null })])
+    expect(groups).toHaveLength(1)
+    expect(groups[0].kind).toBeNull()
+    expect(groups[0].label).toBe('Resource')
+    expect(groups[0].resources).toHaveLength(2)
+  })
+
+  it('returns [] for an empty list', () => {
+    expect(groupByKind([])).toEqual([])
   })
 })

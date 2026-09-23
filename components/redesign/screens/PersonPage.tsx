@@ -12,8 +12,8 @@ import { Section } from '../Section'
 // Task brief §5 point 1: `meta` is `role`, plus ` · roleDetail` when set,
 // verbatim -- both CMS strings printed exactly as stored, never uppercased
 // or otherwise "corrected" here (constraints.md, "CMS text prints
-// verbatim"). PageTitle itself may render `meta` uppercased via CSS (a
-// label-geometry choice, not a text transform this component performs), so
+// verbatim"). PageTitle itself no longer applies any text-transform to
+// `meta` (Task 2, spec §1.3 -- it's a plain sentence-case line now), so
 // the DOM text these two values are concatenated into stays byte-identical
 // to the source fields.
 function metaOf(person: ProfileBySlugPayload): string | undefined {
@@ -68,7 +68,7 @@ function ProfileBlock({ person }: { person: ProfileBySlugPayload }) {
       {/* `min-w-0`: belt-and-braces, not load-bearing here -- `grid-cols-1`
           above already compiles to `minmax(0, 1fr)`, which zeroes this
           track's min-content floor on its own. Added anyway to match the
-          existing convention (PageTitle.tsx's `<h1>`, SectionRail.tsx's
+          existing convention (PageTitle.tsx's `<h1>`, Section.tsx's
           content column) of guarding every grid/flex item that holds
           unpredictable CMS text, in case a future edit narrows the track
           back to a bare `1fr` without carrying this comment along. */}

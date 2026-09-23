@@ -1,3 +1,5 @@
+import { SECTION_GRID, SECTION_GUTTER_X } from './tokens'
+
 export interface PageTitleProps {
   title: string
   meta?: string
@@ -16,27 +18,34 @@ export interface PageTitleProps {
   headingLevel?: 'h1' | 'h2'
 }
 
-// Task 2 (spec §1.3): the rail column is gone -- the `<h1>` is left-aligned
-// directly to the page's own content gutter, the same asymmetric
-// `--spacing-gutter-md`/`-lg` pair every other content edge in this
-// direction uses (Section.tsx's GUTTER_X, FacetBand.tsx, the former
-// PublicationsIndex RECORD_LIST_PADDING). Ported from
+// Task 2 fix round 1 (controller ruling): the rail column is gone, but the
+// `<h1>` doesn't just sit at the page's own left gutter any more -- it sits
+// in the exact same content column every `Section` below it uses
+// (`SECTION_GRID`/`SECTION_GUTTER_X`, tokens.ts), with an empty label cell.
+// Before this fix, `PageTitle` used the page gutter directly and Home's own
+// Identity block (a labelless `Section`, pinned to `lg:col-start-2`) put
+// its `<h1>` ~192px further right at `lg` -- every route's title jogged
+// sideways relative to its own body copy immediately below it. Ported from
 // docs/redesign-experiment/design-system/components/structure/PageTitle.jsx,
 // minus that source's own rail column.
 export function PageTitle({ title, meta, accentMeta = false, headingLevel = 'h1' }: PageTitleProps) {
   const Heading = headingLevel
   return (
-    <>
+    <div className={`${SECTION_GRID} ${SECTION_GUTTER_X} pt-(--spacing-stack) pb-[30px]`}>
       {/* Fix round 2 (Task 1): min-w-0 stops this row's own implicit
           `min-width: auto` blowout, same mechanism as every other
           unconstrained flex/grid item holding CMS text in this direction
           (Section.tsx's content column, PersonPage.tsx's PROFILE_GRID).
           `flex-wrap`/`md:flex-nowrap` lets the title and meta stack below
           `md` instead of forcing the row wide when both don't fit side by
-          side; from `md` this is pixel-identical to before. Each property
-          -- min-width, display's flex-wrap, padding-right, padding-left --
-          is set by exactly one class per breakpoint (constraints.md). */}
-      <div className="min-w-0 flex flex-wrap items-end justify-between gap-6 pt-(--spacing-stack) px-(--spacing-gutter) pb-[30px] md:flex-nowrap md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)">
+          side; from `md` this is pixel-identical to before. `lg:col-start-2`
+          (fix round 1): the empty first grid cell -- there is no label
+          here, ever -- would otherwise auto-place this, the grid's only
+          child, into the label's own 10rem track (same mechanism as
+          Section.tsx's own `lg:col-start-2` comment). Each property --
+          min-width, display's flex-wrap, grid-column-start -- is set by
+          exactly one class per breakpoint (constraints.md). */}
+      <div className="min-w-0 flex flex-wrap items-end justify-between gap-6 md:flex-nowrap lg:col-start-2">
         {/* `min-w-0` here too, not just on the flex container above: a flex
             *item*'s automatic minimum width is its own content size by
             default (the well-known flexbox min-size gotcha), independent
@@ -89,6 +98,6 @@ export function PageTitle({ title, meta, accentMeta = false, headingLevel = 'h1'
           </span>
         )}
       </div>
-    </>
+    </div>
   )
 }

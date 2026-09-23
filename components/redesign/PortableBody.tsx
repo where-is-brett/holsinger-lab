@@ -46,7 +46,7 @@ const BIO_PARAGRAPH_BODY = 'mt-4 max-w-[720px] text-pretty break-words text-body
 // unconditional utility competing with this one), the same "whole string,
 // not a bolted-on override" rule as everywhere else in this file.
 const BIO_PARAGRAPH_LEAD = 'mt-[22px] max-w-[680px] text-pretty break-words text-lead text-text'
-// PR C Task 3: Home's MAESTRO band (SectionRail `inverse`) renders the
+// PR C Task 3: Home's MAESTRO band (`Section`'s `inverse` prop) renders the
 // `maestro` project's `overview` on the dark inverse surface -- a third,
 // entirely separate paragraph class string, same reasoning as
 // BIO_PARAGRAPH_LEAD's own comment above (never BIO_PARAGRAPH_BODY with a
@@ -55,7 +55,7 @@ const BIO_PARAGRAPH_LEAD = 'mt-[22px] max-w-[680px] text-pretty break-words text
 // "Use text-text-inverse-muted for the body". No `max-w`/`text-lead` change
 // needed beyond that -- this keeps the same 720px measure and `--text-body`
 // size as the default bio style, just the inverse-surface colour token
-// (matching Research.tsx's Enquiries band and SectionRail's own `inverse`
+// (matching Research.tsx's Enquiries band and `Section`'s own `inverse`
 // prop, which pair `text-text-inverse`/`text-text-inverse-muted` with a
 // `bg-surface-inverse` ancestor).
 const BIO_PARAGRAPH_INVERSE = 'mt-4 max-w-[720px] text-pretty break-words text-body text-text-inverse-muted'

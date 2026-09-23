@@ -7,7 +7,7 @@ import { Button } from '../Button'
 import { FacetBand } from '../FacetBand'
 import { applyFacets, countBy, toggleFacet } from '../facets'
 import { PageTitle } from '../PageTitle'
-import type { Publication } from '../publicationModel'
+import { formatFilteredPublicationsMeta, formatPublicationsMeta, type Publication } from '../publicationModel'
 import { PublicationRow } from '../PublicationRow'
 import { Section } from '../Section'
 import { LABEL, PUBLICATION_GRID } from '../tokens'
@@ -20,23 +20,15 @@ const TYPE_ORDER = ['Article', 'Review', 'Case report']
 const NOTE =
   'CLICK TO FILTER · CLICK AGAIN TO CLEAR — AN UNTAGGED PAPER STILL APPEARS UNDER YEAR AND TYPE · COMPACT TIGHTENS EACH ROW TO ONE SCANNING LINE'
 
-// Column heads (Year · Title · Authors · Tags · Journal · Link · Cite), from
-// `lg` only -- the same 4-column ledger template PublicationRow's `GRID`
-// uses, so the head row's cells line up with the rows underneath it. `hidden`
-// (unprefixed) / `lg:grid` (prefixed) is the same paired-per-breakpoint
+// Column heads (Year · Title · Authors · Tags · Journal · Link · Cite),
+// from `xl` only (moved from `lg` in Task 2 fix round 1 -- see
+// `PUBLICATION_GRID`'s own comment in tokens.ts) -- the same 4-column
+// ledger template PublicationRow's `GRID` uses, so the head row's cells
+// line up with the rows underneath it. `hidden` (unprefixed) / `PUBLICATION_
+// GRID`'s own `xl:grid` (prefixed) is the same paired-per-breakpoint
 // `display` pattern PublicationRow's own KICKER/GRID split uses, so there is
 // no same-property collision at either breakpoint.
 const COLUMN_HEADS = `hidden ${PUBLICATION_GRID} pb-3`
-
-function formatMeta(pubs: Publication[]): string {
-  const years = pubs.map((p) => p.year).filter(Boolean)
-  const n = pubs.length
-  const label = n === 1 ? 'publication' : 'publications'
-  if (years.length === 0) return `${n} ${label}`
-  const min = years.reduce((a, b) => (b < a ? b : a))
-  const max = years.reduce((a, b) => (b > a ? b : a))
-  return min === max ? `${n} ${label}, ${min}` : `${n} ${label}, ${min}–${max}`
-}
 
 export function PublicationsIndex({ publications }: { publications: Publication[] }) {
   const [year, setYear] = useState<string | null>(null)
@@ -71,46 +63,68 @@ export function PublicationsIndex({ publications }: { publications: Publication[
     <div>
       <PageTitle
         title="Publications"
-        meta={filtered ? `${rows.length} of ${publications.length} publications shown` : formatMeta(publications)}
+        meta={
+          filtered
+            ? formatFilteredPublicationsMeta(rows.length, publications.length)
+            : formatPublicationsMeta(publications)
+        }
         accentMeta={filtered}
       />
-      <FacetBand
-        groups={[
-          {
-            label: 'Year',
-            chips: years.map((y) => ({
-              label: y,
-              count: yearCounts[y],
-              on: year === y,
-              onClick: () => setYear(toggleFacet(year, y)),
-            })),
-          },
-          {
-            label: 'Type',
-            chips: types.map((t) => ({
-              label: t,
-              count: typeCounts[t],
-              on: type === t,
-              onClick: () => setType(toggleFacet(type, t)),
-            })),
-          },
-          {
-            label: 'Topic',
-            chips: topics.map((t) => ({
-              label: t,
-              count: topicCounts[t],
-              on: topic === t,
-              onClick: () => setTopic(toggleFacet(topic, t)),
-            })),
-          },
-        ]}
-        density={{
-          options: ['COMFORTABLE', 'COMPACT'],
-          value: density,
-          onChange: (d) => setDensity(d as 'COMFORTABLE' | 'COMPACT'),
-        }}
-        note={NOTE}
-      />
+      {/* Task 2 fix round 1 (controller ruling): the brief's own label
+          table lists Publications' labels as "Filter" and "Record" -- the
+          original fix round removed "Filter" along with the rail
+          entirely, leaving no Filter label anywhere and a visible
+          misalignment (the band's chips started at the page gutter while
+          the Record rows started at the content column). Wrapping
+          `FacetBand` in its own `Section` restores the label and lines the
+          chips up with the rows below. `padTop`/`padBottom` "0px":
+          `FacetBand` already owns its own vertical rhythm (border, chip-row
+          spacing) -- `Section`'s own default padding would stack with it
+          rather than replace it. `borderTop={false}`: `FacetBand` still
+          renders its own top border (unchanged), so `Section` doesn't add
+          a second one immediately above it. `labelHeading`: true --
+          `FacetBand`'s content is chips, not headings, so "Filter" is this
+          section's only one. PR 3 replaces the band's internals; this is
+          purely the alignment/label fix this task's brief called for. */}
+      <Section label="Filter" labelHeading borderTop={false} padTop="0px" padBottom="0px">
+        <FacetBand
+          groups={[
+            {
+              label: 'Year',
+              chips: years.map((y) => ({
+                label: y,
+                count: yearCounts[y],
+                on: year === y,
+                onClick: () => setYear(toggleFacet(year, y)),
+              })),
+            },
+            {
+              label: 'Type',
+              chips: types.map((t) => ({
+                label: t,
+                count: typeCounts[t],
+                on: type === t,
+                onClick: () => setType(toggleFacet(type, t)),
+              })),
+            },
+            {
+              label: 'Topic',
+              chips: topics.map((t) => ({
+                label: t,
+                count: topicCounts[t],
+                on: topic === t,
+                onClick: () => setTopic(toggleFacet(topic, t)),
+              })),
+            },
+          ]}
+          density={{
+            options: ['COMFORTABLE', 'COMPACT'],
+            value: density,
+            onChange: (d) => setDensity(d as 'COMFORTABLE' | 'COMPACT'),
+          }}
+          note={NOTE}
+        />
+      </Section>
       {/* Task 2: `labelHeading` true -- the record list has no heading of
           its own (a column-head row and a list of rows), so `Record` is
           this section's only one. `padTop="32px"` matches the ui_kit's own

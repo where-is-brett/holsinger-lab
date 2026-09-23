@@ -275,6 +275,40 @@ test.describe('/', () => {
       })
     }
   })
+
+  // Task 2 fix round 1 (review Important 1): the document-level
+  // `scrollWidth`-vs-`clientWidth` check above cannot see a cell that
+  // overflows its own grid track without ever growing the page past the
+  // viewport -- exactly what happened to the "Recent work" ledger's title
+  // column between 1024 and ~1090px once `Section`'s narrower `lg` content
+  // column left the old `lg`-activated `PUBLICATION_GRID` too little room
+  // (see tokens.ts's own comment). Scoped to comfortable density only --
+  // `PublicationRow`'s `compact` density truncates by design, so a
+  // `text-overflow: ellipsis` cell there is not a defect this check should
+  // ever flag. Home only ever renders the `home` variant (no density
+  // toggle), which is comfortable-shaped.
+  test.describe('publication ledger cells never overflow their own track', () => {
+    for (const width of [1024, 1280, 1440]) {
+      test(`at ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 })
+        await page.goto('/')
+        const overflowing = await page.evaluate(() => {
+          const rows = document.querySelectorAll('[data-testid="pub-row"]')
+          const found: { tag: string; text: string; overflowPx: number }[] = []
+          for (const row of rows) {
+            for (const el of row.querySelectorAll('*')) {
+              const overflowPx = el.scrollWidth - el.clientWidth
+              if (overflowPx > 1) {
+                found.push({ tag: el.tagName, text: (el.textContent ?? '').slice(0, 60), overflowPx })
+              }
+            }
+          }
+          return found
+        })
+        expect(overflowing, JSON.stringify(overflowing)).toEqual([])
+      })
+    }
+  })
 })
 
 test.describe('/preview/components gallery: home', () => {
@@ -287,7 +321,7 @@ test.describe('/preview/components gallery: home', () => {
 
     // Instance (a): fixtures.ts's HOME_* constants set every optional
     // block: a labHead (no portrait), one resource, the maestro project,
-    // and a support page -- so all five numbered blocks render at once,
+    // and a support page -- so all five `Section` blocks render at once,
     // which live data (no resource, no labHead) never does.
     const a = section.getByTestId('gallery-home-a')
     await expect(a.getByTestId('home-pi-panel')).toBeVisible()

@@ -8,7 +8,7 @@ import { Section } from '../Section'
 
 // Composition follows
 // docs/redesign-experiment/design-system/ui_kits/site/Research.jsx (task
-// brief "Visual authority"), spec §2/§6: one `SectionRail` per
+// brief "Visual authority"), spec §2/§6: one `Section` per
 // `defined(researchOrder)` project, in `researchOrder` order, then an
 // inverse Enquiries band. Production has zero such projects today (spec
 // §2) -- the populated state is only ever exercised against the

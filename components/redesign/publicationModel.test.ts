@@ -1,7 +1,15 @@
 import type { PublicationPayload } from 'types'
 import { describe, expect, it } from 'vitest'
 
-import { deriveLink, formatRef, shortenLabel, splitAuthors, toPublication } from './publicationModel'
+import {
+  deriveLink,
+  formatFilteredPublicationsMeta,
+  formatPublicationsMeta,
+  formatRef,
+  shortenLabel,
+  splitAuthors,
+  toPublication,
+} from './publicationModel'
 
 describe('splitAuthors', () => {
   it('splits around the PI so the name can be emphasised', () => {
@@ -167,5 +175,34 @@ describe('toPublication', () => {
       } as Partial<PublicationPayload>)
     )
     expect(pub.resources).toEqual([{ id: 'r3', title: 'ES chamber', kind: 'hardware' }])
+  })
+})
+
+describe('formatPublicationsMeta', () => {
+  it('renders a year range, pluralised, matching the brief\'s own example', () => {
+    const pubs = Array.from({ length: 19 }, (_, i) => ({ year: i < 10 ? '2020' : '2025' }))
+    expect(formatPublicationsMeta(pubs)).toBe('19 publications, 2020–2025')
+  })
+
+  it('singularises "publication" when there is exactly one', () => {
+    expect(formatPublicationsMeta([{ year: '2024' }])).toBe('1 publication, 2024')
+  })
+
+  it('collapses to a single year when min === max', () => {
+    expect(formatPublicationsMeta([{ year: '2024' }, { year: '2024' }])).toBe('2 publications, 2024')
+  })
+
+  it('omits the year entirely when no publication has one', () => {
+    expect(formatPublicationsMeta([{ year: '' }, { year: '' }])).toBe('2 publications')
+  })
+
+  it('is "0 publications" for an empty list', () => {
+    expect(formatPublicationsMeta([])).toBe('0 publications')
+  })
+})
+
+describe('formatFilteredPublicationsMeta', () => {
+  it('renders "shown of total", unconditionally plural', () => {
+    expect(formatFilteredPublicationsMeta(5, 19)).toBe('5 of 19 publications shown')
   })
 })

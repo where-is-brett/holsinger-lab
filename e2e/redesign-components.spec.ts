@@ -146,23 +146,27 @@ test.describe('redesign component gallery', () => {
     expect(text).not.toMatch(/^(DOI|URL)\s/m)
   })
 
-  test('PublicationRow: comfortable index row is a grid from lg, stacked below lg', async ({
+  test('PublicationRow: comfortable index row is a grid from xl, stacked below xl', async ({
     page,
   }) => {
+    // Task 2 fix round 1: the ledger's own grid activation moved from `lg`
+    // to `xl` (tokens.ts's `PUBLICATION_GRID` comment) -- `Section`'s
+    // narrower `lg` content column left too little room for the title
+    // track between 1024 and ~1090px.
     const row = page.locator('[data-testid="publication-row-comfortable"] > div').first()
 
-    await page.setViewportSize({ width: 1024, height: 900 })
+    await page.setViewportSize({ width: 1280, height: 900 })
     await expect(row).toHaveCSS('display', 'grid')
 
-    await page.setViewportSize({ width: 900, height: 900 })
+    await page.setViewportSize({ width: 1100, height: 900 })
     await expect(row).not.toHaveCSS('display', 'grid')
   })
 
-  test('PublicationRow: comfortable index row still shows authors and CopyCitation below lg', async ({
+  test('PublicationRow: comfortable index row still shows authors and CopyCitation below xl', async ({
     page,
   }) => {
     // Fix round 1: the journal column collapses into the mobile kicker
-    // below `lg`, but the authors line and CopyCitation control must not --
+    // below `xl`, but the authors line and CopyCitation control must not --
     // this settles it with a live viewport check, not just markup presence.
     await page.setViewportSize({ width: 900, height: 900 })
     const row = page.locator('[data-testid="publication-row-comfortable"] > div').first()

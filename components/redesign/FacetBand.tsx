@@ -60,17 +60,24 @@ const ROW_LABEL = 'font-mono text-[10px] leading-[2.6] tracking-[0.14em] text-te
 // relying on override order (same fix shape as ROW/ROW_CENTER above it).
 const DENSITY_ROW_LABEL = 'font-mono text-[10px] leading-none tracking-[0.14em] text-text-faint uppercase'
 
-// Task 2 (spec §1.3): the "01 / Filter" rail label and its column are
-// gone -- PR 3 replaces this whole band; this task only removes the
-// numbering and rail so no screen is left broken between PRs. What used to
-// be the rail's content-column sibling is now this component's one and
-// only top-level element, carrying the same left/right page gutter (see
-// Section.tsx's GUTTER_X) and top/bottom padding it always had.
+// Task 2 (spec §1.3): the "01 / Filter" rail label and its column are gone
+// -- PR 3 replaces this whole band; this task only removes the numbering
+// and rail so no screen is left broken between PRs.
+//
+// Task 2 fix round 1 (controller ruling): the brief's own label table lists
+// Publications' labels as "Filter" and "Record" -- `PublicationsIndex.tsx`
+// now renders this component inside a `Section label="Filter"`, so the
+// component itself no longer owns any horizontal gutter (`Section`
+// supplies it, the same way it already does for the "Record" list below).
+// This is what lines the chip rows up with the ledger rows beneath them,
+// both starting at `Section`'s own content column. `pt-8`/`pb-9` stay: the
+// vertical rhythm inside the band (chip-row spacing, the density row's own
+// separator) is this component's own concern, not `Section`'s.
 export function FacetBand({ groups = [], density, note, sticky = true }: FacetBandProps) {
   const visibleGroups = groups.filter((g) => g.chips.length > 0)
   return (
     <div
-      className={`${sticky ? 'static [@media(min-width:64rem)_and_(min-height:56rem)]:sticky [@media(min-width:64rem)_and_(min-height:56rem)]:top-(--nav-height)' : 'static'} z-[5] bg-surface border-t border-b border-rule min-w-0 flex flex-col gap-5 pt-8 px-(--spacing-gutter) pb-9 md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)`}
+      className={`${sticky ? 'static [@media(min-width:64rem)_and_(min-height:56rem)]:sticky [@media(min-width:64rem)_and_(min-height:56rem)]:top-(--nav-height)' : 'static'} z-[5] bg-surface border-t border-b border-rule min-w-0 flex flex-col gap-5 pt-8 pb-9`}
     >
       {/* Groups gap is 20px (gap-5), not the source's 14px: the same hit-area
           intrusion that forced gap-y-5 inside a group also applies across

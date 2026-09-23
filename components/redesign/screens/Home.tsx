@@ -26,12 +26,11 @@ import { LABEL, PUBLICATION_GRID, STRIPE_BG } from '../tokens'
 
 // Composition follows
 // docs/redesign-experiment/design-system/ui_kits/site/Home.jsx (task brief
-// "Visual authority"), spec §2 (rulings 2 and 4) / §6: five numbered
-// blocks, each omitted when there's nothing to show, same "no gaps in the
-// render-order numbering" pattern as Research.tsx / People.tsx. Home has
-// zero editorial fields of its own (spec §6, constraints.md forbids
-// touching `home.showcaseProjects`/`siteCopy`) -- every block is derived
-// from other document types or `settings`.
+// "Visual authority"), spec §2 (rulings 2 and 4) / §6: up to five `Section`
+// blocks (Identity plus four labelled ones), each omitted when there's
+// nothing to show. Home has zero editorial fields of its own (spec §6,
+// constraints.md forbids touching `home.showcaseProjects`/`siteCopy`) --
+// every block is derived from other document types or `settings`.
 
 const IA_TAGLINE = 'Advancing the Understanding and Treatment of Neurological Disorders through Molecular Research'
 
@@ -139,7 +138,13 @@ function RecentWorkBlock({ publications, count }: { publications: Publication[];
         </span>
       </div>
       {publications.map((pub) => (
-        <PublicationRow key={pub.id} pub={pub} variant="home" href={pub.href} />
+        // `data-testid="pub-row"` (Task 2 fix round 1): matches
+        // PublicationsIndex.tsx's own row wrapper, so the ledger-cell
+        // overflow guard (`e2e/home.spec.ts`, review Important 1) can
+        // target Home's rows the same way it targets `/publications`'s.
+        <div key={pub.id} data-testid="pub-row">
+          <PublicationRow pub={pub} variant="home" href={pub.href} />
+        </div>
       ))}
       <Link
         href="/publications"

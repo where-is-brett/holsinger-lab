@@ -7,6 +7,7 @@ import type { ProfilePayload, RoleGroupPayload, SettingsPayload } from 'types'
 import { PageTitle } from '../PageTitle'
 import {
   excludeLabHead,
+  formatPeopleMeta,
   groupByRoleGroup,
   initialsOf,
   memberCount,
@@ -20,10 +21,10 @@ import { Section } from '../Section'
 import { LABEL, LABEL_BASE } from '../tokens'
 
 // Composition follows docs/redesign-experiment/design-system/ui_kits/site/People.jsx
-// (task brief §"Visual authority"). Blocks are numbered in render order, with
-// no gaps -- same pattern as PublicationPage.tsx's own `blocks` array -- so an
-// omitted block (no spotlight when settings.labHead is unset, no Alumni
-// section when the group is empty) never leaves a skipped number.
+// (task brief §"Visual authority"). Blocks render as an ordered list of
+// `Section`s, same pattern as PublicationPage.tsx's own `blocks` array --
+// an omitted block (no spotlight when settings.labHead is unset, no Alumni
+// section when the group is empty) simply isn't pushed.
 
 // The 220px portrait column, from `md`; stacked below it with the portrait
 // itself capped at the same 220px width so it doesn't stretch full-bleed on
@@ -108,7 +109,7 @@ function SpotlightBlock({ labHead }: { labHead: LabHead }) {
           repeat(1, minmax(0, 1fr))`, which zeroes the track's own
           min-content floor, so this isn't strictly required for the
           overflow this fix addresses. Added anyway to match `PageTitle.tsx`
-          and `SectionRail.tsx`'s existing convention of guarding every
+          and `Section.tsx`'s existing convention of guarding every
           grid/flex item that holds unpredictable CMS text, in case a future
           edit narrows the track back to a bare `1fr`. */}
       <div className="min-w-0">
@@ -217,20 +218,6 @@ function AlumniBlock({ alumni }: { alumni: ProfilePayload[] }) {
   )
 }
 
-function formatMeta({
-  showSpotlight,
-  n,
-  g,
-}: {
-  showSpotlight: boolean
-  n: number
-  g: number
-}): string {
-  const membersLabel = n === 1 ? 'current member' : 'current members'
-  const groupsLabel = g === 1 ? 'group' : 'groups'
-  return `${showSpotlight ? 'Lab head + ' : ''}${n} ${membersLabel} · ${g} ${groupsLabel}`
-}
-
 export function People({
   settings,
   profiles,
@@ -263,7 +250,7 @@ export function People({
   // counted as a group -- counting titled sections here is what keeps it
   // out of `g` without any special-casing of the 'other' id.
   const g = members.filter((section) => section.title).length
-  const meta = formatMeta({ showSpotlight, n, g })
+  const meta = formatPeopleMeta({ showSpotlight, n, g })
 
   // Task 2: `labelHeading` per block -- `Lab head` and `Members` already
   // have their own in-content heading (`SpotlightBlock`'s labHead-name

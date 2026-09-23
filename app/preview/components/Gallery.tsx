@@ -166,7 +166,7 @@ export default function Gallery() {
 
       <section data-testid="gallery-page-title">
         <Heading>Page title</Heading>
-        <PageTitle title="Publications" meta="19 records" accentMeta />
+        <PageTitle title="Publications" meta="19 publications, 2020–2025" accentMeta />
       </section>
 
       <section data-testid="gallery-section">
