@@ -149,6 +149,29 @@ test.describe('mobile menu accessibility contract', () => {
     await page.getByRole('button', { name: 'Menu', exact: true }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
 
+    // Wait for the panel's own fade-in (DialogPanel's `transition` prop,
+    // `duration-(--sem-motion-reveal)`, 160ms) to actually finish before
+    // scanning -- mid-fade, axe reads whatever partially-blended colour the
+    // opacity transition has reached at that instant and (correctly, for
+    // that instant) reports it as a real color-contrast violation, even
+    // though the panel is opaque a moment later. `toBeVisible()` above only
+    // waits for a non-zero opacity, not a *settled* one. Headless UI 2.2.10
+    // marks an in-flight transition with `data-enter`/`data-transition`
+    // attributes, removed once it settles (confirmed by reading
+    // node_modules/@headlessui/react/dist/hooks/use-transition.js) -- more
+    // reliable than a fixed wait, since it doesn't care how long the
+    // transition actually takes.
+    const panel = page.locator('#mobile-menu-panel')
+    await expect
+      .poll(() =>
+        panel.evaluate((el) => ({
+          opacity: getComputedStyle(el).opacity,
+          enter: el.hasAttribute('data-enter'),
+          transition: el.hasAttribute('data-transition'),
+        }))
+      )
+      .toEqual({ opacity: '1', enter: false, transition: false })
+
     const results = await new AxeBuilder({ page }).analyze()
     expect(
       results.violations,
@@ -188,6 +211,17 @@ test.describe('mobile menu accessibility contract', () => {
     await expect(page.getByRole('dialog')).toBeVisible()
 
     await page.setViewportSize({ width: 800, height: 812 })
+
+    // Condition-based, not a longer timeout: MobileHeader.tsx closes the
+    // menu from a `matchMedia('(min-width: 48rem)')` change listener,
+    // which the browser dispatches asynchronously after a CDP-driven
+    // `setViewportSize` -- not necessarily on the same tick, and (measured
+    // in CI, not locally) occasionally slow enough to eat into the 5s
+    // default an assertion on the dialog alone gets. Confirming the media
+    // query itself has already flipped isolates that from the dialog's own
+    // (much shorter, 160ms) closing transition, so a slow *event dispatch*
+    // doesn't get misdiagnosed as, or masked by, a slow *transition*.
+    await expect.poll(() => page.evaluate(() => matchMedia('(min-width: 48rem)').matches)).toBe(true)
 
     await expect(page.getByRole('dialog')).toBeHidden()
     const overflow = await page.evaluate(() => document.documentElement.style.overflow)
