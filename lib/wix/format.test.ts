@@ -38,13 +38,15 @@ describe('hrefs are stega-clean and null-safe (Review Focus 5)', () => {
   })
 })
 
-describe('cleanLqip (Task MOB2, Part C: stega must not corrupt the blur placeholder)', () => {
+describe('cleanLqip (Task MOB2, Part C: defends against a hypothetical stega-corrupted blur placeholder)', () => {
   const stega = '​‌‍⁠' // zero-width chars as stega encodes
   it('strips stega characters inserted mid-payload, restoring a valid data URL', () => {
     const clean = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB'
     // stegaClean strips these characters wherever they land, not just at
-    // the edges -- splice some into the middle of the base64 payload, where
-    // a real stega annotation of a long string field would actually fall.
+    // the edges -- splice some into the middle of the base64 payload. This
+    // scenario is hypothetical, not observed: see cleanLqip's own comment in
+    // lib/wix/format.ts for why the default stega filter already exempts
+    // `heroImageLqip` (denylisted field name, and a `data:` URL besides).
     const corrupted = clean.slice(0, 30) + stega + clean.slice(30)
     expect(cleanLqip(corrupted)).toBe(clean)
   })

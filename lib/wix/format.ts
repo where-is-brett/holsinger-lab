@@ -34,11 +34,17 @@ export function telHref(phone: string | null | undefined): string | null {
 
 /**
  * In draft mode / Presentation, `sanityFetch` runs with stega encoding on,
- * which inserts invisible characters into string fields -- including,
- * potentially, `heroImageLqip`. A stega-corrupted `data:image/...;base64,...`
- * URL fails to decode, so the blur placeholder silently vanishes (a solid
- * black box until the real image arrives). `stegaClean` strips those
- * characters wherever they land in the string, not just at the edges.
+ * which can insert invisible characters into string fields. `heroImageLqip`
+ * is NOT actually at risk under the default filter: `@sanity/client`'s
+ * `filterDefault` (node_modules/@sanity/client/dist/_chunks-es/
+ * stegaEncodeSourceMap.js, ~lines 215-292) skips any field named `lqip`
+ * outright (it's in the denylist) and, separately, skips any value that
+ * parses as a URL with an allowed protocol -- `data:` included -- so a
+ * `data:image/...;base64,...` LQIP is exempt twice over. This repo sets no
+ * custom `stega.filter`. `cleanLqip` is kept anyway as a cheap no-op on
+ * clean input and as defence against a future custom `stega.filter` or a
+ * changed default that removes one of those exemptions -- not because either
+ * is a live bug today.
  */
 export function cleanLqip(v: string | null | undefined): string | null {
   const c = clean(v)

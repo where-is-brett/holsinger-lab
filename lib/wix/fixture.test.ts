@@ -43,10 +43,14 @@ describe('fixture dataset', () => {
     expect(ofType('profile')).toHaveLength(40)
     expect(ofType('publication')).toHaveLength(17)
     expect(ofType('siteCopy')).toHaveLength(1)
-    // One per fake image asset id (hero, project covers, people portraits) --
-    // without these, `image.asset->metadata.lqip` (the hero's
-    // "heroImageLqip" projection) always resolves to null in fixture mode.
-    expect(ofType('sanity.imageAsset').length).toBeGreaterThan(0)
+    // One per URL in build-fixture.ts's `collectAssetUrls` (hero image, media
+    // posters, project covers -- 4 in the current snapshot) -- without these,
+    // `image.asset->metadata.lqip` (the hero's "heroImageLqip" projection)
+    // always resolves to null in fixture mode. This does NOT include people
+    // portraits: `placeholderPortrait` (~line 156) synthesises a ref to a
+    // deterministic fake asset id per matched profile without ever adding it
+    // to `assetUrls`, so those refs have no corresponding asset document.
+    expect(ofType('sanity.imageAsset')).toHaveLength(4)
     for (const doc of ofType('sanity.imageAsset')) {
       expect((doc as { metadata: { lqip: string } }).metadata.lqip).toMatch(/^data:image\/png;base64,[A-Za-z0-9+/=]+$/)
     }
