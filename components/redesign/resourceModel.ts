@@ -80,6 +80,9 @@ export function buildResourceMeta(resource: ResourcePayload | HomeResourcePayloa
   // *value* (`resource.kind`, the raw lower-case schema enum) stays
   // untouched here -- that's `Resources.tsx`'s `kindLabel`'s job, for its
   // own different purpose (a `Section` label), not this function's.
+  // `identifier` (Task 4, re-review round 2 R2-1): Kind's value is a fixed
+  // schema enum, not CMS free text or an identifier, so it stays
+  // unmarked -- Source and the DOI/URL row below are the identifier data.
   const meta: ResourceBlockMeta[] = [{ label: 'Kind', value: resource.kind ?? '' }]
   const pub = resource.publication
   if (pub) {
@@ -96,11 +99,12 @@ export function buildResourceMeta(resource: ResourcePayload | HomeResourcePayloa
         label: 'Source',
         value: source,
         href: pub.slug ? `/publications/${pub.slug}` : undefined,
+        identifier: true,
       })
     }
     const link = deriveLink(pub.doi ?? null, pub.url ?? null)
     if (link) {
-      meta.push({ label: link.kind, value: link.label, href: link.href })
+      meta.push({ label: link.kind, value: link.label, href: link.href, identifier: true })
     }
   }
   return meta

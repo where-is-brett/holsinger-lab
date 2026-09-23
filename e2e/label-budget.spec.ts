@@ -234,14 +234,21 @@ test.describe('Uppercase micro-label budget', () => {
 // stays independent of whatever `/publications`/`/people` happen to render
 // today.
 test.describe('CMS-verbatim text never trips the source-caps check', () => {
-  test('a journal called "PLOS ONE", a capitalised DOI and a "MD (UNSW)" roleDetail all count 0', async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 375, height: 1000 })
-    await page.goto('/preview/components')
-    const found = await findShoutedText(page, '[data-testid="gallery-cms-verbatim-probe"]')
-    expect(found, JSON.stringify(found)).toEqual([])
-  })
+  // Re-review round 2 (R2-3): 375 alone missed the desktop path -- below
+  // `xl` the journal name renders through PublicationRow's mobile kicker,
+  // but at 1440 it renders through the desktop `META` cell/spans instead
+  // (both marked, but a different DOM path each). Looping over the same
+  // `WIDTHS` the budget itself runs at proves both paths, not just one.
+  for (const width of WIDTHS) {
+    test(`a journal called "PLOS ONE", a capitalised DOI and a "MD (UNSW)" roleDetail all count 0 at ${width}px`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 1000 })
+      await page.goto('/preview/components')
+      const found = await findShoutedText(page, '[data-testid="gallery-cms-verbatim-probe"]')
+      expect(found, JSON.stringify(found)).toEqual([])
+    })
+  }
 })
 
 // Fix round 2 (re-review N2): proves the spec actually catches a shouted

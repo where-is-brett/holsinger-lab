@@ -88,6 +88,7 @@ describe('buildResourceMeta', () => {
       label: 'Source',
       value: 'Journal of Neuroscience Methods 401(2) · 110-118 · 2024',
       href: '/publications/a-paper',
+      identifier: true,
     })
   })
 
@@ -108,7 +109,7 @@ describe('buildResourceMeta', () => {
         },
       })
     )
-    expect(meta).toContainEqual({ label: 'Source', value: 'A titled fallback', href: undefined })
+    expect(meta).toContainEqual({ label: 'Source', value: 'A titled fallback', href: undefined, identifier: true })
   })
 
   it('drops the SOURCE row entirely when there is neither a formatted source nor a title', () => {
@@ -152,6 +153,7 @@ describe('buildResourceMeta', () => {
       label: 'DOI',
       value: '10.1038/s41420-024-00000-1',
       href: 'https://doi.org/10.1038/s41420-024-00000-1',
+      identifier: true,
     })
   })
 

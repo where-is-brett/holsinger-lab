@@ -6,6 +6,17 @@ export interface ResourceBlockMeta {
   label: string
   value: string
   href?: string
+  /**
+   * True when `value` is CMS or identifier data (a DOI, a URL, a source
+   * ref) that must print verbatim -- gets `data-identifier`/
+   * `data-cms-verbatim` so the label-budget e2e's source-caps check
+   * exempts it (see PublicationRow.tsx's Identifier() comment for the
+   * marker's full contract). Omit/false for hard-coded UI copy (e.g. the
+   * "Resources" link text PublicationPage.tsx passes as `More`) so a
+   * future all-caps regression there is still caught (Task 3 re-review
+   * round 2, R2-1).
+   */
+  identifier?: boolean
 }
 
 export interface ResourceBlockProps {
@@ -113,14 +124,23 @@ export function ResourceBlock({ title, meta = [], figureLabel, children }: Resou
               {/* `data-cms-verbatim` (Task 3 fix round 2, re-review N1):
                   `m.value` is CMS/identifier data (a DOI, a journal ref, a
                   resource kind) -- see PublicationRow.tsx's Identifier()
-                  comment for the marker's full contract. */}
+                  comment for the marker's full contract. Only when
+                  `m.identifier` is true (re-review round 2, R2-1): a
+                  hard-coded UI string (PublicationPage.tsx's `More` ->
+                  "Resources" link) must stay outside the marker so the
+                  label-budget e2e's source-caps check still catches a
+                  future all-caps regression there. */}
               <dd className="inline">
                 {m.href ? (
-                  <a className={`text-link ${IDENTIFIER}`} href={m.href} data-identifier data-cms-verbatim>
+                  <a
+                    className={`text-link ${IDENTIFIER}`}
+                    href={m.href}
+                    {...(m.identifier ? { 'data-identifier': true, 'data-cms-verbatim': true } : {})}
+                  >
                     {m.value}
                   </a>
                 ) : (
-                  <span className={IDENTIFIER} data-cms-verbatim>
+                  <span className={IDENTIFIER} {...(m.identifier ? { 'data-cms-verbatim': true } : {})}>
                     {m.value}
                   </span>
                 )}
