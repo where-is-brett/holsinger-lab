@@ -197,8 +197,35 @@ describe('bibtex', () => {
     expect(out).toContain('title = {{A \\& B \\% C\\_\\{D\\}}},')
   })
 
+  it('escapes a literal backslash without double-escaping the braces it introduces', () => {
+    const out = bibtex({ ...BIOMEDICINES, title: 'a\\b' })
+    expect(out).toContain('title = {{a\\textbackslash{}b}},')
+  })
+
+  it('escapes a backslash sitting next to a brace correctly', () => {
+    const out = bibtex({ ...BIOMEDICINES, title: 'a\\{b}' })
+    expect(out).toContain('title = {{a\\textbackslash{}\\{b\\}}},')
+  })
+
   it('is deterministic', () => {
     expect(bibtex(GSD)).toBe(bibtex(GSD))
+  })
+
+  it('Biomedicines: byte-exact full entry', () => {
+    expect(bibtex(BIOMEDICINES)).toBe(
+      [
+        '@article{Huynh2024,',
+        '  author = {Huynh Q-S and Holsinger RMD},',
+        '  title = {{Development of a Cell Culture Chamber for Investigating the Therapeutic Effects of Electrical Stimulation on Neural Growth}},',
+        '  journal = {Biomedicines},',
+        '  year = {2024},',
+        '  volume = {12},',
+        '  number = {2},',
+        '  pages = {289},',
+        '  doi = {10.3390/biomedicines12020289},',
+        '}',
+      ].join('\n')
+    )
   })
 })
 
@@ -244,6 +271,26 @@ describe('ris', () => {
     expect(out).toContain('DO  - 10.3390/biomedicines12020289\r\n')
     expect(out).toContain('PY  - 2024\r\n')
     expect(out).toContain('UR  - https://example.org/paper\r\n')
+  })
+
+  it('Biomedicines: byte-exact full record', () => {
+    expect(ris(BIOMEDICINES)).toBe(
+      [
+        'TY  - JOUR',
+        'AU  - Huynh Q-S',
+        'AU  - Holsinger RMD',
+        'TI  - Development of a Cell Culture Chamber for Investigating the Therapeutic Effects of Electrical Stimulation on Neural Growth',
+        'T2  - Biomedicines',
+        'JO  - Biomedicines',
+        'VL  - 12',
+        'IS  - 2',
+        'SP  - 289',
+        'PY  - 2024',
+        'DO  - 10.3390/biomedicines12020289',
+        'ER  - ',
+        '',
+      ].join('\r\n')
+    )
   })
 
   it('is deterministic', () => {

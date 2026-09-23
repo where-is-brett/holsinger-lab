@@ -108,11 +108,18 @@ function bibtexKey(pub: CitationInput): string {
  * transliterated).
  */
 function escapeBibtex(s: string): string {
+  // A literal backslash is replaced with a placeholder first and expanded to
+  // `\textbackslash{}` last (same trick `~`/`^` use below) -- otherwise the
+  // `{`/`}` it introduces would run straight into the following brace pass
+  // and get escaped a second time (`\textbackslash\{\}` instead of
+  // `\textbackslash{}`).
+  const BACKSLASH_PLACEHOLDER = '\u0000'
   return s
-    .replace(/\\/g, '\\textbackslash{}')
+    .replace(/\\/g, BACKSLASH_PLACEHOLDER)
     .replace(/([{}&%$#_])/g, '\\$1')
     .replace(/~/g, '\\textasciitilde{}')
     .replace(/\^/g, '\\textasciicircum{}')
+    .replace(new RegExp(BACKSLASH_PLACEHOLDER, 'g'), '\\textbackslash{}')
 }
 
 /**
@@ -149,7 +156,16 @@ export function bibtex(pub: CitationInput): string {
   return `@${type}{${bibtexKey(pub)},\n${body}\n}`
 }
 
-/** Splits a "1515-1532" page range into [start, end]; a single page ("74") is [page]. */
+/**
+ * Splits a "1515-1532" page range into [start, end]; a single page ("74") is
+ * [page].
+ *
+ * Known failure mode: any `pages` value shaped like "X-Y" is treated as a
+ * range, including a hyphenated article id that isn't one (e.g. a preprint
+ * id such as "e2024-01-1" would be split into SP/EP instead of staying a
+ * single SP). Not a concern for the current dataset's non-hyphenated
+ * preprint ids, but worth knowing if that changes.
+ */
 function splitPageRange(pages: string): [string, string?] {
   const m = pages.match(/^(\S+)\s*-\s*(\S+)$/)
   return m ? [m[1], m[2]] : [pages]
@@ -205,6 +221,11 @@ export function ris(pub: CitationInput): string {
  * ("Journal 2024; 12(2):289.") -- that's the established convention
  * throughout the rest of the codebase, so it's kept as-is rather than
  * duplicated with the space stripped.
+ *
+ * Deliberately uses the raw cleaned `author` string as-is rather than
+ * `splitAuthors(pub.author).join(...)` -- the source string is already
+ * prose-formatted for display, and `bibtex`/`ris` are the ones that need
+ * individual author fields. Don't "fix" this into calling splitAuthors here.
  */
 export function plainCitation(pub: CitationInput): string {
   const authors = sentence(clean(pub.author))
