@@ -14,7 +14,8 @@ import type {
   SupportPagePayload,
 } from 'types'
 
-import { currentMemberCount, homeStatement, resolveLabHeadHref, shouldShowLabHeadCard } from '../homeModel'
+import { currentMemberCount, homeStatement, resolveLabHeadHref, shouldShowLabHeadCard, splitLead } from '../homeModel'
+import { LeadPublication } from '../LeadPublication'
 import { initialsOf } from '../peopleModel'
 import { PORTRAIT_IMAGE_CLASS } from '../PersonCard'
 import { PortableBody } from '../PortableBody'
@@ -169,15 +170,14 @@ const IDENTITY_GRID_SOLO = 'mt-[38px] grid grid-cols-1'
 // minmax(0,1fr) split, on the same full-width row), so the role and email
 // lines below -- placed at the outer grid's `col-start-2` -- line up
 // exactly under the name without needing a second, independent alignment
-// mechanism. (An earlier version made the outer card the *only* grid and
-// set the `Link` to `display: contents` so the portrait could `row-span`
-// across it; that broke the link's keyboard focusability in Chromium --
-// caught by the hover/focus e2e below -- so the `Link` stays a real,
-// focusable box instead.) `labHead?.name` is the only field this ever
-// assumes is set (`showLabHeadCard` above already gates on it), so role
-// and email each render only when non-blank, and `break-words`/`break-all`
-// guard the two CMS-text lines against an unbroken token blowing out the
-// 20rem card column.
+// mechanism. Do not set the `Link` to `display: contents` to let the
+// portrait `row-span` across the card -- that drops the link from the
+// focus order in Chromium (caught by the hover/focus e2e below), so it
+// stays a real, focusable box instead. `labHead?.name` is the only field
+// this ever assumes is set (`showLabHeadCard` above already gates on it),
+// so role and email each render only when non-blank, and
+// `break-words`/`break-all` guard the two CMS-text lines against an
+// unbroken token blowing out the 20rem card column.
 function LabHeadCard({ labHead }: { labHead: NonNullable<SettingsPayload['labHead']> }) {
   const role = labHead.role?.trim()
   const email = labHead.email?.trim()
@@ -188,7 +188,14 @@ function LabHeadCard({ labHead }: { labHead: NonNullable<SettingsPayload['labHea
     >
       <Link
         href={resolveLabHeadHref(labHead)}
-        className="group col-span-2 grid grid-cols-[4rem_minmax(0,1fr)] items-center gap-x-5"
+        // `justify-self-start max-w-full`: without it, this grid item
+        // (`col-span-2` on a `minmax(0,1fr)` track) stretches to the
+        // card's full width, so its hit area and focus ring extend well
+        // past the portrait+name it actually wraps -- `justify-self-start`
+        // shrinks it to its own content width instead, and `max-w-full`
+        // keeps that from overflowing the card if the content is ever
+        // wider than the column.
+        className="group col-span-2 grid max-w-full grid-cols-[4rem_minmax(0,1fr)] items-center justify-self-start gap-x-5"
         data-testid="home-lab-head-link"
       >
         <PiPortrait64
@@ -217,7 +224,11 @@ function LabHeadCard({ labHead }: { labHead: NonNullable<SettingsPayload['labHea
           href={`mailto:${email}`}
           data-identifier
           data-cms-verbatim
-          className="col-start-2 inline-block min-w-0 break-all font-mono text-[0.8125rem] text-link"
+          // `justify-self-start max-w-full`: same reason as the name
+          // link's own comment above -- this grid item otherwise stretches
+          // to the full card width, so the link's hit area would extend
+          // well past the visible email text.
+          className="col-start-2 inline-block min-w-0 max-w-full justify-self-start break-all font-mono text-[0.8125rem] text-link"
         >
           {email}
         </a>
@@ -226,7 +237,7 @@ function LabHeadCard({ labHead }: { labHead: NonNullable<SettingsPayload['labHea
   )
 }
 
-// -- Block 2: Recent work ------------------------------------------------
+// -- Block 2: Recent papers ------------------------------------------------
 
 // Composes `LABEL` (tokens.ts) instead of hand-writing its geometry,
 // matching PublicationsIndex.tsx's own `COLUMN_HEADS` (`${COLUMN_HEADS}
@@ -234,15 +245,15 @@ function LabHeadCard({ labHead }: { labHead: NonNullable<SettingsPayload['labHea
 const COLUMN_HEAD = `hidden ${PUBLICATION_GRID} pb-3 ${LABEL}`
 
 function RecentWorkBlock({ publications, count }: { publications: Publication[]; count: number }) {
+  // The newest paper gets its own lead row (more visual weight); the next
+  // four render as ordinary ledger rows below it. `splitLead` handles the
+  // empty case (`lead: null`) too, though `RecentWorkBlock` is never
+  // rendered with an empty `publications` array -- `Home`'s own
+  // `showRecentWork` gate already requires `publications.length > 0`.
+  const { lead, rest } = splitLead(publications)
   return (
     <div data-testid="home-recent-work">
-      {/* "Latest five, by date" sits outside the ledger-head row -- it's a
-          sentence-case sort-order note about the block's content, not a
-          column head. Same `xl`-only visibility as the head row below
-          (meaningless once the row stacks below `xl`). */}
-      <div className="hidden justify-end pb-1 xl:flex">
-        <span className="text-[13px] leading-[1.4] text-text-faint">Latest five, by date</span>
-      </div>
+      {lead && <LeadPublication pub={lead} />}
       {/* `data-testid="ledger-head"`: the one place this block's uppercase
           mono is allowed -- e2e/label-budget.spec.ts excludes anything
           inside it from the micro-label budget. */}
@@ -252,7 +263,7 @@ function RecentWorkBlock({ publications, count }: { publications: Publication[];
         <span>Journal</span>
         <span>Link</span>
       </div>
-      {publications.map((pub) => (
+      {rest.map((pub) => (
         // `data-testid="pub-row"`: matches PublicationsIndex.tsx's own row
         // wrapper, so the ledger-cell overflow guard (`e2e/home.spec.ts`)
         // can target Home's rows the same way it targets `/publications`'s.
@@ -417,13 +428,13 @@ export function Home({
   // page yet still change the number, an internal inconsistency between
   // what this same render shows and what it counts. Gating the exclusion
   // on `showLabHeadCard` (this page's own "is the lab head visible here"
-  // boolean, mirroring how `People.tsx` gates `excludeLabHead` on its own
-  // `showSpotlight`) keeps Home internally consistent, and -- since
-  // `showLabHeadCard` and `People.tsx`'s `showSpotlight` are both "labHead
-  // named AND the page's own show flag" -- the two pages' counts agree
-  // whenever `showLabHeadOnHome` and `showLabHeadOnPeople` happen to carry
-  // the same value, which `e2e/home.spec.ts` cross-checks directly against
-  // /people's own rendered meta rather than re-deriving the rule.
+  // boolean) mirrors how `People.tsx` gates `excludeLabHead` on its own
+  // `showSpotlight` -- the two pages' counts agree whenever
+  // `showLabHeadOnHome` and `showLabHeadOnPeople` happen to carry the same
+  // value (note `showSpotlight` itself, unlike `showLabHeadCard`, doesn't
+  // additionally require a named lab head), which `e2e/home.spec.ts`
+  // cross-checks directly against /people's own rendered meta rather than
+  // re-deriving the rule.
   const memberCount = currentMemberCount(profiles, roleGroups, showLabHeadCard ? labHead?._id : null)
   // "0 — PEOPLE →" is never rendered -- the members line needs both the
   // page-level flag and an actual positive count.
@@ -441,7 +452,7 @@ export function Home({
 
   // Each block carries its own React `key` (the identity block has no
   // visible `label` at all: it's the hero, not a labelled section).
-  // `labelHeading` is set per block: `true` for "Recent work"/"Outreach"/
+  // `labelHeading` is set per block: `true` for "Recent papers"/"Outreach"/
   // "The lab" (none of `RecentWorkBlock`/`OutreachBlock`/`TheLabBlock`
   // render a heading of their own -- plain `<div>`s and mono labels), but
   // `false` for "Resources", since `ResourceBlock`'s own title is a real
@@ -464,7 +475,7 @@ export function Home({
   if (showRecentWork) {
     blocks.push({
       key: 'recent-work',
-      label: 'Recent work',
+      label: 'Recent papers',
       labelHeading: true,
       content: <RecentWorkBlock publications={publications} count={publicationCount} />,
     })

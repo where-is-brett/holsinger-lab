@@ -139,36 +139,48 @@ test.describe('/', () => {
     await expect(page.getByRole('heading', { level: 1, name: expected, exact: true })).toBeVisible()
   })
 
-  test('recent-work rows are the latest min(5, n) publications by date, each linking to its paper page, and the "All N publications" count matches the live total', async ({
+  test('recent papers: newest is the lead; the next four are rows; unslugged lead is unlinked', async ({
     page,
   }) => {
-    const [publications, settings] = await Promise.all([fetchLivePublications(), fetchLiveSettings()])
+    const publications = await fetchLivePublications()
+    const settings = await fetchLiveSettings()
     const n = publications.length
-    const expectedRows = publications.slice(0, 5)
     const showRecentWork = n > 0 && settings.showPublications !== false
+    const pubs = publications.slice(0, 5)
 
     await page.goto('/')
 
     if (!showRecentWork) {
       await expect(page.getByTestId('home-recent-work')).toHaveCount(0)
+      await expect(page.getByTestId('home-lead-paper')).toHaveCount(0)
       return
     }
 
     const section = page.getByTestId('home-recent-work')
     await expect(section).toBeVisible()
 
-    const rows = section.getByTestId('pub-title')
-    const titles = await rows.allTextContents()
-    expect(titles.map((t) => t.trim())).toEqual(expectedRows.map((p) => p.title.trim()))
+    const lead = page.getByTestId('home-lead-paper')
+    await expect(lead.locator('h3')).toContainText(pubs[0].title.trim().slice(0, 40))
+    await expect(lead.locator('h3 a')).toHaveCount(pubs[0].slug ? 1 : 0)
+    if (pubs[0].slug) {
+      await expect(lead.locator('h3 a')).toHaveAttribute('href', `/publications/${pubs[0].slug}`)
+    }
 
-    // Fix round 1, point 1: `nth(i)` by index, not `.filter({ hasText })`
-    // -- substring matching trips Playwright's strict mode whenever one
-    // title is itself a substring of another (or of a longer title later
-    // in the list), which a live 19-record dataset makes entirely
-    // possible. Index order is already proven equal to `expectedRows`'
-    // order by the `titles` assertion above.
-    for (let i = 0; i < expectedRows.length; i++) {
-      const pub = expectedRows[i]
+    const restRows = section.getByTestId('pub-row')
+    await expect(restRows).toHaveCount(pubs.length - 1)
+
+    const rows = restRows.getByTestId('pub-title')
+    const titles = await rows.allTextContents()
+    expect(titles.map((t) => t.trim())).toEqual(pubs.slice(1).map((p) => p.title.trim()))
+
+    // Fix round 1, point 1 (pre-Task-3 wording): `nth(i)` by index, not
+    // `.filter({ hasText })` -- substring matching trips Playwright's
+    // strict mode whenever one title is itself a substring of another,
+    // which a live 19-record dataset makes entirely possible. Index order
+    // is already proven equal to the expected order by the `titles`
+    // assertion above.
+    for (let i = 0; i < pubs.length - 1; i++) {
+      const pub = pubs[i + 1]
       if (!pub.slug) continue
       await expect(rows.nth(i)).toHaveAttribute('href', `/publications/${pub.slug}`)
     }
@@ -354,6 +366,14 @@ test.describe('/', () => {
 })
 
 test.describe('/preview/components gallery: home', () => {
+  test('gallery: an unslugged lead paper renders an unlinked title', async ({ page }) => {
+    await page.goto('/preview/components')
+    const lead = page.getByTestId('gallery-home-unslugged').getByTestId('home-lead-paper')
+    await expect(lead.locator('h3')).toBeVisible()
+    await expect(lead.locator('h3 a')).toHaveCount(0)
+    await expect(lead.locator('a[href="null"], a[href=""]')).toHaveCount(0)
+  })
+
   test('every block renders, and no overflow at 320px', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 900 })
     await page.goto('/preview/components')

@@ -34,9 +34,9 @@ describe('shouldShowLabHeadCard', () => {
     ).toBe(false)
   })
 
-  // Home.tsx used to add its own `labHead?.name?.trim()` check on top of
-  // this function at every call site; folding it in here means every
-  // caller (and every e2e mirror) shares one rule instead of repeating it.
+  // This function owns the whole show-gate, including the name check --
+  // every caller (and every e2e mirror) shares this one rule instead of
+  // each repeating its own `labHead?.name?.trim()` check.
   it('is false when labHead.name is missing or blank', () => {
     expect(shouldShowLabHeadCard({ labHead: { _id: 'p1' }, showLabHeadOnHome: true })).toBe(false)
     expect(

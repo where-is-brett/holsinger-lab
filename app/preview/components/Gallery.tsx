@@ -12,6 +12,7 @@ import {
   HOME_PAGE_NO_OVERVIEW_FIXTURE,
   HOME_PUBLICATION_COUNT_FIXTURE,
   HOME_PUBLICATIONS_FIXTURE,
+  HOME_PUBLICATIONS_UNSLUGGED_FIXTURE,
   HOME_RESOURCE_FIXTURE,
   HOME_SETTINGS_FIXTURE,
   HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE,
@@ -32,6 +33,7 @@ import {
   SAMPLE_PEOPLE,
   SAMPLE_PUBLICATIONS,
   TYPOGRAPHY_BUDGET_HOME_FIXTURE,
+  TYPOGRAPHY_BUDGET_LEAD_PUBLICATIONS_FIXTURE,
   TYPOGRAPHY_BUDGET_PUBLICATION_FIXTURE,
   TYPOGRAPHY_BUDGET_RESEARCH_PROJECT_FIXTURE,
 } from 'components/redesign/fixtures'
@@ -663,13 +665,34 @@ export default function Gallery() {
           {/* An unbroken role long enough to overflow a narrow viewport if
               the role line has no `break-words` of its own. */}
           <SubHeading>(e) labHead with a long unbroken role -- the role line must not overflow at 320px</SubHeading>
-          <div className="border border-rule" data-testid="gallery-home-long-role">
+          <div className="mb-8 border border-rule" data-testid="gallery-home-long-role">
             <Home
               home={HOME_PAGE_FIXTURE}
               settings={HOME_SETTINGS_LONG_ROLE_FIXTURE}
               siteName="Holsinger Lab"
               siteCopy={null}
               publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              profiles={PEOPLE_PROFILES_FIXTURE}
+              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+
+          {/* A lead paper with no slug (wix-preview until the importer's
+              fix, and any future import): the lead title must render
+              unlinked, with no crash and no `href="null"`. */}
+          <SubHeading>(f) recent papers&apos; lead has no slug -- the lead title renders unlinked</SubHeading>
+          <div className="border border-rule" data-testid="gallery-home-unslugged">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
+              publications={HOME_PUBLICATIONS_UNSLUGGED_FIXTURE}
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
@@ -734,6 +757,22 @@ export default function Gallery() {
               projects={[TYPOGRAPHY_BUDGET_RESEARCH_PROJECT_FIXTURE]}
               email={null}
               showContactForm={false}
+              headingLevel="h2"
+            />
+          </div>
+          <div className="mt-8 border border-rule" data-testid="typography-budget-lead-paper">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
+              publications={TYPOGRAPHY_BUDGET_LEAD_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              profiles={PEOPLE_PROFILES_FIXTURE}
+              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
               headingLevel="h2"
             />
           </div>

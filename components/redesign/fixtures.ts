@@ -893,6 +893,25 @@ export const HOME_PUBLICATIONS_FIXTURE: Publication[] = SAMPLE_PUBLICATIONS.map(
 }))
 export const HOME_PUBLICATION_COUNT_FIXTURE = 42
 
+// A lead paper with no slug (wix-preview until the importer's fix, and any
+// future import): `LeadPublication` must render its title unlinked, never
+// `href="null"`. Only element 0 (the lead) is unslugged -- the rest stay
+// linked, so this fixture also proves the rest of the block is unaffected.
+export const HOME_PUBLICATIONS_UNSLUGGED_FIXTURE: Publication[] = HOME_PUBLICATIONS_FIXTURE.map((pub, index) =>
+  index === 0 ? { ...pub, href: null } : pub
+)
+
+// Carries the "heading" level's budget word for the lead-paper title
+// specifically (`LeadPublication`'s `<h3>`), capitalised
+// ("Neurodegenerative", which Blink never hyphenates); its companion word
+// is short ("repair") rather than relying on hyphenation, since CI's Linux
+// Chromium ships no hyphenation dictionaries. Consumed only by the
+// full-width "typography budget" gallery section in Gallery.tsx.
+export const TYPOGRAPHY_BUDGET_LEAD_PUBLICATIONS_FIXTURE: Publication[] = [
+  { ...HOME_PUBLICATIONS_FIXTURE[0], id: 'typography-budget-lead', title: 'Neurodegenerative repair' },
+  ...HOME_PUBLICATIONS_FIXTURE.slice(1),
+]
+
 export const HOME_RESOURCE_FIXTURE: HomeResourcePayload = RESOURCES_FIXTURE[0]
 
 // The `maestro` project's title, printed verbatim including its own typo
