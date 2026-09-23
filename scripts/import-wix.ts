@@ -91,6 +91,19 @@ async function main() {
   const settingsId = await client.fetch<string | null>(`*[_type == "settings" && !(_id in path("drafts.**"))][0]._id`)
   if (!settingsId) throw new Error('No settings document.')
 
+  // Read-only: lets the planner refuse a generated slug that would collide
+  // with one already in the dataset (see scripts/wix/plan.ts). Unlike the
+  // `groups`/`settingsId` queries above, this deliberately does NOT exclude
+  // drafts.** -- a draft's slug is still a real value someone could publish,
+  // and treating it as free would let a generated slug collide with it the
+  // moment that draft goes live. Including it only ever makes the check
+  // stricter (never blocks a slug that was actually free), so it's safe to
+  // leave in.
+  const existingSlugList = await client.fetch<string[]>(
+    `*[_type == "publication" && defined(slug.current)].slug.current`
+  )
+  const existingSlugs = new Set(existingSlugList)
+
   const ids = [
     'siteCopy', settingsId,
     ...snapshot.news.map((n) => `wix-news-${n.key}`),
@@ -128,7 +141,7 @@ async function main() {
     assetIds[url] = asset._id
   }
 
-  const plan = planImport({ snapshot, existing, settingsId, roleGroupIds, assetIds, ledger: deserializeLedger(ledgerDoc?.entries), drafts, assetsResolved: commit })
+  const plan = planImport({ snapshot, existing, settingsId, roleGroupIds, assetIds, existingSlugs, ledger: deserializeLedger(ledgerDoc?.entries), drafts, assetsResolved: commit })
 
   for (const op of plan.ops) {
     if (op.kind === 'create') console.log(`CREATE ${op.doc._type} ${op.doc._id}  ${String(op.doc.title ?? op.doc.name ?? '')}`)

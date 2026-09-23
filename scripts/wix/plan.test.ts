@@ -1,9 +1,15 @@
+import { readFileSync } from 'node:fs'
+
 import { describe, expect, it } from 'vitest'
 
+import { publicationSlug } from '../../schemas/lib/publicationSlug.ts'
+import { validateSlugFormat } from '../../schemas/lib/slug.ts'
 import { toBlocks } from './blocks.ts'
 import { type CurrentDoc, planImport, type PlanInput, stableHash } from './plan.ts'
 import { rankAt } from './rank.ts'
 import type { RoleGroupTitle, WixSnapshot } from './snapshot.ts'
+
+const SLUG_MAX_LENGTH = 96
 
 const GROUPS = {
   'Research Scientist': 'rg-rs',
@@ -45,7 +51,7 @@ function input(over: Partial<PlanInput> = {}): PlanInput {
     'pub-old': { _id: 'pub-old', _type: 'publication', title: 'Old (Sanity wording)', doi: null },
     settings: { _id: 'settings', _type: 'settings' },
   }
-  return { snapshot: snapshot(), existing, settingsId: 'settings', roleGroupIds: { ...GROUPS }, assetIds: {}, ledger: {}, drafts: {}, assetsResolved: true, ...over }
+  return { snapshot: snapshot(), existing, settingsId: 'settings', roleGroupIds: { ...GROUPS }, assetIds: {}, existingSlugs: new Set<string>(), ledger: {}, drafts: {}, assetsResolved: true, ...over }
 }
 
 const patchFor = (plan: ReturnType<typeof planImport>, id: string) =>
@@ -79,9 +85,10 @@ describe('planImport: first run', () => {
     expect(patchFor(plan, 'pub-old')?.set).toEqual({ doi: '10.1/x' })
     expect(plan.reports).toContain('publication pub-old: title differs (Sanity "Old (Sanity wording)" vs Wix "Old") — not written')
   })
-  it('creates new publications', () => {
+  it('creates new publications with a generated slug', () => {
     expect(createFor(plan, 'wix-publication-new')?.doc).toMatchObject({
       _type: 'publication', title: 'New', author: 'B', journal: 'bioRxiv', date: '2026-04-19', pages: '04.19.719519', type: 'Article',
+      slug: { _type: 'slug', current: publicationSlug('New', '2026-04-19') },
     })
   })
   it('never deletes and never blanks a field', () => {
@@ -272,6 +279,124 @@ describe('planImport: guards (fix round 1)', () => {
     expect(plan.reports).toContain('publication pub-old: type differs (Sanity "Review" vs Wix "Article") — not written')
     expect(patchFor(plan, 'pub-old')?.set?.type).toBeUndefined()
   })
+})
+
+describe('planImport: created publications get a slug (Wix-freshness FU6)', () => {
+  it('throws when the generated slug already exists in the dataset', () => {
+    const slug = publicationSlug('New', '2026-04-19')
+    expect(() => planImport(input({ existingSlugs: new Set([slug]) }))).toThrow(
+      `publication new: generated slug "${slug}" already exists in the dataset`
+    )
+  })
+
+  it('throws when two created publications would generate the same slug', () => {
+    const snap = snapshot()
+    snap.publications.push({
+      key: 'new-2', sanityId: null, title: 'New', authors: 'C', journal: 'bioRxiv', date: '2026-04-19',
+      volume: null, issue: null, pages: '04.19.999999', doi: '10.64898/2026.04.19.999999', type: 'Article',
+    })
+    const slug = publicationSlug('New', '2026-04-19')
+    expect(() => planImport(input({ snapshot: snap }))).toThrow(
+      `publication new-2: generated slug "${slug}" collides with publication new in this same import`
+    )
+  })
+
+  it('sets the slug on a first run (create)', () => {
+    const plan = planImport(input())
+    expect(createFor(plan, 'wix-publication-new')?.doc.slug).toEqual({
+      _type: 'slug', current: publicationSlug('New', '2026-04-19'),
+    })
+  })
+
+  it('fills a slug on a doc this importer previously created without one, via the normal untouched-field path', () => {
+    // Reproduces the wix-preview state this PR exists to fix: a publication
+    // this importer created earlier (so it already exists in the dataset,
+    // under its deterministic id) but that has no slug at all, because an
+    // earlier version of this planner never wrote one.
+    const withUnslugged = input({
+      existing: { ...input().existing, 'wix-publication-new': { _id: 'wix-publication-new', _type: 'publication', title: 'New' } },
+    })
+    const plan = planImport(withUnslugged)
+    expect(patchFor(plan, 'wix-publication-new')?.set).toMatchObject({
+      slug: { _type: 'slug', current: publicationSlug('New', '2026-04-19') },
+    })
+  })
+
+  it('fix round 1 regression: never rewrites a slug once set, even when the title changes later', () => {
+    // The reviewer's exact repro -- create a doc with a slug, then edit the
+    // Wix title before the next run. The slug must survive untouched even
+    // though `title` (an ordinary "Wix wins" field) is patched.
+    const first = planImport(input())
+    const created = createFor(first, 'wix-publication-new')?.doc as CurrentDoc
+    expect(created.slug).toBeDefined()
+
+    const snap2 = snapshot()
+    snap2.publications[1] = { ...snap2.publications[1], title: 'Corrected Title' }
+
+    const second = planImport(input({
+      snapshot: snap2,
+      existing: { ...input().existing, 'wix-publication-new': created },
+      ledger: first.ledger,
+    }))
+
+    const patch = patchFor(second, 'wix-publication-new')
+    expect(patch?.set).toEqual({ title: 'Corrected Title' })
+    expect(patch?.set).not.toHaveProperty('slug')
+  })
+
+  it('does not refill a slug cleared in Studio on a document with a #slug ledger entry (documented, not a gap)', () => {
+    // A slug already imported once, then deliberately removed in Studio, is
+    // treated the same as clearing any other imported field: skipped as
+    // "edited since import", never silently reinstated. `slug` being
+    // required() in the schema means Studio already surfaces this as a
+    // validation error on that document -- a safer signal than this
+    // importer quietly regenerating a slug someone chose to remove.
+    const first = planImport(input())
+    const created = createFor(first, 'wix-publication-new')?.doc as CurrentDoc
+    expect(created.slug).toBeDefined()
+
+    const cleared = { ...created }
+    delete (cleared as { slug?: unknown }).slug
+
+    const second = planImport(input({
+      existing: { ...input().existing, 'wix-publication-new': cleared },
+      ledger: first.ledger,
+    }))
+
+    expect(patchFor(second, 'wix-publication-new')).toBeUndefined()
+    expect(second.skipped).toContainEqual({ id: 'wix-publication-new', field: 'slug', reason: 'edited-since-import' })
+  })
+})
+
+describe('publicationSlug output satisfies the real field validation (slug is required() as of PR #33)', () => {
+  // `publication.slug` is `Rule.required().custom(validateSlugFormat)` in
+  // schemas/documents/publication.ts -- not merely a nice-to-have. Without a
+  // valid slug, a publication this importer creates is an INVALID document
+  // in Studio and can't be published. This pins the two real committed
+  // publications' generated slugs against the actual field validator and
+  // its actual maxLength, not a hand-rolled regex copy, so a change to
+  // either the schema's rule or publicationSlug's truncation budget that
+  // breaks this is caught here rather than discovered in Studio.
+  const realSnapshot: WixSnapshot = JSON.parse(
+    readFileSync(new URL('../../data/wix/snapshot.json', import.meta.url), 'utf8')
+  )
+  const newPublications = realSnapshot.publications.filter((p) => p.sanityId === null)
+
+  it('the committed snapshot still has exactly the two publications this test is pinning', () => {
+    // Guards against this test silently checking nothing (or the wrong
+    // count) if the snapshot changes.
+    expect(newPublications.map((p) => p.key).sort()).toEqual(['bdnf-mrna-therapy', 'non-coding-rna'])
+  })
+
+  it.each(newPublications.map((p) => [p.key, p.title, p.date] as const))(
+    'the slug generated for %s passes validateSlugFormat and fits maxLength 96',
+    (_key, title, date) => {
+      const slug = publicationSlug(title, date)
+      expect(slug.length).toBeGreaterThan(0)
+      expect(slug.length).toBeLessThanOrEqual(SLUG_MAX_LENGTH)
+      expect(validateSlugFormat({ current: slug })).toBe(true)
+    }
+  )
 })
 
 describe('planImport: singleton drafts kept in step (Fix round 3)', () => {

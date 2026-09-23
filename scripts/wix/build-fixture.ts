@@ -150,6 +150,7 @@ export function buildFixtureDocs(
     settingsId: 'settings',
     roleGroupIds,
     assetIds,
+    existingSlugs: new Set<string>(),
     ledger: {},
     // The fixture has no unpublished drafts of settings/siteCopy.
     drafts: {},

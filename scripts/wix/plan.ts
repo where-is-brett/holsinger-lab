@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 
+import { publicationSlug } from '../../schemas/lib/publicationSlug.ts'
 import { toBlocks } from './blocks.ts'
 import { rankAt } from './rank.ts'
 import { ROLE_GROUP_TITLES, type RoleGroupTitle, type WixSnapshot } from './snapshot.ts'
@@ -22,6 +23,14 @@ export interface PlanInput {
   settingsId: string
   roleGroupIds: Record<RoleGroupTitle, string>
   assetIds: Record<string, string>
+  /**
+   * Every publication slug already present in the dataset (`slug.current`
+   * for docs that have one). `planImport` is pure and can't query, so the
+   * CLI gathers this with one read-only GROQ query, the same way
+   * `roleGroupIds` is gathered. Used only to keep a newly-generated slug
+   * (schemas/lib/publicationSlug.ts) from colliding with an existing one.
+   */
+  existingSlugs: ReadonlySet<string>
   ledger: Ledger
   /**
    * Unpublished drafts of the singleton docs (siteCopy, settings), keyed by
@@ -309,13 +318,83 @@ export function planImport(input: PlanInput): Plan {
     })
   })
 
+  // A publication already has a usable slug once `slug.current` is a
+  // non-empty string. Used below to make sure slug generation only ever
+  // fires ONCE per document -- see the fix-round-1 note at `claimedSlugs`.
+  const hasSlug = (doc: CurrentDoc | undefined): boolean => {
+    const cur = doc?.slug as { current?: unknown } | undefined
+    return typeof cur?.current === 'string' && cur.current.length > 0
+  }
+
   // Publications: create new ones; for matched ones only fill a missing DOI.
   // Every other publication difference is reported, never written.
+  //
+  // A created publication also gets a slug (schemas/lib/publicationSlug.ts),
+  // in the same title+year format the backfill script uses -- without one
+  // the schema's slug field is unset and the paper gets no
+  // /publications/<slug> page. Matched publications are untouched: their
+  // slug is either already set or is a job for the backfill script, not
+  // this importer.
+  //
+  // Fix round 1: slug generation must run at most ONCE per document, never
+  // again after that. It is gated on `!hasSlug(existing[id])`, not merely on
+  // `!existing[id]` (a genuine create) -- because a handful of documents
+  // this importer previously created are already sitting in the dataset
+  // with no slug at all (the bug this PR fixes), and those need exactly one
+  // more run to pick a slug up through the normal `fieldRuleSet` "untouched"
+  // path below (no ledger entry yet for `#slug` + no current value => Wix
+  // wins, once). The bug the reviewer caught: generating the slug on every
+  // run, unconditionally, meant that once the doc existed, a later Wix
+  // title/date edit produced a NEW slug that `fieldRuleSet` then treated
+  // like any other "untouched" field and silently overwrote the live,
+  // possibly-already-cited slug. Gating on `hasSlug` closes that: the
+  // moment a document has any slug at all -- from a create, or from this
+  // catch-up patch -- it is never regenerated or offered to `upsert` again,
+  // so a later title/date change can never reach it.
+  //
+  // A collision (with an existing slug, or with another publication created
+  // in this same run) is never auto-suffixed: two papers landing on the same
+  // title+year slug is a content problem -- a duplicate record, an erratum,
+  // a preprint plus its published version -- that a human needs to look at,
+  // exactly per the backfill script's precedent.
+  const claimedSlugs = new Map<string, string>()
   for (const p of s.publications) {
     if (p.sanityId === null) {
-      upsert(`wix-publication-${p.key}`, 'publication', {
+      const id = `wix-publication-${p.key}`
+      let slugField: Record<string, unknown> = {}
+      // (a) A slug is generated at most once per document and never
+      // regenerated after that -- see the fix-round-1 note above `hasSlug`.
+      // (b) A document this importer created before this fix, with no slug
+      // and no ledger entry for `#slug`, gets exactly one catch-up fill here
+      // (the `!hasSlug` branch below), through the normal untouched-field
+      // path in `fieldRuleSet`.
+      // (c) A slug CLEARED in Studio on a document that already has a
+      // `#slug` ledger entry is deliberately NOT refilled: `hasSlug` sees no
+      // current slug and lets a new one through `upsert`, but `fieldRuleSet`
+      // then finds a ledger entry with `cur` null/undefined and treats that
+      // as "edited since import" -- same as clearing any other imported
+      // field -- so the slug op is skipped, not patched. This is
+      // intentional, not a gap: `slug` is `required()` in the schema, so a
+      // cleared slug already surfaces as a validation error in Studio on
+      // that exact document, which is a safer signal than this importer
+      // silently reinstating a slug someone deliberately removed (possibly
+      // to retire a document's URL, or because it was wrong).
+      if (!hasSlug(existing[id])) {
+        const slug = publicationSlug(p.title, p.date)
+        if (slug) {
+          if (input.existingSlugs.has(slug))
+            throw new Error(`publication ${p.key}: generated slug "${slug}" already exists in the dataset`)
+          const clash = claimedSlugs.get(slug)
+          if (clash)
+            throw new Error(`publication ${p.key}: generated slug "${slug}" collides with publication ${clash} in this same import`)
+          claimedSlugs.set(slug, p.key)
+          slugField = { slug: { _type: 'slug', current: slug } }
+        }
+      }
+      upsert(id, 'publication', {
         title: p.title, author: p.authors, journal: p.journal, date: p.date,
         volume: p.volume, issue: p.issue, pages: p.pages, doi: p.doi, type: p.type,
+        ...slugField,
       })
       continue
     }

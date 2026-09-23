@@ -57,7 +57,7 @@ function realisticInputs() {
   const settingsId = 'settings'
   const drafts = { [`drafts.${settingsId}`]: { _id: `drafts.${settingsId}`, _type: 'settings' } }
 
-  return { snapshot, existing: {}, settingsId, roleGroupIds, assetIds, ledger: {}, drafts, assetsResolved: true }
+  return { snapshot, existing: {}, settingsId, roleGroupIds, assetIds, existingSlugs: new Set<string>(), ledger: {}, drafts, assetsResolved: true }
 }
 
 describe('attribute names (Fix round 4: Sanity rejects "#"/"." in object keys)', () => {
