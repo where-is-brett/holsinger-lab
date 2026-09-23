@@ -184,8 +184,8 @@ describe('firstSentence', () => {
     expect(firstSentence('   ')).toBe('')
   })
 
-  // Fix round 1, finding 1: an abbreviation or a single-capital initial
-  // followed by a capital/digit/paren must not be treated as a sentence end.
+  // An abbreviation or a single-capital initial followed by a
+  // capital/digit/paren must not be treated as a sentence end.
   it('does not split on "Dr."', () => {
     expect(firstSentence('Dr. Holsinger leads the lab. Second.')).toBe(
       'Dr. Holsinger leads the lab.'
@@ -265,9 +265,9 @@ describe('peopleStrip', () => {
   it('skips profiles with a blank name', () => {
     expect(peopleStrip([{ ...p('x', 'g1'), name: '  ' }], groups, null)).toEqual([])
   })
-  // Fix round 1, finding 3: exclude by the profile's own dereferenced
-  // roleGroup.title too, not just by matching against `roleGroups` -- a
-  // stale or missing `roleGroups` entry must not let an alumnus through.
+  // Exclude by the profile's own dereferenced roleGroup.title too, not
+  // just by matching against `roleGroups` -- a stale or missing
+  // `roleGroups` entry must not let an alumnus through.
   it('excludes a profile by its own roleGroup.title even when that group is missing from roleGroups', () => {
     const unlisted = { _id: 'x', name: 'N x', image: { asset: { _ref: 'x' } }, roleGroup: { _id: 'g-unlisted', title: 'Lab Alumni' } }
     expect(peopleStrip([unlisted], groups, null)).toEqual([])
@@ -287,7 +287,6 @@ describe('maestroOverview', () => {
     expect(maestroOverview(null, 'https://x.org')).toEqual([])
   })
 
-  // Fix round 1, finding 2: normalise before comparing.
   const SITE = 'https://tinyurl.com/maestrotalks'
   it('drops a block with trailing punctuation on the URL', () => {
     const blocks = [block('https://tinyurl.com/maestrotalks.')]
@@ -301,7 +300,11 @@ describe('maestroOverview', () => {
     const blocks = [block('HTTPS://TinyURL.com/maestrotalks')]
     expect(maestroOverview(blocks, SITE)).toEqual([])
   })
-  it('drops a block whose only content is a link to the site, whatever the link text says', () => {
+  it('drops a block with both a trailing slash and trailing punctuation (the bare() doc-comment example)', () => {
+    const blocks = [block('HTTPS://www.tinyurl.com/maestrotalks/.')]
+    expect(maestroOverview(blocks, SITE)).toEqual([])
+  })
+  it('drops a block whose only content is short link text to the site ("Register here")', () => {
     const linkBlock = {
       _type: 'block',
       _key: 'lb1',
@@ -310,6 +313,17 @@ describe('maestroOverview', () => {
       markDefs: [{ _type: 'link', _key: 'link1', href: SITE }],
     }
     expect(maestroOverview([linkBlock], SITE)).toEqual([])
+  })
+  it('keeps a block whose only content is a long, fully-linked informational sentence to the site', () => {
+    const text = 'Register to hear from our future scientists every Tuesday at 10am GMT'
+    const linkBlock = {
+      _type: 'block',
+      _key: 'lb2',
+      style: 'normal',
+      children: [{ _type: 'span', _key: 's', text, marks: ['link1'] }],
+      markDefs: [{ _type: 'link', _key: 'link1', href: SITE }],
+    }
+    expect(maestroOverview([linkBlock], SITE)).toEqual([linkBlock])
   })
   it('keeps a sentence that merely contains the URL alongside other text', () => {
     const blocks = [block(`Sign up at ${SITE} to join.`)]

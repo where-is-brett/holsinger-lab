@@ -220,8 +220,8 @@ export function peopleStrip(
 }
 
 // Normalises a URL (or plain text that might be one) for comparison:
-// trims, drops the scheme and a leading "www.", drops a trailing slash and
-// trailing punctuation, and lowercases -- so
+// trims, drops the scheme and a leading "www.", drops any trailing slashes
+// and punctuation in one combined pass, and lowercases -- so
 // "HTTPS://www.tinyurl.com/maestrotalks/." matches
 // "tinyurl.com/maestrotalks" instead of being kept as a visible duplicate.
 const bare = (s: string) =>
@@ -229,8 +229,7 @@ const bare = (s: string) =>
     .trim()
     .replace(/^https?:\/\//i, '')
     .replace(/^www\./i, '')
-    .replace(/\/+$/, '')
-    .replace(/[.,;:!?)\]]+$/, '')
+    .replace(/[/.,;:!?)\]]+$/, '')
     .toLowerCase()
 
 interface PortableBlock {
@@ -239,12 +238,23 @@ interface PortableBlock {
   markDefs?: { _key?: string; _type?: string; href?: string }[]
 }
 
+// A link-only block's text is dropped as "just the register link" only up
+// to this length -- past it, the block is read as real informational copy
+// an editor chose to link (e.g. a schedule sentence), not short link text
+// ("Register here", "Sign up"), and constraints.md's "CMS text prints
+// verbatim" wins: it's kept.
+const LINK_TEXT_MAX = 40
+
 /**
  * True when every non-whitespace span in a block carries a mark linking to
  * `siteBare` -- i.e. the block's only content is a link to the register
- * URL, whatever the link text itself reads ("Register here", the bare URL,
- * ...). Non-`block` items (images, etc.) and blocks with no markDefs at all
- * are never matched.
+ * URL -- and the block's own text is short link text (at most
+ * `LINK_TEXT_MAX` characters) or itself normalises to the site. A longer,
+ * fully-linked informational sentence is not matched, so it survives (its
+ * text still print verbatim; only its short "Register here"-style label is
+ * ever considered a duplicate of the card's own register link). Non-`block`
+ * items (images, etc.) and blocks with no markDefs at all are never
+ * matched.
  */
 function isSiteOnlyLink(block: unknown, siteBare: string): boolean {
   const b = block as PortableBlock
@@ -257,7 +267,9 @@ function isSiteOnlyLink(block: unknown, siteBare: string): boolean {
   if (linkKeys.size === 0) return false
   const spans = b.children.filter((c) => (c.text ?? '').trim() !== '')
   if (spans.length === 0) return false
-  return spans.every((c) => (c.marks ?? []).some((mark) => linkKeys.has(mark)))
+  if (!spans.every((c) => (c.marks ?? []).some((mark) => linkKeys.has(mark)))) return false
+  const text = plainText([b])
+  return text.length <= LINK_TEXT_MAX || bare(text) === siteBare
 }
 
 /**
