@@ -8,6 +8,10 @@ export interface ButtonProps {
   href?: string
   disabled?: boolean
   active?: boolean
+  /** `'primary'` is the ON-chip ink fill (spec's primary CTA); default is the outline button. */
+  variant?: 'default' | 'primary'
+  /** Opens `href` in a new tab with rel="noopener noreferrer". */
+  external?: boolean
 }
 
 // CONTROL_BASE, not LABEL_BASE: a button's own text is caller content
@@ -21,7 +25,43 @@ export interface ButtonProps {
 // `active`.
 const SHAPE = `inline-flex min-h-11 items-center justify-center px-4 ${CONTROL_BASE} leading-none bg-transparent`
 
-export function Button({ children, onClick, href, disabled = false, active = false }: ButtonProps) {
+// A complete, separate class string for `variant="primary"` -- never layered
+// on `SHAPE`, which sets the mono font/size and `bg-transparent`. Sentence-
+// case Archivo (this is caller content, e.g. "Read paper"), the ON-chip ink
+// fill (`bg-surface-inverse`/`text-text-inverse`), already contrast-guarded
+// in styles/tokens.test.ts. `active` has no meaning here -- there is no
+// second state to distinguish -- so it's ignored for this variant.
+const PRIMARY =
+  'inline-flex min-h-11 items-center justify-center gap-2 px-5 font-sans text-[15px] leading-none font-medium border border-surface-inverse bg-surface-inverse text-text-inverse hl-press active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-[0.45]'
+
+export function Button({
+  children,
+  onClick,
+  href,
+  disabled = false,
+  active = false,
+  variant = 'default',
+  external = false,
+}: ButtonProps) {
+  if (variant === 'primary') {
+    if (href && !disabled) {
+      return external ? (
+        <a className={PRIMARY} href={href} target="_blank" rel="noopener noreferrer">
+          {children}
+        </a>
+      ) : (
+        <a className={PRIMARY} href={href}>
+          {children}
+        </a>
+      )
+    }
+    return (
+      <button className={PRIMARY} onClick={onClick} disabled={disabled} type="button">
+        {children}
+      </button>
+    )
+  }
+
   const border = active ? 'border border-link' : HAIRLINE
   const color = active ? 'text-link' : 'text-text-muted'
   const className = `${SHAPE} ${border} ${color} ${PRESS} disabled:cursor-not-allowed disabled:opacity-[0.45]`
@@ -29,7 +69,11 @@ export function Button({ children, onClick, href, disabled = false, active = fal
   // Anchors have no disabled semantics, so a disabled+href button still
   // renders as a real <button disabled> rather than an inert-looking link.
   if (href && !disabled) {
-    return (
+    return external ? (
+      <a className={className} href={href} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    ) : (
       <a className={className} href={href}>
         {children}
       </a>

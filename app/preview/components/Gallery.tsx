@@ -4,6 +4,8 @@ import { Button } from 'components/redesign/Button'
 import { CopyCitation } from 'components/redesign/CopyCitation'
 import { FacetBand, type FacetChipSpec } from 'components/redesign/FacetBand'
 import { applyFacets, countBy, toggleFacet } from 'components/redesign/facets'
+import { FilterBar } from 'components/redesign/FilterBar'
+import { filterOptions, type Filters, NO_FILTERS } from 'components/redesign/filterModel'
 import {
   CMS_VERBATIM_PUB_FEBS_J,
   CMS_VERBATIM_PUB_PLOS_ONE,
@@ -66,6 +68,7 @@ import { Tag } from 'components/redesign/Tag'
 import { META, MICRO_LABEL } from 'components/redesign/tokens'
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
+import { TOPIC_TITLES } from 'schemas/lib/topics'
 
 // This route is the only place any of the Phase 1 primitives actually
 // render: the repo's Vitest config is node-only (see vitest config's
@@ -148,6 +151,24 @@ export default function Gallery() {
     on: topic === label,
     onClick: () => setTopic((cur) => toggleFacet(cur, label)),
   }))
+
+  // -- Filter bar: FilterBar driven by local Filters state ------------------
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS)
+  const filterOptionsValue = useMemo(() => filterOptions(SAMPLE_PUBLICATIONS, TOPIC_TITLES), [])
+  const filterRows = useMemo(() => applyFacets(SAMPLE_PUBLICATIONS, filters), [filters])
+
+  // Review Focus 4: a sparse dataset with no `type` values (backfill not
+  // run) -- the Type select must not render, never render as "All"-only.
+  const SPARSE_PUBLICATIONS = useMemo(
+    () => SAMPLE_PUBLICATIONS.map((p) => ({ ...p, type: '' })),
+    [],
+  )
+  const [sparseFilters, setSparseFilters] = useState<Filters>(NO_FILTERS)
+  const sparseFilterOptions = useMemo(() => filterOptions(SPARSE_PUBLICATIONS, TOPIC_TITLES), [SPARSE_PUBLICATIONS])
+  const sparseFilterRows = useMemo(
+    () => applyFacets(SPARSE_PUBLICATIONS, sparseFilters),
+    [SPARSE_PUBLICATIONS, sparseFilters],
+  )
 
   // -- Tag / Button: onClick wiring, evidenced with a visible counter ------
   const [tagClicks, setTagClicks] = useState(0)
@@ -332,6 +353,33 @@ export default function Gallery() {
             ))}
           </div>
         </div>
+      </section>
+
+      <section data-testid="gallery-filter-bar" className="col-start-2 px-6">
+        <Heading>Filter bar</Heading>
+        <FilterBar
+          options={filterOptionsValue}
+          value={filters}
+          onChange={setFilters}
+          resultCount={filterRows.length}
+        />
+        <p className={`mt-4 ${META}`}>
+          <span data-testid="filter-result-count">{filterRows.length}</span> of{' '}
+          {SAMPLE_PUBLICATIONS.length} publications
+        </p>
+      </section>
+
+      {/* Review Focus 4: no `type` values on any paper (backfill not run) --
+          the Type select must be absent, not an "All"-only select. */}
+      <section data-testid="gallery-filter-bar-sparse" className="col-start-2 px-6">
+        <Heading>Filter bar -- sparse (no type values)</Heading>
+        <FilterBar
+          options={sparseFilterOptions}
+          value={sparseFilters}
+          onChange={setSparseFilters}
+          resultCount={sparseFilterRows.length}
+          idPrefix="filter-sparse"
+        />
       </section>
 
       <section data-testid="gallery-person-card" className="col-start-2 px-6">

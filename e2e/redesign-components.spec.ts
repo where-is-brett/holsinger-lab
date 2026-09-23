@@ -620,6 +620,67 @@ test.describe('redesign component gallery', () => {
     const results = await new AxeBuilder({ page }).include('[data-testid="gallery-facet-band"]').analyze()
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
   })
+
+  test('filter bar: a Year select filters, and Clear restores', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    const bar = page.getByTestId('gallery-filter-bar')
+    const count = bar.getByTestId('filter-result-count')
+    const total = await count.textContent()
+    await bar.getByTestId('filter-row').getByLabel('Year').selectOption({ index: 1 })
+    await expect(count).not.toHaveText(total!)
+    await bar.getByRole('button', { name: 'Clear' }).click()
+    await expect(count).toHaveText(total!)
+  })
+
+  test('filter selects are at least 16px so iOS does not zoom on focus', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    const sizes = await page
+      .getByTestId('gallery-filter-bar')
+      .locator('select')
+      .evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent).map((e) => parseFloat(getComputedStyle(e).fontSize)))
+    expect(sizes.length).toBeGreaterThan(0)
+    for (const s of sizes) expect(s).toBeGreaterThanOrEqual(16)
+  })
+
+  test('a filter group with no values is not rendered', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    const row = page.getByTestId('gallery-filter-bar-sparse').getByTestId('filter-row')
+    await expect(row.getByLabel('Year')).toBeVisible()
+    await expect(row.getByLabel('Type')).toHaveCount(0)
+  })
+
+  test('below md, Filter (n) opens a sheet, Show N results closes it', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    const bar = page.getByTestId('gallery-filter-bar')
+    await expect(bar.getByTestId('filter-row')).toBeHidden()
+    await bar.getByRole('button', { name: 'Filter', exact: true }).click()
+    const sheet = page.getByRole('dialog', { name: 'Filter publications' })
+    await expect(sheet).toBeVisible()
+    await sheet.getByLabel('Year').selectOption({ index: 1 })
+    await sheet.getByRole('button', { name: /^Show \d+ results?$/ }).click()
+    await expect(sheet).toBeHidden()
+    await expect(bar.getByRole('button', { name: 'Filter (1)' })).toBeVisible()
+  })
+
+  test('widening past md closes the filter sheet and unlocks scroll', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    const bar = page.getByTestId('gallery-filter-bar')
+    await bar.getByRole('button', { name: 'Filter', exact: true }).click()
+    await expect(page.getByRole('dialog', { name: 'Filter publications' })).toBeVisible()
+    await page.setViewportSize({ width: 1024, height: 812 })
+    await expect.poll(() => page.evaluate(() => matchMedia('(min-width: 48rem)').matches)).toBe(true)
+    await expect(page.getByRole('dialog', { name: 'Filter publications' })).toBeHidden()
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).overflow)).not.toBe('hidden')
+  })
+
+  test('the open filter sheet has no axe violations', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.getByTestId('gallery-filter-bar').getByRole('button', { name: 'Filter', exact: true }).click()
+    const sheet = page.getByTestId('filter-sheet')
+    await expect(sheet).toBeVisible()
+    const results = await new AxeBuilder({ page }).include('[data-testid="filter-sheet"]').analyze()
+    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
+  })
 })
 
 // The Phase 1 completion check requires /preview/components to render in
