@@ -49,7 +49,16 @@ test.describe('mobile 390', () => {
     await expect(dialog).toBeHidden()
   })
 
-  test('menu traps focus (M8)', async ({ page }) => {
+  test('menu traps focus (M8)', async ({ page, browserName }) => {
+    // WebKit does not move focus to links on Tab by default (Safari's
+    // long-standing "Tab moves focus only to form controls" convention).
+    // Measured: with the dialog open, six consecutive Tab presses leave
+    // document.activeElement as BODY every time -- focus never *enters* the
+    // dialog's links, so it also never appears to "escape" it. That's a
+    // browser input convention, not a product defect, and weakening this
+    // assertion to pass under it would prove nothing, so skip on WebKit
+    // instead of relaxing the (still-strict) Chromium assertion below.
+    test.skip(browserName === 'webkit', 'WebKit does not Tab-focus links by default; see comment above')
     await page.goto('/')
     await page.getByRole('button', { name: 'Open menu' }).click()
     const dialog = page.getByRole('dialog', { name: 'Menu' })
