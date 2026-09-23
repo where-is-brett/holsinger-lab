@@ -28,13 +28,14 @@ Run it from a `redesign/wix` checkout whichever design wins. The import needs a 
 - [ ] Live-impact check (spec section 8, gate G2). Diff the dry run against
       `dryrun-production.txt` in the wix-lookalike ledger
       (`.superpowers/sdd/2026-09-22-wix-lookalike/`, vigorous-wu worktree). Any new or changed
-      line means production drifted since `wix-preview` was copied. Review each one. - `main` (old design) renders production until step 2 lands. Its `/people` would briefly
-      show about 22 new mostly photo-less alumni and intern profiles and Wix role wording. Run
-      steps 1 and 2 back to back to keep that window to minutes. - The spec's full report (import into a temp copy, render `main` against it) needs a
-      spare dataset. The Free plan allows two, and `production` plus `wix-preview` use both.
-      `sanity dataset copy` is Enterprise-only. Either delete `wix-preview` first (the
-      previews then break, which is fine after the choice), or accept the diff above as the
-      check. Your call.
+      line means production drifted since `wix-preview` was copied. Review each one.
+- [ ] Keep the import-to-merge window short. `main` (old design) renders production until
+      step 2 lands, so its `/people` briefly shows about 22 new, mostly photo-less alumni and
+      intern profiles and Wix role wording. Run steps 1 and 2 back to back.
+- [ ] Decide on the spec's full report (import into a temp copy, render `main` against it). It
+      needs a spare dataset: the Free plan allows two, `production` and `wix-preview` use both,
+      and `sanity dataset copy` is Enterprise-only. Either delete `wix-preview` first (the
+      previews break, which is fine after the choice) or accept the diff above as the check.
 - [ ] Backup:
       `npx sanity dataset export production ./backups/production-$(date +%F).tar.gz`
 - [ ] Commit (Brett's yes first):
