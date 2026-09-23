@@ -424,9 +424,17 @@ export default function Gallery() {
 
         <SubHeading>Open sheet (static rendering of the dialog&apos;s contents)</SubHeading>
         {/* md:hidden: at md+ the gallery's SiteNav instances are visible, and
-            this nav would be one more landmark on the page. */}
-        <div className="max-w-sm border border-rule md:hidden">
-          <MobileBand wordmark="Holsinger Lab" open />
+            this nav would be one more landmark on the page. This fixture
+            isn't a real Dialog -- there's no DialogPanel with the default
+            `mobile-menu-panel` id for its own MobileBand's `aria-controls`
+            to reference (and reusing that id would collide with the live
+            MobileHeader instance above, whose own DialogPanel keeps that id
+            in the DOM even while closed). Giving this wrapper its own id
+            and passing it as `panelId` keeps `aria-controls` pointing at a
+            real, unique element (axe's `aria-valid-attr-value` rule; caught
+            by e2e/redesign-components.spec.ts's axe check). */}
+        <div id="gallery-mobile-menu-panel" className="max-w-sm border border-rule md:hidden">
+          <MobileBand wordmark="Holsinger Lab" open panelId="gallery-mobile-menu-panel" />
           <MobileNavRows items={SITE_NAV} current="pubs" label="Gallery: mobile sheet" />
         </div>
       </section>

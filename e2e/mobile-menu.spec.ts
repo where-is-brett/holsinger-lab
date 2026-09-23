@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 
+import { createTabStepper } from './support/focus'
+
 // The trigger ("Menu") lives in the outer sticky band. The panel draws its
 // own copy of the same band, with the toggle reading "Close" there instead
 // (spec decision 3) -- so once the dialog is open, every assertion targets
@@ -25,21 +27,42 @@ test.describe('mobile menu accessibility contract', () => {
   test('is reachable and operable via keyboard alone', async ({ page }) => {
     await page.goto('/')
 
+    // WebKit's default Tab policy only cycles text fields (Safari's
+    // long-standing "Full Keyboard Access" convention, off unless the
+    // user opts in), so a plain Tab doesn't always reach the Menu button.
+    // `createTabStepper` (e2e/support/focus.ts) picks Tab or Alt+Tab
+    // (Option-Tab, WebKit's own equivalent) at runtime rather than
+    // assuming one from the project name or OS -- proven only on macOS,
+    // and CI runs mobile-safari on Linux.
+    const pressTabStep = createTabStepper(page)
     const trigger = page.getByRole('button', { name: 'Menu', exact: true })
     for (let i = 0; i < 5; i++) {
       if (await trigger.evaluate((el) => el === document.activeElement)) break
-      await page.keyboard.press('Tab')
+      await pressTabStep()
     }
     await expect(trigger).toBeFocused()
 
     await page.keyboard.press('Enter')
-    const dialog = page.getByRole('dialog')
+    const dialog = page.getByRole('dialog', { name: 'Menu' })
     await expect(dialog).toBeVisible()
 
-    // Controller ruling: initial focus lands on the in-panel Close, not the
-    // wordmark link that leads it in DOM order.
-    const close = dialog.getByRole('button', { name: 'Close', exact: true })
-    await expect(close).toBeFocused()
+    const coarsePointer = await page.evaluate(() => matchMedia('(pointer: coarse)').matches)
+    if (coarsePointer) {
+      // @headlessui/react's <Dialog> disables its InitialFocus feature on
+      // a coarse pointer (its own `useIsTouchDevice()`, which reads
+      // `matchMedia('(pointer: coarse)')`) -- deliberate upstream
+      // behaviour that avoids iOS Safari's focus-triggered page-jump bug,
+      // not a defect here. Its fallback focuses the Dialog root itself
+      // rather than a specific child; VoiceOver/TalkBack announce that as
+      // "Menu, dialog", which is acceptable for assistive technology, so
+      // the assertion targets the named dialog itself, not Close.
+      await expect(dialog).toBeFocused()
+    } else {
+      // Controller ruling: initial focus lands on the in-panel Close, not the
+      // wordmark link that leads it in DOM order.
+      const close = dialog.getByRole('button', { name: 'Close', exact: true })
+      await expect(close).toBeFocused()
+    }
   })
 
   test('Escape closes the menu and returns focus to the trigger', async ({
@@ -69,9 +92,11 @@ test.describe('mobile menu accessibility contract', () => {
     // Tab one more time than there are links in the panel; focus should
     // still be inside the dialog, never having escaped to page content
     // behind it (e.g. the outer wordmark link, which sits outside the
-    // dialog while it is open).
+    // dialog while it is open). `createTabStepper` picks Tab or Alt+Tab
+    // at runtime -- see the previous test's comment.
+    const pressTabStep = createTabStepper(page)
     for (let i = 0; i < linkCount + 1; i++) {
-      await page.keyboard.press('Tab')
+      await pressTabStep()
     }
     const activeElementIsInDialog = await page.evaluate(() => {
       const dialog = document.querySelector('[role="dialog"]')
@@ -124,6 +149,29 @@ test.describe('mobile menu accessibility contract', () => {
     await page.getByRole('button', { name: 'Menu', exact: true }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
 
+    // Wait for the panel's own fade-in (DialogPanel's `transition` prop,
+    // `duration-(--sem-motion-reveal)`, 160ms) to actually finish before
+    // scanning -- mid-fade, axe reads whatever partially-blended colour the
+    // opacity transition has reached at that instant and (correctly, for
+    // that instant) reports it as a real color-contrast violation, even
+    // though the panel is opaque a moment later. `toBeVisible()` above only
+    // waits for a non-zero opacity, not a *settled* one. Headless UI 2.2.10
+    // marks an in-flight transition with `data-enter`/`data-transition`
+    // attributes, removed once it settles (confirmed by reading
+    // node_modules/@headlessui/react/dist/hooks/use-transition.js) -- more
+    // reliable than a fixed wait, since it doesn't care how long the
+    // transition actually takes.
+    const panel = page.locator('#mobile-menu-panel')
+    await expect
+      .poll(() =>
+        panel.evaluate((el) => ({
+          opacity: getComputedStyle(el).opacity,
+          enter: el.hasAttribute('data-enter'),
+          transition: el.hasAttribute('data-transition'),
+        }))
+      )
+      .toEqual({ opacity: '1', enter: false, transition: false })
+
     const results = await new AxeBuilder({ page }).analyze()
     expect(
       results.violations,
@@ -163,6 +211,17 @@ test.describe('mobile menu accessibility contract', () => {
     await expect(page.getByRole('dialog')).toBeVisible()
 
     await page.setViewportSize({ width: 800, height: 812 })
+
+    // Condition-based, not a longer timeout: MobileHeader.tsx closes the
+    // menu from a `matchMedia('(min-width: 48rem)')` change listener,
+    // which the browser dispatches asynchronously after a CDP-driven
+    // `setViewportSize` -- not necessarily on the same tick, and (measured
+    // in CI, not locally) occasionally slow enough to eat into the 5s
+    // default an assertion on the dialog alone gets. Confirming the media
+    // query itself has already flipped isolates that from the dialog's own
+    // (much shorter, 160ms) closing transition, so a slow *event dispatch*
+    // doesn't get misdiagnosed as, or masked by, a slow *transition*.
+    await expect.poll(() => page.evaluate(() => matchMedia('(min-width: 48rem)').matches)).toBe(true)
 
     await expect(page.getByRole('dialog')).toBeHidden()
     const overflow = await page.evaluate(() => document.documentElement.style.overflow)

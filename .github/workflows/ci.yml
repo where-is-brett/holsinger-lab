@@ -45,7 +45,11 @@ jobs:
         run: npm run build
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        # webkit backs the mobile-safari project (playwright.config.ts) --
+        # the only WebKit/iOS coverage this suite has. Measured: the full
+        # suite across all three projects (chromium, mobile-safari,
+        # mobile-chrome), post-build, took ~1.5m (901 tests, 6 workers).
+        run: npx playwright install --with-deps chromium webkit
 
       - name: E2E tests
         run: npm run test:e2e

@@ -578,6 +578,7 @@ test.describe('/preview/components gallery: home', () => {
 
   test('hero lab-head card: the name gets a colour reveal on hover and keyboard focus', async ({
     page,
+    hasTouch,
   }) => {
     // The name span carries its own `group-hover:text-link`/
     // `group-focus-visible:text-link` reveal, matching PersonCard.tsx's
@@ -592,20 +593,47 @@ test.describe('/preview/components gallery: home', () => {
 
     const restColor = await name.evaluate((el) => getComputedStyle(el).color)
 
-    await link.hover()
-    const hoverColor = await name.evaluate((el) => getComputedStyle(el).color)
-    expect(hoverColor).not.toBe(restColor)
+    // Tailwind's `hover:` variant (tokens.ts's ROW comment) emits `@media
+    // (hover: hover)` -- deliberately, so a hover-only affordance never
+    // "sticks" after a tap on a touch device. mobile-safari/mobile-chrome's
+    // device descriptors set `hasTouch: true`, which Chromium/WebKit both
+    // report as `(hover: none)`, so `link.hover()` moves the pointer but
+    // the CSS rule never matches and the colour can't change -- that is
+    // the design working as intended, not a defect, so only the
+    // non-touch projects exercise this half. The keyboard-focus half below
+    // is unconditional: it doesn't depend on pointer hover capability.
+    if (hasTouch) {
+      // Positively prove the `(hover: hover)` guard itself, rather than
+      // just skipping this half: hovering still moves the pointer under
+      // touch/mobile emulation, so if the guard ever stopped working the
+      // colour would change here too. Settles longer than the 120ms
+      // `--sem-motion-fast` transition before reading.
+      await link.hover()
+      await page.waitForTimeout(400)
+      const hoverColor = await name.evaluate((el) => getComputedStyle(el).color)
+      expect(hoverColor).toBe(restColor)
+      await page.mouse.move(0, 0)
+    } else {
+      await link.hover()
+      const hoverColor = await name.evaluate((el) => getComputedStyle(el).color)
+      expect(hoverColor).not.toBe(restColor)
 
-    // Blur first (hover alone can leave :focus-visible unset, but a fresh
-    // page load's own initial state is the real "at rest" baseline above --
-    // this just confirms the hover-triggered colour reverts before focus is
-    // tested, so the two states aren't confused with each other).
-    await page.mouse.move(0, 0)
+      // Blur first (hover alone can leave :focus-visible unset, but a fresh
+      // page load's own initial state is the real "at rest" baseline above --
+      // this just confirms the hover-triggered colour reverts before focus is
+      // tested, so the two states aren't confused with each other).
+      await page.mouse.move(0, 0)
+    }
 
     await link.focus()
     await expect(link).toBeFocused()
-    const focusColor = await name.evaluate((el) => getComputedStyle(el).color)
-    expect(focusColor).not.toBe(restColor)
+    // `expect.poll`, not a one-shot read: the name span's colour change is
+    // transition-driven (`duration-(--sem-motion-fast)`), and on WebKit a
+    // read taken immediately after `focus()` can land before the
+    // transition has actually started -- measured: this one-shot read
+    // failed 5/30 repeats on mobile-safari; polling until the colour
+    // differs (or the assertion's own timeout elapses) passed 30/30.
+    await expect.poll(() => name.evaluate((el) => getComputedStyle(el).color)).not.toBe(restColor)
   })
 
   // Instance (b): labHead set, showLabHeadOnHome false. No lab-head card,

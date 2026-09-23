@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 
+import { grantClipboardOrSkipWebkit, lastClipboardWrite, spyOnClipboardWrite } from './support/clipboard'
 import { e2eClient } from './support/sanity'
 
 // Each assertion here is derived from the page's own data (a row's own
@@ -76,8 +77,19 @@ test.describe('/publications/[slug]', () => {
   test('copying the citation shows the copied state and puts the citation on the clipboard', async ({
     page,
     context,
+    browserName,
   }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    // WebKit has no Permissions API entry for clipboard-read, so
+    // `navigator.clipboard.readText()` always rejects there regardless of
+    // any grant (and `grantClipboardOrSkipWebkit` grants nothing on
+    // webkit in the first place -- see its own comment). A `writeText` spy
+    // still proves the clipboard claim on every engine: it wraps the real
+    // implementation (so the write itself still happens, including on
+    // WebKit, which succeeds without a grant) while recording the
+    // argument, which this test can read back without ever calling
+    // `readText()`.
+    await spyOnClipboardWrite(page)
+    await grantClipboardOrSkipWebkit(context, browserName)
     await page.goto('/publications')
     const firstRow = page.locator('[data-testid="pub-row"]').first()
     const href = await firstRow.getByTestId('pub-title').getAttribute('href')
@@ -91,8 +103,18 @@ test.describe('/publications/[slug]', () => {
     await copyButton.click()
     await expect(copyButton).toHaveText(/Copied/)
 
-    const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
-    expect(clipboardText).toBe(citationText)
+    expect(await lastClipboardWrite(page)).toBe(citationText)
+
+    // Chromium also supports reading the clipboard back directly (WebKit
+    // does not -- no Permissions API entry for clipboard-read at all,
+    // which is why the spy above is this test's only proof on that
+    // engine). Where it's available, it's a stronger check than the spy
+    // alone: it confirms the OS clipboard itself holds the string, not
+    // just that `writeText` was called with it.
+    if (browserName !== 'webkit') {
+      const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
+      expect(clipboardText).toBe(citationText)
+    }
   })
 
   test('an unknown slug 404s', async ({ page }) => {

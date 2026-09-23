@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { grantClipboardOrSkipWebkit } from './support/clipboard'
+
 // Everything built in Tasks 4-8 is unrendered outside this route -- this
 // repo's Vitest config is node-only (see `**/*.test.ts`, no jsdom), so
 // rendering/interaction behaviour is deliberately proven here in Playwright
@@ -68,8 +70,8 @@ test.describe('redesign component gallery', () => {
     }
   })
 
-  test('copy-citation reports success and reverts', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  test('copy-citation reports success and reverts', async ({ page, context, browserName }) => {
+    await grantClipboardOrSkipWebkit(context, browserName)
     const button = page.getByRole('button', { name: /copy citation/i }).first()
     await button.click()
     await expect(page.getByText('✓ Copied')).toBeVisible()
@@ -196,6 +198,14 @@ test.describe('redesign component gallery', () => {
   })
 
   test('SiteNav marks exactly the current item aria-current, with real hrefs', async ({ page }) => {
+    // The gallery's `gallery-site-nav` section wraps SiteNav in `hidden
+    // md:block` (Gallery.tsx) so only one nav landmark is visible at a
+    // given viewport (this file's axe check). This test targets that
+    // desktop component specifically, so it pins a `md`+ width rather than
+    // depending on whichever project's default viewport happens to run it
+    // -- mobile-safari/mobile-chrome's own device viewports are both below
+    // `md`, where this section is legitimately hidden by design.
+    await page.setViewportSize({ width: 1280, height: 900 })
     const nav = page.getByTestId('gallery-site-nav')
     await expect(nav.locator('a[aria-current="page"]')).toHaveText('Publications')
     await expect(nav.locator('a[aria-current="page"]')).toHaveCount(1)
@@ -556,6 +566,37 @@ test.describe('redesign component gallery', () => {
   test('has no detectable accessibility violations (light)', async ({ page }) => {
     const results = await new AxeBuilder({ page }).analyze()
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
+  })
+
+  // Regression guard for the gallery's static "Open sheet" MobileBand
+  // fixture (Gallery.tsx): its `aria-controls` pointed at the default
+  // `mobile-menu-panel` id, which only exists in the DOM while the live
+  // `MobileHeader` instance above it is open (its DialogPanel is unmounted
+  // while closed) -- axe's `aria-valid-attr-value` rule flags any
+  // `aria-controls` whose id doesn't resolve. 375px, not the axe tests'
+  // default viewport, because this fixture is `md:hidden` -- only visible
+  // (and only in the accessibility tree) below `md`.
+  test('every aria-controls value on the gallery resolves to a real element id', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    // `expect.poll`, not a one-shot read: the live `MobileHeader` instance
+    // above the static fixture renders its `DialogPanel` (the default
+    // `mobile-menu-panel` id) through a Headless UI `<Portal>`, which is
+    // client-mounted -- confirmed absent from the raw server-rendered HTML
+    // entirely, appearing only once hydration has mounted it. A one-shot
+    // check right after `setViewportSize` can race that mount and find the
+    // id genuinely missing for a moment, even though it always settles in.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const missing: string[] = []
+          for (const el of document.querySelectorAll('[aria-controls]')) {
+            const id = el.getAttribute('aria-controls')!
+            if (!document.getElementById(id)) missing.push(id)
+          }
+          return missing
+        })
+      )
+      .toEqual([])
   })
 
   // Fix round 4: the two checks above run at first paint, where every

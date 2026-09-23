@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 
+import { grantClipboardOrSkipWebkit, lastClipboardWrite, spyOnClipboardWrite } from './support/clipboard'
 import { e2eClient } from './support/sanity'
 
 // Located via `data-testid="facet-band"` (FacetBand.tsx). Facet-group label
@@ -148,8 +149,14 @@ test.describe('publications index', () => {
   test('copying the first row citation shows the copied state and puts the title on the clipboard', async ({
     page,
     context,
+    browserName,
   }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    // Spying on `writeText` (rather than reading the clipboard back with
+    // `readText()`) proves the clipboard claim on every engine, including
+    // WebKit, which has no Permissions API entry for clipboard-read at all
+    // -- see e2e/support/clipboard.ts's own comment.
+    await spyOnClipboardWrite(page)
+    await grantClipboardOrSkipWebkit(context, browserName)
     await page.goto('/publications')
 
     const firstRow = page.locator('[data-testid="pub-row"]').first()
@@ -158,8 +165,16 @@ test.describe('publications index', () => {
     await copyButton.click()
     await expect(copyButton).toHaveText(/Copied/)
 
-    const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
-    expect(clipboardText).toContain(title)
+    expect(await lastClipboardWrite(page)).toContain(title)
+
+    // Chromium also supports reading the clipboard back directly (WebKit
+    // does not -- see e2e/support/clipboard.ts's comment) -- a stronger
+    // check than the spy alone where it's available, since it confirms the
+    // OS clipboard itself holds the string.
+    if (browserName !== 'webkit') {
+      const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
+      expect(clipboardText).toContain(title)
+    }
   })
 
   test("every row is partitioned by link kind, and each kind's identifier matches its data", async ({

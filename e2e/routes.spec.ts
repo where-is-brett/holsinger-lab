@@ -35,9 +35,21 @@ for (const path of CONTENT_ROUTES) {
     // strict mode. The nav link's own accessible name is exactly
     // "Publications", so `exact: true` disambiguates without scoping to
     // the nav landmark.
-    await expect(
-      page.getByRole('link', { name: 'Publications', exact: true })
-    ).toBeVisible()
+    //
+    // This spec never sets its own viewport, so it runs at each project's
+    // own default -- including the real device widths of mobile-safari
+    // and mobile-chrome (playwright.config.ts), below the `md` breakpoint
+    // where SiteChrome swaps the desktop nav for MobileHeader's "Menu"
+    // toggle (spec decision 3). Branching on the real viewport width, not
+    // accepting either form unconditionally, keeps this a genuine check of
+    // each one: a regression that hid the desktop nav while still showing
+    // the Menu button below `md` would otherwise pass unnoticed.
+    const width = page.viewportSize()!.width
+    if (width < 768) {
+      await expect(page.getByRole('button', { name: 'Menu', exact: true })).toBeVisible()
+    } else {
+      await expect(page.getByRole('link', { name: 'Publications', exact: true })).toBeVisible()
+    }
   })
 }
 
