@@ -26,7 +26,13 @@ for (const viewport of [
 
     test('the header stays pinned after scrolling', async ({ page }) => {
       await page.goto('/publications')
-      await page.mouse.wheel(0, 1500)
+      // `page.mouse.wheel()`, not a real wheel event: Playwright throws
+      // "Mouse wheel is not supported in mobile WebKit" for any
+      // touch-capable WebKit context (measured under mobile-safari). A
+      // programmatic scroll proves the same sticky-header geometry without
+      // depending on an input method the assertion itself doesn't care
+      // about.
+      await page.evaluate(() => window.scrollBy(0, 1500))
       await expect
         .poll(() => page.evaluate(() => document.querySelector('[data-testid="site-header"]')!.getBoundingClientRect().top))
         .toBe(0)

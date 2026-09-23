@@ -76,8 +76,8 @@ test.describe('/publications/[slug]', () => {
   test('copying the citation shows the copied state and puts the citation on the clipboard', async ({
     page,
     context,
+    browserName,
   }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     await page.goto('/publications')
     const firstRow = page.locator('[data-testid="pub-row"]').first()
     const href = await firstRow.getByTestId('pub-title').getAttribute('href')
@@ -88,6 +88,19 @@ test.describe('/publications/[slug]', () => {
     const citationText = (await page.getByTestId('pub-cite-text').textContent())!.trim()
 
     const copyButton = page.getByRole('button', { name: 'Copy citation' })
+    if (browserName === 'webkit') {
+      // `context.grantPermissions` doesn't support clipboard-write on
+      // WebKit (Playwright throws "Unknown permission: clipboard-write"),
+      // and WebKit has no Permissions API entry for clipboard-read either,
+      // so `navigator.clipboard.readText()` always rejects there
+      // regardless of any grant. Measured: with no permission granted at
+      // all, `writeText()` still resolves under WebKit and the control
+      // shows "Copied" -- assert that measured outcome, not the readback.
+      await copyButton.click()
+      await expect(copyButton).toHaveText(/Copied/)
+      return
+    }
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     await copyButton.click()
     await expect(copyButton).toHaveText(/Copied/)
 

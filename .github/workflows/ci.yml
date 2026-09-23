@@ -45,7 +45,12 @@ jobs:
         run: npm run build
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        # webkit backs the mobile-safari project (playwright.config.ts) --
+        # the only WebKit/iOS coverage this suite has. Adding the two device
+        # projects (mobile-safari, mobile-chrome) alongside chromium adds
+        # coverage for iPhone 13 (WebKit) and touch-enabled Pixel 7
+        # (Chromium) on top of the existing Desktop Chrome project.
+        run: npx playwright install --with-deps chromium webkit
 
       - name: E2E tests
         run: npm run test:e2e

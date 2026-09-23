@@ -68,8 +68,15 @@ test.describe('redesign component gallery', () => {
     }
   })
 
-  test('copy-citation reports success and reverts', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  test('copy-citation reports success and reverts', async ({ page, context, browserName }) => {
+    // `context.grantPermissions` doesn't support clipboard-write on WebKit
+    // (Playwright throws "Unknown permission: clipboard-write") -- measured
+    // (e2e/publication-page.spec.ts's copy-citation test) that
+    // `writeText()` still resolves under WebKit with no permission granted
+    // at all, so the grant is skipped there rather than failing the test.
+    if (browserName !== 'webkit') {
+      await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    }
     const button = page.getByRole('button', { name: /copy citation/i }).first()
     await button.click()
     await expect(page.getByText('✓ Copied')).toBeVisible()
@@ -196,6 +203,14 @@ test.describe('redesign component gallery', () => {
   })
 
   test('SiteNav marks exactly the current item aria-current, with real hrefs', async ({ page }) => {
+    // The gallery's `gallery-site-nav` section wraps SiteNav in `hidden
+    // md:block` (Gallery.tsx) so only one nav landmark is visible at a
+    // given viewport (this file's axe check). This test targets that
+    // desktop component specifically, so it pins a `md`+ width rather than
+    // depending on whichever project's default viewport happens to run it
+    // -- mobile-safari/mobile-chrome's own device viewports are both below
+    // `md`, where this section is legitimately hidden by design.
+    await page.setViewportSize({ width: 1280, height: 900 })
     const nav = page.getByTestId('gallery-site-nav')
     await expect(nav.locator('a[aria-current="page"]')).toHaveText('Publications')
     await expect(nav.locator('a[aria-current="page"]')).toHaveCount(1)

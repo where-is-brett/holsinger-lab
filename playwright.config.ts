@@ -40,7 +40,21 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // `mobile-safari` (devices['iPhone 13']) is the only WebKit coverage this
+  // suite has -- Safari/iOS is the engine we previously had zero visibility
+  // into. `mobile-chrome` (devices['Pixel 7']) is the only touch-enabled
+  // Chromium coverage -- `chromium` above runs Desktop Chrome with a mouse,
+  // never a touch pointer. Specs that call `test.use({ viewport })` (most of
+  // the existing suite) keep their own viewport under these two projects --
+  // they still gain real engine and touch/UA coverage, just not the device's
+  // own viewport. e2e/mobile.spec.ts is the one spec that deliberately
+  // does *not* override the device viewport, so it alone exercises the real
+  // iPhone 13 / Pixel 7 dimensions end to end.
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile-safari', use: { ...devices['iPhone 13'] } },
+    { name: 'mobile-chrome', use: { ...devices['Pixel 7'] } },
+  ],
   // Rebuilds and serves a real production build rather than `next dev`, matching
   // this project's established "verify against a real build" approach (Phases
   // 0/1/1C). This means every `test:e2e` run rebuilds even if `npm run build` was

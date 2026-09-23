@@ -578,6 +578,7 @@ test.describe('/preview/components gallery: home', () => {
 
   test('hero lab-head card: the name gets a colour reveal on hover and keyboard focus', async ({
     page,
+    hasTouch,
   }) => {
     // The name span carries its own `group-hover:text-link`/
     // `group-focus-visible:text-link` reveal, matching PersonCard.tsx's
@@ -592,15 +593,26 @@ test.describe('/preview/components gallery: home', () => {
 
     const restColor = await name.evaluate((el) => getComputedStyle(el).color)
 
-    await link.hover()
-    const hoverColor = await name.evaluate((el) => getComputedStyle(el).color)
-    expect(hoverColor).not.toBe(restColor)
+    // Tailwind's `hover:` variant (tokens.ts's ROW comment) emits `@media
+    // (hover: hover)` -- deliberately, so a hover-only affordance never
+    // "sticks" after a tap on a touch device. mobile-safari/mobile-chrome's
+    // device descriptors set `hasTouch: true`, which Chromium/WebKit both
+    // report as `(hover: none)`, so `link.hover()` moves the pointer but
+    // the CSS rule never matches and the colour can't change -- that is
+    // the design working as intended, not a defect, so only the
+    // non-touch projects exercise this half. The keyboard-focus half below
+    // is unconditional: it doesn't depend on pointer hover capability.
+    if (!hasTouch) {
+      await link.hover()
+      const hoverColor = await name.evaluate((el) => getComputedStyle(el).color)
+      expect(hoverColor).not.toBe(restColor)
 
-    // Blur first (hover alone can leave :focus-visible unset, but a fresh
-    // page load's own initial state is the real "at rest" baseline above --
-    // this just confirms the hover-triggered colour reverts before focus is
-    // tested, so the two states aren't confused with each other).
-    await page.mouse.move(0, 0)
+      // Blur first (hover alone can leave :focus-visible unset, but a fresh
+      // page load's own initial state is the real "at rest" baseline above --
+      // this just confirms the hover-triggered colour reverts before focus is
+      // tested, so the two states aren't confused with each other).
+      await page.mouse.move(0, 0)
+    }
 
     await link.focus()
     await expect(link).toBeFocused()
