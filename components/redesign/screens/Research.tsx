@@ -186,7 +186,12 @@ export function Research({
         // `<h2 data-testid="research-project-title">` (the project title),
         // so a second `<h2>` for the label would be a redundant heading.
         projects.map((project, index) => (
-          <Section key={project.id} label={project.label} borderTop={index !== 0}>
+          <Section
+            key={project.id}
+            id={project.slug ?? undefined}
+            label={project.label}
+            borderTop={index !== 0}
+          >
             <Narrative project={project} />
           </Section>
         ))

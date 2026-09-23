@@ -634,6 +634,7 @@ function researchCoverView(width: number, height: number, alt: string): Research
 
 function researchProjectView(overrides: {
   id: string
+  slug?: string | null
   title: string
   body: ReturnType<typeof overviewParagraph>[]
   start: string | null
@@ -644,6 +645,11 @@ function researchProjectView(overrides: {
   const tags = overrides.tags
   return {
     id: overrides.id,
+    // Task 1 (homeModel.ts): every existing fixture gets a slug derived
+    // from its id so `/research#<slug>` and `researchCards`' href both
+    // resolve for it -- an explicit `slug: null` override still models
+    // the unslugged case (see `gallery-home-unslugged`, Task 3).
+    slug: overrides.slug === undefined ? overrides.id : overrides.slug,
     title: overrides.title,
     label: tags[0] || 'Project',
     kicker: researchKicker({ start: overrides.start, category: overrides.category }),

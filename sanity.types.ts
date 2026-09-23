@@ -1352,6 +1352,39 @@ export type SupportPageQueryResult = {
 } | null
 
 // Source: lib/sanity.queries.ts
+// Variable: homeSiteCopyQuery
+// Query: *[_type == "siteCopy"][0]{    hero{ subheading },    about{ body, themes[]{ title, summary } },  }
+export type HomeSiteCopyQueryResult = {
+  hero: {
+    subheading: string | null
+  } | null
+  about: {
+    body: Array<{
+      children?: Array<{
+        marks?: Array<string>
+        text?: string
+        _type: 'span'
+        _key: string
+      }>
+      style?: 'normal'
+      listItem?: never
+      markDefs?: Array<{
+        href?: string
+        _type: 'link'
+        _key: string
+      }>
+      level?: number
+      _type: 'block'
+      _key: string
+    }> | null
+    themes: Array<{
+      title: string | null
+      summary: string | null
+    }> | null
+  } | null
+} | null
+
+// Source: lib/sanity.queries.ts
 // Variable: researchProjectsQuery
 // Query: *[_type == "project" && defined(researchOrder)] | order(researchOrder asc) {    _id,    title,    "slug": slug.current,    overview,    description,    coverImage{      ...,      asset->{        _id,        metadata{ dimensions{ width, height, aspectRatio } }      }    },    "start": duration.start,    tags,    category,  }
 export type ResearchProjectsQueryResult = Array<{
@@ -1584,6 +1617,7 @@ declare module '@sanity/client' {
     '\n  *[_type == "resource"] | order(title asc) [0] {\n    \n  _id,\n  title,\n  kind,\n  summary,\n  howToObtain,\n  publication->{\n    _id,\n    title,\n    date,\n    doi,\n    url,\n    journal,\n    volume,\n    issue,\n    pages,\n    "slug": slug.current,\n  },\n\n  }\n': HomeResourceQueryResult
     '\n  *[_type == "project" && slug.current == "maestro"][0]{\n    _id,\n    title,\n    overview,\n    site,\n  }\n': MaestroProjectQueryResult
     '\n  *[_type == "page" && slug.current == "support-our-research"][0]{\n    title,\n    "slug": slug.current,\n  }\n': SupportPageQueryResult
+    '\n  *[_type == "siteCopy"][0]{\n    hero{ subheading },\n    about{ body, themes[]{ title, summary } },\n  }\n': HomeSiteCopyQueryResult
     '\n  *[_type == "project" && defined(researchOrder)] | order(researchOrder asc) {\n    _id,\n    title,\n    "slug": slug.current,\n    overview,\n    description,\n    coverImage{\n      ...,\n      asset->{\n        _id,\n        metadata{ dimensions{ width, height, aspectRatio } }\n      }\n    },\n    "start": duration.start,\n    tags,\n    category,\n  }\n': ResearchProjectsQueryResult
     '\n  *[_type == "resource"] | order(title asc) {\n    \n  _id,\n  title,\n  kind,\n  summary,\n  howToObtain,\n  publication->{\n    _id,\n    title,\n    date,\n    doi,\n    url,\n    journal,\n    volume,\n    issue,\n    pages,\n    "slug": slug.current,\n  },\n\n  }\n': ResourcesQueryResult
     '\n  *[_type == "roleGroup"] | order(orderRank) {\n    _id,\n    title,\n  }\n': RoleGroupQueryResult

@@ -159,6 +159,20 @@ describe('POST /api/revalidate', () => {
     expect(revalidatePath).toHaveBeenCalledTimes(3)
   })
 
+  it('revalidates the homepage for a siteCopy webhook (Task 1: Home reads siteCopy for its hero statement and research fallback)', async () => {
+    vi.mocked(parseBody).mockResolvedValue({
+      isValidSignature: true,
+      body: { type: 'siteCopy', slug: undefined },
+    })
+
+    const response = await POST(request())
+    const json = await response.json()
+
+    expect(revalidatePath).toHaveBeenCalledWith('/')
+    expect(revalidatePath).toHaveBeenCalledTimes(1)
+    expect(json.success).toBe(true)
+  })
+
   it('revalidates every known path for an unrecognized type', async () => {
     vi.mocked(getAllPaths).mockResolvedValue(['/', '/about', undefined])
     vi.mocked(parseBody).mockResolvedValue({
