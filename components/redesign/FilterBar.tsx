@@ -77,7 +77,7 @@ export function FilterBar({ options, value, onChange, resultCount }: FilterBarPr
             wash the page out instead of dimming it). No text renders on
             this backdrop, so it doesn't trip the token-role guard's ban on
             pairing `bg-scrim` with inverse text. */}
-        <div className="fixed inset-0 bg-scrim opacity-60" aria-hidden="true" />
+        <div data-testid="filter-sheet-backdrop" className="fixed inset-0 bg-scrim opacity-60" aria-hidden="true" />
         <DialogPanel
           data-testid="filter-sheet"
           className="fixed inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto border-t border-rule bg-surface px-(--spacing-gutter) pt-5 pb-8"

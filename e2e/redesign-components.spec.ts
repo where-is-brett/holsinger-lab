@@ -712,17 +712,43 @@ test.describe('redesign component gallery', () => {
     await page.reload()
     await page.getByTestId('gallery-filter-bar').getByRole('button', { name: 'Filter', exact: true }).click()
     await expect(page.getByRole('dialog', { name: 'Filter publications' })).toBeVisible()
-    const [backdropRgb, surfaceRgb] = await page.evaluate(() => {
-      const dialog = document.querySelector('[role="dialog"]')
-      const backdrop = dialog?.querySelector('[aria-hidden="true"]')
-      if (!backdrop) throw new Error('sheet backdrop not found')
-      return [getComputedStyle(backdrop).backgroundColor, getComputedStyle(document.body).backgroundColor]
-    })
-    const luminance = (rgb: string) => {
-      const [r, g, b] = rgb.match(/[\d.]+/g)!.map(Number)
+    const backdrop = page.getByTestId('filter-sheet-backdrop')
+    await expect(backdrop).toBeAttached()
+
+    // Composited via a 1x1 canvas, not a regex over the computed-style
+    // strings: `background-color` can come back as `oklab(...)`, which a
+    // channel regex mis-parses as 0-255 rgb (and drops the sign on any
+    // negative component), and reading the colour alone ignores the
+    // element's own `opacity` -- the canvas lets the browser resolve both
+    // for us, the same way it would actually paint the backdrop.
+    const blendedLuminance = await page.evaluate(() => {
+      const backdropEl = document.querySelector('[data-testid="filter-sheet-backdrop"]')
+      if (!backdropEl) throw new Error('sheet backdrop not found')
+      const surfaceColor = getComputedStyle(document.body).backgroundColor
+      const backdropStyle = getComputedStyle(backdropEl)
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const ctx = canvas.getContext('2d')!
+      ctx.fillStyle = surfaceColor
+      ctx.fillRect(0, 0, 1, 1)
+      ctx.globalAlpha = parseFloat(backdropStyle.opacity)
+      ctx.fillStyle = backdropStyle.backgroundColor
+      ctx.fillRect(0, 0, 1, 1)
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data
       return 0.2126 * r + 0.7152 * g + 0.0722 * b
-    }
-    expect(luminance(backdropRgb)).toBeLessThan(luminance(surfaceRgb))
+    })
+    const surfaceLuminance = await page.evaluate(() => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const ctx = canvas.getContext('2d')!
+      ctx.fillStyle = getComputedStyle(document.body).backgroundColor
+      ctx.fillRect(0, 0, 1, 1)
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    })
+    expect(blendedLuminance).toBeLessThan(surfaceLuminance)
   })
 })
 
