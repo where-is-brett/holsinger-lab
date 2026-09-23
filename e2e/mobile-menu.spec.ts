@@ -22,47 +22,41 @@ test.describe('mobile menu accessibility contract', () => {
     await expect(close).toHaveAttribute('aria-expanded', 'true')
   })
 
-  test('is reachable and operable via keyboard alone', async ({ page, hasTouch }, testInfo) => {
+  test('is reachable and operable via keyboard alone', async ({ page }, testInfo) => {
     // WebKit's default Tab policy only cycles text fields (Safari's
     // long-standing "Full Keyboard Access" convention, off unless the user
-    // opts in) -- measured: from a fresh page load, five consecutive Tab
-    // presses never land focus on the Menu button under mobile-safari,
-    // even though it's a <button>, not a link. Desktop Chromium and
-    // mobile-chrome (also Chromium) both Tab-focus it on the first press.
-    // Extends the same WebKit Tab-focus limit #48 measured for links.
-    test.skip(
-      testInfo.project.name === 'mobile-safari',
-      "WebKit's default Tab policy skips this button by default; see comment above"
-    )
+    // opts in), so a plain Tab never reaches the Menu button there --
+    // measured: from a fresh load, five consecutive plain Tab presses
+    // never focus it under mobile-safari. Option-Tab ("highlight each
+    // item on a webpage") is WebKit's own equivalent and does reach it
+    // (Playwright's `Alt` maps to macOS Option); Chromium reaches the
+    // button with a plain Tab and doesn't need the modifier.
+    const TAB = testInfo.project.name === 'mobile-safari' ? 'Alt+Tab' : 'Tab'
 
     await page.goto('/')
 
     const trigger = page.getByRole('button', { name: 'Menu', exact: true })
     for (let i = 0; i < 5; i++) {
       if (await trigger.evaluate((el) => el === document.activeElement)) break
-      await page.keyboard.press('Tab')
+      await page.keyboard.press(TAB)
     }
     await expect(trigger).toBeFocused()
 
     await page.keyboard.press('Enter')
-    const dialog = page.getByRole('dialog')
+    const dialog = page.getByRole('dialog', { name: 'Menu' })
     await expect(dialog).toBeVisible()
 
-    if (hasTouch) {
-      // @headlessui/react's <Dialog> disables its InitialFocus feature in
-      // any touch-capable context (components/dialog/dialog.js: `ae =
-      // !useIsTouchDevice()` gates `FocusTrapFeatures.InitialFocus`) --
-      // deliberate upstream behaviour that avoids iOS Safari's
-      // focus-triggered page-jump bug, not a defect here. Its fallback
-      // focuses the Dialog root itself (`tabIndex={-1}`) rather than a
-      // specific child, so the assertion is "focus moved inside the
-      // dialog", not "landed on Close" -- confirmed by reading the source
-      // and reproduced under both mobile-safari and mobile-chrome.
-      const focusIsInDialog = await page.evaluate(() => {
-        const dlg = document.querySelector('[role="dialog"]')
-        return dlg?.contains(document.activeElement) ?? false
-      })
-      expect(focusIsInDialog).toBe(true)
+    const coarsePointer = await page.evaluate(() => matchMedia('(pointer: coarse)').matches)
+    if (coarsePointer) {
+      // @headlessui/react's <Dialog> disables its InitialFocus feature on
+      // a coarse pointer (its own `useIsTouchDevice()`, which reads
+      // `matchMedia('(pointer: coarse)')`) -- deliberate upstream
+      // behaviour that avoids iOS Safari's focus-triggered page-jump bug,
+      // not a defect here. Its fallback focuses the Dialog root itself
+      // rather than a specific child; VoiceOver/TalkBack announce that as
+      // "Menu, dialog", which is acceptable for assistive technology, so
+      // the assertion targets the named dialog itself, not Close.
+      await expect(dialog).toBeFocused()
     } else {
       // Controller ruling: initial focus lands on the in-panel Close, not the
       // wordmark link that leads it in DOM order.
@@ -88,13 +82,9 @@ test.describe('mobile menu accessibility contract', () => {
   })
 
   test('Tab stays trapped inside the open panel', async ({ page }, testInfo) => {
-    // Same measured WebKit Tab-focus limit as the previous test: Tab
-    // presses don't move focus onto the panel's links/buttons by default
-    // under mobile-safari, so "focus never escapes" can't be exercised.
-    test.skip(
-      testInfo.project.name === 'mobile-safari',
-      "WebKit's default Tab policy skips these controls; see the previous test's comment"
-    )
+    // WebKit needs Option-Tab (Alt+Tab), not a plain Tab, to move focus at
+    // all -- see the previous test's comment for the measured reason.
+    const TAB = testInfo.project.name === 'mobile-safari' ? 'Alt+Tab' : 'Tab'
 
     await page.goto('/')
 
@@ -108,7 +98,7 @@ test.describe('mobile menu accessibility contract', () => {
     // behind it (e.g. the outer wordmark link, which sits outside the
     // dialog while it is open).
     for (let i = 0; i < linkCount + 1; i++) {
-      await page.keyboard.press('Tab')
+      await page.keyboard.press(TAB)
     }
     const activeElementIsInDialog = await page.evaluate(() => {
       const dialog = document.querySelector('[role="dialog"]')

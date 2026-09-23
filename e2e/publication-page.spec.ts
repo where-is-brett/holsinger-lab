@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 
+import { grantClipboardOrSkipWebkit, lastClipboardWrite, spyOnClipboardWrite } from './support/clipboard'
 import { e2eClient } from './support/sanity'
 
 // Each assertion here is derived from the page's own data (a row's own
@@ -78,6 +79,17 @@ test.describe('/publications/[slug]', () => {
     context,
     browserName,
   }) => {
+    // WebKit has no Permissions API entry for clipboard-read, so
+    // `navigator.clipboard.readText()` always rejects there regardless of
+    // any grant (and `grantClipboardOrSkipWebkit` grants nothing on
+    // webkit in the first place -- see its own comment). A `writeText` spy
+    // still proves the clipboard claim on every engine: it wraps the real
+    // implementation (so the write itself still happens, including on
+    // WebKit, which succeeds without a grant) while recording the
+    // argument, which this test can read back without ever calling
+    // `readText()`.
+    await spyOnClipboardWrite(page)
+    await grantClipboardOrSkipWebkit(context, browserName)
     await page.goto('/publications')
     const firstRow = page.locator('[data-testid="pub-row"]').first()
     const href = await firstRow.getByTestId('pub-title').getAttribute('href')
@@ -88,24 +100,10 @@ test.describe('/publications/[slug]', () => {
     const citationText = (await page.getByTestId('pub-cite-text').textContent())!.trim()
 
     const copyButton = page.getByRole('button', { name: 'Copy citation' })
-    if (browserName === 'webkit') {
-      // `context.grantPermissions` doesn't support clipboard-write on
-      // WebKit (Playwright throws "Unknown permission: clipboard-write"),
-      // and WebKit has no Permissions API entry for clipboard-read either,
-      // so `navigator.clipboard.readText()` always rejects there
-      // regardless of any grant. Measured: with no permission granted at
-      // all, `writeText()` still resolves under WebKit and the control
-      // shows "Copied" -- assert that measured outcome, not the readback.
-      await copyButton.click()
-      await expect(copyButton).toHaveText(/Copied/)
-      return
-    }
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     await copyButton.click()
     await expect(copyButton).toHaveText(/Copied/)
 
-    const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
-    expect(clipboardText).toBe(citationText)
+    expect(await lastClipboardWrite(page)).toBe(citationText)
   })
 
   test('an unknown slug 404s', async ({ page }) => {

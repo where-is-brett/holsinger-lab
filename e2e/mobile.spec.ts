@@ -1,15 +1,15 @@
+import type { TestInfo } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
-import { stubClipboardWriteToReject } from './support/clipboard'
+import { grantClipboardOrSkipWebkit, stubClipboardWriteToReject } from './support/clipboard'
 import { e2eClient } from './support/sanity'
 
 // This spec deliberately never calls `test.use({ viewport })` -- the whole
 // point is to inherit each project's real device viewport, user agent and
 // `hasTouch` (playwright.config.ts's mobile-safari / mobile-chrome
-// projects), which every other spec's own `test.use({ viewport })` calls
-// override. `locator.tap()` requires `hasTouch`, which the desktop
-// `chromium` project doesn't set, so the touch-driven menu tests below are
-// skipped there rather than failed.
+// projects). `locator.tap()` requires `hasTouch`, which the desktop
+// `chromium` project doesn't set, so the touch-driven describe blocks below
+// are skipped there rather than failed.
 
 async function firstPublicationSlug(): Promise<string | null> {
   return e2eClient.fetch<string | null>(
@@ -20,9 +20,8 @@ async function firstPublicationSlug(): Promise<string | null> {
 async function piProfileSlug(): Promise<string | null> {
   // Prefer settings.labHead when it's set and has a page; otherwise fall
   // back to any profile with no roleGroup (the PI shape in the current
-  // dataset -- see memory/holsinger_lab_next_up.md's "roleGroup taxonomy"
-  // note) that has a page of its own. Either way this resolves against the
-  // live dataset rather than a hardcoded slug (constraints.md).
+  // dataset) that has a page of its own. Either way this resolves against
+  // the live dataset rather than a hardcoded slug (constraints.md).
   const labHead = await e2eClient.fetch<{ slug: string | null; hasPage: boolean | null } | null>(
     `*[_type == "settings"][0].labHead->{"slug": slug.current, hasPage}`
   )
@@ -41,13 +40,14 @@ test.describe('mobile menu, tap-driven', () => {
     const trigger = page.getByRole('button', { name: 'Menu', exact: true })
     await trigger.tap()
 
-    const dialog = page.getByRole('dialog')
+    const dialog = page.getByRole('dialog', { name: 'Menu' })
     await expect(dialog).toBeVisible()
-    const focusIsInDialog = await page.evaluate(() => {
-      const dlg = document.querySelector('[role="dialog"]')
-      return dlg?.contains(document.activeElement) ?? false
-    })
-    expect(focusIsInDialog).toBe(true)
+    // @headlessui/react's <Dialog> focuses its own root on a coarse
+    // pointer rather than a specific child (see
+    // components/redesign/MobileHeader.tsx's `autoFocus` comment) --
+    // VoiceOver/TalkBack announce that as "Menu, dialog", so the
+    // assertion targets the named dialog itself.
+    await expect(dialog).toBeFocused()
 
     await dialog.getByRole('link', { name: 'Publications' }).tap()
     await expect(page).toHaveURL(/\/publications$/)
@@ -71,7 +71,7 @@ test.describe('mobile menu, tap-driven', () => {
 })
 
 test.describe('no horizontal overflow at the device viewport', () => {
-  async function resolvedPaths(): Promise<{ label: string; path: string }[]> {
+  async function resolvedPaths(testInfo: TestInfo): Promise<{ label: string; path: string }[]> {
     const [pubSlug, piSlug] = await Promise.all([firstPublicationSlug(), piProfileSlug()])
     const paths = [
       { label: '/', path: '/' },
@@ -81,13 +81,25 @@ test.describe('no horizontal overflow at the device viewport', () => {
       { label: '/resources', path: '/resources' },
       { label: '/contact', path: '/contact' },
     ]
-    if (pubSlug) paths.push({ label: 'paper page', path: `/publications/${pubSlug}` })
-    if (piSlug) paths.push({ label: 'PI profile', path: `/people/${piSlug}` })
+    // Annotate rather than silently drop: if either slug fails to
+    // resolve, this test still runs (and can still fail on the six routes
+    // above), but the reduced coverage is visible in the report instead of
+    // passing quietly with fewer routes checked than intended.
+    if (pubSlug) {
+      paths.push({ label: 'paper page', path: `/publications/${pubSlug}` })
+    } else {
+      testInfo.annotations.push({ type: 'reduced-coverage', description: 'no publication with a slug resolved; paper page skipped' })
+    }
+    if (piSlug) {
+      paths.push({ label: 'PI profile', path: `/people/${piSlug}` })
+    } else {
+      testInfo.annotations.push({ type: 'reduced-coverage', description: 'no PI profile slug resolved; PI profile page skipped' })
+    }
     return paths
   }
 
-  test('every resolved page fits the viewport width', async ({ page }) => {
-    const paths = await resolvedPaths()
+  test('every resolved page fits the viewport width', async ({ page }, testInfo) => {
+    const paths = await resolvedPaths(testInfo)
     for (const { label, path } of paths) {
       await page.goto(path)
       const { scrollWidth, clientWidth } = await page.evaluate(() => ({
@@ -103,17 +115,7 @@ test.describe('copy citation, tap-driven', () => {
   test.skip(({ hasTouch }) => !hasTouch, 'touch-only spec')
 
   test('tapping the first row copy button shows the copied state', async ({ page, context, browserName }) => {
-    // mobile-chrome is Chromium, where `navigator.clipboard.writeText()`
-    // is gated behind the Permissions API and fails without an explicit
-    // grant (measured: without this, the control never reaches "Copied").
-    // mobile-safari is WebKit, where `grantPermissions(['clipboard-write'])`
-    // itself throws ("Unknown permission: clipboard-write") but the write
-    // still succeeds with no grant at all under a real tap (constraints.md
-    // harness limit (b)) -- so the grant only ever applies to the
-    // non-WebKit project.
-    if (browserName !== 'webkit') {
-      await context.grantPermissions(['clipboard-read', 'clipboard-write'])
-    }
+    await grantClipboardOrSkipWebkit(context, browserName)
     await page.goto('/publications')
     const firstRow = page.locator('[data-testid="pub-row"]').first()
     const copyButton = firstRow.getByRole('button', { name: 'Copy citation' })

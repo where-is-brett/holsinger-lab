@@ -40,16 +40,18 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
   },
-  // `mobile-safari` (devices['iPhone 13']) is the only WebKit coverage this
-  // suite has -- Safari/iOS is the engine we previously had zero visibility
-  // into. `mobile-chrome` (devices['Pixel 7']) is the only touch-enabled
-  // Chromium coverage -- `chromium` above runs Desktop Chrome with a mouse,
-  // never a touch pointer. Specs that call `test.use({ viewport })` (most of
-  // the existing suite) keep their own viewport under these two projects --
-  // they still gain real engine and touch/UA coverage, just not the device's
-  // own viewport. e2e/mobile.spec.ts is the one spec that deliberately
-  // does *not* override the device viewport, so it alone exercises the real
-  // iPhone 13 / Pixel 7 dimensions end to end.
+  // `mobile-safari` (devices['iPhone 13']) is this suite's only WebKit
+  // coverage. `mobile-chrome` (devices['Pixel 7']) is this suite's only
+  // touch-enabled Chromium coverage -- `chromium` above runs Desktop
+  // Chrome with a mouse, never a touch pointer. A spec that calls
+  // `test.use({ viewport })` or `page.setViewportSize()` keeps that
+  // viewport under these two projects too -- it still gains real engine
+  // and touch/UA coverage, just not the device's own dimensions. A spec
+  // that never overrides the viewport (e2e/mobile.spec.ts, plus about a
+  // third of the rest of this directory, e.g. e2e/routes.spec.ts and
+  // e2e/interactive-controls.spec.ts) inherits each project's own
+  // viewport instead, so it runs at the real iPhone 13 / Pixel 7
+  // dimensions under these two.
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile-safari', use: { ...devices['iPhone 13'] } },

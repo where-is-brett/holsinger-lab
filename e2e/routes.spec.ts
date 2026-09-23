@@ -36,19 +36,20 @@ for (const path of CONTENT_ROUTES) {
     // "Publications", so `exact: true` disambiguates without scoping to
     // the nav landmark.
     //
-    // This spec never sets its own viewport, so it now also runs at the
-    // real device width of the mobile-safari/mobile-chrome projects
-    // (playwright.config.ts), below the `md` breakpoint where SiteChrome
-    // swaps the desktop nav for MobileHeader's "Menu" toggle (spec
-    // decision 3) -- the desktop "Publications" link is legitimately not
-    // in the accessibility tree there. Either form of navigation being
-    // visible proves the same thing this test cares about: primary
-    // navigation is reachable.
-    await expect(
-      page
-        .getByRole('link', { name: 'Publications', exact: true })
-        .or(page.getByRole('button', { name: 'Menu', exact: true }))
-    ).toBeVisible()
+    // This spec never sets its own viewport, so it runs at each project's
+    // own default -- including the real device widths of mobile-safari
+    // and mobile-chrome (playwright.config.ts), below the `md` breakpoint
+    // where SiteChrome swaps the desktop nav for MobileHeader's "Menu"
+    // toggle (spec decision 3). Branching on the real viewport width, not
+    // accepting either form unconditionally, keeps this a genuine check of
+    // each one: a regression that hid the desktop nav while still showing
+    // the Menu button below `md` would otherwise pass unnoticed.
+    const width = page.viewportSize()!.width
+    if (width < 768) {
+      await expect(page.getByRole('button', { name: 'Menu', exact: true })).toBeVisible()
+    } else {
+      await expect(page.getByRole('link', { name: 'Publications', exact: true })).toBeVisible()
+    }
   })
 }
 

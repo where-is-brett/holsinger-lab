@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 
+import { grantClipboardOrSkipWebkit, lastClipboardWrite, spyOnClipboardWrite } from './support/clipboard'
 import { e2eClient } from './support/sanity'
 
 // Located via `data-testid="facet-band"` (FacetBand.tsx). Facet-group label
@@ -150,28 +151,21 @@ test.describe('publications index', () => {
     context,
     browserName,
   }) => {
+    // Spying on `writeText` (rather than reading the clipboard back with
+    // `readText()`) proves the clipboard claim on every engine, including
+    // WebKit, which has no Permissions API entry for clipboard-read at all
+    // -- see e2e/support/clipboard.ts's own comment.
+    await spyOnClipboardWrite(page)
+    await grantClipboardOrSkipWebkit(context, browserName)
     await page.goto('/publications')
 
     const firstRow = page.locator('[data-testid="pub-row"]').first()
     const title = (await firstRow.getByTestId('pub-title').textContent())!.trim()
     const copyButton = firstRow.getByRole('button', { name: 'Copy citation' })
-    if (browserName === 'webkit') {
-      // `context.grantPermissions` doesn't support clipboard-write on
-      // WebKit, and WebKit has no Permissions API entry for clipboard-read
-      // either, so `readText()` always rejects there regardless of any
-      // grant. Measured: `writeText()` still resolves under WebKit with no
-      // permission granted at all, and the control shows "Copied" -- assert
-      // that, not the readback.
-      await copyButton.click()
-      await expect(copyButton).toHaveText(/Copied/)
-      return
-    }
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     await copyButton.click()
     await expect(copyButton).toHaveText(/Copied/)
 
-    const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
-    expect(clipboardText).toContain(title)
+    expect(await lastClipboardWrite(page)).toContain(title)
   })
 
   test("every row is partitioned by link kind, and each kind's identifier matches its data", async ({

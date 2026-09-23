@@ -602,7 +602,16 @@ test.describe('/preview/components gallery: home', () => {
     // the design working as intended, not a defect, so only the
     // non-touch projects exercise this half. The keyboard-focus half below
     // is unconditional: it doesn't depend on pointer hover capability.
-    if (!hasTouch) {
+    if (hasTouch) {
+      // Positively prove the `(hover: hover)` guard itself, rather than
+      // just skipping this half: hovering still moves the pointer under
+      // touch/mobile emulation, so if the guard ever stopped working the
+      // colour would change here too.
+      await link.hover()
+      const hoverColor = await name.evaluate((el) => getComputedStyle(el).color)
+      expect(hoverColor).toBe(restColor)
+      await page.mouse.move(0, 0)
+    } else {
       await link.hover()
       const hoverColor = await name.evaluate((el) => getComputedStyle(el).color)
       expect(hoverColor).not.toBe(restColor)

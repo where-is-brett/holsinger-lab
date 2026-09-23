@@ -60,9 +60,14 @@ export interface MobileBandProps {
   onHome?: () => void
   /**
    * Headless UI 2.x honours `data-autofocus` on an element inside the
-   * panel: passed only by the in-panel instance, so the dialog's initial
-   * focus lands on Close rather than the wordmark link that precedes it in
-   * DOM order.
+   * panel -- passed only by the in-panel instance -- but only on a fine
+   * (non-touch) pointer: `Dialog` folds its `InitialFocus` feature in only
+   * when `!useIsTouchDevice()` (`(pointer: coarse)`), so on a fine pointer
+   * the dialog's initial focus lands on Close rather than the wordmark
+   * link that precedes it in DOM order. On a coarse pointer that feature
+   * is dropped entirely and Headless UI's own fallback focuses the Dialog
+   * root instead (its deliberate touch behaviour, not something this
+   * component controls) -- `data-autofocus` has no effect there.
    */
   autoFocus?: boolean
 }

@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { grantClipboardOrSkipWebkit } from './support/clipboard'
+
 // Everything built in Tasks 4-8 is unrendered outside this route -- this
 // repo's Vitest config is node-only (see `**/*.test.ts`, no jsdom), so
 // rendering/interaction behaviour is deliberately proven here in Playwright
@@ -69,14 +71,7 @@ test.describe('redesign component gallery', () => {
   })
 
   test('copy-citation reports success and reverts', async ({ page, context, browserName }) => {
-    // `context.grantPermissions` doesn't support clipboard-write on WebKit
-    // (Playwright throws "Unknown permission: clipboard-write") -- measured
-    // (e2e/publication-page.spec.ts's copy-citation test) that
-    // `writeText()` still resolves under WebKit with no permission granted
-    // at all, so the grant is skipped there rather than failing the test.
-    if (browserName !== 'webkit') {
-      await context.grantPermissions(['clipboard-read', 'clipboard-write'])
-    }
+    await grantClipboardOrSkipWebkit(context, browserName)
     const button = page.getByRole('button', { name: /copy citation/i }).first()
     await button.click()
     await expect(page.getByText('✓ Copied')).toBeVisible()
