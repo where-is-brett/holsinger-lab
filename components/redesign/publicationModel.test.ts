@@ -77,6 +77,44 @@ describe('splitAuthors', () => {
     expect(r.pi).toBe('')
     expect(r.post).toBe('')
   })
+
+  // "Surname, Initials" -- the majority format on the real dataset. The
+  // comma right after the surname is the name's own internal separator,
+  // not the next author's, so the initials fold into the same bold run.
+  it('folds "Surname, Initials" into one bold token, at the end of the list', () => {
+    const r = splitAuthors('Olufunmilayo, E. and Holsinger, R.M.D.')
+    expect(r.pre).toBe('Olufunmilayo, E. and ')
+    expect(r.pi).toBe('Holsinger, R.M.D.')
+    expect(r.post).toBe('')
+  })
+
+  it('folds "Surname, Initials" into one bold token, mid-list', () => {
+    const r = splitAuthors('Quinn, J., Holsinger, RMD., Gov, E.')
+    expect(r.pre).toBe('Quinn, J., ')
+    expect(r.pi).toBe('Holsinger, RMD.')
+    expect(r.post).toBe(', Gov, E.')
+  })
+
+  it('does not fold the next author -- "Kiang K.M." is a name, not initials', () => {
+    const r = splitAuthors('Holsinger R.M.D., Kiang K.M.')
+    expect(r.pre).toBe('')
+    expect(r.pi).toBe('Holsinger R.M.D.')
+    expect(r.post).toBe(', Kiang K.M.')
+  })
+
+  it('folds space-separated "Surname, Initials" up to a semicolon', () => {
+    const r = splitAuthors('Holsinger, R. M. D.; X, Y.')
+    expect(r.pre).toBe('')
+    expect(r.pi).toBe('Holsinger, R. M. D.')
+    expect(r.post).toBe('; X, Y.')
+  })
+
+  it('does not fold a real given name after the comma', () => {
+    const r = splitAuthors('Holsinger, Damian')
+    expect(r.pre).toBe('')
+    expect(r.pi).toBe('Holsinger')
+    expect(r.post).toBe(', Damian')
+  })
 })
 
 describe('deriveLink', () => {
