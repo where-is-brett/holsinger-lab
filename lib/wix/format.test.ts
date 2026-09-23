@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { doiHref, formatCitationLine, formatMediaDate, mailtoHref, telHref, youtubeEmbedUrl } from './format'
+import { cleanLqip, doiHref, formatCitationLine, formatMediaDate, mailtoHref, telHref, youtubeEmbedUrl } from './format'
 
 describe('formatCitationLine (Wix: "Journal Year; vol(issue):pages.")', () => {
   it('full record', () => {
@@ -35,6 +35,29 @@ describe('hrefs are stega-clean and null-safe (Review Focus 5)', () => {
     expect(telHref('+612 9351 0876')).toBe('tel:+61293510876')
     expect(mailtoHref('')).toBeNull()
     expect(telHref(undefined)).toBeNull()
+  })
+})
+
+describe('cleanLqip (Task MOB2, Part C: defends against a hypothetical stega-corrupted blur placeholder)', () => {
+  const stega = '​‌‍⁠' // zero-width chars as stega encodes
+  it('strips stega characters inserted mid-payload, restoring a valid data URL', () => {
+    const clean = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB'
+    // stegaClean strips these characters wherever they land, not just at
+    // the edges -- splice some into the middle of the base64 payload. This
+    // scenario is hypothetical, not observed: see cleanLqip's own comment in
+    // lib/wix/format.ts for why the default stega filter already exempts
+    // `heroImageLqip` (denylisted field name, and a `data:` URL besides).
+    const corrupted = clean.slice(0, 30) + stega + clean.slice(30)
+    expect(cleanLqip(corrupted)).toBe(clean)
+  })
+  it('leaves an unannotated data URL untouched', () => {
+    const clean = 'data:image/jpeg;base64,/9j/4AAQSkZJRg=='
+    expect(cleanLqip(clean)).toBe(clean)
+  })
+  it('null/undefined/empty all become null', () => {
+    expect(cleanLqip(null)).toBeNull()
+    expect(cleanLqip(undefined)).toBeNull()
+    expect(cleanLqip('')).toBeNull()
   })
 })
 

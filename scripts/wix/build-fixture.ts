@@ -52,6 +52,19 @@ const PUBLICATION_YEARS: Record<string, number> = {
   'genome-wide-integrative-analysis': 2020,
 }
 
+// The real LQIP (blur placeholder) for the live hero photo -- a 20x15 PNG
+// Sanity itself generated from that asset, base64-encoded here -- not a
+// synthetic gradient. Its pixel colours are the actual hero photo's, so the
+// e2e contrast guard in e2e/wix-home.spec.ts (which falls back to measuring
+// the scrim against this placeholder when WIX_FIXTURE=1 makes the full
+// <img> 404) samples something representative rather than an arbitrary
+// placeholder or the section's own bg-black. Shared across every fake image
+// asset in the fixture rather than generated per-asset: only the hero's
+// LQIP is exercised by any guard, and one shared string keeps the fixture
+// simple and deterministic.
+const SHARED_LQIP =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAPCAYAAADkmO9VAAAACXBIWXMAABYlAAAWJQFJUiTwAAADK0lEQVQ4jS3RWW/bRhSG4RnOKsqOZe2SbUnWSlEbqSWO1zibk27ogjpF0RQtctGbBg16UbT//i0o6eJgOCT4zDfniOtphZuowHX/iKftJ2xODkkbh8SVA6KiZ17SrCqaZVY1w7SmqRcDwmNJcSTpfi0Z/yro/yiobgTi7arGQ3LE69kh96MDrtshy3qORTXPsh6yaVg2TcOyYUiahnFD02gEVAcB8XPHzU+ey98V84+CwaNAfJVWeBPneRV7Xo49L/uO25bjohlycZZn3XakLUvSscw6lkHH0IoUyzvPh48n/Plvh+8+5Xn2lyT9WyDezUvcdj3XXcNN13LXsdy2LJetkLSVZ9i09GqaKEt3aui1Dd1lwMO3If99Oufz5yH37w+Z/yZZ/SMR36zKPB/muG0b7k4tm5re9i2t55g0QjpFQ/soYFRULKqa+EQzuJBcPyoeHw94/fCE/o1h+F4w/UMg3qRl7qd57vuOqxPDvKyJjjWzpic5C5mXDemRYl1QXJU1q6pimEiiHwSz7yWjt9lgBMOfBZ0vBCKKjlgkIenMEWU9OtX0WoYozjGJQyZ1Q1JQbMqaq4ZhXdF0OgGnLyS9R8nwF8nwg6T1paQQBYjjOKS8sNQWhtLIUIo0pZmmvLaUE0uhpShWFPUzSztytAaOwrnhYKop3Snq7xTVV4rDqcLUNSKcO/xU4WOFHyv8XOGXGr9SuIXCDDVBW6MHDrvwuCSHjh1B7NAzh00dZuIIOgaxAy0uVtixwk4Ubq5wqcIlCpedGmuCiUNOPXLikWOHHLndmuaQq3D3nIGnBpGLLXassRk6VdhZgFsqfKq3+y04dcjZHhs65MAiRnYHPg2RC48YWGTPIXJzu4OmwTaRne0T7q+sBwrZ1oiOQfYsMtqnzQ5JPPIi3NXCb7+JcGO3P9vFHssqu24GpgrdC5B1tetPyyCzZHOPTHI76DaPvMrAHLJrEflLh3+md2gGZXC2ZimXCjNWyDONaGpke59y6BBZ0nUGHiA3ISJ7V1OI/JXDX2rcU4Vb72u5g7NJ24UhODdbULQ0omuRfYtoG0Q2nHWImPjdQIoB/wNRvoUJWcy/4gAAAABJRU5ErkJggg=='
+
 /** A fake, deterministic asset id in the shape Sanity would hand out. */
 function fakeAssetId(url: string): string {
   const hash = createHash('sha1').update(url).digest('hex').slice(0, 24)
@@ -175,10 +188,15 @@ export function buildFixtureDocs(
   }
 
   // Fake file-asset documents, so `video.asset->url` resolves in fixture mode.
+  // Fake image-asset documents, so `image.asset->metadata.lqip` (the hero's
+  // "heroImageLqip" projection in lib/wix/queries.ts) resolves too -- without
+  // this, every image reference dereferences to nothing and the LQIP is
+  // always null in fixture mode, which is exactly how CI runs.
   for (const url of assetUrls) {
     const id = assetIds[url]
-    if (id.startsWith('file-'))
-      docsById.set(id, { _id: id, _type: 'sanity.fileAsset', url })
+    if (id.startsWith('file-')) docsById.set(id, { _id: id, _type: 'sanity.fileAsset', url })
+    if (id.startsWith('image-'))
+      docsById.set(id, { _id: id, _type: 'sanity.imageAsset', url, metadata: { lqip: SHARED_LQIP } })
   }
 
   // planImport's project/profile/publication loops report-and-skip a

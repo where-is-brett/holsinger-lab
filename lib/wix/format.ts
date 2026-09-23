@@ -32,6 +32,25 @@ export function telHref(phone: string | null | undefined): string | null {
   return t ? `tel:${t}` : null
 }
 
+/**
+ * In draft mode / Presentation, `sanityFetch` runs with stega encoding on,
+ * which can insert invisible characters into string fields. `heroImageLqip`
+ * is NOT actually at risk under the default filter: `@sanity/client`'s
+ * `filterDefault` (node_modules/@sanity/client/dist/_chunks-es/
+ * stegaEncodeSourceMap.js, ~lines 215-292) skips any field named `lqip`
+ * outright (it's in the denylist) and, separately, skips any value that
+ * parses as a URL with an allowed protocol -- `data:` included -- so a
+ * `data:image/...;base64,...` LQIP is exempt twice over. This repo sets no
+ * custom `stega.filter`. `cleanLqip` is kept anyway as a cheap no-op on
+ * clean input and as defence against a future custom `stega.filter` or a
+ * changed default that removes one of those exemptions -- not because either
+ * is a live bug today.
+ */
+export function cleanLqip(v: string | null | undefined): string | null {
+  const c = clean(v)
+  return c || null
+}
+
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 export function formatMediaDate(date: string | null | undefined): string | null {
   if (!date) return null

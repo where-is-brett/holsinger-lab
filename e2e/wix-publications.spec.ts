@@ -39,11 +39,27 @@ test('no orphan punctuation in citation lines (Review Focus 4)', async ({ page }
   for (const l of lines) expect(l).not.toMatch(/;\s*\.|^\s*[;.]|\(\)/)
 })
 
-test('copy citation writes the plain-text citation to the clipboard and announces it', async ({ page, context }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+test('copy citation writes the plain-text citation to the clipboard and announces it', async ({ page, context, browserName }) => {
   const pubs = await expectedPublications()
   await page.goto('/publications')
   const firstEntry = page.locator('[data-wix="publication"]').first()
+  if (browserName === 'webkit') {
+    // `context.grantPermissions` doesn't support clipboard-write on WebKit
+    // (Playwright throws "Unknown permission: clipboard-write"), so this
+    // engine can't grant clipboard permission and can't read the clipboard
+    // back with navigator.clipboard.readText() either (WebKit also has no
+    // Permissions API entry for it). Measured empirically instead: under
+    // Playwright's synthetic .click() on WebKit, with no permission granted
+    // at all, navigator.clipboard.writeText() still resolves successfully
+    // and CitationActions shows "Copied" -- WebKit does not gate this write
+    // behind the same permission WebKit's own grantPermissions rejects, so
+    // (unlike Chromium) no explicit grant is needed for the write to
+    // succeed here. Assert that measured outcome, not the fallback text.
+    await firstEntry.getByRole('button', { name: 'Copy citation' }).click()
+    await expect(firstEntry.getByRole('status')).toHaveText('Copied')
+    return
+  }
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
   await firstEntry.getByRole('button', { name: 'Copy citation' }).click()
   await expect(firstEntry.getByRole('status')).toHaveText('Copied')
   const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
