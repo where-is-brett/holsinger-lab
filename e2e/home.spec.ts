@@ -355,6 +355,44 @@ test.describe('/preview/components gallery: home', () => {
     }
   })
 
+  test('"The lab" block: the PI name gets a colour reveal on hover and keyboard focus', async ({
+    page,
+  }) => {
+    // Fix round 3 (coordinator's finding 6): removing PersonCard-style
+    // portrait grayscale left `TheLabBlock`'s PI `Link` (`group`) with
+    // nothing to trigger, since the name span never had its own
+    // `group-hover:`/`group-focus-visible:` colour reveal the way
+    // PersonCard.tsx's own name `div` does -- the whole link silently lost
+    // all hover/focus feedback. `components/redesign/screens/Home.tsx`
+    // added the same `group-hover:text-link group-focus-visible:text-link`
+    // pair to the name span; this proves it actually fires, on both
+    // pointer and keyboard, so it can't silently regress again.
+    // `npm run css:proof` (grep for `group-hover\:text-link` and
+    // `group-focus-visible\:text-link` in the generated stylesheet)
+    // confirms those utilities are emitted.
+    await page.goto('/preview/components')
+    const a = page.getByTestId('gallery-home-a')
+    const link = a.getByTestId('home-lab-head-link')
+    const name = link.getByText('Dr Ilse Van Der Berg')
+
+    const restColor = await name.evaluate((el) => getComputedStyle(el).color)
+
+    await link.hover()
+    const hoverColor = await name.evaluate((el) => getComputedStyle(el).color)
+    expect(hoverColor).not.toBe(restColor)
+
+    // Blur first (hover alone can leave :focus-visible unset, but a fresh
+    // page load's own initial state is the real "at rest" baseline above --
+    // this just confirms the hover-triggered colour reverts before focus is
+    // tested, so the two states aren't confused with each other).
+    await page.mouse.move(0, 0)
+
+    await link.focus()
+    await expect(link).toBeFocused()
+    const focusColor = await name.evaluate((el) => getComputedStyle(el).color)
+    expect(focusColor).not.toBe(restColor)
+  })
+
   // Fix round 1, IMPORTANT 1: instance (b) is the exact shape of the bug
   // this fixes -- labHead set, showLabHeadOnHome false. No PI panel, and
   // the PI must now count as an ordinary member: (b)'s count is (a)'s

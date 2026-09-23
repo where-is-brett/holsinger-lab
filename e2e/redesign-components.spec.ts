@@ -226,6 +226,41 @@ test.describe('redesign component gallery', () => {
     await expect(jiyooCard.locator('img')).toHaveCount(0)
   })
 
+  test('PersonCard: the portrait renders in full colour at rest, not greyscale', async ({
+    page,
+  }) => {
+    // Brett's review (fix/research-description-fallback): portraits must
+    // never render in black-and-white anywhere, not even briefly before a
+    // hover/focus reveal -- PersonCard.tsx's `IMAGE_FILTER` (which carried
+    // `grayscale contrast-[1.04]` lifted only on `group-hover:`/
+    // `group-focus-visible:`) was replaced with a plain `PORTRAIT_IMAGE_CLASS`
+    // of `object-cover` alone. This asserts the *unhovered, unfocused*
+    // portrait's computed `filter` is the CSS default `none` -- the direct
+    // negative of the old grayscale-at-rest treatment this test replaces.
+    const section = page.getByTestId('gallery-person-card')
+    const img = section.getByRole('img', { name: 'Haochen Wu' })
+    await expect(img).toBeVisible()
+    const filter = await img.evaluate((el) => getComputedStyle(el).filter)
+    expect(filter).toBe('none')
+
+    // Coordinator's fix round 2: also check the *linked* card (Élodie
+    // Ñúñez's -- `href` set, `PersonCard`'s own `group`/`group-hover:`/
+    // `group-focus-visible:` branch), since a reveal is most plausible to
+    // get reintroduced exactly there, where a `group` wrapper already
+    // exists for the name's own colour reveal (a future edit could too
+    // easily bolt a `group-hover:grayscale-0`-style pair back onto the
+    // image, matching the name's pattern, without anyone noticing it
+    // reintroduces a hidden-at-rest state). Unhovered, unfocused, its
+    // portrait's computed `filter` must be `none` too. The linked card's
+    // image is `alt=""` (decorative -- PersonCard.tsx's own `href` branch,
+    // asserted separately below), so it's found via the link's accessible
+    // name, not `getByRole('img', ...)`.
+    const linkedImg = section.getByRole('link', { name: 'Élodie Ñúñez' }).locator('img')
+    await expect(linkedImg).toBeVisible()
+    const linkedFilter = await linkedImg.evaluate((el) => getComputedStyle(el).filter)
+    expect(linkedFilter).toBe('none')
+  })
+
   test('PersonCard: detail renders as a second mono line under role, only when present', async ({
     page,
   }) => {
@@ -253,8 +288,10 @@ test.describe('redesign component gallery', () => {
     page,
   }) => {
     // Carried Task 1 review minor (c): group-focus-visible: pairs mirror
-    // group-hover: on both the portrait filter and the name colour, so
-    // keyboard users get the identical reveal a mouse hover gives.
+    // group-hover: on the name colour, so keyboard users get the identical
+    // reveal a mouse hover gives. (The portrait no longer has a filter
+    // reveal at all -- Brett's review, fix/research-description-fallback --
+    // so only the name's colour is exercised here now.)
     const section = page.getByTestId('gallery-person-card')
     const link = section.getByRole('link', { name: 'Élodie Ñúñez' })
     await link.focus()
