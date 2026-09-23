@@ -606,8 +606,17 @@ test.describe('/preview/components gallery: home', () => {
       // Positively prove the `(hover: hover)` guard itself, rather than
       // just skipping this half: hovering still moves the pointer under
       // touch/mobile emulation, so if the guard ever stopped working the
-      // colour would change here too.
+      // colour would change here too. Settles for the name span's own
+      // `duration-(--sem-motion-fast)` transition (styles/index.css) before
+      // reading -- otherwise a colour change that fires just after this
+      // read, not because of hover, would go undetected and this would
+      // pass even if the `(hover: hover)` guard broke (measured: without a
+      // settle, this read can land mid-transition either way).
       await link.hover()
+      const transitionMs = await page.evaluate(() =>
+        Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sem-motion-fast')) || 120
+      )
+      await page.waitForTimeout(transitionMs + 200)
       const hoverColor = await name.evaluate((el) => getComputedStyle(el).color)
       expect(hoverColor).toBe(restColor)
       await page.mouse.move(0, 0)
@@ -625,8 +634,13 @@ test.describe('/preview/components gallery: home', () => {
 
     await link.focus()
     await expect(link).toBeFocused()
-    const focusColor = await name.evaluate((el) => getComputedStyle(el).color)
-    expect(focusColor).not.toBe(restColor)
+    // `expect.poll`, not a one-shot read: the name span's colour change is
+    // transition-driven (`duration-(--sem-motion-fast)`), and on WebKit a
+    // read taken immediately after `focus()` can land before the
+    // transition has actually started -- measured: this one-shot read
+    // failed 5/30 repeats on mobile-safari; polling until the colour
+    // differs (or the assertion's own timeout elapses) passed 30/30.
+    await expect.poll(() => name.evaluate((el) => getComputedStyle(el).color)).not.toBe(restColor)
   })
 
   // Instance (b): labHead set, showLabHeadOnHome false. No lab-head card,
