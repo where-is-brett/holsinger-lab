@@ -49,7 +49,7 @@ export interface ResearchProjectCover {
 export interface ResearchProjectView {
   id: string
   title: string
-  /** The rail label: the first tag, or "Project" when there are none. */
+  /** The section label: the first tag, or "Project" when there are none. */
   label: string
   /** `researchKicker`'s own output ("Since {year}", category, both, or ""). */
   kicker: string

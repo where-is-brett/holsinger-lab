@@ -54,7 +54,22 @@ test.describe('/resources', () => {
 
     await page.goto('/resources')
     const meta = await page.getByTestId('page-title-meta').innerText()
-    expect(meta).toBe(`${n} RESOURCE${n === 1 ? '' : 'S'}`)
+    expect(meta).toBe(`${n} resource${n === 1 ? '' : 's'}`)
+  })
+
+  // `kind` is a lower-case schema enum (`schemas/documents/resource.ts`'s
+  // `RESOURCE_KINDS`); the section label must render it through `kindLabel`
+  // (resourceModel.ts) in sentence case, never the raw enum value.
+  test('each section-label starts with an upper-case letter', async ({ page }) => {
+    const resources = await fetchLiveResources()
+    test.skip(resources.length === 0, 'no resource documents in this dataset')
+
+    await page.goto('/resources')
+    const labels = await page.getByTestId('section-label').allTextContents()
+    expect(labels.length).toBeGreaterThan(0)
+    for (const label of labels) {
+      expect(label[0], `"${label}" doesn't start with an upper-case letter`).toBe(label[0].toUpperCase())
+    }
   })
 
   test('each linked publication SOURCE link goes to /publications/<slug>', async ({ page }) => {
@@ -98,6 +113,15 @@ test.describe('/preview/components gallery: resources', () => {
 
     const titles = await section.getByTestId('resource-block-title').allTextContents()
     expect(titles.length).toBe(4)
+
+    // Production has zero resources today, so this fixture is the only
+    // guaranteed place the sentence-case kind label actually renders --
+    // see the live `/resources` test's identical check above.
+    const labels = await section.getByTestId('section-label').allTextContents()
+    expect(labels.length).toBeGreaterThan(0)
+    for (const label of labels) {
+      expect(label[0], `"${label}" doesn't start with an upper-case letter`).toBe(label[0].toUpperCase())
+    }
 
     // The howToObtain portable-text link renders as a real anchor inside the
     // gallery's resource fixture, not just as its own plain-text run.

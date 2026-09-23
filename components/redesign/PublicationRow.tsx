@@ -25,15 +25,19 @@ export interface PublicationRowProps {
 // property references, so there's no var()-wrapping trap here (see
 // tokens.ts's PRESS comment for the trap itself).
 //
-// Grid only from `lg` (spec §4.1 / ruling in §7): the 4-column ledger needs
-// ~700px of content box, which the `md` rail layout doesn't leave. Below
-// `lg` the container is a plain block (no `grid`/`flex` utility at all --
-// that's the initial value, so there is nothing to set and nothing that
-// could collide with the `lg:` triad below).
+// Grid only from `xl` (spec §4.1 / ruling in §7): the 4-column ledger
+// needs ~700px of content box for its title track alone not to collide
+// with the journal column -- `Section`'s own content column at `lg` is
+// only ~728px at 1024px, leaving too little room. Below `xl` the
+// container is a plain block (the initial value, so nothing could collide
+// with the `xl:` triad below).
 const GRID = PUBLICATION_GRID
 // The mobile "year — journal ref" kicker line, shared by every non-narrow
-// variant below `lg`. Same anatomy as the `narrow` branch's kicker.
-const KICKER = 'font-mono text-[10px] leading-[1.4] font-medium tracking-[0.06em] uppercase'
+// variant below `xl`. Same anatomy as the `narrow` branch's kicker. No
+// `uppercase`: the journal name is CMS data and must print verbatim
+// (constraints.md); the year beside it is styled via `text-accent`, not
+// case.
+const KICKER = 'font-mono text-[10px] leading-[1.4] font-medium tracking-[0.06em]'
 
 // The row is the hover target, never a click target -- only the title (an
 // optional <button>) is. `group` on the row pairs with `group-hover:` on the
@@ -130,7 +134,10 @@ function Identifier({
   return (
     <span className={`font-mono ${fontSize} leading-[1.5] break-all`}>
       <span className="text-text-faint">{pub.linkKind} </span>
-      <a className={IDENTIFIER} href={pub.linkHref} data-identifier>
+      {/* `data-cms-verbatim`: a DOI/URL is case-sensitive CMS data, not a
+          label -- the label-budget e2e's source-caps check skips anything
+          inside this marker (or `[data-identifier]`'s). */}
+      <a className={IDENTIFIER} href={pub.linkHref} data-identifier data-cms-verbatim>
         {label}
       </a>
     </span>
@@ -156,7 +163,9 @@ export function PublicationRow({
       <div className="group border-t border-rule py-[13px]">
         <div className={KICKER}>
           <span className="text-accent">{pub.year}</span>
-          <span className="text-text-faint">
+          {/* `data-cms-verbatim`: the journal name is CMS data, not a
+              label -- see Identifier()'s own comment above. */}
+          <span className="text-text-faint" data-cms-verbatim>
             {' '}
             — {pub.journal} {pub.ref}
           </span>
@@ -181,7 +190,7 @@ export function PublicationRow({
         {pub.linkHref !== '' && (
           <div className="relative mt-1.5 truncate font-mono text-[9.5px] leading-[1.4]">
             <span className="text-text-faint">{pub.linkKind} </span>
-            <a className={IDENTIFIER} href={pub.linkHref} data-identifier>
+            <a className={IDENTIFIER} href={pub.linkHref} data-identifier data-cms-verbatim>
               {pub.linkLabel}
             </a>
           </div>
@@ -192,9 +201,9 @@ export function PublicationRow({
 
   // Below, the responsive stacked-to-grid anatomy shared by `home` and both
   // `index` densities (spec §4.1, Task 3 brief point 2): one DOM tree per
-  // variant, container classes switch to the ledger grid at `lg` (`GRID`),
+  // variant, container classes switch to the ledger grid at `xl` (`GRID`),
   // and every element sets `display` at most once per breakpoint --
-  // unprefixed for its stacked-anatomy role, `lg:` for its ledger-cell role
+  // unprefixed for its stacked-anatomy role, `xl:` for its ledger-cell role
   // -- so no same-property pair can ever collide. The title element is
   // never duplicated (only its href/onOpen wiring changes); every other
   // paired element (year, journal/meta) is duplicated intentionally, once
@@ -204,12 +213,12 @@ export function PublicationRow({
   if (variant === 'home') {
     return (
       <div className={`${ROW} items-baseline py-(--spacing-row)`}>
-        <span className="hidden font-mono text-[13px] leading-[1.5] font-medium text-accent lg:block">
+        <span className="hidden font-mono text-[13px] leading-[1.5] font-medium text-accent xl:block">
           {pub.year}
         </span>
-        <div className={`${KICKER} lg:hidden`}>
+        <div className={`${KICKER} xl:hidden`}>
           <span className="text-accent">{pub.year}</span>
-          <span className="text-text-faint">
+          <span className="text-text-faint" data-cms-verbatim>
             {' '}
             — {pub.journal} {pub.ref}
           </span>
@@ -218,23 +227,23 @@ export function PublicationRow({
           pub={pub}
           href={href}
           onOpen={onOpen}
-          className="mt-1.5 lg:mt-0 lg:pr-3 text-[17.5px] leading-[1.35] font-semibold tracking-[-0.005em] text-pretty"
+          className="mt-1.5 xl:mt-0 xl:pr-3 text-[17.5px] leading-[1.35] font-semibold tracking-[-0.005em] text-pretty"
         />
-        <span className="hidden font-mono text-[12.5px] leading-[1.5] text-text-muted lg:block">
+        <span className="hidden font-mono text-[12.5px] leading-[1.5] text-text-muted xl:block" data-cms-verbatim>
           {pub.journal} {pub.ref}
         </span>
         {/* `relative` (see the HIT_AREA comment in tokens.ts and the `narrow`
-            branch's identical comment below) -- below `lg` this identifier
+            branch's identical comment below) -- below `xl` this identifier
             sits directly under the title with nothing else between them, so
             it's the element most exposed to the title's overhanging 44px
             hit area. Promoting it to a positioned element makes it paint
             after (on top of) the title's pseudo in the overlap band,
-            keeping the DOI/URL link tappable. `mt-1.5 lg:mt-0`: real
-            vertical rhythm below `lg` (matching the narrow branch), reset
+            keeping the DOI/URL link tappable. `mt-1.5 xl:mt-0`: real
+            vertical rhythm below `xl` (matching the narrow branch), reset
             to nothing once the grid takes over and column gap does the
             spacing instead. */}
         {pub.linkHref !== '' && (
-          <div className="relative mt-1.5 lg:mt-0">
+          <div className="relative mt-1.5 xl:mt-0">
             <Identifier pub={pub} fontSize="text-[12px]" label={pub.linkLabel} />
           </div>
         )}
@@ -245,12 +254,12 @@ export function PublicationRow({
   if (density === 'compact') {
     return (
       <div className={`${ROW} items-baseline py-[10px]`}>
-        <span className="hidden font-mono text-[12px] leading-[1.5] font-medium text-accent lg:block">
+        <span className="hidden font-mono text-[12px] leading-[1.5] font-medium text-accent xl:block">
           {pub.year}
         </span>
-        <div className={`${KICKER} lg:hidden`}>
+        <div className={`${KICKER} xl:hidden`}>
           <span className="text-accent">{pub.year}</span>
-          <span className="text-text-faint">
+          <span className="text-text-faint" data-cms-verbatim>
             {' '}
             — {pub.journal} {pub.ref}
           </span>
@@ -259,19 +268,22 @@ export function PublicationRow({
           pub={pub}
           href={href}
           onOpen={onOpen}
-          className="mt-1.5 lg:mt-0 lg:truncate lg:pr-3 text-[14.5px] leading-[1.5] font-semibold tracking-[-0.005em]"
+          className="mt-1.5 xl:mt-0 xl:truncate xl:pr-3 text-[14.5px] leading-[1.5] font-semibold tracking-[-0.005em]"
         />
-        <span className="hidden truncate font-mono text-[11.5px] leading-[1.6] text-text-muted lg:block">
+        <span
+          className="hidden truncate font-mono text-[11.5px] leading-[1.6] text-text-muted xl:block"
+          data-cms-verbatim
+        >
           {pub.journal} · {pub.ref}
         </span>
-        {/* `relative` + `mt-1.5 lg:mt-0`: same title-hit-area protection and
+        {/* `relative` + `mt-1.5 xl:mt-0`: same title-hit-area protection and
             stacked-rhythm reset as the `home` branch above -- this row is
             the identifier/CopyCitation block for `compact`. */}
-        <span className="relative mt-1.5 flex items-baseline gap-2.5 whitespace-nowrap font-mono text-[11px] leading-[1.6] lg:mt-0">
+        <span className="relative mt-1.5 flex items-baseline gap-2.5 whitespace-nowrap font-mono text-[11px] leading-[1.6] xl:mt-0">
           {pub.linkHref !== '' && (
             <span className="overflow-hidden text-ellipsis">
               <span className="text-text-faint">{pub.linkKind} </span>
-              <a className={IDENTIFIER} href={pub.linkHref} data-identifier>
+              <a className={IDENTIFIER} href={pub.linkHref} data-identifier data-cms-verbatim>
                 {pub.linkLabelShort || pub.linkLabel}
               </a>
             </span>
@@ -284,17 +296,17 @@ export function PublicationRow({
 
   return (
     <div className={`${ROW} items-start py-(--spacing-row)`}>
-      <span className="hidden font-mono text-[13px] leading-[1.5] font-medium text-accent lg:block">
+      <span className="hidden font-mono text-[13px] leading-[1.5] font-medium text-accent xl:block">
         {pub.year}
       </span>
-      <div className={`${KICKER} lg:hidden`}>
+      <div className={`${KICKER} xl:hidden`}>
         <span className="text-accent">{pub.year}</span>
-        <span className="text-text-faint">
+        <span className="text-text-faint" data-cms-verbatim>
           {' '}
           — {pub.journal} {pub.ref}
         </span>
       </div>
-      <div className="mt-1.5 flex flex-col gap-[7px] lg:mt-0 lg:pr-3">
+      <div className="mt-1.5 flex flex-col gap-[7px] xl:mt-0 xl:pr-3">
         <Title
           pub={pub}
           href={href}
@@ -306,25 +318,30 @@ export function PublicationRow({
           <strong className="font-semibold text-text">{pub.authorsPI}</strong>
           {pub.authorsPost}
         </div>
+        {/* Sentence-case Archivo, not uppercase mono: `tagLine` joins the
+            publication's own `type` and CMS `topics`, which must print
+            verbatim (constraints.md). `data-cms-verbatim`: marked
+            defensively in case a future size tweak brings it under the
+            budget's <=12px gate. */}
         {tagLine(pub) !== '' && (
-          <div className="font-mono text-[10px] leading-[1.6] font-medium tracking-[0.1em] text-text-faint uppercase">
+          <div className="text-[13px] leading-[1.6] font-medium text-text-faint" data-cms-verbatim>
             {tagLine(pub)}
           </div>
         )}
       </div>
-      <div className={`hidden lg:block ${META}`}>
+      <div className={`hidden xl:block ${META}`} data-cms-verbatim>
         {pub.journal}
         <br />
         {pub.ref}
       </div>
-      {/* `relative` + `mt-1.5 lg:mt-0`: same title-hit-area protection and
+      {/* `relative` + `mt-1.5 xl:mt-0`: same title-hit-area protection and
           stacked-rhythm reset as the `home`/`compact` branches above -- this
           is the identifier/CopyCitation block for comfortable density. It
           isn't always the element directly under the title (the authors
           and tag lines usually sit between them), but the tag line is
           conditional and titles vary in height, so this stays defensive
           rather than relying on there always being a buffer. */}
-      <div className="relative mt-1.5 flex flex-col items-start gap-2.5 lg:mt-0">
+      <div className="relative mt-1.5 flex flex-col items-start gap-2.5 xl:mt-0">
         <Identifier pub={pub} fontSize="text-[11.5px]" label={pub.linkLabel} />
         <CopyCitation cite={pub.cite} />
       </div>

@@ -219,16 +219,12 @@ test.describe('/', () => {
     expect(await readMemberCount(block)).toBe(expected)
   })
 
-  // Fix round 1, IMPORTANT 1: cross-checks Home's own rendered count
-  // against /people's own rendered "N CURRENT MEMBERS" meta, rather than
-  // re-deriving the same rule a second time (which couldn't have caught
-  // the original bug -- both implementations agreed with each other while
-  // disagreeing with /people). Only compared when the two pages' lab-head
-  // visibility flags agree (both pages then exclude, or both include, the
-  // same person) and both member-count elements are actually rendered --
-  // when the flags genuinely differ, the two pages are allowed to show
-  // different numbers (one page's PI is visible there and not the other),
-  // which is a valid configuration, not a bug.
+  // Cross-checks Home's own rendered count against /people's own rendered
+  // "N current members" meta, rather than re-deriving the same rule a
+  // second time -- two independent implementations agreeing is a stronger
+  // signal than one re-derivation agreeing with itself. Only compared when
+  // the two pages' lab-head visibility flags agree; when they genuinely
+  // differ, the pages are allowed to show different numbers.
   test("the current-member count equals /people's own rendered count, whenever the two pages' lab-head visibility agree and both blocks are visible", async ({
     page,
   }) => {
@@ -243,7 +239,7 @@ test.describe('/', () => {
     const peopleResponse = await page.goto('/people')
     test.skip(peopleResponse?.status() !== 200, '/people 404s under current settings (showPeople is false)')
     const peopleMeta = await page.getByTestId('page-title-meta').innerText()
-    const match = peopleMeta.match(/(\d+)\s+CURRENT MEMBERS?/)
+    const match = peopleMeta.match(/(\d+)\s+current members?/i)
     test.skip(!match, `/people's meta "${peopleMeta}" has no "N CURRENT MEMBER(S)" segment`)
     const peopleCount = Number(match![1])
 
@@ -275,6 +271,34 @@ test.describe('/', () => {
       })
     }
   })
+
+  // The document-level `scrollWidth`-vs-`clientWidth` check above cannot
+  // see a cell that overflows its own grid track without ever growing the
+  // page past the viewport, so this checks each publication row's cells
+  // directly. Home only ever renders the comfortable-density `home`
+  // variant, so there's no need to exempt a truncating compact mode here.
+  test.describe('publication ledger cells never overflow their own track', () => {
+    for (const width of [1024, 1280, 1440]) {
+      test(`at ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 })
+        await page.goto('/')
+        const overflowing = await page.evaluate(() => {
+          const rows = document.querySelectorAll('[data-testid="pub-row"]')
+          const found: { tag: string; text: string; overflowPx: number }[] = []
+          for (const row of rows) {
+            for (const el of row.querySelectorAll('*')) {
+              const overflowPx = el.scrollWidth - el.clientWidth
+              if (overflowPx > 1) {
+                found.push({ tag: el.tagName, text: (el.textContent ?? '').slice(0, 60), overflowPx })
+              }
+            }
+          }
+          return found
+        })
+        expect(overflowing, JSON.stringify(overflowing)).toEqual([])
+      })
+    }
+  })
 })
 
 test.describe('/preview/components gallery: home', () => {
@@ -287,7 +311,7 @@ test.describe('/preview/components gallery: home', () => {
 
     // Instance (a): fixtures.ts's HOME_* constants set every optional
     // block: a labHead (no portrait), one resource, the maestro project,
-    // and a support page -- so all five numbered blocks render at once,
+    // and a support page -- so all five `Section` blocks render at once,
     // which live data (no resource, no labHead) never does.
     const a = section.getByTestId('gallery-home-a')
     await expect(a.getByTestId('home-pi-panel')).toBeVisible()
@@ -301,6 +325,34 @@ test.describe('/preview/components gallery: home', () => {
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
     )
     expect(fits).toBe(true)
+  })
+
+  // The publication ledger's `xl:` grid activates on *viewport* width, not
+  // the gallery's own demo-frame width, so this applies the same per-row
+  // overflow check used against the live `/` route above to the gallery
+  // fixtures at the same breakpoints.
+  test.describe('publication ledger cells never overflow their own track', () => {
+    for (const width of [1280, 1440]) {
+      test(`at ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 })
+        await page.goto('/preview/components')
+        const overflowing = await page.evaluate(() => {
+          const section = document.querySelector('[data-testid="gallery-home"]')
+          const found: { tag: string; text: string; overflowPx: number }[] = []
+          if (!section) return found
+          for (const row of section.querySelectorAll('[data-testid="pub-row"]')) {
+            for (const el of row.querySelectorAll('*')) {
+              const overflowPx = el.scrollWidth - el.clientWidth
+              if (overflowPx > 1) {
+                found.push({ tag: el.tagName, text: (el.textContent ?? '').slice(0, 60), overflowPx })
+              }
+            }
+          }
+          return found
+        })
+        expect(overflowing, JSON.stringify(overflowing)).toEqual([])
+      })
+    }
   })
 
   test('"The lab" block: the PI name gets a colour reveal on hover and keyboard focus', async ({

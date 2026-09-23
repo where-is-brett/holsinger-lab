@@ -13,7 +13,7 @@ const GALLERY_SECTIONS = [
   'button',
   'copy-citation',
   'page-title',
-  'section-rail',
+  'section',
   'publication-row',
   'facet-band',
   'person-card',
@@ -53,18 +53,13 @@ test.describe('redesign component gallery', () => {
       const href = await el.getAttribute('href')
       // The rendered label must not have been case-transformed. `href`
       // containment only applies to identifiers that are *links to that
-      // identifier* (a DOI/URL anchor, always an absolute `http(s)` URL) --
-      // fix round 1 adds two `data-identifier` cases this doesn't cover:
-      // the citation box's cite string (plain text, no `href` at all -- per
-      // the Task 5 brief, "a bordered box with the cite text
-      // (data-identifier, mono)") and ResourceBlock's `MORE` meta entry
-      // (per the same brief: `{ label: 'MORE', value: 'Resources', href:
-      // '/resources' }` -- a same-site navigational link whose label is a
-      // human word, not the href repeated back). Both are legitimately
-      // `data-identifier` (verbatim, never-uppercased text) without being
-      // "the href must contain the label" identifiers -- distinguished
-      // here by `href` starting with `/` (same-site nav) vs `http` (an
-      // actual DOI/URL identifier).
+      // identifier* (a DOI/URL/mailto/tel anchor whose label is the
+      // identifier itself); the citation box's cite string is plain text
+      // with no `href` at all, so it's exempt from the containment check
+      // but still checked for case. Every `data-identifier` element's
+      // `href` is either absent (the cite string) or contains the
+      // identifier text, so the `href !== null` branch below is only ever
+      // an `http(s)`, `mailto:` or `tel:` link.
       if (href !== null && !href.startsWith('/')) {
         // the href must carry the full identifier even when the label is truncated.
         expect(href).toContain(text.replace(/^https?:\/\//, '').replace(/^www\./, ''))
@@ -77,8 +72,8 @@ test.describe('redesign component gallery', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     const button = page.getByRole('button', { name: /copy citation/i }).first()
     await button.click()
-    await expect(page.getByText('✓ COPIED')).toBeVisible()
-    await expect(page.getByText('✓ COPIED')).toBeHidden({ timeout: 4000 })
+    await expect(page.getByText('✓ Copied')).toBeVisible()
+    await expect(page.getByText('✓ Copied')).toBeHidden({ timeout: 4000 })
   })
 
   test('facet chips filter and clear, with live counts through countBy/applyFacets', async ({
@@ -146,24 +141,28 @@ test.describe('redesign component gallery', () => {
     expect(text).not.toMatch(/^(DOI|URL)\s/m)
   })
 
-  test('PublicationRow: comfortable index row is a grid from lg, stacked below lg', async ({
+  test('PublicationRow: comfortable index row is a grid from xl, stacked below xl', async ({
     page,
   }) => {
+    // The ledger's own grid activates at `xl` (tokens.ts's
+    // `PUBLICATION_GRID`), not `lg` -- `Section`'s narrower `lg` content
+    // column leaves too little room for the title track between 1024 and
+    // ~1090px.
     const row = page.locator('[data-testid="publication-row-comfortable"] > div').first()
 
-    await page.setViewportSize({ width: 1024, height: 900 })
+    await page.setViewportSize({ width: 1280, height: 900 })
     await expect(row).toHaveCSS('display', 'grid')
 
-    await page.setViewportSize({ width: 900, height: 900 })
+    await page.setViewportSize({ width: 1100, height: 900 })
     await expect(row).not.toHaveCSS('display', 'grid')
   })
 
-  test('PublicationRow: comfortable index row still shows authors and CopyCitation below lg', async ({
+  test('PublicationRow: comfortable index row still shows authors and CopyCitation below xl', async ({
     page,
   }) => {
-    // Fix round 1: the journal column collapses into the mobile kicker
-    // below `lg`, but the authors line and CopyCitation control must not --
-    // this settles it with a live viewport check, not just markup presence.
+    // The journal column collapses into the mobile kicker below `xl`, but
+    // the authors line and CopyCitation control must not -- this settles it
+    // with a live viewport check, not just markup presence.
     await page.setViewportSize({ width: 900, height: 900 })
     const row = page.locator('[data-testid="publication-row-comfortable"] > div').first()
 
@@ -214,18 +213,16 @@ test.describe('redesign component gallery', () => {
   }) => {
     const section = page.getByTestId('gallery-person-card')
     await expect(section.getByRole('img', { name: 'Haochen Wu' })).toBeVisible()
-    // The fallback case: no <img>, initials + "NO PORTRAIT ON FILE" instead.
-    // Several fixture cards use the fallback, so this is scoped to Jiyoo
-    // Choi's card specifically -- found via her unique role text, then
-    // walked up to the card's own wrapping div -- rather than asserting on
-    // the page-wide (non-unique) "NO PORTRAIT ON FILE" / "JC" text alone,
-    // which could pass even if a different card's fallback rendered instead
-    // of hers.
+    // The fallback case: no <img>, initials tile only. Several fixture
+    // cards use the fallback, so this is scoped to Jiyoo Choi's card
+    // specifically -- found via her unique role text, then walked up to the
+    // card's own wrapping div -- rather than asserting on the page-wide
+    // (non-unique) "JC" text alone, which could pass even if a different
+    // card's fallback rendered instead of hers.
     const jiyooRole = section.getByText('Ungergraduate student - Diagnostic Radiography')
     await expect(jiyooRole).toBeVisible()
     const jiyooCard = jiyooRole.locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " group ")][1]')
     await expect(jiyooCard.getByText('JC')).toBeVisible()
-    await expect(jiyooCard.getByText('[ NO PORTRAIT ON FILE ]')).toBeVisible()
     await expect(jiyooCard.locator('img')).toHaveCount(0)
   })
 
@@ -390,7 +387,7 @@ test.describe('redesign component gallery', () => {
 
   // Carried assertion (Task 3 brief): the number of `people-section-title`
   // headings actually rendered must equal `g`, the group count baked into
-  // PageTitle's own meta string ("LAB HEAD + N CURRENT MEMBERS · G GROUPS")
+  // PageTitle's own meta string ("Lab head + N current members · G groups")
   // -- People.tsx's `g` is derived by counting titled member sections
   // (peopleModel.ts's `groupByRoleGroup`/`splitAlumni`), and this is the
   // one place that number is checked against what the DOM actually shows,
@@ -400,7 +397,7 @@ test.describe('redesign component gallery', () => {
   }) => {
     const instance = page.getByTestId('gallery-people-a')
     const meta = await instance.getByTestId('page-title-meta').innerText()
-    const match = meta.match(/(\d+)\s+GROUPS?/)
+    const match = meta.match(/(\d+)\s+groups?/i)
     expect(match, `meta "${meta}" has no "N GROUP(S)" segment`).not.toBeNull()
     const expectedGroups = Number(match![1])
     await expect(instance.getByTestId('people-section-title')).toHaveCount(expectedGroups)

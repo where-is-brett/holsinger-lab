@@ -6,6 +6,14 @@ export interface ResourceBlockMeta {
   label: string
   value: string
   href?: string
+  /**
+   * True when `value` is CMS or identifier data (a DOI, a URL, a source
+   * ref) that must print verbatim -- gets `data-identifier`/
+   * `data-cms-verbatim` so the label-budget e2e's source-caps check
+   * exempts it (see PublicationRow.tsx's Identifier() comment). Omit/false
+   * for hard-coded UI copy so an all-caps regression there is still caught.
+   */
+  identifier?: boolean
 }
 
 export interface ResourceBlockProps {
@@ -25,11 +33,13 @@ export interface ResourceBlockProps {
 // Purely presentational, no state or handlers -- no 'use client'.
 
 // Meta values print VERBATIM -- a DOI is a case-sensitive identifier.
-// Labels are uppercased by style; values are not. `normal-case!` is
-// Tailwind 4's trailing-bang form, emitting `text-transform: none
-// !important` -- reproducing components.css's `.hl-identifier` guard (same
-// technique as PublicationRow.tsx's IDENTIFIER constant) so an ambient
-// uppercasing context can never mangle an identifier.
+// Labels (`Kind`/`Source`/`DOI`) are sentence-case `<dt>`s (spec §1.5) --
+// a definition-list pairing reads better to assistive tech than an
+// unstructured `<span>` beside a value. `normal-case!` is Tailwind 4's
+// trailing-bang form, emitting `text-transform: none !important` --
+// reproducing components.css's `.hl-identifier` guard (same technique as
+// PublicationRow.tsx's IDENTIFIER constant) so an ambient uppercasing
+// context can never mangle an identifier.
 //
 // Fix round 1: a realistic DOI (e.g.
 // "10.1016/j.neurobiolaging.2023.04.012", 38 characters, no internal
@@ -79,27 +89,50 @@ export function ResourceBlock({ title, meta = [], figureLabel, children }: Resou
             (its own fix-round-1 comment) -- a single long unbreakable word
             in `title` can be wider than this column at 320px, and
             `break-words` (`overflow-wrap: break-word`) is a different
-            property than anything else already set here, so it's additive. */}
-        <div
+            property than anything else already set here, so it's additive.
+            A real `<h2>`, not a `<div>`: each resource section otherwise
+            has no heading of its own (`Resources.tsx` labels it with a
+            `<p>`, not an `<h2>`, since two resources can share a kind). The
+            other two call sites (`Home.tsx`'s Resources block,
+            `PublicationPage.tsx`'s Resource block) already wrap this in a
+            `Section` whose own label is an `<h2>`, so a sibling `<h2>` here
+            doesn't skip or duplicate a level. */}
+        <h2
           data-testid="resource-block-title"
           className="max-w-[640px] text-heading font-semibold break-words"
         >
           {title}
-        </div>
-        <div className="mt-[26px] flex flex-col gap-2.5 font-mono text-[12.5px] leading-[1.5]">
+        </h2>
+        <dl className="mt-[26px] flex flex-col gap-2.5 font-mono text-[12.5px] leading-[1.5]">
           {meta.map((m) => (
             <div key={m.label}>
-              <span className="inline-block min-w-16 uppercase text-text-faint">{m.label}</span>
-              {m.href ? (
-                <a className={`text-link ${IDENTIFIER}`} href={m.href} data-identifier>
-                  {m.value}
-                </a>
-              ) : (
-                <span className={IDENTIFIER}>{m.value}</span>
-              )}
+              <dt className="inline-block min-w-16 text-text-faint">{m.label}</dt>
+              {/* `data-cms-verbatim`/`data-identifier` only when
+                  `m.identifier` is true -- `m.value` is then CMS or
+                  identifier data (a DOI, a journal ref, a resource kind),
+                  exempted from the label-budget e2e's source-caps check
+                  (see PublicationRow.tsx's Identifier() comment). A
+                  hard-coded UI string (e.g. `More`'s "Resources" link)
+                  omits it, so an all-caps regression there is still
+                  caught. */}
+              <dd className="inline">
+                {m.href ? (
+                  <a
+                    className={`text-link ${IDENTIFIER}`}
+                    href={m.href}
+                    {...(m.identifier ? { 'data-identifier': true, 'data-cms-verbatim': true } : {})}
+                  >
+                    {m.value}
+                  </a>
+                ) : (
+                  <span className={IDENTIFIER} {...(m.identifier ? { 'data-cms-verbatim': true } : {})}>
+                    {m.value}
+                  </span>
+                )}
+              </dd>
             </div>
           ))}
-        </div>
+        </dl>
         {children && <div className="mt-6">{children}</div>}
       </div>
       {figureLabel && (

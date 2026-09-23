@@ -3,31 +3,57 @@
 // token change is a one-file edit.
 
 /**
- * Mono caps label geometry, no colour. Callers add their own text colour --
- * split out because Tag, Button and CopyCitation each need a different,
- * state-dependent colour (muted / link / faint), and LABEL below bakes in
- * one fixed colour that only suits column heads and the footer.
+ * Mono caps label geometry, no colour. Uppercase mono is for **data column
+ * heads only** (spec §1.5) -- the publication ledger's Year/Title/Journal/
+ * Link head row, carrying `data-testid="ledger-head"` so
+ * `e2e/label-budget.spec.ts` can exclude it. Every other label uses
+ * `CONTROL_BASE` (controls) or `MICRO_LABEL` (sentence-case labels) below.
  */
-export const LABEL_BASE = 'font-mono text-label uppercase'
-/** Mono caps label: column heads, footer. Faint by default. */
+// Not exported: `LABEL` (below) is the only real consumer.
+const LABEL_BASE = 'font-mono text-label uppercase'
+/** Mono caps label: the publication ledger's column-head row only. */
 export const LABEL = `${LABEL_BASE} text-text-faint`
 /** Mono metadata: journal refs, counts, identifiers. */
 export const META = 'font-mono text-meta text-text-muted'
+/**
+ * The non-uppercase geometry for a control (Tag, Button, CopyCitation,
+ * FormField) whose text is caller-supplied or CMS content
+ * (`Copy citation`, a topic title), not a shouted mono label. Same mono
+ * family and size as `LABEL_BASE`, no `text-transform`, lighter tracking.
+ * Colour is per-branch, not baked in.
+ */
+export const CONTROL_BASE = 'font-mono text-[11px] leading-none font-medium tracking-[0.02em]'
+/**
+ * The sentence-case Archivo geometry for a small kicker/meta-label that
+ * isn't a data column head -- e.g. "Principal investigator", a role-group
+ * heading, a research project's kicker line. Same 13px/500/Archivo
+ * geometry `Section.tsx`'s own label uses, so it reads as the same visual
+ * weight. `leading-[1.4]` (not `leading-none`) gives a wrapping label real
+ * line spacing. Colour is `text-text-muted` by default; callers needing
+ * the inverse (dark-surface) variant compose their own
+ * `text-text-inverse-muted`.
+ */
+export const MICRO_LABEL = 'font-sans text-[0.8125rem] leading-[1.4] font-medium text-text-muted'
 /** The system's only border treatment: 1px, square corners, no shadow. */
 export const HAIRLINE = 'border border-rule-strong'
 /**
- * The `[rail | content]` grid every page block shares. SectionRail and
- * PageTitle MUST use the same value or their rails misalign at the seam
- * between them -- the rail's right-edge rule is meant to read as one
- * continuous vertical line running down the page.
+ * `Section`'s structural signature: from `lg` (1024px), a `[label |
+ * content]` grid with a narrow ~10rem label column, top-aligned, no
+ * vertical rule between the two (spec §1.3). Below `lg`, a single column.
  *
- * Narrows to --spacing-rail-sm below `md`, widens to --spacing-rail from
- * `md` up. The vendored sources (SectionRail.jsx, PageTitle.jsx) both
- * hardcode `var(--spacing-rail) 1fr` at every viewport -- 88px is 23% of a
- * 390px mobile viewport, so neither source is mobile-aware. This
- * responsive narrowing is an addition on top of the port.
+ * `PageTitle` reuses this same grid, with an empty label cell, so its
+ * `<h1>`/meta row lands in the same content column as every `Section`'s
+ * own content below it. Hoisted here (not private to `Section.tsx`) so
+ * both can share the exact same value -- two independently-typed copies
+ * of a `10rem` column width can only be kept in sync by discipline.
  */
-export const RAIL_GRID = 'grid grid-cols-[var(--spacing-rail-sm)_1fr] md:grid-cols-[var(--spacing-rail)_1fr]'
+export const SECTION_GRID = 'grid grid-cols-1 gap-2 lg:grid-cols-[10rem_minmax(0,1fr)] lg:items-start lg:gap-x-8 lg:gap-y-0'
+/**
+ * The page's one asymmetric horizontal gutter, shared by `Section`,
+ * `PageTitle` and `FacetBand` -- `md`, not `lg`, is this scheme's own
+ * breakpoint, independent of `SECTION_GRID`'s `lg` column switch above.
+ */
+export const SECTION_GUTTER_X = 'px-(--spacing-gutter) md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)'
 /**
  * Press feedback. Paired with the motion tokens; reduced-motion neutralises it.
  *
@@ -96,12 +122,20 @@ export const STRIPE_BG =
 /**
  * The publication ledger's 4-column `[year | title | journal | link-cite]`
  * grid track: 64px year, fluid title, 230px journal, 250px link-cite, 28px
- * column gap, `lg` only. Home's column head, PublicationRow's row grid and
- * PublicationsIndex's column heads MUST use the same value or the head row's
- * cells stop lining up with the rows underneath it -- same reasoning as
- * RAIL_GRID above. Was spelled out identically in Home.tsx, PublicationRow.tsx
- * and PublicationsIndex.tsx (final-review fix wave); hoisted here as the one
- * place that knows the track, per this file's own header comment.
+ * column gap, `xl` only (stacked below it). Home's column head,
+ * PublicationRow's row grid and PublicationsIndex's column heads MUST use
+ * the same value or the head row's cells stop lining up with the rows
+ * underneath it -- hoisted here as the one shared constant.
+ *
+ * The title track is `minmax(0,1fr)`, not a bare `1fr`: a bare `1fr`
+ * carries an implicit `min-width: auto` and refuses to shrink below its
+ * widest unbroken word, which can push the row past the viewport. `xl`
+ * (not `lg`) is where the ledger's own content column (`Section.tsx`'s
+ * ~728px at 1024px) gives the title enough room that it doesn't collide
+ * with the journal column beside it -- `e2e/publications-interactive.
+ * spec.ts`'s and `e2e/home.spec.ts`'s per-row overflow checks prove this
+ * directly, since a cell collision doesn't grow the document past the
+ * viewport (the page-level overflow gate can't see it).
  */
 export const PUBLICATION_GRID =
-  'lg:grid lg:grid-cols-[64px_1fr_230px_250px] lg:gap-x-[28px]'
+  'xl:grid xl:grid-cols-[64px_minmax(0,1fr)_230px_250px] xl:gap-x-[28px]'

@@ -87,6 +87,37 @@ export const SAMPLE_PUBLICATIONS: Publication[] = [
   ),
 ]
 
+// `e2e/label-budget.spec.ts`'s source-caps check must not fire on a lab's
+// own journal names or DOIs that happen to read as shouted caps -- these
+// give the gallery's CMS-verbatim probe section (Gallery.tsx) real
+// examples: a journal literally called "PLOS ONE", one abbreviated to
+// three letters ("FEBS J"), and a DOI recorded with capital letters (DOIs
+// are case-insensitive on resolution, so publisher casing varies). Kept
+// out of SAMPLE_PUBLICATIONS because that array's length is assumed
+// elsewhere in the gallery (facet-band result counts).
+export const CMS_VERBATIM_PUB_PLOS_ONE: Publication = make(
+  '2024',
+  'A record whose journal and DOI happen to read as shouted caps',
+  'Holsinger, R.M.D.',
+  'PLOS ONE',
+  '19(3) · 100',
+  '10.1371/JOURNAL.PONE.0290000',
+  null,
+  'Article',
+  [],
+)
+export const CMS_VERBATIM_PUB_FEBS_J: Publication = make(
+  '2021',
+  'A second record whose journal abbreviation happens to read as shouted caps',
+  'Holsinger, R.M.D.',
+  'FEBS J',
+  '288(4) · 1200',
+  '10.1111/febs.15678',
+  null,
+  'Review',
+  [],
+)
+
 // Real routes carry an `href` (Task 3, spec §4.1): a clone of the first
 // fixture is enough to prove the title renders as a next/link, without
 // touching SAMPLE_PUBLICATIONS and its length-2 assumptions elsewhere in
@@ -130,11 +161,11 @@ export const NO_LINK_PUB: Publication = {
 // fixes needed a gallery fixture exercising the no-canonical-link + linked-
 // resource case together -- neither SAMPLE_PUBLICATIONS entry nor
 // NO_LINK_PUB carries an abstract or a resource. No DOI and no URL (so
-// Cite & access has no canonical-link column and the citation box should
-// take the full width), a two-paragraph abstract (so the Abstract rail
-// renders more than one <p>), and one linked resource (so the Resource
-// rail -- otherwise unrendered on real data, since the live dataset has
-// zero `resource` documents today -- gets proven at all).
+// "Cite and access" has no canonical-link column and the citation box
+// should take the full width), a two-paragraph abstract (so the Abstract
+// section renders more than one <p>), and one linked resource (so the
+// Resource section -- otherwise unrendered on real data, since the live
+// dataset has zero `resource` documents today -- gets proven at all).
 export const PUBLICATION_PAGE_FIXTURE: Publication = {
   id: 'publication-page-fixture',
   href: '/publications/publication-page-fixture',
@@ -154,10 +185,26 @@ export const PUBLICATION_PAGE_FIXTURE: Publication = {
   topics: ['Metabolism, oxidative stress & neuroprotection'],
   cite: 'Choi, J., Wu, H. and Holsinger, R.M.D. (2021). A record on file with no canonical link, an abstract, and one linked resource. Journal of Unlinked Records 2(1) · 15.',
   abstract: [
-    'The first paragraph sets up the problem: this fixture exists to prove the Abstract rail renders more than one paragraph, and that Cite & access falls back to a full-width citation column when there is no DOI or URL on file.',
+    'The first paragraph sets up the problem: this fixture exists to prove the Abstract section renders more than one paragraph, and that Cite and access falls back to a full-width citation column when there is no DOI or URL on file.',
     'The second paragraph proves the same block renders a second <p> rather than concatenating both into one -- the two-paragraph split is the thing under test, not the prose itself.',
   ],
   resources: [{ id: 'resource-fixture-1', title: 'Cell culture chamber CAD files', kind: 'hardware' }],
+}
+
+// Carries the "title" level's budget word, capitalised ("Pathophysiology"
+// -- see PaperBlock's own comment in PublicationPage.tsx). Every other word
+// is short enough to fit whole at 320px without hyphenation, since CI's
+// Linux Chromium ships no hyphenation dictionaries and would go red on a
+// fixture that only fit locally via macOS Chromium's hyphenation. Consumed
+// only by the full-width "typography budget" gallery section in
+// Gallery.tsx -- kept separate from `PUBLICATION_PAGE_FIXTURE` above, whose
+// title is prose, not built to carry this specific word.
+export const TYPOGRAPHY_BUDGET_PUBLICATION_FIXTURE: Publication = {
+  ...PUBLICATION_PAGE_FIXTURE,
+  id: 'typography-budget-publication',
+  href: '/publications/typography-budget-publication',
+  title: 'Pathophysiology of ageing',
+  cite: 'Fixture author (2026). Pathophysiology of ageing. Journal of Fixtures 1(1) · 1.',
 }
 
 export const SAMPLE_PEOPLE: {
@@ -543,7 +590,7 @@ export const RESOURCES_FIXTURE: ResourcePayload[] = [
 // the populated screen's "with cover" / "without cover" branches (and the
 // no-placeholder-box rule) are both exercised. Also, spread across those
 // five: one overview with a long unbreakable token (the 320px overflow
-// guard), one with no tags (SectionRail's "Project" label fallback,
+// guard), one with no tags (Section's "Project" label fallback,
 // researchKicker's tag-less branch) and one with no `start` date
 // (researchKicker's category-only branch) -- matching the task brief's
 // fixture requirements one-for-one, reusing the existing `portableParagraph`
@@ -646,7 +693,7 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
     // 630×600 = 1.05.
     cover: researchCoverView(630, 600, 'Glial activity as a marker of disease'),
   }),
-  // No tags -- SectionRail's label falls back to "Project", and
+  // No tags -- Section's label falls back to "Project", and
   // researchKicker's tag-line half is empty (kicker is category-only, since
   // there's no `start` here either -- see fixture 4 for the start-only
   // partner case).
@@ -728,6 +775,31 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
   }),
 ]
 
+// Standalone fixture (not part of `RESEARCH_PROJECTS_FIXTURE`, so it
+// doesn't disturb that array's own fixture-count assertions) consumed only
+// by the dedicated full-width "typography budget" gallery section in
+// Gallery.tsx, which renders the real `Research` component at the page's
+// actual gutter width rather than this file's narrower demo frame. The
+// title carries the "heading" level's budget word, capitalised
+// ("Neurodegenerative", which Blink never hyphenates); its companion word
+// is short ("repair") rather than relying on hyphenation, since CI's Linux
+// Chromium ships no hyphenation dictionaries.
+export const TYPOGRAPHY_BUDGET_RESEARCH_PROJECT_FIXTURE: ResearchProjectView = researchProjectView({
+  id: 'typography-budget-research',
+  title: 'Neurodegenerative repair',
+  body: [
+    overviewParagraph(
+      'typography-budget-research-p1',
+      'Fixture-only project proving the "heading" type role’s clamp floor fits its budget word ' +
+        'on one line in the real page column at 320px.'
+    ),
+  ],
+  start: null,
+  tags: [],
+  category: null,
+  cover: null,
+})
+
 // Task 3 (Home): production today has no resource, an unset labHead, and no
 // `support-our-research` page (spec §2) -- the states this fixture proves
 // are exactly the ones live data can't show (constraints.md), reusing the
@@ -784,6 +856,19 @@ export const HOME_PAGE_FIXTURE: HomePagePayload = {
     ),
   ],
   showcaseProjects: [],
+}
+
+// Carries the "display" level's budget word, capitalised ("Neuroscience",
+// already the lab name's own word -- see HOME_PAGE_FIXTURE above, which is
+// why this couldn't stay a plain literal for the gallery to typo-check
+// against). Its companions are short words ("and", "ageing") rather than
+// relying on hyphenation, since CI's Linux Chromium ships no hyphenation
+// dictionaries. Consumed only by the full-width "typography budget"
+// gallery section in Gallery.tsx.
+export const TYPOGRAPHY_BUDGET_HOME_FIXTURE: HomePagePayload = {
+  ...HOME_PAGE_FIXTURE,
+  _id: 'typography-budget-home',
+  title: 'Neuroscience and ageing',
 }
 
 // Real routes carry `href` (Home's Recent work rows link to the paper

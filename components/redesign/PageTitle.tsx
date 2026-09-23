@@ -1,4 +1,4 @@
-import { RAIL_GRID } from './tokens'
+import { SECTION_GRID, SECTION_GUTTER_X } from './tokens'
 
 export interface PageTitleProps {
   title: string
@@ -18,41 +18,22 @@ export interface PageTitleProps {
   headingLevel?: 'h1' | 'h2'
 }
 
-// Sits on the same [rail | content] grid as SectionRail (RAIL_GRID, from
-// tokens.ts), with an empty rail cell that still carries the 1px right
-// rule. Ported from
+// Shares `Section`'s own grid (`SECTION_GRID`/`SECTION_GUTTER_X`, tokens.ts)
+// with an empty label cell, so the `<h1>` lines up with every `Section`'s
+// content column below it (spec §1.3). Ported from
 // docs/redesign-experiment/design-system/components/structure/PageTitle.jsx.
-//
-// Sharing RAIL_GRID rather than repeating the class string is not just
-// tidiness: PageTitle's rail and every SectionRail's rail share one
-// vertical rule running down the page, so their column widths must stay
-// byte-identical or that rule jogs sideways at the PageTitle/SectionRail
-// seam on mobile. One export is what makes that guarantee enforceable.
 export function PageTitle({ title, meta, accentMeta = false, headingLevel = 'h1' }: PageTitleProps) {
   const Heading = headingLevel
   return (
-    <div className={RAIL_GRID}>
-      <div className="border-r border-rule" />
-      {/* Fix round 2: this content column is RAIL_GRID's `1fr` track --
-          same implicit `min-width: auto` blowout SectionRail.tsx's content
-          div had before its own round-1 `min-w-0` fix, and this one was
-          never given the same treatment. The `pr`/`pl` gutters were also
-          hardcoded to the desktop-sized `--spacing-gutter-lg`/`-md` tokens
-          at every width, so on a narrow phone there was very little room
-          left for the `<h1>` + meta row before it forced this column wide.
-          Fixed the same way `components/redesign/screens/PublicationsIndex.tsx`'s
-          `RECORD_LIST_PADDING` already does it: `px-(--spacing-gutter)`
-          (one token, both sides) below the breakpoint, overridden by the
-          asymmetric `pr`/`pl` tokens from it -- `md`, not `lg`, to switch
-          together with RAIL_GRID's own rail-width breakpoint (38px rail
-          below `md`, 88px from `md`). `flex-wrap`/`md:flex-nowrap` lets the
-          title and meta stack below `md` instead of forcing the row wide
-          when both don't fit side by side; from `md` this is pixel-
-          identical to before (same classes, just conditioned on the
-          breakpoint they always ran at). Each property -- min-width,
-          display's flex-wrap, padding-right, padding-left -- is set by
-          exactly one class per breakpoint. */}
-      <div className="min-w-0 flex flex-wrap items-end justify-between gap-6 pt-(--spacing-stack) px-(--spacing-gutter) pb-[30px] md:flex-nowrap md:pr-(--spacing-gutter-lg) md:pl-(--spacing-gutter-md)">
+    <div className={`${SECTION_GRID} ${SECTION_GUTTER_X} pt-(--spacing-stack) pb-[30px]`}>
+      {/* `min-w-0` stops this row's implicit `min-width: auto` blowout on
+          CMS text. `flex-wrap`/`md:flex-nowrap` stacks the title and meta
+          below `md` instead of forcing the row wide. `lg:col-start-2`: with
+          no label here, this grid's only child would otherwise auto-place
+          into the label's own 10rem track (see Section.tsx's own
+          `lg:col-start-2`). Each property is set by exactly one class per
+          breakpoint (constraints.md). */}
+      <div className="min-w-0 flex flex-wrap items-end justify-between gap-6 md:flex-nowrap lg:col-start-2">
         {/* `min-w-0` here too, not just on the flex container above: a flex
             *item*'s automatic minimum width is its own content size by
             default (the well-known flexbox min-size gotcha), independent
@@ -60,37 +41,33 @@ export function PageTitle({ title, meta, accentMeta = false, headingLevel = 'h1'
             still refused to shrink to fit its row even with `break-words`
             set, because `min-width: auto` was still winning over the
             container's available space. */}
-        <Heading className="m-0 min-w-0 text-title leading-none break-words">{title}</Heading>
+        {/* `break-words` (canonical note -- other heading sites cross-
+            reference this one): the last-resort fallback for a word that
+            doesn't fit its column. Blink never hyphenates a capitalised
+            word, so `hyphens-auto` isn't used on headings here -- CMS
+            titles are almost all title-case, and it only added
+            platform-dependent hyphenation on the rare lowercase word with
+            no benefit. Each heading level's clamp floor is sized so its
+            budget word fits on one line at 320px; a longer word may still
+            split raw rather than overflow -- a documented exception (see
+            phase-3-decisions.md, "Word-fit budget"), not a defect. No
+            `leading-none`: it would discard `--text-title`'s own 1.1
+            line-height, which matters once a title wraps. */}
+        <Heading data-testid="page-title-heading" className="m-0 min-w-0 text-title break-words">
+          {title}
+        </Heading>
         {meta && (
-          /* PageTitle.jsx specifies 400 12px/1 mono at 0.1em tracking in
-             --sem-text-faint (or --sem-link when accentMeta) -- this
-             disagrees with the brief's claim that PageTitle consumes META
-             (font-mono text-meta text-text-muted, i.e. a different size,
-             tracking and colour). The vendored source wins per the task's
-             decision #3, so this is composed by hand rather than using the
-             META token from tokens.ts. */
-          /* Task 2 fix: a longer meta string (People's "LAB HEAD + N CURRENT
-             MEMBERS · G GROUPS", vs. Publications' shorter "N RECORDS · Y")
-             overflowed the viewport below `md`. Below `md`, PageTitle's flex
-             row wraps onto two lines (`flex-wrap` above), and this span
-             becomes the sole occupant of its own row -- but `flex-shrink-0`
-             refused to let it shrink to that row's actual width, and with no
-             `min-w-0` its automatic minimum stayed its own unbroken
-             max-content size, so it kept its full intrinsic width and
-             overflowed regardless of the viewport (same flexbox min-size
-             gotcha as the `<h1>` above, and SectionRail.tsx's content
-             column). `min-w-0` (unprefixed) lets it shrink and wrap at word
-             boundaries below `md`; `md:flex-shrink-0` restores the desktop
-             row layout's "meta never shrinks, stays right-aligned" behaviour
-             from `md` up, where the row is wide enough that this never
-             triggers. `flex-shrink` and `min-width` each get exactly one
-             unprefixed declaration (or none) and one `md:` declaration --
-             never two utilities for the same property at the same
-             breakpoint (constraints.md). */
+          /* A sentence-case muted line in Archivo, 15px (spec §1.3) --
+             each screen's meta string is sentence case too, so no CSS
+             transform is needed here. `min-w-0`/`md:flex-shrink-0`: same
+             flexbox min-size fix as the `<h1>` above, so a long meta
+             string (e.g. People's "Lab head + N current members · G
+             groups") can shrink and wrap below `md` instead of
+             overflowing. */
           <span
             data-testid="page-title-meta"
-            className={`min-w-0 font-mono text-[12px] leading-none font-normal tracking-[0.1em] uppercase md:flex-shrink-0 ${
-              accentMeta ? 'text-link' : 'text-text-faint'
+            className={`min-w-0 text-[15px] leading-none font-normal md:flex-shrink-0 ${
+              accentMeta ? 'text-link' : 'text-text-muted'
             }`}
           >
             {meta}

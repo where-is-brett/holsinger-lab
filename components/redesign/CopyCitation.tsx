@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import { HAIRLINE, LABEL_BASE, PRESS } from './tokens'
+import { CONTROL_BASE, HAIRLINE, PRESS } from './tokens'
 
 export interface CopyCitationProps {
   cite: string
@@ -10,10 +10,13 @@ export interface CopyCitationProps {
   copiedLabel?: string
 }
 
-// LABEL_BASE gives the mono caps font/size/case with no colour baked in --
-// see the matching comment in Button.tsx for why the colour and border
-// utilities are chosen per branch instead of layered on a fixed class.
-const SHAPE = `inline-flex min-h-11 min-w-11 items-center justify-center ${LABEL_BASE} leading-none`
+// CONTROL_BASE, not LABEL_BASE: this renders once per publication row, so
+// a shouted mono-caps label would blow the micro-label budget on
+// /publications by itself. Gives the mono font/size with no colour baked
+// in -- see the matching comment in Button.tsx for why the colour and
+// border utilities are chosen per branch instead of layered on a fixed
+// class.
+const SHAPE = `inline-flex min-h-11 min-w-11 items-center justify-center ${CONTROL_BASE} leading-none`
 
 export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitationProps) {
   const [copied, setCopied] = useState(false)
@@ -52,8 +55,11 @@ export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitatio
     }
   }
 
-  const restLabel = compact ? 'CITE' : 'COPY CITATION'
-  const doneLabel = compact ? '✓' : copiedLabel || '✓ COPIED'
+  // Sentence case, not shouted caps: these literal strings are what the
+  // accessible name and the rendered text actually are -- no CSS transform
+  // uppercases them.
+  const restLabel = compact ? 'Cite' : 'Copy citation'
+  const doneLabel = compact ? '✓' : copiedLabel || '✓ Copied'
   const border = copied ? 'border border-link' : HAIRLINE
   const color = copied ? 'text-link' : 'text-text-muted'
   const sizing = compact ? 'px-2 py-1' : 'px-3 py-2'

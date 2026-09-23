@@ -14,7 +14,7 @@ import { settingsQuery } from 'lib/sanity.queries'
 import { fetchSettingsSafely } from 'lib/settings'
 import { siteUrl } from 'lib/site'
 import type { Metadata, Viewport } from 'next'
-import { IBM_Plex_Mono, PT_Serif } from 'next/font/google'
+import { Archivo, IBM_Plex_Mono, PT_Serif } from 'next/font/google'
 import localFont from 'next/font/local'
 import { draftMode } from 'next/headers'
 import { VisualEditing } from 'next-sanity/visual-editing'
@@ -24,7 +24,20 @@ import type { Image } from 'sanity'
 const mono = IBM_Plex_Mono({
   variable: '--font-mono',
   subsets: ['latin'],
-  weight: ['500', '700'],
+  weight: ['400', '500', '700'],
+})
+
+// Archivo -- the redesign's reading and display face (spec §1.1).
+// `--font-sans` in styles/index.css otherwise points at the mono face,
+// which would render every heading, abstract and bio in mono. `display:
+// 'swap'` avoids invisible text while the webfont loads; weights
+// 400/500/600/700 match `--text-*--font-weight`'s range across the type
+// roles (body 400, section labels 500, headings 600).
+const archivo = Archivo({
+  variable: '--font-archivo',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
 })
 
 const serif = PT_Serif({
@@ -157,7 +170,7 @@ export default async function RootLayout({
     <html
       lang="en"
       data-theme={dataTheme}
-      className={`${mono.variable} ${antarcticanMono.variable} ${serif.variable} ${arianaPro.variable}`}
+      className={`${archivo.variable} ${mono.variable} ${antarcticanMono.variable} ${serif.variable} ${arianaPro.variable}`}
     >
       {brandStyle ? (
         <style

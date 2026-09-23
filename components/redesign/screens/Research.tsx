@@ -4,11 +4,12 @@ import Link from 'next/link'
 import { PageTitle } from '../PageTitle'
 import { PortableBody } from '../PortableBody'
 import type { ResearchProjectView } from '../researchModel'
-import { SectionRail } from '../SectionRail'
+import { Section } from '../Section'
+import { MICRO_LABEL } from '../tokens'
 
 // Composition follows
 // docs/redesign-experiment/design-system/ui_kits/site/Research.jsx (task
-// brief "Visual authority"), spec §2/§6: one `SectionRail` per
+// brief "Visual authority"), spec §2/§6: one `Section` per
 // `defined(researchOrder)` project, in `researchOrder` order, then an
 // inverse Enquiries band. Production has zero such projects today (spec
 // §2) -- the populated state is only ever exercised against the
@@ -51,8 +52,13 @@ const NARRATIVE_GRID_SOLO = 'grid grid-cols-1'
 function ProjectKicker({ project }: { project: ResearchProjectView }) {
   if (!project.kicker && !project.tagLine) return null
 
+  // Sentence-case Archivo, not uppercase mono -- `kicker` mixes a derived
+  // "Since <year>" string with the project's own CMS `category`
+  // (researchModel.ts's `researchKicker`), so forcing it upper-case would
+  // blow the micro-label budget and, for the `category` half, run against
+  // constraints.md's "CMS text prints verbatim" rule.
   return (
-    <div className="font-mono text-[11px] leading-[1.6] font-medium tracking-[0.1em] text-text-faint uppercase">
+    <div className={MICRO_LABEL}>
       {project.kicker}
       {project.kicker && project.tagLine ? ' — ' : ''}
       {project.tagLine && <span className="text-link">{project.tagLine}</span>}
@@ -67,6 +73,8 @@ function Narrative({ project }: { project: ResearchProjectView }) {
     <div className={cover ? NARRATIVE_GRID : NARRATIVE_GRID_SOLO}>
       <div className="min-w-0">
         <ProjectKicker project={project} />
+        {/* `break-words` (see PageTitle.tsx's canonical note) -- a project
+            title is CMS text. */}
         <h2
           data-testid="research-project-title"
           className="mt-4 max-w-[640px] text-pretty break-words text-heading font-semibold"
@@ -121,6 +129,7 @@ function Enquiries({ email, showContactForm }: { email: string | null; showConta
             href={`mailto:${email}`}
             className="font-mono text-[20px] leading-[1.4] break-all text-link-inverse underline underline-offset-[5px]"
             data-identifier
+            data-cms-verbatim
           >
             {email}
           </a>
@@ -162,30 +171,31 @@ export function Research({
     <div>
       <PageTitle
         title="Research"
-        meta={`${n} ACTIVE PROJECT${n === 1 ? '' : 'S'}`}
+        meta={`${n} active project${n === 1 ? '' : 's'}`}
         headingLevel={headingLevel}
       />
       {n === 0 ? (
-        <SectionRail>
+        <Section>
           <p className="text-[14px] leading-[1.5] text-text-muted">
             Research projects will be listed here soon.
           </p>
-        </SectionRail>
+        </Section>
       ) : (
+        // `labelHeading` is `false` here -- each project's own `Narrative`
+        // already renders a real
+        // `<h2 data-testid="research-project-title">` (the project title),
+        // so a second `<h2>` for the label would be a redundant heading.
         projects.map((project, index) => (
-          <SectionRail
-            key={project.id}
-            num={String(index + 1).padStart(2, '0')}
-            label={project.label}
-            borderTop={index !== 0}
-          >
+          <Section key={project.id} label={project.label} borderTop={index !== 0}>
             <Narrative project={project} />
-          </SectionRail>
+          </Section>
         ))
       )}
-      <SectionRail num={String(n + 1).padStart(2, '0')} label="Enquiries" inverse>
+      {/* `labelHeading`: true -- `Enquiries` has no heading of its own,
+          just a paragraph, so the label is this section's only landmark. */}
+      <Section label="Enquiries" labelHeading inverse>
         <Enquiries email={email} showContactForm={showContactForm} />
-      </SectionRail>
+      </Section>
     </div>
   )
 }

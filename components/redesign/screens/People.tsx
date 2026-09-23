@@ -7,6 +7,7 @@ import type { ProfilePayload, RoleGroupPayload, SettingsPayload } from 'types'
 import { PageTitle } from '../PageTitle'
 import {
   excludeLabHead,
+  formatPeopleMeta,
   groupByRoleGroup,
   initialsOf,
   memberCount,
@@ -16,14 +17,14 @@ import {
 } from '../peopleModel'
 import { PersonCard, PortraitFrame } from '../PersonCard'
 import { PortableBody } from '../PortableBody'
-import { SectionRail } from '../SectionRail'
-import { LABEL, LABEL_BASE } from '../tokens'
+import { Section } from '../Section'
+import { MICRO_LABEL } from '../tokens'
 
 // Composition follows docs/redesign-experiment/design-system/ui_kits/site/People.jsx
-// (task brief §"Visual authority"). Blocks are numbered in render order, with
-// no gaps -- same pattern as PublicationPage.tsx's own `blocks` array -- so an
-// omitted block (no spotlight when settings.labHead is unset, no Alumni
-// section when the group is empty) never leaves a skipped number.
+// (task brief §"Visual authority"). Blocks render as an ordered list of
+// `Section`s, same pattern as PublicationPage.tsx's own `blocks` array --
+// an omitted block (no spotlight when settings.labHead is unset, no Alumni
+// section when the group is empty) simply isn't pushed.
 
 // The 220px portrait column, from `md`; stacked below it with the portrait
 // itself capped at the same 220px width so it doesn't stretch full-bleed on
@@ -49,12 +50,13 @@ import { LABEL, LABEL_BASE } from '../tokens'
 const SPOTLIGHT_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr] md:items-start md:gap-x-11 md:gap-y-0'
 const SPOTLIGHT_PORTRAIT = 'max-w-[220px] md:max-w-none'
 
-// Mono caps, faint -- ui_kit's "Head of laboratory · Principal investigator"
-// label geometry, reusing the LABEL token rather than hand-rolling the same
-// font-mono/uppercase/tracking triad again.
-const SPOTLIGHT_LABEL_CLASS = LABEL
+// Sentence-case Archivo, reusing the MICRO_LABEL token rather than
+// hand-rolling the same font-sans/13px/500 triad again -- the micro-label
+// budget rule forbids mono-caps uppercase for anything that isn't a data
+// column head.
+const SPOTLIGHT_LABEL_CLASS = MICRO_LABEL
 
-const PROFILE_LINK_LABEL = 'mt-5 inline-block font-mono text-[12px] font-medium tracking-[0.1em] text-link uppercase'
+const PROFILE_LINK_LABEL = 'mt-5 inline-block text-[14px] font-medium text-link'
 // No `normal-case!`: nothing on the ancestor chain sets `text-transform:
 // uppercase` for this element (unlike PublicationPage.tsx's IDENTIFIER,
 // which guards against `.hl-identifier`'s global `text-transform: none
@@ -63,15 +65,25 @@ const PROFILE_LINK_LABEL = 'mt-5 inline-block font-mono text-[12px] font-medium 
 const EMAIL_LINK = 'mt-5 block font-mono text-[12.5px] text-link'
 
 const SECTION_HEADING_ROW = 'mb-5 flex items-baseline gap-3.5 border-t border-rule pt-[18px]'
-const SECTION_TITLE = `${LABEL_BASE} text-text-faint`
-const SECTION_COUNT = `${LABEL_BASE} text-link`
+// Sentence-case Archivo, not uppercase mono -- a role-group title is real
+// CMS content (constraints.md's "CMS text prints verbatim"), so forcing it
+// into caps is presentational overreach, and it would blow the
+// micro-label budget whenever more than a couple of groups render.
+// `break-words` guards against a long `title` overflowing this column (see
+// PageTitle.tsx's canonical note).
+const SECTION_TITLE = `${MICRO_LABEL} break-words`
+// The member-count badge next to it: mono digits with no `text-transform`
+// -- a bare number renders identically without it, and omitting
+// `uppercase` keeps it out of the micro-label budget, which counts the
+// computed style regardless of whether there are letters to transform.
+const SECTION_COUNT = 'font-mono text-[11px] leading-none font-medium text-link'
 
 // 2 columns on phone, 3 from `md`, 6 from `lg` (spec §5 point 3). Gap matches
 // the ui_kit's "28px 24px" (row, column): `gap-y-7`/`gap-x-6` are Tailwind's
 // exact 28px/24px steps, so no arbitrary value is needed.
 const CARD_GRID = 'grid grid-cols-2 gap-x-6 gap-y-7 md:grid-cols-3 lg:grid-cols-6'
 
-const ALUMNI_LABEL = LABEL
+const ALUMNI_LABEL = MICRO_LABEL
 const ALUMNI_PARAGRAPH = 'max-w-[820px] text-pretty text-body text-text-muted'
 // `underline` (not just `text-link`): axe's link-in-text-block rule flags an
 // inline link that relies on colour alone against its surrounding muted
@@ -103,15 +115,17 @@ function SpotlightBlock({ labHead }: { labHead: LabHead }) {
           repeat(1, minmax(0, 1fr))`, which zeroes the track's own
           min-content floor, so this isn't strictly required for the
           overflow this fix addresses. Added anyway to match `PageTitle.tsx`
-          and `SectionRail.tsx`'s existing convention of guarding every
+          and `Section.tsx`'s existing convention of guarding every
           grid/flex item that holds unpredictable CMS text, in case a future
           edit narrows the track back to a bare `1fr`. */}
       <div className="min-w-0">
         <div className={SPOTLIGHT_LABEL_CLASS}>Head of laboratory · Principal investigator</div>
-        <h2 className="mt-3 text-heading">{labHead.name}</h2>
+        {/* `break-words` (see PageTitle.tsx's canonical note) -- a name is
+            CMS text. */}
+        <h2 className="mt-3 text-heading break-words">{labHead.name}</h2>
         <PortableBody blocks={labHead.fullBio} bio={labHead.bio} />
         {labHead.email && (
-          <a href={`mailto:${labHead.email}`} data-identifier className={EMAIL_LINK}>
+          <a href={`mailto:${labHead.email}`} data-identifier data-cms-verbatim className={EMAIL_LINK}>
             {labHead.email}
           </a>
         )}
@@ -210,20 +224,6 @@ function AlumniBlock({ alumni }: { alumni: ProfilePayload[] }) {
   )
 }
 
-function formatMeta({
-  showSpotlight,
-  n,
-  g,
-}: {
-  showSpotlight: boolean
-  n: number
-  g: number
-}): string {
-  const membersLabel = n === 1 ? 'CURRENT MEMBER' : 'CURRENT MEMBERS'
-  const groupsLabel = g === 1 ? 'GROUP' : 'GROUPS'
-  return `${showSpotlight ? 'LAB HEAD + ' : ''}${n} ${membersLabel} · ${g} ${groupsLabel}`
-}
-
 export function People({
   settings,
   profiles,
@@ -256,29 +256,30 @@ export function People({
   // counted as a group -- counting titled sections here is what keeps it
   // out of `g` without any special-casing of the 'other' id.
   const g = members.filter((section) => section.title).length
-  const meta = formatMeta({ showSpotlight, n, g })
+  const meta = formatPeopleMeta({ showSpotlight, n, g })
 
-  const blocks: Array<{ label: string; content: ReactNode }> = []
+  // `labelHeading` per block -- `Lab head` and `Members` already
+  // have their own in-content heading (`SpotlightBlock`'s labHead-name
+  // `<h2>`; each role group's own `<h2 data-testid="people-section-title">`
+  // inside `MembersBlock`), so their `Section` label stays a `<p>`.
+  // `Alumni` has none (`AlumniBlock` is just a mono label plus a
+  // paragraph), so its label is the section's only heading.
+  const blocks: Array<{ label: string; labelHeading?: boolean; content: ReactNode }> = []
   if (showSpotlight && labHead) {
     blocks.push({ label: 'Lab head', content: <SpotlightBlock labHead={labHead} /> })
   }
   blocks.push({ label: 'Members', content: <MembersBlock sections={members} /> })
   if (alumni.length > 0) {
-    blocks.push({ label: 'Alumni', content: <AlumniBlock alumni={alumni} /> })
+    blocks.push({ label: 'Alumni', labelHeading: true, content: <AlumniBlock alumni={alumni} /> })
   }
 
   return (
     <div>
       <PageTitle title="People" meta={meta} headingLevel={headingLevel} />
       {blocks.map((block, index) => (
-        <SectionRail
-          key={block.label}
-          num={String(index + 1).padStart(2, '0')}
-          label={block.label}
-          borderTop={index !== 0}
-        >
+        <Section key={block.label} label={block.label} labelHeading={block.labelHeading} borderTop={index !== 0}>
           {block.content}
-        </SectionRail>
+        </Section>
       ))}
     </div>
   )

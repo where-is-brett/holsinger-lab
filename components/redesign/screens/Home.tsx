@@ -21,17 +21,16 @@ import type { Publication } from '../publicationModel'
 import { PublicationRow } from '../PublicationRow'
 import { ResourceBlock } from '../ResourceBlock'
 import { buildResourceMeta } from '../resourceModel'
-import { SectionRail } from '../SectionRail'
-import { LABEL, PUBLICATION_GRID, STRIPE_BG } from '../tokens'
+import { Section } from '../Section'
+import { LABEL, MICRO_LABEL, PUBLICATION_GRID, STRIPE_BG } from '../tokens'
 
 // Composition follows
 // docs/redesign-experiment/design-system/ui_kits/site/Home.jsx (task brief
-// "Visual authority"), spec §2 (rulings 2 and 4) / §6: five numbered
-// blocks, each omitted when there's nothing to show, same "no gaps in the
-// render-order numbering" pattern as Research.tsx / People.tsx. Home has
-// zero editorial fields of its own (spec §6, constraints.md forbids
-// touching `home.showcaseProjects`/`siteCopy`) -- every block is derived
-// from other document types or `settings`.
+// "Visual authority"), spec §2 (rulings 2 and 4) / §6: up to five `Section`
+// blocks (Identity plus four labelled ones), each omitted when there's
+// nothing to show. Home has zero editorial fields of its own (spec §6,
+// constraints.md forbids touching `home.showcaseProjects`/`siteCopy`) --
+// every block is derived from other document types or `settings`.
 
 const IA_TAGLINE = 'Advancing the Understanding and Treatment of Neurological Disorders through Molecular Research'
 
@@ -61,13 +60,21 @@ function IdentityBlock({
 
   return (
     <div>
+      {/* Sentence-case Archivo, not uppercase mono -- a kicker is exactly
+          the label shape the micro-label budget rule targets. */}
       <div className="flex items-center gap-4">
         <span className="h-px w-9 bg-text" />
-        <span className="font-mono text-[12px] leading-none font-medium tracking-[0.2em] uppercase">
-          The University of Sydney
-        </span>
+        <span className={MICRO_LABEL}>The University of Sydney</span>
       </div>
-      <Heading className="mt-[30px] max-w-[1180px] text-pretty break-words text-display font-semibold">
+      {/* `break-words`: see PageTitle.tsx's canonical note. `text-balance`
+          (spec §1.2, "keep text-wrap: balance on display headings")
+          replaces `text-pretty` here -- this is the one display-role
+          heading, and the display floor is sized so its longest word
+          ("Neuroscience") fits at 320px. */}
+      <Heading
+        data-testid="home-identity-title"
+        className="mt-[30px] max-w-[1180px] text-balance break-words text-display font-semibold"
+      >
         {title}
       </Heading>
       {/* Two-column grid ([tagline | PI panel]) from `lg`, stacked below --
@@ -91,7 +98,7 @@ function IdentityBlock({
         </p>
         {showPiPanel && labHead && (
           <div className="min-w-0 border-l border-rule pl-6" data-testid="home-pi-panel">
-            <div className={LABEL}>Principal investigator</div>
+            <div className={MICRO_LABEL}>Principal investigator</div>
             <Link href={resolveLabHeadHref(labHead)} className="mt-[9px] block text-[21px] font-semibold tracking-[-0.01em] break-words">
               {labHead.name}
             </Link>
@@ -99,6 +106,7 @@ function IdentityBlock({
               <a
                 href={`mailto:${labHead.email}`}
                 data-identifier
+                data-cms-verbatim
                 className="mt-[7px] inline-block font-mono text-[11.5px] leading-[1.4] break-all text-link"
               >
                 {labHead.email}
@@ -116,27 +124,41 @@ const IDENTITY_GRID_SOLO = 'mt-[38px] grid grid-cols-1'
 
 // -- Block 2: Recent work ------------------------------------------------
 
-const COLUMN_HEAD = `hidden ${PUBLICATION_GRID} pb-3 font-mono text-[11px] leading-none font-medium tracking-[0.12em] text-text-faint uppercase`
+// Composes `LABEL` (tokens.ts) instead of hand-writing its geometry,
+// matching PublicationsIndex.tsx's own `COLUMN_HEADS` (`${COLUMN_HEADS}
+// ${LABEL}`).
+const COLUMN_HEAD = `hidden ${PUBLICATION_GRID} pb-3 ${LABEL}`
 
 function RecentWorkBlock({ publications, count }: { publications: Publication[]; count: number }) {
   return (
     <div data-testid="home-recent-work">
-      <div className={COLUMN_HEAD}>
+      {/* "Latest five, by date" sits outside the ledger-head row -- it's a
+          sentence-case sort-order note about the block's content, not a
+          column head. Same `xl`-only visibility as the head row below
+          (meaningless once the row stacks below `xl`). */}
+      <div className="hidden justify-end pb-1 xl:flex">
+        <span className="text-[13px] leading-[1.4] text-text-faint">Latest five, by date</span>
+      </div>
+      {/* `data-testid="ledger-head"`: the one place this block's uppercase
+          mono is allowed -- e2e/label-budget.spec.ts excludes anything
+          inside it from the micro-label budget. */}
+      <div data-testid="ledger-head" className={COLUMN_HEAD}>
         <span>Year</span>
         <span>Title</span>
         <span>Journal</span>
-        <span className="flex justify-between">
-          <span>Link</span>
-          <span className="tracking-[0.08em]">Latest five · by date</span>
-        </span>
+        <span>Link</span>
       </div>
       {publications.map((pub) => (
-        <PublicationRow key={pub.id} pub={pub} variant="home" href={pub.href} />
+        // `data-testid="pub-row"`: matches PublicationsIndex.tsx's own row
+        // wrapper, so the ledger-cell overflow guard (`e2e/home.spec.ts`)
+        // can target Home's rows the same way it targets `/publications`'s.
+        <div key={pub.id} data-testid="pub-row">
+          <PublicationRow pub={pub} variant="home" href={pub.href} />
+        </div>
       ))}
-      <Link
-        href="/publications"
-        className="mt-5 inline-block font-mono text-[12px] font-medium tracking-[0.1em] text-link uppercase"
-      >
+      {/* Sentence case, not uppercase mono -- links to another route are
+          sentence case per the brief. */}
+      <Link href="/publications" className="mt-5 inline-block text-[14px] font-medium text-link">
         All {count} publication{count === 1 ? '' : 's'} →
       </Link>
     </div>
@@ -154,10 +176,7 @@ function ResourcesBlock({ resource }: { resource: HomeResourcePayload }) {
   return (
     <div data-testid="home-resources">
       <ResourceBlock title={resource.title ?? ''} meta={buildResourceMeta(resource)} />
-      <Link
-        href="/resources"
-        className="mt-5 inline-block font-mono text-[12px] font-medium tracking-[0.1em] text-link uppercase"
-      >
+      <Link href="/resources" className="mt-5 inline-block text-[14px] font-medium text-link">
         All resources →
       </Link>
     </div>
@@ -166,7 +185,7 @@ function ResourcesBlock({ resource }: { resource: HomeResourcePayload }) {
 
 // -- Block 4: Outreach (MAESTRO), inverse ---------------------------------
 
-// The identifier prints "REGISTER — <site without scheme>" verbatim --
+// The identifier prints "Register — <site without scheme>" verbatim --
 // scheme stripped for display only, same `deriveLink` URL-label convention
 // used everywhere else in this direction; the href keeps the full URL.
 function siteLabel(site: string): string {
@@ -176,24 +195,26 @@ function siteLabel(site: string): string {
 function OutreachBlock({ maestro }: { maestro: MaestroProjectPayload }) {
   return (
     <div data-testid="home-maestro">
+      {/* `break-words` (see PageTitle.tsx's canonical note) -- the MAESTRO
+          project title is CMS text this repo doesn't control the shape
+          of. */}
       <div className="max-w-[720px] text-pretty break-words text-heading font-semibold" data-testid="maestro-title">
         {maestro.title}
       </div>
       <PortableBody blocks={maestro.overview} variant="inverse" />
       {maestro.site && (
         // No `data-identifier`: unlike PublicationRow/ResourceBlock's
-        // identifiers, this anchor's rendered text is "REGISTER — <label>",
+        // identifiers, this anchor's rendered text is "Register — <label>",
         // not the bare identifier -- e2e/redesign-components.spec.ts's
         // generic `[data-identifier]` contract asserts the *whole* element
         // text (scheme/`www.` stripped) is contained in `href`, which a
-        // "REGISTER — " prefix would trip. Nothing here sets
-        // `text-transform: uppercase` on this element or an ancestor, so
-        // there's no uppercasing risk to guard against either.
+        // "Register — " prefix would trip. Sentence case, not mono,
+        // matching "All resources →"'s own link style.
         <a
           href={maestro.site}
-          className="mt-5 inline-block font-mono text-[12px] leading-none tracking-[0.08em] break-all text-text-inverse underline underline-offset-4"
+          className="mt-5 inline-block break-all text-[14px] font-medium text-text-inverse underline underline-offset-4"
         >
-          REGISTER — {siteLabel(maestro.site)}
+          Register — {siteLabel(maestro.site)}
         </a>
       )}
     </div>
@@ -306,7 +327,7 @@ function TheLabBlock({
           existing "min-w-0 column" shape below, not a redesign of it. */}
       {showPiPanel && labHead && (
         <div className="min-w-0">
-          <div className={`${LABEL} mb-2.5`}>Principal investigator</div>
+          <div className={`${MICRO_LABEL} mb-2.5`}>Principal investigator</div>
           <Link
             href={resolveLabHeadHref(labHead)}
             className="group flex min-w-0 items-center gap-5"
@@ -336,20 +357,16 @@ function TheLabBlock({
           `showPeople` as sufficient on its own either. */}
       {showMembersLine && (
         <div className="min-w-0" data-testid="home-member-count">
-          <div className={`${LABEL} mb-2.5`}>Current members</div>
+          <div className={`${MICRO_LABEL} mb-2.5`}>Current members</div>
           <Link href="/people" className="text-[24px] font-semibold">
-            {memberCount}{' '}
-            <span className="font-mono text-[12px] font-normal text-text-faint">— PEOPLE →</span>
+            {memberCount} <span className="text-[13px] font-normal text-text-faint">— People →</span>
           </Link>
         </div>
       )}
       {supportPage && (
         <div className="min-w-0" data-testid="home-support">
-          <div className={`${LABEL} mb-3`}>Support</div>
-          <Link
-            href={`/${supportPage.slug}`}
-            className="font-mono text-[13px] leading-[1.5] font-medium tracking-[0.06em] text-link uppercase"
-          >
+          <div className={`${MICRO_LABEL} mb-3`}>Support</div>
+          <Link href={`/${supportPage.slug}`} className="text-[14px] font-medium text-link">
             Support our research →
           </Link>
         </div>
@@ -418,12 +435,21 @@ export function Home({
   // "The lab" itself still renders whenever any one of its three parts
   // has content -- no longer keyed off `showPeople` alone, since a
   // `showPeople`-true page with zero current members (and no PI panel, no
-  // support page) would otherwise render an empty rail.
+  // support page) would otherwise render an empty `Section` (a label with
+  // no content beneath it).
   const showTheLab = showPiPanel || showMembersLine || Boolean(supportPage)
 
-  const blocks: Array<{ label: string; inverse?: boolean; content: ReactNode }> = [
+  // Each block carries its own React `key` (the identity block has no
+  // visible `label` at all: it's the hero, not a labelled section).
+  // `labelHeading` is set per block: `true` for "Recent work"/"Outreach"/
+  // "The lab" (none of `RecentWorkBlock`/`OutreachBlock`/`TheLabBlock`
+  // render a heading of their own -- plain `<div>`s and mono labels), but
+  // `false` for "Resources", since `ResourceBlock`'s own title is a real
+  // `<h2>` and a second `<h2>` label here would be a redundant sibling
+  // heading.
+  const blocks: Array<{ key: string; label?: string; labelHeading?: boolean; inverse?: boolean; content: ReactNode }> = [
     {
-      label: 'Identity',
+      key: 'identity',
       content: (
         <IdentityBlock home={home} siteName={siteName} settings={settings} headingLevel={headingLevel} />
       ),
@@ -431,19 +457,29 @@ export function Home({
   ]
   if (showRecentWork) {
     blocks.push({
+      key: 'recent-work',
       label: 'Recent work',
+      labelHeading: true,
       content: <RecentWorkBlock publications={publications} count={publicationCount} />,
     })
   }
   if (showResources && resource) {
-    blocks.push({ label: 'Resources', content: <ResourcesBlock resource={resource} /> })
+    blocks.push({ key: 'resources', label: 'Resources', content: <ResourcesBlock resource={resource} /> })
   }
   if (showOutreach && maestro) {
-    blocks.push({ label: 'Outreach', inverse: true, content: <OutreachBlock maestro={maestro} /> })
+    blocks.push({
+      key: 'outreach',
+      label: 'Outreach',
+      labelHeading: true,
+      inverse: true,
+      content: <OutreachBlock maestro={maestro} />,
+    })
   }
   if (showTheLab) {
     blocks.push({
+      key: 'the-lab',
       label: 'The lab',
+      labelHeading: true,
       content: (
         <TheLabBlock
           showPiPanel={showPiPanel}
@@ -459,15 +495,15 @@ export function Home({
   return (
     <div>
       {blocks.map((block, index) => (
-        <SectionRail
-          key={block.label}
-          num={String(index + 1).padStart(2, '0')}
+        <Section
+          key={block.key}
           label={block.label}
+          labelHeading={block.labelHeading}
           inverse={block.inverse}
           borderTop={index !== 0}
         >
           {block.content}
-        </SectionRail>
+        </Section>
       ))}
     </div>
   )

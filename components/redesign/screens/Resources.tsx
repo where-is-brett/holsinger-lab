@@ -3,8 +3,8 @@ import type { ResourcePayload } from 'types'
 import { PageTitle } from '../PageTitle'
 import { PortableBody } from '../PortableBody'
 import { ResourceBlock } from '../ResourceBlock'
-import { buildResourceMeta } from '../resourceModel'
-import { SectionRail } from '../SectionRail'
+import { buildResourceMeta, kindLabel } from '../resourceModel'
+import { Section } from '../Section'
 
 // Task 1 brief / spec §6, §2 ruling 1: one `/resources` index page, no
 // per-resource route -- the IA gives resources no pages, and one item
@@ -23,19 +23,21 @@ export function Resources({ resources }: { resources: ResourcePayload[] }) {
 
   return (
     <div>
-      <PageTitle title="Resources" meta={`${n} RESOURCE${n === 1 ? '' : 'S'}`} />
+      <PageTitle title="Resources" meta={`${n} resource${n === 1 ? '' : 's'}`} />
       {n === 0 ? (
-        <SectionRail>
+        <Section>
           <p className="text-[14px] leading-[1.5] text-text-muted">No resources are listed yet.</p>
-        </SectionRail>
+        </Section>
       ) : (
+        // One `Section` per resource, in the query's own order (`title
+        // asc`). `kindLabel` gives the label its sentence case, but it
+        // renders as this `Section`'s default `<p>` (`labelHeading` unset),
+        // not an `<h2>` -- two resources can share a kind, and a `<p>`
+        // avoids duplicate `<h2>`s (a heading-order concern) where that
+        // happens. `ResourceBlock`'s own title is the real heading for
+        // each resource.
         resources.map((resource, index) => (
-          <SectionRail
-            key={resource._id}
-            num={String(index + 1).padStart(2, '0')}
-            label={resource.kind ?? ''}
-            borderTop={index !== 0}
-          >
+          <Section key={resource._id} label={kindLabel(resource.kind)} borderTop={index !== 0}>
             <ResourceBlock title={resource.title ?? ''} meta={buildResourceMeta(resource)}>
               {/* Fix round 1: aligned to PortableBody's own BIO_PARAGRAPH
                   measure (`max-w-[720px]`), not ResourceBlock's narrower
@@ -51,7 +53,7 @@ export function Resources({ resources }: { resources: ResourcePayload[] }) {
               )}
               <PortableBody blocks={resource.howToObtain} />
             </ResourceBlock>
-          </SectionRail>
+          </Section>
         ))
       )}
     </div>

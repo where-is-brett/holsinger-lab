@@ -1,7 +1,7 @@
 import type { ResourcePayload } from 'types'
 import { describe, expect, it } from 'vitest'
 
-import { buildResourceMeta, formatSource } from './resourceModel'
+import { buildResourceMeta, formatSource, kindLabel } from './resourceModel'
 
 describe('formatSource', () => {
   it('joins journal, ref and year with " · "', () => {
@@ -23,6 +23,29 @@ describe('formatSource', () => {
   })
 })
 
+describe('kindLabel', () => {
+  it('sentence-cases each known kind', () => {
+    expect(kindLabel('hardware')).toBe('Hardware')
+    expect(kindLabel('protocol')).toBe('Protocol')
+    expect(kindLabel('software')).toBe('Software')
+    expect(kindLabel('dataset')).toBe('Dataset')
+  })
+
+  it('starts with an upper-case letter for every known kind', () => {
+    for (const kind of ['hardware', 'protocol', 'software', 'dataset']) {
+      const label = kindLabel(kind)
+      expect(label[0]).toBe(label[0].toUpperCase())
+    }
+  })
+
+  it('falls back to "Resource" for null, undefined or an unrecognised kind', () => {
+    expect(kindLabel(null)).toBe('Resource')
+    expect(kindLabel(undefined)).toBe('Resource')
+    expect(kindLabel('unknown-kind')).toBe('Resource')
+    expect(kindLabel('')).toBe('Resource')
+  })
+})
+
 function resource(overrides: Partial<ResourcePayload> = {}): ResourcePayload {
   return {
     _id: 'resource-1',
@@ -36,12 +59,15 @@ function resource(overrides: Partial<ResourcePayload> = {}): ResourcePayload {
 }
 
 describe('buildResourceMeta', () => {
-  it('always includes KIND', () => {
-    expect(buildResourceMeta(resource({ kind: 'protocol' }))).toEqual([{ label: 'KIND', value: 'protocol' }])
+  // KIND's value goes through `kindLabel` (sentence case, "Hardware"),
+  // matching the same resource's own `Section` label instead of printing
+  // the raw lower-case enum.
+  it('always includes KIND, sentence-cased via kindLabel', () => {
+    expect(buildResourceMeta(resource({ kind: 'protocol' }))).toEqual([{ label: 'Kind', value: 'Protocol' }])
   })
 
-  it('KIND value is "" when kind is unset', () => {
-    expect(buildResourceMeta(resource({ kind: null }))).toEqual([{ label: 'KIND', value: '' }])
+  it('KIND value is "Resource" (kindLabel\'s own fallback) when kind is unset', () => {
+    expect(buildResourceMeta(resource({ kind: null }))).toEqual([{ label: 'Kind', value: 'Resource' }])
   })
 
   it('adds a SOURCE row linking to the publication page when journal/ref/year resolve', () => {
@@ -62,9 +88,10 @@ describe('buildResourceMeta', () => {
       })
     )
     expect(meta).toContainEqual({
-      label: 'SOURCE',
+      label: 'Source',
       value: 'Journal of Neuroscience Methods 401(2) · 110-118 · 2024',
       href: '/publications/a-paper',
+      identifier: true,
     })
   })
 
@@ -85,7 +112,7 @@ describe('buildResourceMeta', () => {
         },
       })
     )
-    expect(meta).toContainEqual({ label: 'SOURCE', value: 'A titled fallback', href: undefined })
+    expect(meta).toContainEqual({ label: 'Source', value: 'A titled fallback', href: undefined, identifier: true })
   })
 
   it('drops the SOURCE row entirely when there is neither a formatted source nor a title', () => {
@@ -105,7 +132,7 @@ describe('buildResourceMeta', () => {
         },
       })
     )
-    expect(meta.find((m) => m.label === 'SOURCE')).toBeUndefined()
+    expect(meta.find((m) => m.label === 'Source')).toBeUndefined()
   })
 
   it('adds a DOI row when the linked publication has a doi', () => {
@@ -129,10 +156,11 @@ describe('buildResourceMeta', () => {
       label: 'DOI',
       value: '10.1038/s41420-024-00000-1',
       href: 'https://doi.org/10.1038/s41420-024-00000-1',
+      identifier: true,
     })
   })
 
   it('adds no SOURCE/DOI/URL rows when there is no linked publication', () => {
-    expect(buildResourceMeta(resource({ publication: null }))).toEqual([{ label: 'KIND', value: 'hardware' }])
+    expect(buildResourceMeta(resource({ publication: null }))).toEqual([{ label: 'Kind', value: 'Hardware' }])
   })
 })

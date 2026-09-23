@@ -7,15 +7,15 @@ import { PageTitle } from '../PageTitle'
 import { initialsOf } from '../peopleModel'
 import { PortraitFrame } from '../PersonCard'
 import { PortableBody } from '../PortableBody'
-import { SectionRail } from '../SectionRail'
+import { Section } from '../Section'
 
 // Task brief §5 point 1: `meta` is `role`, plus ` · roleDetail` when set,
 // verbatim -- both CMS strings printed exactly as stored, never uppercased
 // or otherwise "corrected" here (constraints.md, "CMS text prints
-// verbatim"). PageTitle itself may render `meta` uppercased via CSS (a
-// label-geometry choice, not a text transform this component performs), so
-// the DOM text these two values are concatenated into stays byte-identical
-// to the source fields.
+// verbatim"). PageTitle itself no longer applies any text-transform to
+// `meta` (spec §1.3) -- it's a plain sentence-case line now, so the DOM
+// text these two values are concatenated into stays byte-identical to the
+// source fields.
 function metaOf(person: ProfileBySlugPayload): string | undefined {
   if (!person.role) {
     return undefined
@@ -68,19 +68,19 @@ function ProfileBlock({ person }: { person: ProfileBySlugPayload }) {
       {/* `min-w-0`: belt-and-braces, not load-bearing here -- `grid-cols-1`
           above already compiles to `minmax(0, 1fr)`, which zeroes this
           track's min-content floor on its own. Added anyway to match the
-          existing convention (PageTitle.tsx's `<h1>`, SectionRail.tsx's
+          existing convention (PageTitle.tsx's `<h1>`, Section.tsx's
           content column) of guarding every grid/flex item that holds
           unpredictable CMS text, in case a future edit narrows the track
           back to a bare `1fr` without carrying this comment along. */}
       <div className="min-w-0">
         <PortableBody blocks={person.fullBio} bio={person.bio} />
         {person.email && (
-          <a href={`mailto:${person.email}`} data-identifier className={IDENTIFIER_LINK}>
+          <a href={`mailto:${person.email}`} data-identifier data-cms-verbatim className={IDENTIFIER_LINK}>
             {person.email}
           </a>
         )}
         {person.phone && (
-          <a href={`tel:${person.phone}`} data-identifier className={IDENTIFIER_LINK}>
+          <a href={`tel:${person.phone}`} data-identifier data-cms-verbatim className={IDENTIFIER_LINK}>
             {person.phone}
           </a>
         )}
@@ -98,20 +98,20 @@ export function PersonPage({ person }: { person: ProfileBySlugPayload }) {
   return (
     <div>
       <PageTitle title={person.name ?? ''} meta={metaOf(person)} />
-      <SectionRail num="01" label="Profile" borderTop={false}>
-        {/* Copied from PublicationPage.tsx's own back-link styling -- same
-            "← All ..." mono-caps label geometry, linking back to the index
-            route this detail page belongs under. */}
-        <Link
-          href="/people"
-          className="font-mono text-[11px] leading-none font-medium tracking-[0.1em] text-link uppercase"
-        >
+      {/* `labelHeading` true -- `ProfileBlock` has no heading of its own
+          (just a bio and identifier links), so `Profile` is this section's
+          only one. */}
+      <Section label="Profile" labelHeading borderTop={false}>
+        {/* Same "← All ..." sentence-case link as PublicationPage.tsx's own
+            back-link, linking back to the index route this detail page
+            belongs under. */}
+        <Link href="/people" className="text-[13px] leading-none font-medium text-link">
           ← All people
         </Link>
         <div className="mt-[26px]">
           <ProfileBlock person={person} />
         </div>
-      </SectionRail>
+      </Section>
     </div>
   )
 }

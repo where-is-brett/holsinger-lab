@@ -98,3 +98,34 @@ export function toPublication(p: PublicationPayload): Publication {
       .filter((r) => r.title !== ''),
   }
 }
+
+/**
+ * `PageTitle`'s `/publications` meta line (unfiltered), sentence case
+ * (spec §1.3): "19 publications, 2020–2025" (spec's own example), or
+ * "1 publication" with no years on file. Lives here rather than in
+ * `PublicationsIndex.tsx` so its singular/plural, single-year
+ * (`min === max`) and no-year branches get direct unit coverage instead of
+ * relying only on an e2e regex check.
+ */
+export function formatPublicationsMeta(pubs: Pick<Publication, 'year'>[]): string {
+  const years = pubs.map((p) => p.year).filter(Boolean)
+  const n = pubs.length
+  const label = n === 1 ? 'publication' : 'publications'
+  if (years.length === 0) return `${n} ${label}`
+  const min = years.reduce((a, b) => (b < a ? b : a))
+  const max = years.reduce((a, b) => (b > a ? b : a))
+  return min === max ? `${n} ${label}, ${min}` : `${n} ${label}, ${min}–${max}`
+}
+
+/**
+ * The filtered variant of the same meta line: "5 of 19 publications shown"
+ * (`PublicationsIndex.tsx`'s `accentMeta` state). A separate function, not
+ * a branch inside `formatPublicationsMeta`, because it takes a different
+ * shape of input (two counts, not a list to derive a year range from).
+ * Unconditionally plural: a filtered view implies at least one chip is
+ * active against a real dataset, which is never the single-publication
+ * case in practice.
+ */
+export function formatFilteredPublicationsMeta(shownCount: number, totalCount: number): string {
+  return `${shownCount} of ${totalCount} publications shown`
+}

@@ -38,9 +38,14 @@ const HEADER =
 // `.hidden` is generated after `.block`, which is exactly the ordering
 // dependency the rule exists to avoid.
 const WORDMARK_LINK = 'min-w-0'
-const WORDMARK = 'truncate font-mono text-[12px] leading-none font-medium tracking-[0.1em] uppercase'
+// Sentence-case Archivo, not uppercase mono (spec §1.5), on both: the
+// wordmark plus this repo's six live nav items (Home/Publications/
+// Research/Resources/People/Contact) is 7 uppercase mono micro-labels by
+// itself, already over the whole-page budget of 6 (e2e/label-budget.spec.ts)
+// before a single route's own content renders.
+const WORDMARK = 'truncate font-sans text-[13px] leading-none font-medium'
 
-const NAV = 'flex shrink-0 gap-7 font-mono text-[12px] leading-none tracking-[0.08em] uppercase'
+const NAV = 'flex shrink-0 gap-7 font-sans text-[13px] leading-none'
 
 // Two fully-formed class strings, not one base plus a same-property
 // override: the current item never underlines, even on hover (source

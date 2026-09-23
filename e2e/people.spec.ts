@@ -182,12 +182,12 @@ test.describe('/people', () => {
     // element, or the wrong one, if that phrase ever appears elsewhere on
     // the page.
     const meta = await page.getByTestId('page-title-meta').innerText()
-    const n = Number(meta.match(/(\d+)\s+CURRENT MEMBER/)![1])
-    const g = Number(meta.match(/(\d+)\s+GROUPS?/)![1])
+    const n = Number(meta.match(/(\d+)\s+current members?/i)![1])
+    const g = Number(meta.match(/(\d+)\s+groups?/i)![1])
     expect(n).toBe(cardCount)
     expect(n).toBe(expectedN)
     expect(g).toBe(expectedG)
-    expect(meta.startsWith('LAB HEAD + ')).toBe(showSpotlight)
+    expect(meta.startsWith('Lab head + ')).toBe(showSpotlight)
   })
 
   test.describe('no horizontal overflow', () => {

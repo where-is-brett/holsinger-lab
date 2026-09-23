@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   excludeLabHead,
+  formatPeopleMeta,
   groupByRoleGroup,
   initialsOf,
   isAlumniGroup,
@@ -232,5 +233,23 @@ describe('memberCount', () => {
 
   it('is 0 for an empty array', () => {
     expect(memberCount([])).toBe(0)
+  })
+})
+
+describe('formatPeopleMeta', () => {
+  it('pluralises members and groups, with no "Lab head +" when the spotlight is hidden', () => {
+    expect(formatPeopleMeta({ showSpotlight: false, n: 3, g: 2 })).toBe('3 current members · 2 groups')
+  })
+
+  it('singularises member and group when each count is exactly 1', () => {
+    expect(formatPeopleMeta({ showSpotlight: false, n: 1, g: 1 })).toBe('1 current member · 1 group')
+  })
+
+  it('prefixes "Lab head + " when the spotlight is showing', () => {
+    expect(formatPeopleMeta({ showSpotlight: true, n: 19, g: 6 })).toBe('Lab head + 19 current members · 6 groups')
+  })
+
+  it('handles zero members and zero groups', () => {
+    expect(formatPeopleMeta({ showSpotlight: false, n: 0, g: 0 })).toBe('0 current members · 0 groups')
   })
 })

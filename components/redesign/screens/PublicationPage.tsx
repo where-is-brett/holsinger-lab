@@ -4,9 +4,9 @@ import type { ReactNode } from 'react'
 import { CopyCitation } from '../CopyCitation'
 import type { Publication } from '../publicationModel'
 import { ResourceBlock } from '../ResourceBlock'
-import { SectionRail } from '../SectionRail'
+import { Section } from '../Section'
 import { Tag } from '../Tag'
-import { LABEL } from '../tokens'
+import { MICRO_LABEL } from '../tokens'
 
 // The identifier -- DOI or URL -- must print verbatim: never uppercased,
 // never re-typed. Same guard as PublicationRow.tsx's IDENTIFIER constant
@@ -14,32 +14,33 @@ import { LABEL } from '../tokens'
 // reproduced here via Tailwind 4's trailing-bang form.
 const IDENTIFIER = 'text-link normal-case! break-all'
 
-// Generic explanatory line (spec §4.4) -- the ui_kit's "For the 9 papers
-// without one" is mockup text pinned to today's dataset; this holds for any
-// count.
-const CANONICAL_LINK_EXPLANATION =
-  "The DOI is the paper's permanent address. Where a paper has none, the recorded publisher URL stands in."
+// The ui_kit's "The DOI is the paper's permanent address. Where a paper has
+// none, the recorded publisher URL stands in." explanation is
+// developer-facing copy explaining the system's own fallback rule, not
+// content for a visitor -- omitted here rather than rendered.
 
 function PaperBlock({ pub }: { pub: Publication }) {
   return (
     <>
-      <Link
-        href="/publications"
-        className="font-mono text-[11px] leading-none font-medium tracking-[0.1em] text-link uppercase"
-      >
+      <Link href="/publications" className="text-[13px] leading-none font-medium text-link">
         ← All publications
       </Link>
-      {/* Fix round 1: at 375px, SectionRail's content column narrows to
-          roughly 233px, and a single long word (e.g. "Neuroprotective") set
-          at this heading's large 2.3125rem font-size can be wider than
-          that column on its own -- normal word-wrapping only breaks at
-          spaces, so without `break-words` (`overflow-wrap: break-word`)
-          that one word pushes past the column and (like the Tag row above)
-          inflates the page's horizontal scroll width. `break-words` sets a
-          different CSS property (`overflow-wrap`) than `text-pretty`
-          (`text-wrap`), so this is additive, not a same-property
-          collision. */}
-      <h1 className="mt-[26px] max-w-[1060px] text-[2.3125rem] leading-[1.22] font-semibold tracking-[-0.012em] text-pretty break-words">
+      {/* `break-words`: see PageTitle.tsx's canonical note. The DOI paper
+          title "INPP5D/SHIP1: Expression, Regulation and Roles in
+          Alzheimer's Disease Pathophysiology" is title-case, so
+          "Pathophysiology" never hyphenates (Blink skips capitalised
+          words) -- at a fixed 2.3125rem it overflows this column at
+          320px. Sized as `clamp(1.75rem,4.5vw,2.3125rem)` instead: same
+          floor and slope as `--text-title` (reusing that level's own fit
+          budget), same 2.3125rem ceiling once the viewport is wide enough
+          that 4.5vw exceeds it, so desktop is unchanged -- still a
+          documented exception to the generic `--text-title` token (a
+          smaller ceiling for these longer scientific titles), just fluid
+          now instead of fixed. */}
+      <h1
+        data-testid="paper-title"
+        className="mt-[26px] max-w-[1060px] text-[clamp(1.75rem,4.5vw,2.3125rem)] leading-[1.22] font-semibold tracking-[-0.012em] text-pretty break-words"
+      >
         {pub.title}
       </h1>
       <p className="mt-5 max-w-[900px] text-[16px] leading-[1.6] text-text-muted">
@@ -55,7 +56,7 @@ function PaperBlock({ pub }: { pub: Publication }) {
         // topic tag (Tag's chip is `whitespace-nowrap` by default --
         // tokens.ts, fixed geometry -- so one long enough label, e.g. the
         // real topic "Metabolism, oxidative stress & neuroprotection",
-        // pushes past the row's width even after SectionRail.tsx's min-w-0
+        // pushes past the row's width even after Section.tsx's min-w-0
         // fix stops the page-wide blowout). Round 2: that scrollable region
         // had nothing focusable inside it (axe's
         // `scrollable-region-focusable`) and looked visually cut off on a
@@ -86,10 +87,13 @@ function AbstractBlock({ pub }: { pub: Publication }) {
           this column narrows to at 320px, and `text-pretty` alone
           (`text-wrap`) doesn't stop that; `break-words` (`overflow-wrap`)
           is a different property, so it's additive here too. */}
+      {/* Uses the `text-body` token (17px/1.6 per spec §1.2) instead of a
+          hand-written size/line-height pair, so this can't drift from the
+          token. */}
       {pub.abstract.map((paragraph, index) => (
         <p
           key={index}
-          className={`max-w-[840px] text-[1.0625rem] leading-[1.7] text-pretty break-words ${index === 0 ? '' : 'mt-4'}`}
+          className={`max-w-[840px] text-body text-pretty break-words ${index === 0 ? '' : 'mt-4'}`}
         >
           {paragraph}
         </p>
@@ -113,21 +117,22 @@ function CiteAndAccessBlock({ pub }: { pub: Publication }) {
     >
       {hasLink && (
         <div>
-          <div className={LABEL}>Canonical link — {pub.linkKind}</div>
+          {/* Sentence-case Archivo, not uppercase mono -- this is a genuine
+              label, not a data column head, so the micro-label budget rule
+              applies. */}
+          <div className={MICRO_LABEL}>Canonical link — {pub.linkKind}</div>
           <a
             href={pub.linkHref}
             data-identifier
+            data-cms-verbatim
             className={`mt-[14px] inline-block font-mono text-[15px] leading-[1.5] font-medium ${IDENTIFIER}`}
           >
             {pub.linkHref}
           </a>
-          <div className="mt-[14px] max-w-[380px] font-mono text-[11px] leading-[1.7] tracking-[0.02em] text-text-faint uppercase">
-            {CANONICAL_LINK_EXPLANATION}
-          </div>
         </div>
       )}
       <div className={hasLink ? 'mt-8 lg:mt-0' : ''}>
-        <div className={LABEL}>Formatted citation</div>
+        <div className={MICRO_LABEL}>Formatted citation</div>
         <div className="mt-[14px] border border-rule px-[22px] py-5" data-testid="pub-citation-box">
           {/* Fix round 1: `pub.cite` (lib/citation.ts's `formatApaCitation`)
               ends with a bare DOI/publisher URL -- a single unbreakable
@@ -139,12 +144,13 @@ function CiteAndAccessBlock({ pub }: { pub: Publication }) {
           <div
             className="font-mono text-[12.5px] leading-[1.75] break-words normal-case!"
             data-identifier
+            data-cms-verbatim
             data-testid="pub-cite-text"
           >
             {pub.cite}
           </div>
           <div className="mt-4">
-            <CopyCitation cite={pub.cite} copiedLabel="✓ COPIED — CITATION ON CLIPBOARD" />
+            <CopyCitation cite={pub.cite} copiedLabel="✓ Copied — citation on clipboard" />
           </div>
         </div>
       </div>
@@ -160,8 +166,8 @@ function ResourceSectionBlock({ pub }: { pub: Publication }) {
           key={resource.id}
           title={resource.title}
           meta={[
-            { label: 'KIND', value: resource.kind ?? '—' },
-            { label: 'MORE', value: 'Resources', href: '/resources' },
+            { label: 'Kind', value: resource.kind ?? '—' },
+            { label: 'More', value: 'Resources', href: '/resources' },
           ]}
         />
       ))}
@@ -169,17 +175,24 @@ function ResourceSectionBlock({ pub }: { pub: Publication }) {
   )
 }
 
-// Blocks numbered in render order (spec §4.4), so an omitted block (Abstract
-// when there's none, Resource when there are none -- both true for most of
-// today's dataset) leaves no gap in the numbering rather than a skipped "03".
+// Blocks render as an ordered list of `Section`s (spec §4.4); an omitted
+// block (Abstract when there's none, Resource when there are none -- both
+// true for most of today's dataset) simply isn't pushed.
 export function PublicationPage({ pub }: { pub: Publication }) {
-  const blocks: Array<{ label: string; content: ReactNode }> = [
+  // `Paper`'s `Section` label stays a `<p>` -- `PaperBlock` already renders
+  // the page's real `<h1 data-testid="paper-title">`, so its label isn't
+  // the section's only heading. `Abstract` and `Cite and access` have no
+  // heading of their own (plain paragraphs / mono labels), so their labels
+  // are `<h2>`s. `Resource` stays a `<p>`: `ResourceBlock`'s own title is a
+  // real `<h2>`, so a second `<h2>` label here would be a redundant,
+  // sibling heading.
+  const blocks: Array<{ label: string; labelHeading?: boolean; content: ReactNode }> = [
     { label: 'Paper', content: <PaperBlock pub={pub} /> },
   ]
   if (pub.abstract.length > 0) {
-    blocks.push({ label: 'Abstract', content: <AbstractBlock pub={pub} /> })
+    blocks.push({ label: 'Abstract', labelHeading: true, content: <AbstractBlock pub={pub} /> })
   }
-  blocks.push({ label: 'Cite & access', content: <CiteAndAccessBlock pub={pub} /> })
+  blocks.push({ label: 'Cite and access', labelHeading: true, content: <CiteAndAccessBlock pub={pub} /> })
   if (pub.resources.length > 0) {
     blocks.push({ label: 'Resource', content: <ResourceSectionBlock pub={pub} /> })
   }
@@ -187,14 +200,9 @@ export function PublicationPage({ pub }: { pub: Publication }) {
   return (
     <div>
       {blocks.map((block, index) => (
-        <SectionRail
-          key={block.label}
-          num={String(index + 1).padStart(2, '0')}
-          label={block.label}
-          borderTop={index !== 0}
-        >
+        <Section key={block.label} label={block.label} labelHeading={block.labelHeading} borderTop={index !== 0}>
           {block.content}
-        </SectionRail>
+        </Section>
       ))}
     </div>
   )

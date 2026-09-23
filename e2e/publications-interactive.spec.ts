@@ -2,17 +2,12 @@ import { expect, test } from '@playwright/test'
 
 import { e2eClient } from './support/sanity'
 
-// The FacetBand root is the ancestor div carrying its `z-[5]` utility
-// (unique to that one element -- see components/redesign/FacetBand.tsx),
-// located from the always-present "Density" row label. Facet-group label
+// Located via `data-testid="facet-band"` (FacetBand.tsx). Facet-group label
 // lookups are scoped inside it, not the whole page: the column-head row
-// (`hidden lg:grid`) also renders a plain "Year" span, and an unscoped
+// (`hidden xl:grid`) also renders a plain "Year" span, and an unscoped
 // `getByText('Year', { exact: true })` would match both.
 function facetBand(page: import('@playwright/test').Page) {
-  return page
-    .getByText('Density', { exact: true })
-    .locator('xpath=ancestor::div[contains(@class, "z-[5]")]')
-    .first()
+  return page.getByTestId('facet-band')
 }
 
 test.describe('publications index', () => {
@@ -23,7 +18,7 @@ test.describe('publications index', () => {
     const rowCount = await rows.count()
     expect(rowCount).toBeGreaterThan(0)
 
-    const meta = page.getByText(/^\d+ RECORDS( · |$)/)
+    const meta = page.getByText(/^\d+ publications?(, |$)/)
     await expect(meta).toBeVisible()
     const metaText = (await meta.textContent())!
     const n = Number(metaText.match(/^(\d+)/)![1])
@@ -46,7 +41,7 @@ test.describe('publications index', () => {
 
     await firstChip.click()
 
-    await expect(page.getByText(/ OF \d+ RECORDS SHOWN$/)).toBeVisible()
+    await expect(page.getByText(/ of \d+ publications shown$/)).toBeVisible()
     const visibleCount = await rows.count()
     expect(visibleCount).toBeGreaterThan(0)
     expect(visibleCount).toBeLessThanOrEqual(fullCount)
@@ -56,7 +51,7 @@ test.describe('publications index', () => {
     }
 
     await firstChip.click()
-    await expect(page.getByText(/^\d+ RECORDS( · |$)/)).toBeVisible()
+    await expect(page.getByText(/^\d+ publications?(, |$)/)).toBeVisible()
     await expect(rows).toHaveCount(fullCount)
   })
 
@@ -79,7 +74,7 @@ test.describe('publications index', () => {
     const chipType = chipText.replace(/\s*\d+$/, '')
 
     await firstChip.click()
-    await expect(page.getByText(/ OF \d+ RECORDS SHOWN$/)).toBeVisible()
+    await expect(page.getByText(/ of \d+ publications shown$/)).toBeVisible()
     const types = await rows.evaluateAll((els) => els.map((el) => el.getAttribute('data-type')))
     for (const type of types) {
       expect(type).toBe(chipType)
@@ -138,7 +133,7 @@ test.describe('publications index', () => {
 
   test('the density toggle tightens rows so the title truncates on one line', async ({ page }) => {
     await page.goto('/publications')
-    await page.getByRole('button', { name: 'COMPACT' }).click()
+    await page.getByRole('button', { name: 'Compact' }).click()
 
     const firstTitle = page.locator('[data-testid="pub-row"]').first().getByTestId('pub-title')
     await expect
@@ -159,9 +154,9 @@ test.describe('publications index', () => {
 
     const firstRow = page.locator('[data-testid="pub-row"]').first()
     const title = (await firstRow.getByTestId('pub-title').textContent())!.trim()
-    const copyButton = firstRow.getByRole('button', { name: 'COPY CITATION' })
+    const copyButton = firstRow.getByRole('button', { name: 'Copy citation' })
     await copyButton.click()
-    await expect(copyButton).toHaveText(/COPIED/)
+    await expect(copyButton).toHaveText(/Copied/)
 
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
     expect(clipboardText).toContain(title)
@@ -234,12 +229,9 @@ test.describe('publications index', () => {
   })
 
   test.describe('no horizontal overflow', () => {
-    // 375/390 added in fix round 2: PageTitle.tsx and FacetBand.tsx had
-    // non-responsive gutters (fixed `pr`/`pl` gutter tokens at every width)
-    // and neither RAIL_GRID content column had its own `min-w-0`, so this
-    // page genuinely overflowed at real phone widths (measured 621px
-    // scrollWidth vs a 375px viewport before the fix) -- previously
-    // uncaught because this describe block only ever checked >=768px.
+    // Includes real phone widths (320/375/390), not just >=768px, since
+    // narrow-viewport overflow is its own failure mode independent of
+    // desktop layout.
     for (const width of [320, 375, 390, 768, 1023, 1024, 1280]) {
       test(`at ${width}px`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 })
@@ -248,6 +240,34 @@ test.describe('publications index', () => {
           () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
         )
         expect(fits).toBe(true)
+      })
+    }
+  })
+
+  // The document-level check above cannot see a title that overflows its
+  // own ledger cell without ever growing the page past the viewport, so
+  // this checks each row's cells directly. Density defaults to Comfortable
+  // on load, which is the shape this check targets; Compact truncates by
+  // design, so an ellipsis cell there is not a defect.
+  test.describe('publication ledger cells never overflow their own track', () => {
+    for (const width of [1024, 1280, 1440]) {
+      test(`at ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 })
+        await page.goto('/publications')
+        const overflowing = await page.evaluate(() => {
+          const rows = document.querySelectorAll('[data-testid="pub-row"]')
+          const found: { tag: string; text: string; overflowPx: number }[] = []
+          for (const row of rows) {
+            for (const el of row.querySelectorAll('*')) {
+              const overflowPx = el.scrollWidth - el.clientWidth
+              if (overflowPx > 1) {
+                found.push({ tag: el.tagName, text: (el.textContent ?? '').slice(0, 60), overflowPx })
+              }
+            }
+          }
+          return found
+        })
+        expect(overflowing, JSON.stringify(overflowing)).toEqual([])
       })
     }
   })

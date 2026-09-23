@@ -9,22 +9,22 @@ test.describe('publication copy-citation control', () => {
     await context.grantPermissions(['clipboard-write'])
     await page.goto('/publications')
 
-    const control = page.getByRole('button', { name: 'COPY CITATION' }).first()
+    const control = page.getByRole('button', { name: 'Copy citation' }).first()
     await control.focus()
     await expect(control).toBeFocused()
-    await expect(control).toHaveText('COPY CITATION')
+    await expect(control).toHaveText('Copy citation')
 
     await page.keyboard.press('Enter')
-    await expect(control).toHaveText(/COPIED/)
+    await expect(control).toHaveText(/Copied/)
   })
 
   test('is operable via Space as well as Enter', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-write'])
     await page.goto('/publications')
 
-    const control = page.getByRole('button', { name: 'COPY CITATION' }).first()
+    const control = page.getByRole('button', { name: 'Copy citation' }).first()
     await control.focus()
     await page.keyboard.press('Space')
-    await expect(control).toHaveText(/COPIED/)
+    await expect(control).toHaveText(/Copied/)
   })
 })
