@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 
+import { stubClipboardWriteToReject } from './support/clipboard'
 import { e2eClient } from './support/sanity'
 
 // This spec deliberately never calls `test.use({ viewport })` -- the whole
@@ -118,5 +119,37 @@ test.describe('copy citation, tap-driven', () => {
     const copyButton = firstRow.getByRole('button', { name: 'Copy citation' })
     await copyButton.tap()
     await expect(copyButton).toHaveText(/Copied/)
+  })
+})
+
+test.describe('copy citation, clipboard write fails', () => {
+  test('shows a visible fallback message and selects the citation text', async ({ page, browserName }) => {
+    // No clipboard grant at all: Chromium (chromium, mobile-chrome) denies
+    // `writeText` without an explicit grant, which is exactly the failure
+    // path under test. WebKit succeeds without a grant (harness limit
+    // (b)), so its write is forced to reject instead, deliberately, rather
+    // than relying on an ungranted permission it doesn't need.
+    if (browserName === 'webkit') {
+      await stubClipboardWriteToReject(page)
+    }
+    await page.goto('/publications')
+
+    const firstRow = page.locator('[data-testid="pub-row"]').first()
+    const copyButton = firstRow.getByRole('button', { name: 'Copy citation' })
+    const citeText = await firstRow.getByTestId('copy-citation-text').textContent()
+
+    const coarsePointer = await page.evaluate(() => matchMedia('(pointer: coarse)').matches)
+    if (coarsePointer) {
+      await copyButton.tap()
+    } else {
+      await copyButton.click()
+    }
+
+    const status = firstRow.getByRole('status')
+    await expect(status).toBeVisible()
+    await expect(status).toHaveText(coarsePointer ? "Use your device's copy action" : /Press (⌘C|Ctrl\+C) to copy/)
+
+    const selectedText = await page.evaluate(() => window.getSelection()?.toString() ?? '')
+    expect(selectedText).toBe(citeText)
   })
 })

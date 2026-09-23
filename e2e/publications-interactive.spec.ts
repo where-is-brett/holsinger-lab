@@ -271,6 +271,19 @@ test.describe('publications index', () => {
           const found: { tag: string; text: string; overflowPx: number }[] = []
           for (const row of rows) {
             for (const el of row.querySelectorAll('*')) {
+              // Skip visually-hidden (`sr-only`-pattern) elements: CopyCitation
+              // keeps an off-screen, 1px, `white-space: nowrap` span holding
+              // the full citation text as a manual-copy selection target
+              // (components/redesign/CopyCitation.tsx) -- its `scrollWidth`
+              // is deliberately far larger than its `clientWidth` (the whole
+              // point is that it never wraps, so Range/selectNodeContents
+              // selects the exact citation string), and it is clipped out of
+              // the visible page regardless, so it can never contribute to
+              // this row's visible overflow. A rect this small only ever
+              // matches an intentionally hidden node -- real overflow bugs
+              // are on elements that actually render at a visible size.
+              const rect = el.getBoundingClientRect()
+              if (rect.width <= 1 && rect.height <= 1) continue
               const overflowPx = el.scrollWidth - el.clientWidth
               if (overflowPx > 1) {
                 found.push({ tag: el.tagName, text: (el.textContent ?? '').slice(0, 60), overflowPx })
