@@ -60,6 +60,14 @@ export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitatio
   // it mounts/unmounts with `fallback` (see the JSX), since it must not
   // exist on an ordinary row at all -- see that block's own comment.
   const [fallback, setFallback] = useState('')
+  // Incremented on every failed attempt, including a second (or later)
+  // failure with the identical message -- `fallback` alone can't drive the
+  // re-selection effect below in that case, since setting React state to
+  // the same string is a no-op that never re-runs an effect keyed on it.
+  // Without this, a reader who cleared the selection (or long-pressed
+  // elsewhere) between two failed taps would see the citation text but
+  // find nothing actually selected on the second attempt.
+  const [fallbackAttempt, setFallbackAttempt] = useState(0)
   // Typed via the bare (unprefixed) setTimeout/clearTimeout, not
   // window.setTimeout: with @types/node in scope (as it is for the whole
   // project), `window.setTimeout` and the ambient `setTimeout` type
@@ -89,7 +97,7 @@ export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitatio
     const selection = window.getSelection()
     selection?.removeAllRanges()
     selection?.addRange(range)
-  }, [fallback])
+  }, [fallback, fallbackAttempt])
 
   const copy = async () => {
     if (timeoutRef.current !== null) clearTimeout(timeoutRef.current)
@@ -117,6 +125,7 @@ export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitatio
     }
     setCopied(false)
     setFallback(copyFallbackMessage({ coarsePointer: isCoarsePointer(), mac: isMac() }))
+    setFallbackAttempt((n) => n + 1)
   }
 
   // Sentence case, not shouted caps: these literal strings are what the

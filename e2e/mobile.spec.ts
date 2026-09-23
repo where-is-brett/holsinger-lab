@@ -171,4 +171,36 @@ test.describe('copy citation, clipboard write fails', () => {
     const occurrences = await firstRow.evaluate((el, text) => (el.textContent ?? '').split(text).length - 1, citeText)
     expect(occurrences).toBe(1)
   })
+
+  test('re-selects the citation on a second failed attempt', async ({ page, browserName }) => {
+    if (browserName === 'webkit') {
+      await stubClipboardWriteToReject(page)
+    }
+    await page.goto('/publications')
+
+    const firstRow = page.locator('[data-testid="pub-row"]').first()
+    const copyButton = firstRow.getByRole('button', { name: 'Copy citation' })
+    const coarsePointer = await page.evaluate(() => matchMedia('(pointer: coarse)').matches)
+    const tapOrClick = () => (coarsePointer ? copyButton.tap() : copyButton.click())
+
+    await tapOrClick()
+    await expect(firstRow.getByTestId('copy-citation-fallback-text')).toBeVisible()
+
+    // Simulate the reader clearing the selection (e.g. tapping elsewhere)
+    // between two failed attempts, then failing a second copy with the
+    // identical fallback message. Setting React state to the same string
+    // twice is a no-op that never re-runs an effect keyed only on it, so
+    // this is what proves the selection effect is keyed on an attempt
+    // counter instead (components/redesign/CopyCitation.tsx).
+    await page.evaluate(() => window.getSelection()?.removeAllRanges())
+    const clearedLength = await page.evaluate(() => window.getSelection()?.toString().length ?? 0)
+    expect(clearedLength).toBe(0)
+
+    await tapOrClick()
+    // `expect.poll`, not a one-shot read: the re-selection happens inside a
+    // `useEffect` that runs after React commits the failed-attempt state
+    // update, which is not guaranteed to have happened yet the instant
+    // `tapOrClick()`'s own promise resolves.
+    await expect.poll(() => page.evaluate(() => window.getSelection()?.toString().length ?? 0)).toBeGreaterThan(0)
+  })
 })

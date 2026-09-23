@@ -38,21 +38,32 @@ async function movedFocus(page: Page, before: JSHandle<Element | null>, after: J
  * probing Tab before every Alt+Tab (rather than deciding once) makes
  * Alt+Tab loop on the same element forever instead of ever progressing.
  * Each call is its own named `test.step`, so a report/trace shows which
- * key is in use. Throws -- failing the test, never skipping it -- if
- * neither key moves focus off `document.body` on the first call.
+ * key is in use.
+ *
+ * Every call -- not just the first -- verifies focus actually moved to a
+ * different element, and throws (failing the test, never skipping it) if
+ * it didn't. Without this on later calls, a caller looping this to walk a
+ * sequence (e.g. a focus-trap test) could pass vacuously if focus got
+ * stuck partway through: nothing would ever notice, since only "focus is
+ * somewhere inside the dialog" was being asserted, which stuck focus also
+ * satisfies.
  */
 export function createTabStepper(page: Page): () => Promise<void> {
   let resolvedKey: 'Tab' | 'Alt+Tab' | null = null
 
   return async function pressTabStep(): Promise<void> {
+    const before = await activeElementHandle(page)
+
     if (resolvedKey !== null) {
       await test.step(resolvedKey, async () => {
         await page.keyboard.press(resolvedKey!)
       })
+      const after = await activeElementHandle(page)
+      if (!(await movedFocus(page, before, after))) {
+        throw new Error(`${resolvedKey} did not move keyboard focus`)
+      }
       return
     }
-
-    const before = await activeElementHandle(page)
 
     await test.step('Tab', async () => {
       await page.keyboard.press('Tab')
