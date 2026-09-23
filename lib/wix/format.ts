@@ -32,6 +32,19 @@ export function telHref(phone: string | null | undefined): string | null {
   return t ? `tel:${t}` : null
 }
 
+/**
+ * In draft mode / Presentation, `sanityFetch` runs with stega encoding on,
+ * which inserts invisible characters into string fields -- including,
+ * potentially, `heroImageLqip`. A stega-corrupted `data:image/...;base64,...`
+ * URL fails to decode, so the blur placeholder silently vanishes (a solid
+ * black box until the real image arrives). `stegaClean` strips those
+ * characters wherever they land in the string, not just at the edges.
+ */
+export function cleanLqip(v: string | null | undefined): string | null {
+  const c = clean(v)
+  return c || null
+}
+
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 export function formatMediaDate(date: string | null | undefined): string | null {
   if (!date) return null
