@@ -430,11 +430,11 @@ export function Home({
   // on `showLabHeadCard` (this page's own "is the lab head visible here"
   // boolean) mirrors how `People.tsx` gates `excludeLabHead` on its own
   // `showSpotlight` -- the two pages' counts agree whenever
-  // `showLabHeadOnHome` and `showLabHeadOnPeople` happen to carry the same
-  // value (note `showSpotlight` itself, unlike `showLabHeadCard`, doesn't
-  // additionally require a named lab head), which `e2e/home.spec.ts`
-  // cross-checks directly against /people's own rendered meta rather than
-  // re-deriving the rule.
+  // `showLabHeadOnHome` and `showLabHeadOnPeople` carry the same value AND
+  // the lab head is named (`showSpotlight` alone doesn't require a name,
+  // unlike `showLabHeadCard`, so the two can still disagree with a set but
+  // nameless `labHead`), which `e2e/home.spec.ts` cross-checks directly
+  // against /people's own rendered meta rather than re-deriving the rule.
   const memberCount = currentMemberCount(profiles, roleGroups, showLabHeadCard ? labHead?._id : null)
   // "0 — PEOPLE →" is never rendered -- the members line needs both the
   // page-level flag and an actual positive count.

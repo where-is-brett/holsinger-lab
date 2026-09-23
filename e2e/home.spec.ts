@@ -173,12 +173,9 @@ test.describe('/', () => {
     const titles = await rows.allTextContents()
     expect(titles.map((t) => t.trim())).toEqual(pubs.slice(1).map((p) => p.title.trim()))
 
-    // Fix round 1, point 1 (pre-Task-3 wording): `nth(i)` by index, not
-    // `.filter({ hasText })` -- substring matching trips Playwright's
-    // strict mode whenever one title is itself a substring of another,
-    // which a live 19-record dataset makes entirely possible. Index order
-    // is already proven equal to the expected order by the `titles`
-    // assertion above.
+    // Index by `nth(i)`, not `.filter({ hasText })` -- substring matching
+    // trips strict mode when one title is a substring of another. Order is
+    // already proven by the `titles` assertion above.
     for (let i = 0; i < pubs.length - 1; i++) {
       const pub = pubs[i + 1]
       if (!pub.slug) continue

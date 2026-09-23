@@ -27,13 +27,20 @@ export interface Publication {
 
 const PI_SURNAME = 'Holsinger'
 
+// The PI's own name token ends at the next comma, semicolon, or " and "/
+// " & " conjunction -- so a co-author listed right after the PI with no
+// comma between them ("... Holsinger R.M.D. and Neely G.") is never swept
+// into the bold run too.
+const AUTHOR_TOKEN_BOUNDARY = /[,;]|\s+(?:and|&)\s+/
+
 export function splitAuthors(authors: string, piSurname: string = PI_SURNAME) {
   const at = authors.indexOf(piSurname)
   if (at === -1) return { pre: authors, pi: '', post: '' }
-  // The PI's name runs from the surname to the next comma or the end, so
+  // The PI's name runs from the surname to that boundary or the end, so
   // initials stay attached ("Holsinger R.M.D." not "Holsinger").
-  let end = at + piSurname.length
-  while (end < authors.length && authors[end] !== ',') end++
+  const rest = authors.slice(at + piSurname.length)
+  const boundary = rest.search(AUTHOR_TOKEN_BOUNDARY)
+  const end = at + piSurname.length + (boundary === -1 ? rest.length : boundary)
   return {
     pre: authors.slice(0, at),
     pi: authors.slice(at, end).trimEnd(),
