@@ -86,12 +86,14 @@ export function PortraitFrame({
       <Image src={img} alt={name} fill sizes={sizes} className={IMAGE_FILTER} />
     </div>
   ) : (
+    // Task 3 fix round 1: the "[ NO PORTRAIT ON FILE ]" line is deleted --
+    // it's system-explaining copy (the kind item 1 of the brief removes),
+    // and it rendered on live `/people` any time a profile has no image.
+    // The initials plus the quiet striped background are enough; PR 4 adds
+    // a real initials tile.
     <div className={`${FOOTPRINT_FALLBACK} ${className ?? ''}`} style={{ backgroundImage: STRIPE_BG }}>
       <span className="font-mono text-[26px] leading-none font-medium text-text-muted">
         {initials}
-      </span>
-      <span className="font-mono text-[8.5px] leading-[1.4] tracking-[0.08em] text-text-faint">
-        [ NO PORTRAIT ON FILE ]
       </span>
     </div>
   )

@@ -42,7 +42,11 @@ export const CONTROL_BASE = 'font-mono text-[11px] leading-none font-medium trac
  * own `text-text-inverse-muted` instead of this baked-in colour, same
  * "colour chosen per branch" reasoning as `LABEL_BASE`/`CONTROL_BASE`.
  */
-export const MICRO_LABEL = 'font-sans text-[0.8125rem] leading-none font-medium text-text-muted'
+// Task 3 fix round 1 (review Minor 2): `leading-[1.4]`, not `leading-none`
+// -- a converted label that wraps (Research's kicker, People's spotlight
+// role line, a long role-group `<h2>` at 320px) needs real line spacing,
+// not lines stacked with zero gap between them.
+export const MICRO_LABEL = 'font-sans text-[0.8125rem] leading-[1.4] font-medium text-text-muted'
 /** The system's only border treatment: 1px, square corners, no shadow. */
 export const HAIRLINE = 'border border-rule-strong'
 /**

@@ -218,18 +218,18 @@ test.describe('redesign component gallery', () => {
   }) => {
     const section = page.getByTestId('gallery-person-card')
     await expect(section.getByRole('img', { name: 'Haochen Wu' })).toBeVisible()
-    // The fallback case: no <img>, initials + "NO PORTRAIT ON FILE" instead.
-    // Several fixture cards use the fallback, so this is scoped to Jiyoo
-    // Choi's card specifically -- found via her unique role text, then
-    // walked up to the card's own wrapping div -- rather than asserting on
-    // the page-wide (non-unique) "NO PORTRAIT ON FILE" / "JC" text alone,
+    // The fallback case: no <img>, initials only (Task 3 fix round 1: the
+    // "[ NO PORTRAIT ON FILE ]" system-explaining text is deleted -- PR 4
+    // adds the initials tile). Several fixture cards use the fallback, so
+    // this is scoped to Jiyoo Choi's card specifically -- found via her
+    // unique role text, then walked up to the card's own wrapping div --
+    // rather than asserting on the page-wide (non-unique) "JC" text alone,
     // which could pass even if a different card's fallback rendered instead
     // of hers.
     const jiyooRole = section.getByText('Ungergraduate student - Diagnostic Radiography')
     await expect(jiyooRole).toBeVisible()
     const jiyooCard = jiyooRole.locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " group ")][1]')
     await expect(jiyooCard.getByText('JC')).toBeVisible()
-    await expect(jiyooCard.getByText('[ NO PORTRAIT ON FILE ]')).toBeVisible()
     await expect(jiyooCard.locator('img')).toHaveCount(0)
   })
 

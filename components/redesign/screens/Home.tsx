@@ -128,6 +128,17 @@ const COLUMN_HEAD = `hidden ${PUBLICATION_GRID} pb-3 font-mono text-[11px] leadi
 function RecentWorkBlock({ publications, count }: { publications: Publication[]; count: number }) {
   return (
     <div data-testid="home-recent-work">
+      {/* Task 3 fix round 1 (review Minor 1): "Latest five · by date" moved
+          out of the ledger-head row -- it's a sentence-case sort-order
+          note about the block's content, not a fifth column head, and the
+          `ledger-head` exclusion only ever covered it because of where it
+          sat. Same `xl`-only visibility as the head row below it (the
+          annotation is meaningless once the row stacks below `xl`), just
+          its own sentence-case sibling instead of a shouted mono span
+          inside the head row. */}
+      <div className="hidden justify-end pb-1 xl:flex">
+        <span className="text-[13px] leading-[1.4] text-text-faint">Latest five, by date</span>
+      </div>
       {/* `data-testid="ledger-head"` (Task 3): the one place this block's
           uppercase mono is still allowed -- e2e/label-budget.spec.ts
           excludes anything inside it from the micro-label budget. */}
@@ -135,10 +146,7 @@ function RecentWorkBlock({ publications, count }: { publications: Publication[];
         <span>Year</span>
         <span>Title</span>
         <span>Journal</span>
-        <span className="flex justify-between">
-          <span>Link</span>
-          <span className="tracking-[0.08em]">Latest five · by date</span>
-        </span>
+        <span>Link</span>
       </div>
       {publications.map((pub) => (
         // `data-testid="pub-row"` (Task 2 fix round 1): matches
@@ -178,7 +186,7 @@ function ResourcesBlock({ resource }: { resource: HomeResourcePayload }) {
 
 // -- Block 4: Outreach (MAESTRO), inverse ---------------------------------
 
-// The identifier prints "REGISTER — <site without scheme>" verbatim --
+// The identifier prints "Register — <site without scheme>" verbatim --
 // scheme stripped for display only, same `deriveLink` URL-label convention
 // used everywhere else in this direction; the href keeps the full URL.
 function siteLabel(site: string): string {
@@ -197,18 +205,21 @@ function OutreachBlock({ maestro }: { maestro: MaestroProjectPayload }) {
       <PortableBody blocks={maestro.overview} variant="inverse" />
       {maestro.site && (
         // No `data-identifier`: unlike PublicationRow/ResourceBlock's
-        // identifiers, this anchor's rendered text is "REGISTER — <label>",
+        // identifiers, this anchor's rendered text is "Register — <label>",
         // not the bare identifier -- e2e/redesign-components.spec.ts's
         // generic `[data-identifier]` contract asserts the *whole* element
         // text (scheme/`www.` stripped) is contained in `href`, which a
-        // "REGISTER — " prefix would trip. Nothing here sets
-        // `text-transform: uppercase` on this element or an ancestor, so
-        // there's no uppercasing risk to guard against either.
+        // "Register — " prefix would trip.
+        //
+        // Task 3 fix round 1 (review Important 2): was a shouted, tracked
+        // mono literal ("REGISTER — …") -- the brief's own "links become
+        // sentence case" rule applies to it too, so it now matches "All
+        // resources →"'s own sentence-case link style (14px, not mono).
         <a
           href={maestro.site}
-          className="mt-5 inline-block font-mono text-[12px] leading-none tracking-[0.08em] break-all text-text-inverse underline underline-offset-4"
+          className="mt-5 inline-block break-all text-[14px] font-medium text-text-inverse underline underline-offset-4"
         >
-          REGISTER — {siteLabel(maestro.site)}
+          Register — {siteLabel(maestro.site)}
         </a>
       )}
     </div>

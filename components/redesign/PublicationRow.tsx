@@ -38,7 +38,14 @@ export interface PublicationRowProps {
 const GRID = PUBLICATION_GRID
 // The mobile "year — journal ref" kicker line, shared by every non-narrow
 // variant below `xl`. Same anatomy as the `narrow` branch's kicker.
-const KICKER = 'font-mono text-[10px] leading-[1.4] font-medium tracking-[0.06em] uppercase'
+//
+// Task 3 fix round 1 (review Important 4): no `uppercase` -- this forced
+// the CMS `journal` name upper-case (constraints.md: "CMS text prints
+// verbatim"), once per row, on every route below `xl` (measured: 76 on
+// `/publications`, 20 on `/` at 375px). The journal name now renders
+// exactly as typed; the year beside it is still styled via `text-accent`,
+// not case.
+const KICKER = 'font-mono text-[10px] leading-[1.4] font-medium tracking-[0.06em]'
 
 // The row is the hover target, never a click target -- only the title (an
 // optional <button>) is. `group` on the row pairs with `group-hover:` on the

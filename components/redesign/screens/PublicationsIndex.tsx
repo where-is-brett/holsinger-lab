@@ -38,7 +38,13 @@ export function PublicationsIndex({ publications }: { publications: Publication[
   const [year, setYear] = useState<string | null>(null)
   const [type, setType] = useState<string | null>(null)
   const [topic, setTopic] = useState<string | null>(null)
-  const [density, setDensity] = useState<'COMFORTABLE' | 'COMPACT'>('COMFORTABLE')
+  // Task 3 fix round 1 (review Important 5): the density chip labels are
+  // sentence case ('Comfortable'/'Compact'), not shouted caps -- these are
+  // the state's own values (FacetBand renders each option label verbatim
+  // as its chip text), so the state type itself carries the display text.
+  // PR 3 removes this toggle entirely; this is a like-for-like case fix,
+  // not a redesign.
+  const [density, setDensity] = useState<'Comfortable' | 'Compact'>('Comfortable')
 
   const yearCounts = useMemo(() => countBy(publications, (p) => p.year), [publications])
   const typeCounts = useMemo(() => countBy(publications, (p) => p.type), [publications])
@@ -132,9 +138,9 @@ export function PublicationsIndex({ publications }: { publications: Publication[
             },
           ]}
           density={{
-            options: ['COMFORTABLE', 'COMPACT'],
+            options: ['Comfortable', 'Compact'],
             value: density,
-            onChange: (d) => setDensity(d as 'COMFORTABLE' | 'COMPACT'),
+            onChange: (d) => setDensity(d as 'Comfortable' | 'Compact'),
           }}
         />
       </Section>
@@ -172,7 +178,7 @@ export function PublicationsIndex({ publications }: { publications: Publication[
             >
               <PublicationRow
                 pub={pub}
-                density={density === 'COMPACT' ? 'compact' : 'comfortable'}
+                density={density === 'Compact' ? 'compact' : 'comfortable'}
                 href={pub.href}
               />
             </div>

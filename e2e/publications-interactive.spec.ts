@@ -135,7 +135,7 @@ test.describe('publications index', () => {
 
   test('the density toggle tightens rows so the title truncates on one line', async ({ page }) => {
     await page.goto('/publications')
-    await page.getByRole('button', { name: 'COMPACT' }).click()
+    await page.getByRole('button', { name: 'Compact' }).click()
 
     const firstTitle = page.locator('[data-testid="pub-row"]').first().getByTestId('pub-title')
     await expect
@@ -253,8 +253,8 @@ test.describe('publications index', () => {
   // above cannot see a title that overflows its own ledger cell without
   // ever growing the page past the viewport -- see `e2e/home.spec.ts`'s
   // identical check and `tokens.ts`'s `PUBLICATION_GRID` comment for the
-  // full root cause. Density defaults to COMFORTABLE on load, which is the
-  // shape this check targets; COMPACT truncates by design (`lg:truncate`),
+  // full root cause. Density defaults to Comfortable on load, which is the
+  // shape this check targets; Compact truncates by design (`lg:truncate`),
   // so a `text-overflow: ellipsis` cell there is not a defect.
   test.describe('publication ledger cells never overflow their own track', () => {
     for (const width of [1024, 1280, 1440]) {
