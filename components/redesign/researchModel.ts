@@ -49,7 +49,7 @@ export interface ResearchProjectCover {
 export interface ResearchProjectView {
   id: string
   title: string
-  /** The project's slug, or `null` when unset (e.g. an unslugged import) -- see `splitLead`/`researchCards` (homeModel.ts) for how callers link to it. */
+  /** The project's slug, or `null` when unset (e.g. an unslugged import) -- see `researchCards` (homeModel.ts) for how callers link to it. */
   slug: string | null
   /** The section label: the first tag, or "Project" when there are none. */
   label: string

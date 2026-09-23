@@ -183,6 +183,46 @@ describe('firstSentence', () => {
   it('returns "" for blank input', () => {
     expect(firstSentence('   ')).toBe('')
   })
+
+  // Fix round 1, finding 1: an abbreviation or a single-capital initial
+  // followed by a capital/digit/paren must not be treated as a sentence end.
+  it('does not split on "Dr."', () => {
+    expect(firstSentence('Dr. Holsinger leads the lab. Second.')).toBe(
+      'Dr. Holsinger leads the lab.'
+    )
+  })
+  it('does not split on "Fig."', () => {
+    expect(firstSentence('Fig. 2 shows it. Next.')).toBe('Fig. 2 shows it.')
+  })
+  it('does not split on "et al."', () => {
+    expect(firstSentence('Smith et al. (2020) showed that. Next.')).toBe(
+      'Smith et al. (2020) showed that.'
+    )
+  })
+  it('does not split on single-capital initials ("A.I.")', () => {
+    expect(firstSentence('We use A.I. Methods. Next.')).toBe('We use A.I. Methods.')
+  })
+  it('keeps a closing straight or curly quote after the terminator', () => {
+    expect(firstSentence('He said “this works.” Then left.')).toBe(
+      'He said “this works.”'
+    )
+  })
+  it('splits before an opening quote that starts the next sentence', () => {
+    expect(firstSentence('First sentence. “Quoted second.”')).toBe('First sentence.')
+  })
+  it('matches non-ASCII uppercase (e.g. "Émile") as a sentence start', () => {
+    expect(firstSentence('Alzheimer’s disease is common. Émile agrees.')).toBe(
+      'Alzheimer’s disease is common.'
+    )
+  })
+  it('does not split on a decimal number', () => {
+    expect(firstSentence('The dose is 3.5 mg twice daily.')).toBe(
+      'The dose is 3.5 mg twice daily.'
+    )
+  })
+  it('returns the whole text when there is no terminal punctuation', () => {
+    expect(firstSentence('No terminal punctuation here')).toBe('No terminal punctuation here')
+  })
 })
 
 describe('researchCards', () => {
@@ -225,6 +265,13 @@ describe('peopleStrip', () => {
   it('skips profiles with a blank name', () => {
     expect(peopleStrip([{ ...p('x', 'g1'), name: '  ' }], groups, null)).toEqual([])
   })
+  // Fix round 1, finding 3: exclude by the profile's own dereferenced
+  // roleGroup.title too, not just by matching against `roleGroups` -- a
+  // stale or missing `roleGroups` entry must not let an alumnus through.
+  it('excludes a profile by its own roleGroup.title even when that group is missing from roleGroups', () => {
+    const unlisted = { _id: 'x', name: 'N x', image: { asset: { _ref: 'x' } }, roleGroup: { _id: 'g-unlisted', title: 'Lab Alumni' } }
+    expect(peopleStrip([unlisted], groups, null)).toEqual([])
+  })
 })
 
 describe('maestroOverview', () => {
@@ -238,5 +285,42 @@ describe('maestroOverview', () => {
   })
   it('returns [] for null blocks', () => {
     expect(maestroOverview(null, 'https://x.org')).toEqual([])
+  })
+
+  // Fix round 1, finding 2: normalise before comparing.
+  const SITE = 'https://tinyurl.com/maestrotalks'
+  it('drops a block with trailing punctuation on the URL', () => {
+    const blocks = [block('https://tinyurl.com/maestrotalks.')]
+    expect(maestroOverview(blocks, SITE)).toEqual([])
+  })
+  it('drops a block with a "www." prefix and a trailing slash', () => {
+    const blocks = [block('http://www.tinyurl.com/maestrotalks/')]
+    expect(maestroOverview(blocks, SITE)).toEqual([])
+  })
+  it('drops a block that differs only in case', () => {
+    const blocks = [block('HTTPS://TinyURL.com/maestrotalks')]
+    expect(maestroOverview(blocks, SITE)).toEqual([])
+  })
+  it('drops a block whose only content is a link to the site, whatever the link text says', () => {
+    const linkBlock = {
+      _type: 'block',
+      _key: 'lb1',
+      style: 'normal',
+      children: [{ _type: 'span', _key: 's', text: 'Register here', marks: ['link1'] }],
+      markDefs: [{ _type: 'link', _key: 'link1', href: SITE }],
+    }
+    expect(maestroOverview([linkBlock], SITE)).toEqual([])
+  })
+  it('keeps a sentence that merely contains the URL alongside other text', () => {
+    const blocks = [block(`Sign up at ${SITE} to join.`)]
+    expect(maestroOverview(blocks, SITE)).toEqual(blocks)
+  })
+  it('drops a block with no text at all (the empty-<p> defect)', () => {
+    const blocks = [block('Join us.'), block('')]
+    expect(maestroOverview(blocks, SITE)).toEqual([block('Join us.')])
+  })
+  it('drops an empty block even when site is unset', () => {
+    const blocks = [block('Join us.'), block('')]
+    expect(maestroOverview(blocks, null)).toEqual([block('Join us.')])
   })
 })

@@ -5,9 +5,8 @@ import { isAlumniGroup } from './peopleModel'
 import type { ResearchProjectCover, ResearchProjectView } from './researchModel'
 
 /**
- * The IA's fixed fallback tagline (spec, agreed-ia.md) -- moved here from
- * `Home.tsx` so `homeStatement` can fall back to it without a screen-level
- * import cycle. Same text, unchanged.
+ * The IA's fixed fallback tagline (spec, agreed-ia.md). Shared by
+ * `homeStatement` below and Home's own fallback tagline (`Home.tsx`).
  */
 export const IA_TAGLINE =
   'Advancing the Understanding and Treatment of Neurological Disorders through Molecular Research'
@@ -123,12 +122,31 @@ export function splitLead<T>(publications: T[]): { lead: T | null; rest: T[] } {
   return { lead, rest }
 }
 
+// Candidate sentence boundary: a terminator, optionally followed by closing
+// quote/bracket characters, then either whitespace and an (optionally
+// quote/paren-led) uppercase letter or digit, or the end of the string.
+// `\p{Lu}` (with the `u` flag) matches non-ASCII uppercase (e.g. "Émile"),
+// not just A-Z.
+const SENTENCE_BOUNDARY = /[.!?]["'”’)\]]*(?=\s+["'“‘(]?[\p{Lu}\p{N}]|$)/gu
+
+// A boundary candidate is a false positive, not a real sentence end, when
+// the text immediately before it is a known abbreviation ("Dr.", "Fig.",
+// "et al.", "e.g.", ...) or a single capital initial ("A." in "A.I.") --
+// tested against the text up to and including the terminator itself (not
+// any trailing closing quote/bracket).
+const ABBREVIATION = /(?:\b(?:Dr|Prof|Assoc|Fig|Figs|Eq|No|St|Mr|Mrs|Ms|Jr|Sr|vs|cf|approx|ca|al|e\.g|i\.e)|\b\p{Lu})\.$/u
+
 /** The first sentence, cut at a word boundary with "…" when longer than `max`. */
 export function firstSentence(text: string, max = 200): string {
   const clean = text.replace(/\s+/g, ' ').trim()
   if (!clean) return ''
-  const match = clean.match(/^.+?[.!?](?=\s+[A-Z0-9"'(]|$)/)
-  const sentence = match ? match[0] : clean
+  let sentence = clean
+  for (const match of clean.matchAll(SENTENCE_BOUNDARY)) {
+    const end = match.index + match[0].length
+    if (ABBREVIATION.test(clean.slice(0, match.index + 1))) continue
+    sentence = clean.slice(0, end)
+    break
+  }
   if (sentence.length <= max) return sentence
   const cut = sentence.slice(0, max)
   const lastSpace = cut.lastIndexOf(' ')
@@ -193,17 +211,74 @@ export function peopleStrip(
   const alumni = new Set(roleGroups.filter((g) => isAlumniGroup(g.title)).map((g) => g._id))
   return profiles
     .filter((p) => !(labHeadId && p._id === labHeadId))
-    .filter((p) => !(p.roleGroup && alumni.has(p.roleGroup._id)))
+    .filter(
+      (p) => !(p.roleGroup && (alumni.has(p.roleGroup._id) || isAlumniGroup(p.roleGroup.title)))
+    )
     .filter((p) => Boolean(p.image) && Boolean(p.name?.trim()))
     .slice(0, max)
     .map((p) => ({ id: p._id, name: p.name!.trim(), image: p.image }))
 }
 
-const bare = (s: string) => s.trim().replace(/^https?:\/\//, '').replace(/\/$/, '')
+// Normalises a URL (or plain text that might be one) for comparison:
+// trims, drops the scheme and a leading "www.", drops a trailing slash and
+// trailing punctuation, and lowercases -- so
+// "HTTPS://www.tinyurl.com/maestrotalks/." matches
+// "tinyurl.com/maestrotalks" instead of being kept as a visible duplicate.
+const bare = (s: string) =>
+  s
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/^www\./i, '')
+    .replace(/\/+$/, '')
+    .replace(/[.,;:!?)\]]+$/, '')
+    .toLowerCase()
 
-/** The MAESTRO overview minus any block that only repeats the register URL: the card has one register link. */
+interface PortableBlock {
+  _type?: string
+  children?: { text?: string; marks?: string[] }[]
+  markDefs?: { _key?: string; _type?: string; href?: string }[]
+}
+
+/**
+ * True when every non-whitespace span in a block carries a mark linking to
+ * `siteBare` -- i.e. the block's only content is a link to the register
+ * URL, whatever the link text itself reads ("Register here", the bare URL,
+ * ...). Non-`block` items (images, etc.) and blocks with no markDefs at all
+ * are never matched.
+ */
+function isSiteOnlyLink(block: unknown, siteBare: string): boolean {
+  const b = block as PortableBlock
+  if (b?._type !== 'block' || !Array.isArray(b.children)) return false
+  const linkKeys = new Set(
+    (b.markDefs ?? [])
+      .filter((def) => def._type === 'link' && typeof def.href === 'string' && bare(def.href) === siteBare)
+      .map((def) => def._key)
+  )
+  if (linkKeys.size === 0) return false
+  const spans = b.children.filter((c) => (c.text ?? '').trim() !== '')
+  if (spans.length === 0) return false
+  return spans.every((c) => (c.marks ?? []).some((mark) => linkKeys.has(mark)))
+}
+
+/**
+ * The MAESTRO overview minus: a block with no text at all (the real
+ * defect this guards -- an empty portable-text block otherwise renders as
+ * an empty `<p>`); a block whose whole text is only the register URL,
+ * normalised (`bare`); and a block whose only content is a link to that
+ * URL, regardless of its link text. The card already carries one register
+ * link, so any of these would show it twice, or render nothing. A sentence
+ * that merely contains the URL alongside other text is kept.
+ */
 export function maestroOverview<B>(blocks: B[] | null | undefined, site: string | null | undefined): B[] {
   if (!blocks) return []
-  if (!site) return blocks
-  return blocks.filter((b) => bare(plainText([b])) !== bare(site))
+  const siteBare = site ? bare(site) : null
+  return blocks.filter((b) => {
+    const isBlock = (b as PortableBlock)?._type === 'block'
+    const text = plainText([b])
+    if (isBlock && text === '') return false
+    if (!siteBare) return true
+    if (bare(text) === siteBare) return false
+    if (isSiteOnlyLink(b, siteBare)) return false
+    return true
+  })
 }

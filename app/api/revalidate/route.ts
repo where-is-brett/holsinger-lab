@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
           message: `Revalidated "${type}" with slug "people"`,
         })
       case 'siteCopy':
-        // Task 1 (Home): Home's hero statement and research fallback read siteCopy.
+        // Home's hero statement and research fallback read siteCopy.
         revalidatePath(`/`)
         return NextResponse.json({
           success: true,
