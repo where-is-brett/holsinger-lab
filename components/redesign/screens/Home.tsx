@@ -67,14 +67,12 @@ function IdentityBlock({
           The University of Sydney
         </span>
       </div>
-      {/* Task 1 fix round 1: `break-words` stays alongside `hyphens-auto`
-          as a fallback (see PageTitle.tsx's own note, and
-          PublicationPage.tsx's for the live-data proof) -- Chromium's
-          hyphenation engine doesn't reliably find a break point for every
-          real title, and this is the exact heading Brett's review flagged
-          ("Laborato/ry" breaking at 375px), so it keeps its overflow
-          guard rather than trading one defect for another. */}
-      <Heading className="mt-[30px] max-w-[1180px] text-pretty break-words hyphens-auto text-display font-semibold">
+      {/* `break-words`/`hyphens-auto`: see PageTitle.tsx's canonical note.
+          `text-balance` (spec §1.2 "keep text-wrap: balance on display
+          headings") replaces `text-pretty` here -- this is the one
+          display-role heading, and the display floor is sized so its
+          budget word ("Neuroscience") fits at 320px (task-1-report.md). */}
+      <Heading className="mt-[30px] max-w-[1180px] text-balance break-words hyphens-auto text-display font-semibold">
         {title}
       </Heading>
       {/* Two-column grid ([tagline | PI panel]) from `lg`, stacked below --

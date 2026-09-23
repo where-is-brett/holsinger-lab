@@ -63,13 +63,11 @@ const PROFILE_LINK_LABEL = 'mt-5 inline-block font-mono text-[12px] font-medium 
 const EMAIL_LINK = 'mt-5 block font-mono text-[12.5px] text-link'
 
 const SECTION_HEADING_ROW = 'mb-5 flex items-baseline gap-3.5 border-t border-rule pt-[18px]'
-// `hyphens-auto` (Task 1, "Fonts and type scale"): a real `h2`, so it's in
-// scope for the e2e's "no h1/h2 overflows a word" sweep alongside every
-// other heading -- a long roleGroup `title` a future edit adds should still
-// only ever break at a syllable boundary where the browser's hyphenation
-// engine can, never overflow. `break-words` joins it as the fallback for
-// when it can't (see PageTitle.tsx's note, and PublicationPage.tsx's for
-// the live-data proof this is load-bearing, not defensive-only).
+// `hyphens-auto` is inert here (an all-caps mono label -- LABEL_BASE
+// uppercases it -- and Blink hyphenates neither all-caps nor capitalised
+// words), kept only for consistency with every other heading;
+// `break-words` is what actually keeps a long roleGroup `title` from
+// overflowing (see PageTitle.tsx's canonical note).
 const SECTION_TITLE = `${LABEL_BASE} text-text-faint break-words hyphens-auto`
 const SECTION_COUNT = `${LABEL_BASE} text-link`
 

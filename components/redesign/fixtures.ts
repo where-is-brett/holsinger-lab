@@ -160,6 +160,24 @@ export const PUBLICATION_PAGE_FIXTURE: Publication = {
   resources: [{ id: 'resource-fixture-1', title: 'Cell culture chamber CAD files', kind: 'hardware' }],
 }
 
+// Task 1 (Fonts and type scale) fix round 2: the "title" level's budget
+// word, capitalised ("Pathophysiology" -- the same word, and the same
+// mechanism, that overflowed the real DOI paper this task proved live;
+// see PaperBlock's own comment in PublicationPage.tsx), paired with a
+// long lowercase word ("neuroinflammation") so e2e/typography.spec.ts's
+// raw-split probe can prove one hyphenates and the other legitimately
+// can't, neither overflowing. Consumed only by the full-width "typography
+// budget" gallery section in Gallery.tsx -- a separate fixture from
+// `PUBLICATION_PAGE_FIXTURE` above (whose title is prose, not built to
+// carry these specific words).
+export const TYPOGRAPHY_BUDGET_PUBLICATION_FIXTURE: Publication = {
+  ...PUBLICATION_PAGE_FIXTURE,
+  id: 'typography-budget-publication',
+  href: '/publications/typography-budget-publication',
+  title: 'Pathophysiology of neuroinflammation',
+  cite: 'Fixture author (2026). Pathophysiology of neuroinflammation. Journal of Fixtures 1(1) · 1.',
+}
+
 export const SAMPLE_PEOPLE: {
   name: string
   role: string
@@ -726,30 +744,38 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
     category: null,
     cover: null,
   }),
-  // Task 1 (Fonts and type scale) fix: a heading instance made of long,
-  // unhyphenated single words -- "Neuroscience", "Pathophysiology",
-  // "Microbiome" are each long enough on their own to overflow this `h2`'s
-  // narrow column at 320/375px, so e2e/typography.spec.ts's "no h1/h2
-  // splits mid-word" sweep is exercised on /preview/components regardless
-  // of what today's live research projects happen to be titled (spec §1.2,
-  // constraints.md "every e2e assertion holds for any valid dataset" --
-  // live data can't guarantee a title this shape).
-  researchProjectView({
-    id: 'fixture-research-7',
-    title: 'Neuroscience Pathophysiology Microbiome',
-    body: [
-      overviewParagraph(
-        'research-7-p1',
-        'A fixture-only title exercising the fluid type scale’s hyphenation guard against long ' +
-          'single words that have no natural break point.'
-      ),
-    ],
-    start: null,
-    tags: [],
-    category: null,
-    cover: null,
-  }),
 ]
+
+// Task 1 (Fonts and type scale) fix round 2: the review found the original
+// `fixture-research-7` here tested nothing -- its 22px `text-heading`
+// column inside this gallery section's narrow demo frame let all three of
+// its words fit without ever needing to split, and all three were
+// capitalised anyway, so it couldn't show hyphenation even if a word did
+// split. Replaced with a standalone fixture (not part of
+// `RESEARCH_PROJECTS_FIXTURE`, so it doesn't disturb that array's own
+// fixture-count assertions) consumed only by the dedicated full-width
+// "typography budget" gallery section in Gallery.tsx, which renders the
+// real `Research` component at the page's actual gutter width rather than
+// this file's narrower demo frame. The title pairs the "heading" level's
+// budget word, capitalised ("Neurodegenerative", which Blink never
+// hyphenates), with a long lowercase word ("pathophysiology", which does)
+// so e2e/typography.spec.ts's per-element raw-split probe exercises both
+// outcomes on one heading.
+export const TYPOGRAPHY_BUDGET_RESEARCH_PROJECT_FIXTURE: ResearchProjectView = researchProjectView({
+  id: 'typography-budget-research',
+  title: 'Neurodegenerative pathophysiology',
+  body: [
+    overviewParagraph(
+      'typography-budget-research-p1',
+      'Fixture-only project proving the "heading" type role’s clamp floor fits its budget word ' +
+        'on one line in the real page column at 320px.'
+    ),
+  ],
+  start: null,
+  tags: [],
+  category: null,
+  cover: null,
+})
 
 // Task 3 (Home): production today has no resource, an unset labHead, and no
 // `support-our-research` page (spec §2) -- the states this fixture proves
@@ -807,6 +833,21 @@ export const HOME_PAGE_FIXTURE: HomePagePayload = {
     ),
   ],
   showcaseProjects: [],
+}
+
+// Task 1 (Fonts and type scale) fix round 2: the "display" level's budget
+// word, capitalised ("Neuroscience", already the lab name's own word --
+// see HOME_PAGE_FIXTURE above, which is why this couldn't stay a plain
+// literal for the gallery to typo-check against), paired with a long
+// lowercase word ("neurodegeneration") so e2e/typography.spec.ts's
+// raw-split probe can prove Blink hyphenates the lowercase word and
+// legitimately can't hyphenate the capitalised one, both without
+// overflowing. Consumed only by the full-width "typography budget" gallery
+// section in Gallery.tsx.
+export const TYPOGRAPHY_BUDGET_HOME_FIXTURE: HomePagePayload = {
+  ...HOME_PAGE_FIXTURE,
+  _id: 'typography-budget-home',
+  title: 'Neuroscience and neurodegeneration',
 }
 
 // Real routes carry `href` (Home's Recent work rows link to the paper

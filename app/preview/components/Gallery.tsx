@@ -25,6 +25,9 @@ import {
   RESOURCES_FIXTURE,
   SAMPLE_PEOPLE,
   SAMPLE_PUBLICATIONS,
+  TYPOGRAPHY_BUDGET_HOME_FIXTURE,
+  TYPOGRAPHY_BUDGET_PUBLICATION_FIXTURE,
+  TYPOGRAPHY_BUDGET_RESEARCH_PROJECT_FIXTURE,
 } from 'components/redesign/fixtures'
 import { FormField } from 'components/redesign/FormField'
 import { MobileBand, MobileHeader, MobileNavRows } from 'components/redesign/MobileHeader'
@@ -555,6 +558,61 @@ export default function Gallery() {
             supportPage={HOME_SUPPORT_PAGE_FIXTURE}
             headingLevel="h2"
           />
+        </div>
+      </section>
+
+      {/* Task 1 ("Fonts and type scale") fix round 2: the review found the
+          gallery's other sections undercount the real page column, because
+          `<main>`'s own `px-6` (48px) stacks on top of each component's
+          own gutter -- a heading here measures ~196px wide at 320px
+          instead of a real route's ~246px, so a word that's actually
+          within budget on every live route can still split inside this
+          narrower demo frame (reviewer's finding: the Home gallery `<h1>`
+          split "Neuroscien|ce" here while the live Home route did not).
+          `-mx-6` cancels `<main>`'s padding so everything inside renders
+          at the page's real gutter width, matching production exactly --
+          this is what "at full page width" means below, not a wider demo
+          box. Each fixture pairs its level's budget word, capitalised
+          (Blink never hyphenates it), with a long lowercase word (which
+          does) -- see each fixture's own comment in fixtures.ts.
+          e2e/typography.spec.ts's raw-split probe (fix round 2) is scoped
+          to exactly these four elements. */}
+      <section data-testid="gallery-typography-budget">
+        <Heading>Typography budget (full page width)</Heading>
+        <div className="-mx-6" data-testid="gallery-typography-budget-inner">
+          <div className="border border-rule" data-testid="typography-budget-display">
+            <Home
+              home={TYPOGRAPHY_BUDGET_HOME_FIXTURE}
+              settings={HOME_SETTINGS_FIXTURE}
+              siteName="Holsinger Lab"
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              profiles={PEOPLE_PROFILES_FIXTURE}
+              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+          <div className="mt-8 border border-rule" data-testid="typography-budget-title">
+            <PageTitle
+              title="Pathophysiology and immunohistochemistry"
+              meta="Typography budget fixture"
+              headingLevel="h2"
+            />
+          </div>
+          <div className="mt-8 border border-rule" data-testid="typography-budget-paper-title">
+            <PublicationPage pub={TYPOGRAPHY_BUDGET_PUBLICATION_FIXTURE} />
+          </div>
+          <div className="mt-8 border border-rule" data-testid="typography-budget-heading">
+            <Research
+              projects={[TYPOGRAPHY_BUDGET_RESEARCH_PROJECT_FIXTURE]}
+              email={null}
+              showContactForm={false}
+              headingLevel="h2"
+            />
+          </div>
         </div>
       </section>
     </main>

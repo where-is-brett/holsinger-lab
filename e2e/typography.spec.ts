@@ -4,32 +4,28 @@ import { expect, test } from '@playwright/test'
 // root cause was typographic -- `--font-sans` pointed at the old site's
 // mono face, and Archivo (the design's reading/display face) was loaded
 // nowhere, so every heading, abstract and bio rendered mono, and at 375px
-// Home's `<h1>` broke "Laborato/ry" mid-word (`break-words` alone was doing
-// the job fluid type + `hyphens: auto` should mostly do instead). This file
-// proves the fix: (a) no `h1`/`h2` word overflows its own line at 320/375,
-// (b) the body font is actually Archivo, (c) mono stays on data (a DOI).
+// Home's `<h1>` broke "Laborato/ry" mid-word. Fix round 2 (review):
+// Chromium never hyphenates a capitalised word, so `hyphens-auto` is inert
+// on nearly every heading here, and `break-words` alone decides whether a
+// long word splits raw or a level's clamp floor genuinely fits it. This
+// file proves: (a) live routes never overflow (the unconditional floor);
+// (b) on the gallery's dedicated full-width fixtures, each type level's
+// budget word fits *without* relying on a raw `overflow-wrap` split --
+// see task-1-report.md's "Word-fit budgets"; (c) the body font is Archivo;
+// (d) mono stays on data (a DOI).
 
-// -- (a) "every word's width fits the line" --------------------------------
+// -- (a) live routes: no h1/h2 word overflows its own line ------------------
 //
-// This is the second technique the task brief names as an alternative to
-// walking `Range#getClientRects()` for a rendered-hyphen glyph: that first
-// technique was tried and dropped (fix round 1) after it produced a false
-// positive on a Gallery heading -- when a hyphen genuinely renders, the
-// gap it leaves before the line's right edge can be a fraction of a pixel
-// in some font/size combinations, indistinguishable from browser rounding
-// noise, so a minimum-gap threshold has no value that is both strict
-// enough to catch a real miss and loose enough not to flag a real hyphen.
-//
-// This checks the weaker but unambiguous claim instead: for every word in
-// every `h1`/`h2`, no rendered fragment of it (a `Range` over just that
-// word, per `getClientRects()`) pokes out past the heading's own right
-// edge. A word that wraps cleanly (via a hyphen, or by moving whole to the
-// next line) always satisfies this. A word that *doesn't* wrap and is too
-// wide for its line -- the actual defect this task fixes (proved live:
-// PublicationPage.tsx's h1 lets exactly this happen for one real DOI
-// paper's "Pathophysiology", which is why `break-words` stays as a
-// fallback there and everywhere else in components/redesign/** -- see its
-// own comment) -- fails this check by construction.
+// This only proves absence of overflow, which `break-words` guarantees by
+// construction -- it cannot tell a real hyphenated wrap from a raw
+// mid-word split (see (b) below for that). It stays because it's cheap,
+// dataset-independent, and still a real regression guard: it would catch a
+// heading whose word is wide enough to overflow even with `break-words`
+// (e.g. a single unbreakable run wider than the whole column). Applied to
+// live routes precisely because a raw split in real CMS content -- title
+// case is nearly all of it -- is an accepted, documented fallback (spec
+// exception, task-1-report.md), not a bug: this suite must hold for any
+// valid dataset, so it must not fail CI over a raw split it can't help.
 const OVERFLOW_TOLERANCE_PX = 1
 
 interface OverflowViolation {
@@ -97,7 +93,87 @@ test.describe('no h1/h2 word overflows its own line', () => {
   }
 })
 
-// -- (b) the body font is Archivo -------------------------------------------
+// -- (b) gallery typography budget: no *raw* mid-word split -----------------
+//
+// The reviewer's detection method: for the heading inside each fixture, set
+// `overflow-wrap: normal` on it (removing `break-words`'s raw-split
+// fallback, leaving only `hyphens-auto` and ordinary space-wrapping) and
+// re-measure. If it still doesn't overflow its own box
+// (`scrollWidth <= clientWidth`), whatever wrapping happens is either a real
+// hyphenated break or a whole-word wrap -- never a raw split -- so the
+// level's clamp floor genuinely fits its budget word. If it overflows once
+// the fallback is removed, the original render was relying on a raw split
+// (or would have overflowed outright), and the test fails. This is the
+// "simpler equivalent" of the per-word toggle-and-compare probe: a raw
+// split can only ever happen via `overflow-wrap`, so proving the heading
+// survives without it is exactly proving no raw split occurred.
+//
+// Scoped to the gallery's dedicated "typography budget" section
+// (Gallery.tsx), not every heading on the page: those fixtures render the
+// real Home/PageTitle/PublicationPage/Research components at the page's
+// actual gutter width (a `-mx-6` full-width wrapper, cancelling out
+// `<main>`'s own padding -- see that section's comment), and each one's
+// title pairs its level's budget word, capitalised, with a long lowercase
+// word, so this exercises both the "can't hyphenate" and "does hyphenate"
+// outcomes deliberately. Other gallery sections keep their narrower demo
+// frames on purpose (isolated component previews, not page simulations),
+// so they're intentionally out of scope for this stronger check -- they're
+// still covered by (a) above.
+const BUDGET_TOLERANCE_PX = 1
+
+const BUDGET_FIXTURES = [
+  { testId: 'typography-budget-display', level: 'display', word: 'Neuroscience' },
+  { testId: 'typography-budget-title', level: 'title (page title)', word: 'Pathophysiology' },
+  { testId: 'typography-budget-paper-title', level: 'title (paper title)', word: 'Pathophysiology' },
+  { testId: 'typography-budget-heading', level: 'heading', word: 'Neurodegenerative' },
+]
+
+interface RawSplitResult {
+  testId: string
+  level: string
+  word: string
+  found: boolean
+  overflowPx: number
+}
+
+async function checkNoRawSplit(
+  page: import('@playwright/test').Page,
+  testId: string
+): Promise<{ found: boolean; overflowPx: number }> {
+  return page.evaluate((id: string) => {
+    const container = document.querySelector(`[data-testid="${id}"]`)
+    const heading = container?.querySelector('h1, h2')
+    if (!heading) return { found: false, overflowPx: 0 }
+
+    const original = (heading as HTMLElement).style.overflowWrap
+    ;(heading as HTMLElement).style.overflowWrap = 'normal'
+    const overflowPx = heading.scrollWidth - heading.clientWidth
+    ;(heading as HTMLElement).style.overflowWrap = original
+
+    return { found: true, overflowPx }
+  }, testId)
+}
+
+test.describe('gallery typography budget: each level fits its budget word without a raw split', () => {
+  for (const width of WIDTHS) {
+    test(`/preview/components at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 })
+      await page.goto('/preview/components')
+
+      const violations: RawSplitResult[] = []
+      for (const fixture of BUDGET_FIXTURES) {
+        const result = await checkNoRawSplit(page, fixture.testId)
+        if (!result.found || result.overflowPx > BUDGET_TOLERANCE_PX) {
+          violations.push({ ...fixture, ...result })
+        }
+      }
+
+      expect(violations, JSON.stringify(violations, null, 2)).toEqual([])
+    })
+  }
+})
+
+// -- (c) the body font is Archivo -------------------------------------------
 //
 // `getComputedStyle` reports the resolved `font-family` stack, whose first
 // entry is next/font's generated Archivo family name (a hashed
@@ -111,7 +187,7 @@ test('the body font is Archivo, not a mono face', async ({ page }) => {
   expect(firstFamily, fontFamily).toContain('archivo')
 })
 
-// -- (c) mono stays on data: a DOI ------------------------------------------
+// -- (d) mono stays on data: a DOI ------------------------------------------
 //
 // Mirrors publication-page.spec.ts's own "find a DOI row, skip if this
 // dataset has none" pattern -- an assertion that holds for any valid

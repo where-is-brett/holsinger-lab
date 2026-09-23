@@ -29,32 +29,22 @@ function PaperBlock({ pub }: { pub: Publication }) {
       >
         ← All publications
       </Link>
-      {/* Fix round 1, revisited by Task 1 ("Fonts and type scale") fix
-          round 1: at 375px, SectionRail's content column narrows to
-          roughly 233px, and a single long word (e.g. "Neuroprotective")
-          set at this heading's large 2.3125rem font-size can be wider than
-          that column on its own. The original fix was `break-words`
-          (`overflow-wrap: break-word`), which stopped the horizontal
-          overflow but split the word at an arbitrary character with no
-          visual mark -- Brett's review flagged exactly this on Home's
-          "Laborato/ry". Task 1 tried removing `break-words` in favour of
-          `hyphens-auto` alone (`<html lang="en">` is already set, so
-          hyphenation applies) -- but proved against the live dataset that
-          this regresses: the DOI paper
-          "INPP5D/SHIP1: Expression, Regulation and Roles in Alzheimer's
-          Disease Pathophysiology" overflows at 320px with `hyphens-auto`
-          alone, because Chromium's hyphenation engine renders
-          "Pathophysiology" as one unbroken line instead of finding a break
-          point -- e2e/publication-page.spec.ts's existing "no horizontal
-          overflow" sweep caught it. `break-words` stays as the fallback:
-          per the CSS Text spec, `overflow-wrap: break-word` only takes
-          effect when a line has no other acceptable break (a space, or a
-          hyphenation point), so a title that DOES hyphenate cleanly (most
-          of them) is unaffected -- this only guards the ones that don't.
-          `hyphens`/`overflow-wrap` are different CSS properties from each
-          other and from `text-pretty` (`text-wrap`), so all three are
-          additive, not a same-property collision. */}
-      <h1 className="mt-[26px] max-w-[1060px] text-[2.3125rem] leading-[1.22] font-semibold tracking-[-0.012em] text-pretty break-words hyphens-auto">
+      {/* `break-words`/`hyphens-auto`: see PageTitle.tsx's canonical note.
+          Live proof site, fix round 2: the DOI paper "INPP5D/SHIP1:
+          Expression, Regulation and Roles in Alzheimer's Disease
+          Pathophysiology" is title-case, so "Pathophysiology" never
+          hyphenates (Blink skips capitalised words) -- at the old fixed
+          2.3125rem/37px size it was 42px too wide for this column at
+          320px and overflowed. This role's size is now `clamp(1.75rem,
+          4.5vw,2.3125rem)`: same floor and slope as `--text-title`
+          (reusing the "title" level's own fit budget -- "Pathophysiology"
+          measured 218px against a 246px column at the 28px floor,
+          task-1-report.md), same 2.3125rem ceiling as before once the
+          viewport is wide enough that 4.5vw exceeds it -- so desktop is
+          unchanged, and this is still a documented exception to the
+          generic `--text-title` token (a smaller ceiling for these longer
+          scientific titles), just a fluid one now instead of fixed. */}
+      <h1 className="mt-[26px] max-w-[1060px] text-[clamp(1.75rem,4.5vw,2.3125rem)] leading-[1.22] font-semibold tracking-[-0.012em] text-pretty break-words hyphens-auto">
         {pub.title}
       </h1>
       <p className="mt-5 max-w-[900px] text-[16px] leading-[1.6] text-text-muted">
@@ -101,10 +91,14 @@ function AbstractBlock({ pub }: { pub: Publication }) {
           this column narrows to at 320px, and `text-pretty` alone
           (`text-wrap`) doesn't stop that; `break-words` (`overflow-wrap`)
           is a different property, so it's additive here too. */}
+      {/* Task 1 fix round 2: this was `text-[1.0625rem] leading-[1.7]` --
+          the right font-size (17px) but the wrong line-height (spec §1.2's
+          reading size is 17px/1.6, not 1.7). Swapped for the `text-body`
+          token itself so this can never drift from the token again. */}
       {pub.abstract.map((paragraph, index) => (
         <p
           key={index}
-          className={`max-w-[840px] text-[1.0625rem] leading-[1.7] text-pretty break-words ${index === 0 ? '' : 'mt-4'}`}
+          className={`max-w-[840px] text-body text-pretty break-words ${index === 0 ? '' : 'mt-4'}`}
         >
           {paragraph}
         </p>
