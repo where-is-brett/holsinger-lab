@@ -1,308 +1,229 @@
-# Website handover
+# Your lab website: handover guide
 
-Everything needed to own and run the Holsinger Lab website.
+For Damian Holsinger: choosing the design, taking over the accounts, and editing the site
+yourself. No code needed.
 
-**From:** Brett Yang · **To:** R. M. Damian Holsinger · **Date:** 18 August 2026
-
-All five services are on free plans; there is no custom domain and nothing to renew.
-The only blank left is the repository's address, which changes when the transfer completes.
-
----
-
-## 1. What this site is
-
-The website has two halves.
-
-**The content** — every person, publication, project, page, the logo and the colours —
-lives in a service called **Sanity**. You edit it through a web page called Studio, at
-`holsingerlab.vercel.app/studio`. It works like any other web form. Nothing you do there
-involves code.
-
-**The code** — the design and the layout, the parts that don't change week to week — lives
-on **GitHub** and is published by **Vercel**.
-
-The important consequence: **you can change anything on the site yourself, without a
-developer.** Edits appear on the live site about a minute after you press Publish. You only
-need a developer to change how the site _works_ — a new type of page, a different layout.
+The site's words, people, papers and pictures are stored in **Sanity**. You edit them in
+**Studio**, a set of web forms at **holsingerlab.vercel.app/studio**. The design is code, kept on
+**GitHub** and put online by **Vercel**.
 
 ---
 
-## 2. What you now own
+## 1. Pick a design
 
-Five services. All five are free at this size — there is nothing to pay and nothing to renew.
+Both designs are finished and show the same content, so anything you edit appears in
+whichever you choose. Neither link changes the live site.
 
-| Service       | What it does                                  | If the account lapses                         | Cost         |
-| ------------- | --------------------------------------------- | --------------------------------------------- | ------------ |
-| **Sanity**    | Stores all content. The Studio you edit in.   | Site loses all its content. Most serious.     | Free         |
-| **Vercel**    | Publishes the site and serves it to visitors. | Site goes offline.                            | Free (Hobby) |
-| **GitHub**    | Stores the code.                              | Site keeps running, but no one can change it. | Free         |
-| **Formspree** | Delivers contact-form messages to email.      | Contact form stops sending. Nothing else.     | Free         |
-| **Domain**    | The site's address.                           | Nothing — see below.                          | Free         |
+- **Classic**, matching your Wix site:
+  https://holsingerlab-git-redesign-wix-whereisbretts-projects.vercel.app
+- **Redesign**, a newer layout built around publications and research:
+  https://holsingerlab-git-redesign-integration-whereisbretts-projects.vercel.app
 
-**About the domain.** There is no custom domain. The site lives at
-`holsingerlab.vercel.app`, an address Vercel provides free — so nothing expires here and
-there is no renewal to miss. One less thing to own.
+|                  | Classic                                                  | Redesign                                                    |
+| ---------------- | -------------------------------------------------------- | ----------------------------------------------------------- |
+| Pages            | Home, Research, News, Publications, Team, Media, Contact | Home, Publications, Research, Resources, People, Contact    |
+| Publications     | Copy any citation, or download BibTeX or RIS             | Filters, a page for every paper, and a copy-citation button |
+| People           | One Team page                                            | One People page, plus an optional page for each person      |
+| Doesn't include  | A Resources page                                         | News or Media pages                                         |
+| Contact page     | Your address, email and phone                            | A contact form that emails you                              |
+| Logo and colours | Fixed to match Wix                                       | You can change them                                         |
 
-**Worth considering, though.** That address belongs to Vercel, not to the lab. If the site
-ever moves to different hosting, it stops working, and every link pointing at it — in
-papers, on collaborators' pages, in Google's index — breaks with it. A domain of your own
-(`holsingerlab.org`, for instance) costs roughly $15 a year and is the one thing that would
-most improve the site's long-term survival. Not urgent. Easier to do now than after the
-current address has been cited in print.
-
-**Practical advice:** because nothing here expires, the one thing that can quietly break the
-lab's ownership is the account email. Make sure it is an address you will still read in five
-years, and that someone else in the lab knows where the passwords are kept.
+Look through both, on your phone too, then reply to Brett with **classic** or **redesign**.
+Where this guide says "classic only" or "redesign only", skip it if it's not the one you chose.
 
 ---
 
-## 3. The transfer checklist
+## 2. What you'll own
 
-Do these in order. **The golden rule: Damian gets full access and confirms it works
-_before_ Brett is removed from anything.** Reversing that order can lock everyone out.
+All of these are free. There is no custom web address to renew.
 
-### Step 1 — Damian creates accounts (Damian, ~20 minutes)
+| Account                       | What it holds                                        | If it's lost or lapses                                    |
+| ----------------------------- | ---------------------------------------------------- | --------------------------------------------------------- |
+| **Sanity**                    | All content, and Studio                              | The site loses its content. The most important one.       |
+| **Vercel**                    | Puts the site online                                 | The site goes offline.                                    |
+| **GitHub**                    | The design code (public, but only you can change it) | The site keeps working, but no one can change the design. |
+| **Formspree** (redesign only) | Sends contact-form messages to your email            | The contact form stops. Nothing else.                     |
 
-Sign up at each of these, using **the same email address** for all four. Use an address
-that will outlive any single staff member.
+Use one email address for all of them, and make it one you'll still read in five years.
 
-- github.com
-- vercel.com — sign in with the GitHub account from above
-- sanity.io/manage
-- formspree.io
+---
 
-### Step 2 — Brett grants access (Brett, ~15 minutes)
+## 3. Taking over the accounts
 
-| Service       | What to do                                                                |
-| ------------- | ------------------------------------------------------------------------- |
-| **GitHub**    | Repo → Settings → Collaborators → add Damian as **Admin**                 |
-| **Vercel**    | Project → Settings → Members → add Damian as **Owner**                    |
-| **Sanity**    | sanity.io/manage → project → Members → invite Damian as **Administrator** |
-| **Formspree** | See Step 5 — handled differently                                          |
+Brett will do these with you, in order. **The rule: you get access and check it works before
+Brett is removed from anything.**
 
-### Step 3 — Damian confirms access (Damian, ~10 minutes)
+**Step 1. Create your accounts.** You, 20 minutes.
 
-Before going further, check each one works. Sign in and confirm you can see:
+Sign up at **github.com**, then **vercel.com** (choose **Continue with GitHub** and the free
+**Hobby** plan), then **sanity.io/manage**. Redesign only: also **formspree.io**. Done when you
+can sign in to each. Send Brett your GitHub username.
 
-- **Sanity Studio** — go to `/studio`, open any person, change something trivial, press
-  Publish, then check the live site a minute later. Change it back.
-- **Vercel** — you can see the project dashboard and its deployment history.
-- **GitHub** — you can see the code and the repository settings.
+**Step 2. Brett adds you.** Brett, 10 minutes.
 
-**If any of these fail, stop and sort it out before Step 4.**
+Accept the two invitation emails (GitHub and Sanity). Done when you can sign in at
+**holsingerlab.vercel.app/studio** and see the content.
 
-### Step 4 — Replace the access keys (both, ~20 minutes)
+**Step 3. Check you can edit.** You, 5 minutes.
 
-This step is easy to skip and causes a failure weeks later, so it's worth understanding.
+In Studio, open any person in **People**, change one letter of their **Bio**, and click
+**Publish**. A minute later, reload the live site and check the change is there. Change it
+back and publish again. If it doesn't work, stop and tell Brett.
 
-The site uses several secret keys to talk to Sanity. Those keys were created under **Brett's
-account**. They keep working right up until Brett's account is removed — and then the site
-breaks, with nothing obviously connecting the two events.
+**Step 4. Move the accounts to you.** Both of you, 20 minutes.
 
-So the keys must be **created fresh by Damian**, not copied across.
+1. **Code.** Brett transfers it to your GitHub account. Accept from the email. The invitation
+   expires after a day.
+2. **Hosting.** Brett sends you a link. Open it while signed in to Vercel and accept. The link
+   lasts 24 hours. Then open the project, then **Settings**, then **Git**. It should name
+   `holsinger-lab` (the code). It almost always does; if not, click **Connect** and pick
+   `holsinger-lab`.
+3. **Content.** Brett moves the Sanity project into your Sanity organisation. He may ask you
+   to add him to it for a few minutes.
 
-1. **Damian:** sanity.io/manage → project → API → Tokens. Create two tokens:
-   - one named `read`, with **Viewer** permission
-   - one named `write`, with **Editor** permission
-2. **Damian:** Vercel → project → Settings → Environment Variables. Replace the values of
-   `SANITY_API_READ_TOKEN` and `SANITY_API_WRITE_TOKEN` with the new tokens.
-3. **Damian:** invent a new random password of at least 20 characters. Put it in Vercel as
-   `SANITY_WEBHOOK_SECRET`, and put the _same_ value in sanity.io/manage → API → Webhooks →
-   the existing webhook → Secret. **These two must match exactly or edits stop appearing on
-   the site.**
-4. **Damian:** Vercel → Deployments → the most recent one → Redeploy. Environment variables
-   only take effect on a new deployment.
-5. **Check:** edit something in Studio, publish, confirm it appears on the site within a
-   minute or two.
-6. **Brett:** only now, delete your old tokens in sanity.io/manage → API → Tokens.
+Done when the site shows in all three accounts and still loads.
 
-### Step 5 — Move the contact form (Damian, ~10 minutes)
+**Step 5. Replace the secret keys.** You, with Brett, 20 minutes.
 
-Formspree's free plan doesn't share forms between accounts, so rather than transferring,
-create a new one.
+The site uses two private passwords to fetch content from Sanity. Brett's stop working when he
+leaves, so you make new ones, with Brett alongside. A mistake here only stops new edits
+appearing; the site stays up.
 
-1. In your own Formspree account, create a new form. Set the notification email to wherever
-   contact messages should arrive.
-2. Copy the form's ID — the part after `formspree.io/f/` in its endpoint.
-3. Vercel → Settings → Environment Variables → set `FORMSPREE_ENDPOINT` to that ID.
-4. Redeploy (as in Step 4.4), then send yourself a test message through the site's contact
-   page and confirm it arrives.
+1. In **sanity.io/manage**, open the project, then **API**, then **Tokens**. Click
+   **Add API token**. Name it `read` and choose **Viewer**. Copy the token now, because it's
+   shown only once.
+2. In **Vercel**, open the project, then **Settings**, then **Environment Variables**. Edit
+   `SANITY_API_READ_TOKEN`, paste the token, and save.
+3. Make up a long random password (20 characters or more). In Vercel, edit
+   `SANITY_WEBHOOK_SECRET` and paste it. In Sanity, go to **API**, then **Webhooks**, edit the
+   webhook, and paste the same password as its **Secret**. Paste both from the same copy rather
+   than typing it. **The two must match exactly, or your edits stop appearing.**
+4. In Vercel, open **Deployments**. On the top one, click the **⋯** menu, then **Redeploy**.
+5. Repeat the Step 3 test. If the edit appears, the passwords match.
 
-### Step 6 — Transfer full ownership (both, ~10 minutes)
+Done when the test edit appears. Brett then deletes his old ones.
 
-Only once everything above is confirmed working.
+**Step 6. Contact form.** Redesign only. You, 10 minutes.
 
-1. **Brett:** GitHub → repo → Settings → General → Danger Zone → **Transfer ownership** to
-   Damian's account.
-2. **Damian:** after the transfer, check Vercel → Settings → Git still shows the repository
-   connected. If it's disconnected, reconnect it and authorise Vercel for your GitHub
-   account. **A silent disconnection here means edits to the code stop publishing** — worth
-   testing rather than assuming.
-3. **Brett:** remove yourself from Sanity, Vercel and GitHub.
-4. **Damian:** confirm you can still sign in to all three, and that the site is up.
+1. In **Formspree**, create a new form and set it to email you.
+2. Copy the form's ID. In an address like `https://formspree.io/f/xyzabcde`, it's `xyzabcde`.
+3. In Vercel, edit `FORMSPREE_ENDPOINT`, paste the ID, and save. Redeploy as in Step 5.4.
+4. Send yourself a message from the site's **Contact** page.
 
-### Step 7 — Write down where everything is (Damian, ~10 minutes)
+Done when the message arrives.
 
-Record the account email, and where the passwords are kept, somewhere a colleague could
-find it if you were unavailable. A password manager shared with one trusted person is
-ideal. This is the single most valuable ten minutes in this document.
+**Step 7. Brett steps out.** Brett, 5 minutes.
+
+Brett removes himself from every account; remove him from your Sanity organisation. Done when
+you can still sign in everywhere and the site is up.
+
+**Step 8. Write it down.** You, 10 minutes.
+
+Record the account email and where the passwords are kept, somewhere a colleague could find
+it. A password manager shared with one trusted person is ideal.
 
 ---
 
 ## 4. Editing the site
 
-Go to **`holsingerlab.vercel.app/studio`** and sign in.
+Sign in at **holsingerlab.vercel.app/studio**. Everything you can edit is in the list on the
+left. To add something, click an entry, then the **+** button at the top of the next column.
+(The **Media** tab at the very top is the picture library, not the **Media** list.)
 
-The left-hand menu lists everything you can edit. Change a field, then press **Publish**
-(bottom right). Changes reach the live site in about a minute. **Nothing is live until you
-press Publish** — you can leave a draft half-finished and come back to it.
+**Add a person.** **People**, then **+**. Fill in **Name**, **Role** (the words on their
+card), **Role Group** (the heading they sit under) and **Image**, then **Publish**. Redesign
+only: for a page of their own, turn on **Give this person their own page** and click
+**Generate** next to **Slug** (the page's web address).
 
-### Adding a person
+**Move someone to alumni.** Set their **Role Group** to **Lab Alumni** and **Publish**.
 
-**People** → the **+** button. Fill in name, role and photo. Two fields worth knowing:
+**Add a publication.** **Publication**, then **+**.
 
-- **Role Group** decides which heading they appear under on the People page (Postdocs, PhD
-  Students, and so on). Groups are edited under **Role Groups**.
-- **Give this person their own page** — off by default. Turn it on and they get a full
-  profile page of their own; leave it off and they appear in the People grid only.
+1. Paste the DOI into **DOI**, like `10.1038/s41420-025-02362-7` (not the `https://doi.org`
+   part).
+2. Click the small menu button beside **Publish** and choose **Fetch from DOI**. Check the
+   details it shows, then confirm. Title, authors, journal, date and abstract fill in.
+3. Click **Generate** next to **Slug**.
+4. Redesign only: choose **Type** and **Topics**. Turn on **Featured** to show it on the home
+   page.
+5. **Publish**. Papers sort themselves by date. No DOI? Fill in the fields by hand.
 
-You can drag people up and down in the list to change the order they appear in.
+**Add news.** Classic only. **News**, then **+**. Fill in **Headline**, **Home page text**
+and **News page sentence**. Two switches choose where it shows. **Publish**.
 
-### Adding a publication
+**Add media.** Classic only. **Media**, then **+**. Fill in **Title**, **Outlet** and
+**Date**. Paste a YouTube address into **Link** and the video plays on the page; any other
+link shows as a link. **Publish**.
 
-There's a shortcut worth knowing. Create the publication, paste the **DOI** into the DOI
-field, then click the small arrow next to the **Publish** button and choose **Fetch from
-DOI**. The title, authors, journal, volume, issue, pages, date and abstract are all filled
-in automatically from the publisher's records. Check what comes back, then Publish.
+**Change the home-page text.** **Site copy**, then **About the laboratory**. Classic also
+uses **Home page banner** (picture and heading) and the Team and Contact page introductions.
 
-If a publication has no DOI, fill the fields in by hand.
+**Add a resource.** Redesign only. **Resource**, then **+**. Fill in **Title**, **Kind**,
+**Summary**, **Source paper** and **How to obtain**. **Publish**.
 
-### Changing the logo, colours or lab name
+**Change the order.** In **People**, **News**, **Media** and **Role Groups**, drag items up
+or down; new ones start at the bottom. For research, open the project in **Project** and set
+**Position on the Research page** (1 is first; empty takes it off the page).
 
-**Settings**, which has tabs across the top:
+**Hide a page.** Redesign only. **Settings**, then the **Navigation** tab. Turn off **Enable
+Publications page**, **Enable Team page** (the People page) or **Enable Contact Us page**.
+This removes the page completely, not just its menu link. Neither design uses **Menu Item
+list**; ignore it.
 
-- **Identity** — the lab's name, and the image shown when someone shares a link on social
-  media.
-- **Branding** — logo, icon, brand colour, background tone.
-- **Lab head** — who's featured, and whether they appear on the home page and People page.
-- **Navigation** — which pages exist and the order of the menu.
-- **Footer** — the text at the bottom of every page.
+**Change the lab head, logo or colours.** **Settings**:
 
-Any colour you choose is safe. The site automatically adjusts how light or dark it renders
-so text stays readable, in both light and dark mode. There is no colour that produces an
-unreadable page.
-
-### One thing to be careful about
-
-Under **Settings → Navigation**, the toggles for Publications, Team and Contact Us don't
-just hide the page from the menu — they **remove the page from the site entirely**. Anyone
-following an old link gets a "page not found" error. Turn one off only if you genuinely
-want that page gone.
-
----
-
-## 5. Giving other people access
-
-You're the administrator of all three services, so you can add and remove people yourself.
-
-| To let someone…                   | Go to                             | Give them         |
-| --------------------------------- | --------------------------------- | ----------------- |
-| Edit content (most lab members)   | sanity.io/manage → Members        | **Editor**        |
-| Edit content _and_ manage members | sanity.io/manage → Members        | **Administrator** |
-| Change the code (a developer)     | GitHub → Settings → Collaborators | **Write**         |
-| Manage the hosting                | Vercel → Settings → Members       | **Member**        |
-
-Most people only ever need the first one. A student who's writing up their profile needs
-Sanity Editor and nothing else.
-
-**When someone leaves, remove them the same day.** It takes thirty seconds in each service
-and it's the kind of task that never gets done later.
+- **Lab head** tab: choose the person. The redesign shows them at the top of People and on the
+  home page (two switches). The classic leaves them off the Team page.
+- **Identity** tab: **Site name**, the lab's name in the header and browser tab.
+- **Branding** tab: **Icon** (the browser-tab picture) works in both. **Logo**, **Brand
+  colour** and **Background tone** are redesign only. Any colour stays readable.
+- **Contact** tab: your address, email and phone. The redesign uses the email only.
 
 ---
 
-## 6. When something looks wrong
+## 5. Saving and publishing
 
-| What you see                                | What's likely happening            | What to do                                                                                                                    |
-| ------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Edit published, but the site hasn't changed | Usually just timing                | Wait 2 minutes and reload. If still wrong, check `SANITY_WEBHOOK_SECRET` matches in both Vercel and Sanity (Step 4.3)         |
-| **The whole site is down**                  | Vercel outage, or a bad deployment | Check vercel-status.com. If Vercel is fine, go to Vercel → Deployments, find the last one that worked, and click **Rollback** |
-| Contact-form messages not arriving          | Formspree                          | Check the Formspree dashboard — the message may be there but the notification email wrong. Check junk mail                    |
-| Can't sign in to Studio                     | Your Sanity access                 | Sign in at sanity.io/manage. If you're not listed as a member, another administrator must re-add you                          |
-| A page shows "page not found"               | Usually a toggle                   | Check Settings → Navigation — that page may have been switched off (see §4)                                                   |
-| Site up but looks broken or unstyled        | A bad deployment                   | Vercel → Deployments → **Rollback** to the last working one                                                                   |
-
-**Rollback is the safe move.** It restores the previous working version in about a minute
-and changes no content. If something is badly wrong and you're not sure why, roll back
-first and investigate afterwards.
+Studio saves as you type, as a private draft you can come back to. **Nothing changes on the
+site until you click Publish.** After that, the site updates within about a minute. **Unpublish** (in the menu beside
+**Publish**) takes something off the site without deleting it.
 
 ---
 
-## 7. Keeping it healthy
+## 6. Giving someone else access
 
-The site is built on other people's code — hundreds of small components maintained by other
-people. Those get security updates, and this repository is set up to notice.
+In **sanity.io/manage**, open the project, then **Members**, then **Invite**. Choose **Editor**
+for someone who edits content. That's all most people need.
 
-**You will get GitHub notifications about dependency updates.** A robot called Renovate opens
-a request whenever something it watches has a new version, and GitHub separately emails about
-security advisories. This is normal and it never stops.
+A developer also needs access to the code: on GitHub, open the repository, then **Settings**,
+then **Collaborators**.
 
-**You don't need to act on these individually, and you shouldn't merge them yourself.** A
-dependency update can break the site, which is why the automated tests exist. Someone needs to
-read the result.
-
-**What to do instead:** once a year, ask a developer to do a dependency refresh — update
-everything, confirm all the tests still pass, fix whatever broke. It's roughly half a day's
-work and it keeps the accumulation from becoming a rewrite.
-
-**Where things stand today:** the dependencies were refreshed as part of this handover, which
-cleared the advisories that could be cleared safely — 16 down to 11, and the serious ones from
-5 to 2.
-
-The 11 that remain are all inside the tooling used to _build_ the site, not in the site
-visitors actually load. They can only be cleared by a change that would downgrade the CMS,
-which would be worse than leaving them. This is normal and it is not a security problem for
-the site. Ask a developer to look again at the yearly refresh.
+When someone leaves the lab, remove them the same day.
 
 ---
 
-## 8. If you ever need a developer
+## 7. If something looks wrong
 
-The site is built so that ordinary work — content, people, publications, branding — never
-needs one. You'd need a developer for a new type of page, a different layout, or if
-something breaks that rollback doesn't fix.
-
-**What to give them:** access to the GitHub repository, and point them at `README.md` and
-the `docs/` folder. `docs/superpowers/` contains the full design record of every change
-made during the 2026 rebuild — an unusually complete history for a site this size.
-
-**What to tell them it's built with:** Next.js, TypeScript, Tailwind CSS and Sanity CMS.
-All current, mainstream, widely known. Any competent web developer will recognise the whole
-stack.
-
-**What to expect:** a small change is a few hours' work. Ask for a fixed quote on a defined
-piece of work rather than an open-ended arrangement. The code has automated tests that run
-on every change, so ask them to make sure those still pass — that's the site's safety net.
-
-**One thing to insist on:** they work on a copy and show you a preview link before anything
-reaches the live site. Vercel creates one automatically for every change. Never let someone
-edit the live site directly.
+1. **A change isn't showing.** Wait two minutes and reload. Check you clicked **Publish**.
+2. **A page has disappeared.** Check the switches in **Settings**, **Navigation** (Section 4).
+3. **No edits appear at all.** The two passwords from Step 5.3 probably don't match. Redo it.
+4. **The site is down or looks broken.** In Vercel, open **Deployments** and find the one
+   dated before it broke. Click its **⋯** and choose **Instant Rollback**. This changes no
+   content. Then contact a developer.
+5. **Contact messages aren't arriving** (redesign). Check your Formspree dashboard and your junk
+   mail.
 
 ---
 
-## Reference
+## 8. Once a year, and if you need a developer
 
-Details a developer will ask for.
+**Ignore GitHub's update emails.** They suggest updates to the parts the site is built from,
+and accepting one yourself could break it. Instead, once a year, pay a developer for about half
+a day to update everything and check the automated tests still pass.
 
-|                   |                                                                                                             |
-| ----------------- | ----------------------------------------------------------------------------------------------------------- |
-| Repository        | `github.com/where-is-brett/holsinger-lab` — becomes `github.com/<your-username>/holsinger-lab` after Step 6 |
-| Live site         | `holsingerlab.vercel.app`                                                                                   |
-| Studio            | `holsingerlab.vercel.app/studio`                                                                            |
-| Sanity project ID | `j3f9z8os`                                                                                                  |
-| Sanity dataset    | `production`                                                                                                |
-| Custom domain     | None — uses the free `holsingerlab.vercel.app`                                                              |
+**You need a developer only** to change the design or layout, or to fix something a rollback
+doesn't. Give them access to the code (Section 6); they'll find the notes they need there.
+The site uses Next.js and Sanity, which most web developers know. Ask for a fixed quote and a
+preview link before anything goes live. Tell them never to run `npm audit fix --force` here.
 
-**Environment variables** are set in Vercel → Settings → Environment Variables. Full list
-and explanation in `.env.local.example`. The secret ones are `SANITY_API_READ_TOKEN`,
-`SANITY_API_WRITE_TOKEN`, `SANITY_WEBHOOK_SECRET` and `FORMSPREE_ENDPOINT` — these must
-never be written into the code or shared outside the people who need them.
+**Optional, no action needed:** a web address of the lab's own (about $15 a year) would keep
+links working if the site ever moved away from `holsingerlab.vercel.app`.

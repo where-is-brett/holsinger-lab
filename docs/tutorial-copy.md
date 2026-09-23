@@ -1,130 +1,79 @@
 # Paste into the /tutorial page in Studio
 
-Editor-facing copy, written for lab members with no technical background. Everything here is
-done in Studio — no code changes, no developer, no waiting for a deploy.
-
-Keep this file and the `/tutorial` page in step: if you edit one, edit the other.
+Editor-facing copy for lab members with no technical background. It matches section 4 of
+[`HANDOVER.md`](HANDOVER.md). If you edit one, edit the other. After the design is chosen,
+delete the lines for the design that wasn't.
 
 ---
 
 ## The basics
 
-You're in Studio, the site's editor. The menu on the left lists everything you can change.
+This is Studio, the site's editor. Everything you can change is in the list on the left. To
+add something, click an entry, then the **+** button at the top of the next column.
 
-Pick something, change it, then press **Publish** at the bottom right. Your change reaches
-the live site about a minute later.
+Studio saves as you type, as a private draft. **Nothing changes on the site until you click
+Publish** (bottom right). The site updates about a minute later.
 
-Nothing is live until you press Publish. You can start something, leave it half-finished,
-and come back to it another day — visitors won't see it until you publish.
+(The **Media** tab at the very top is the picture library, not the **Media** list.)
 
----
+## People
 
-## Adding a person
+**Add a person.** **People**, then **+**. Fill in **Name**, **Role** (the words on their
+card), **Role Group** (the heading they sit under) and **Image**, then **Publish**.
 
-Go to **People** and press the **+** button.
+**Move someone to alumni.** Set their **Role Group** to **Lab Alumni** and **Publish**.
 
-Fill in their name, role and photo. Two fields are worth explaining:
+**Order.** Drag people up or down in the **People** list. New people start at the bottom.
 
-**Role Group** decides which heading they appear under on the People page — Postdocs, PhD
-Students, and so on. If the group you want doesn't exist yet, add it under **Role Groups**
-first.
+Redesign only: for a page of their own, turn on **Give this person their own page** and click
+**Generate** next to **Slug** (the page's web address).
 
-**Give this person their own page** is off to begin with. Leave it off and they appear in
-the People grid with a short bio. Turn it on and they get a full page of their own, which is
-worth doing for anyone with a substantial biography or publication record.
+## Publications
 
-To change the order people appear in, drag them up and down in the list.
+1. **Publication**, then **+**.
+2. Paste the DOI into **DOI**, like `10.1038/s41420-025-02362-7` (not the `https://doi.org`
+   part).
+3. Click the small menu button beside **Publish** and choose **Fetch from DOI**. Check the
+   details it shows, then confirm.
+4. Click **Generate** next to **Slug**.
+5. Redesign only: choose **Type** and **Topics**. Turn on **Featured** to show it on the home
+   page.
+6. **Publish**. Papers sort themselves by date. No DOI? Fill in the fields by hand.
 
----
+## News and media (classic only)
 
-## Adding a publication
+**News**, then **+**. Fill in **Headline**, **Home page text** and **News page sentence**. Two
+switches choose where it shows.
 
-There's a shortcut that saves a lot of typing.
+**Media**, then **+**. Fill in **Title**, **Outlet** and **Date**. Paste a YouTube address into
+**Link** and the video plays on the page; any other link shows as a link.
 
-Create the publication, paste its **DOI** into the DOI field. Then click the small arrow
-next to the **Publish** button at the bottom right, and choose **Fetch from DOI**. The
-title, authors, journal, volume, issue, pages, date and abstract all fill in automatically
-from the publisher's own records.
+Drag items in either list to reorder them.
 
-Check what comes back before publishing — occasionally a publisher's records have an author
-name formatted oddly. Then press Publish.
+## Research and resources
 
-If a publication has no DOI, fill the fields in by hand.
+**Research page.** Open the project in **Project** and set **Position on the Research page**
+(1 is first; empty takes it off the page).
 
----
+**Resources** (redesign only). **Resource**, then **+**. Fill in **Title**, **Kind**,
+**Summary**, **Source paper** and **How to obtain**.
 
-## Editing pages
+## Home-page text
 
-**Home** is the front page. **Pages** holds everything else — About, Research, and any other
-page the lab adds.
+**Site copy**, then **About the laboratory**. Classic also uses **Home page banner** (picture
+and heading) and the Team and Contact page introductions.
 
-Text fields work like any word processor: select text to make it bold or italic, or to turn
-it into a link.
+## Settings
 
-To add a new page, go to **Pages** → **+**, write it, and publish. To put it in the site
-menu, go to **Settings → Navigation** and add it to the menu list. A page that isn't in the
-menu still exists and still works — it's just not linked from anywhere, which is sometimes
-what you want.
-
----
-
-## Branding
-
-The site's look is controlled from **Settings → Branding** and **Settings → Identity** — no
-code changes needed for any of this. Everything below is optional; leaving a field empty
-keeps the site's built-in look.
-
-### The lab's name
-
-Under **Settings → Identity**, **Site name** is the full name of the lab — it appears in browser
-tabs, in search results and on social media share cards. **Short name** is used where there's less
-room, like the site header and the icon label on a phone home screen.
-
-Leave either empty and the site falls back to its built-in name.
-
-### Logo
-
-Upload an image under **Logo** and it replaces the text mark in the site header. Any shape
-works — the site scales it to fit the header automatically.
-
-If your logo is dark-coloured and would be hard to see on a dark background, also upload a
-**Logo (dark mode)** version. It's shown automatically to visitors whose device is set to
-dark mode — you don't need to do anything else for this to work.
-
-### Brand colour
-
-Set **Brand colour** to your lab's main colour and the site uses it for links and small
-accents (borders, highlights) throughout. Pick any colour — the site automatically adjusts
-how light or dark it renders so text and links stay easy to read, in both light and dark
-mode. There's no colour you can choose that will make the site hard to read.
-
-**Background tone** offers two overall page tones — a cool grey (the default) or a warm
-cream — independent of your brand colour. Try both and see which one fits.
-
-### Icon
-
-Upload a square image under **Icon** and it becomes the small icon shown in browser tabs and
-when someone saves the site to their phone's home screen. A simple, recognisable mark works
-best at small sizes — think of how small your browser tab icon actually is.
-
----
-
-## Two things to be careful about
-
-**The page toggles under Settings → Navigation** — Publications, Team, Contact Us — don't
-just hide a page from the menu. They remove it from the site completely, and anyone
-following an old link to it gets an error. Only switch one off if you really want that page
-gone.
-
-**Turning off the lab head spotlight on the People page** removes the lab head from that
-page altogether — they won't appear in the ordinary grid either.
-
----
+- **Lab head** tab: who the lab head is.
+- **Identity** tab: **Site name**.
+- **Branding** tab: **Icon** works in both designs. **Logo**, **Brand colour** and
+  **Background tone** are redesign only. Any colour stays readable.
+- **Contact** tab: address, email and phone.
+- **Navigation** tab (redesign only): the **Enable** switches remove a page from the site
+  completely, not just from the menu. Only turn one off if you want that page gone.
 
 ## If something doesn't look right
 
-Wait two minutes and reload the page — changes aren't instant.
-
-If it's still wrong, or something looks broken, don't try to fix it by making more changes.
-Note what you did and what happened, and check the handover document's troubleshooting
-table.
+Wait two minutes and reload. Check you clicked **Publish**. If it's still wrong, don't make more
+changes to fix it. Note what you did and tell the lab head.
