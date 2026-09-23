@@ -25,26 +25,18 @@ export interface PublicationRowProps {
 // property references, so there's no var()-wrapping trap here (see
 // tokens.ts's PRESS comment for the trap itself).
 //
-// Grid only from `xl` (spec §4.1 / ruling in §7, moved from `lg` in Task 2
-// fix round 1): the 4-column ledger needs ~700px of content box for its
-// title track alone not to collide with the journal column -- `Section`'s
-// own `lg` content column (a ~160px label column plus the page gutter,
-// replacing the old rail) is only 728px total at 1024px, leaving as little
-// as 100px for the title before that. `xl` (1280px) is comfortably past
-// that squeeze point (measured: the collision clears by about 1090px).
-// Below `xl` the container is a plain block (no `grid`/`flex` utility at
-// all -- that's the initial value, so there is nothing to set and nothing
-// that could collide with the `xl:` triad below).
+// Grid only from `xl` (spec §4.1 / ruling in §7): the 4-column ledger
+// needs ~700px of content box for its title track alone not to collide
+// with the journal column -- `Section`'s own content column at `lg` is
+// only ~728px at 1024px, leaving too little room. Below `xl` the
+// container is a plain block (the initial value, so nothing could collide
+// with the `xl:` triad below).
 const GRID = PUBLICATION_GRID
 // The mobile "year — journal ref" kicker line, shared by every non-narrow
-// variant below `xl`. Same anatomy as the `narrow` branch's kicker.
-//
-// Task 3 fix round 1 (review Important 4): no `uppercase` -- this forced
-// the CMS `journal` name upper-case (constraints.md: "CMS text prints
-// verbatim"), once per row, on every route below `xl` (measured: 76 on
-// `/publications`, 20 on `/` at 375px). The journal name now renders
-// exactly as typed; the year beside it is still styled via `text-accent`,
-// not case.
+// variant below `xl`. Same anatomy as the `narrow` branch's kicker. No
+// `uppercase`: the journal name is CMS data and must print verbatim
+// (constraints.md); the year beside it is styled via `text-accent`, not
+// case.
 const KICKER = 'font-mono text-[10px] leading-[1.4] font-medium tracking-[0.06em]'
 
 // The row is the hover target, never a click target -- only the title (an
@@ -142,11 +134,9 @@ function Identifier({
   return (
     <span className={`font-mono ${fontSize} leading-[1.5] break-all`}>
       <span className="text-text-faint">{pub.linkKind} </span>
-      {/* `data-cms-verbatim` (Task 3 fix round 2): a DOI/URL is
-          case-sensitive CMS data, not a label -- e2e/label-budget.spec.ts's
-          source-caps check skips it, the same way it already skips
-          anything inside `[data-identifier]`'s sibling `[data-cms-verbatim]`
-          marker everywhere else in this direction. */}
+      {/* `data-cms-verbatim`: a DOI/URL is case-sensitive CMS data, not a
+          label -- the label-budget e2e's source-caps check skips anything
+          inside this marker (or `[data-identifier]`'s). */}
       <a className={IDENTIFIER} href={pub.linkHref} data-identifier data-cms-verbatim>
         {label}
       </a>
@@ -173,12 +163,8 @@ export function PublicationRow({
       <div className="group border-t border-rule py-[13px]">
         <div className={KICKER}>
           <span className="text-accent">{pub.year}</span>
-          {/* `data-cms-verbatim` (Task 3 fix round 2, re-review N1): the
-              journal name is CMS data, not a label -- the budget spec's
-              source-caps check must never depend on whether a given lab's
-              journal names happen to read as shouted caps ("PLOS ONE",
-              "FEBS J"). See Identifier()'s own comment above for the
-              marker's full contract. */}
+          {/* `data-cms-verbatim`: the journal name is CMS data, not a
+              label -- see Identifier()'s own comment above. */}
           <span className="text-text-faint" data-cms-verbatim>
             {' '}
             — {pub.journal} {pub.ref}
@@ -332,16 +318,11 @@ export function PublicationRow({
           <strong className="font-semibold text-text">{pub.authorsPI}</strong>
           {pub.authorsPost}
         </div>
-        {/* Task 3: sentence-case Archivo, not uppercase mono -- `tagLine`
-            joins the publication's own `type` and CMS `topics` (constraints.md:
-            "CMS text prints verbatim"), and this renders once per row, so
-            keeping it upper-case blew the micro-label budget on
-            /publications by itself (one violation per visible row).
-            `data-cms-verbatim` (fix round 2): this is a 13px line today, so
-            it's already outside the budget spec's <=12px gate, but marked
-            defensively -- CMS type/topic values, same category as the
-            journal name below, and a future size tweak shouldn't quietly
-            reopen N1 here. */}
+        {/* Sentence-case Archivo, not uppercase mono: `tagLine` joins the
+            publication's own `type` and CMS `topics`, which must print
+            verbatim (constraints.md). `data-cms-verbatim`: marked
+            defensively in case a future size tweak brings it under the
+            budget's <=12px gate. */}
         {tagLine(pub) !== '' && (
           <div className="text-[13px] leading-[1.6] font-medium text-text-faint" data-cms-verbatim>
             {tagLine(pub)}

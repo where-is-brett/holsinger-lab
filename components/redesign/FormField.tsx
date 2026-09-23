@@ -19,10 +19,9 @@ export interface FormFieldProps {
 // docs/redesign-experiment/design-system/components/content/FormField.jsx.
 // 'use client': `onChange` attaches a handler to the host <input>/<textarea>.
 
-// Task 3 (spec §1.5): sentence-case Archivo, matching tokens.ts's
-// `MICRO_LABEL` geometry, not the mono-caps treatment this used before --
-// a form field's label is exactly the kind of micro-label the budget rule
-// targets, and it isn't a data column head.
+// Sentence-case Archivo, matching tokens.ts's `MICRO_LABEL` geometry, not
+// mono-caps (spec §1.5): a form field's label is exactly the kind of
+// micro-label the budget rule targets, and it isn't a data column head.
 const LABEL_CLASS = 'block font-sans text-[0.8125rem] leading-none font-medium text-text-faint'
 
 // Square, transparent, --sem-field-bordered input. `min-h-11` is the 44px

@@ -2,11 +2,9 @@ import { expect, test } from '@playwright/test'
 
 import { e2eClient } from './support/sanity'
 
-// `data-testid="facet-band"` (FacetBand.tsx, Task 2 fix round 2 -- replaces
-// the old `z-[5]`-ancestor lookup, `z-[5]` having existed only to support
-// the band's now-removed sticky positioning). Facet-group label lookups
-// are scoped inside it, not the whole page: the column-head row (`hidden
-// xl:grid`) also renders a plain "Year" span, and an unscoped
+// Located via `data-testid="facet-band"` (FacetBand.tsx). Facet-group label
+// lookups are scoped inside it, not the whole page: the column-head row
+// (`hidden xl:grid`) also renders a plain "Year" span, and an unscoped
 // `getByText('Year', { exact: true })` would match both.
 function facetBand(page: import('@playwright/test').Page) {
   return page.getByTestId('facet-band')
@@ -231,12 +229,9 @@ test.describe('publications index', () => {
   })
 
   test.describe('no horizontal overflow', () => {
-    // 375/390 added in fix round 2: PageTitle.tsx and FacetBand.tsx had
-    // non-responsive gutters (fixed `pr`/`pl` gutter tokens at every width)
-    // and neither content column had its own `min-w-0`, so this page
-    // genuinely overflowed at real phone widths (measured 621px scrollWidth
-    // vs a 375px viewport before the fix) -- previously uncaught because
-    // this describe block only ever checked >=768px.
+    // Includes real phone widths (320/375/390), not just >=768px, since
+    // narrow-viewport overflow is its own failure mode independent of
+    // desktop layout.
     for (const width of [320, 375, 390, 768, 1023, 1024, 1280]) {
       test(`at ${width}px`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 })
@@ -249,13 +244,11 @@ test.describe('publications index', () => {
     }
   })
 
-  // Task 2 fix round 1 (review Important 1): the document-level check
-  // above cannot see a title that overflows its own ledger cell without
-  // ever growing the page past the viewport -- see `e2e/home.spec.ts`'s
-  // identical check and `tokens.ts`'s `PUBLICATION_GRID` comment for the
-  // full root cause. Density defaults to Comfortable on load, which is the
-  // shape this check targets; Compact truncates by design (`lg:truncate`),
-  // so a `text-overflow: ellipsis` cell there is not a defect.
+  // The document-level check above cannot see a title that overflows its
+  // own ledger cell without ever growing the page past the viewport, so
+  // this checks each row's cells directly. Density defaults to Comfortable
+  // on load, which is the shape this check targets; Compact truncates by
+  // design, so an ellipsis cell there is not a defect.
   test.describe('publication ledger cells never overflow their own track', () => {
     for (const width of [1024, 1280, 1440]) {
       test(`at ${width}px`, async ({ page }) => {

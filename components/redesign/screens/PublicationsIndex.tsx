@@ -16,18 +16,18 @@ import { LABEL, PUBLICATION_GRID } from '../tokens'
 // facet is actually carrying, same pattern as the ui_kit's TYPES constant.
 const TYPE_ORDER = ['Article', 'Review', 'Case report']
 
-// Task 3: the ui_kit's instructional note ("CLICK TO FILTER · CLICK AGAIN
-// TO CLEAR -- AN UNTAGGED PAPER STILL APPEARS UNDER YEAR AND TYPE · COMPACT
-// TIGHTENS EACH ROW TO ONE SCANNING LINE") is developer-facing copy
-// explaining the system to whoever's looking, not content for a visitor --
-// removed outright, not converted. `FacetBand`'s `note` prop stays (the
-// gallery still uses it for its own "N of M publications" demo line); this
-// screen just no longer passes one.
+// The ui_kit's instructional note ("CLICK TO FILTER · CLICK AGAIN TO CLEAR
+// -- AN UNTAGGED PAPER STILL APPEARS UNDER YEAR AND TYPE · COMPACT TIGHTENS
+// EACH ROW TO ONE SCANNING LINE") is developer-facing copy explaining the
+// system to whoever's looking, not content for a visitor -- omitted here
+// rather than rendered. `FacetBand`'s `note` prop stays (the gallery still
+// uses it for its own "N of M publications" demo line); this screen just
+// doesn't pass one.
 
 // Column heads (Year · Title · Authors · Tags · Journal · Link · Cite),
-// from `xl` only (moved from `lg` in Task 2 fix round 1 -- see
-// `PUBLICATION_GRID`'s own comment in tokens.ts) -- the same 4-column
-// ledger template PublicationRow's `GRID` uses, so the head row's cells
+// from `xl` only (see `PUBLICATION_GRID`'s own comment in tokens.ts) --
+// the same 4-column ledger template PublicationRow's `GRID` uses, so the
+// head row's cells
 // line up with the rows underneath it. `hidden` (unprefixed) / `PUBLICATION_
 // GRID`'s own `xl:grid` (prefixed) is the same paired-per-breakpoint
 // `display` pattern PublicationRow's own KICKER/GRID split uses, so there is
@@ -38,12 +38,10 @@ export function PublicationsIndex({ publications }: { publications: Publication[
   const [year, setYear] = useState<string | null>(null)
   const [type, setType] = useState<string | null>(null)
   const [topic, setTopic] = useState<string | null>(null)
-  // Task 3 fix round 1 (review Important 5): the density chip labels are
-  // sentence case ('Comfortable'/'Compact'), not shouted caps -- these are
-  // the state's own values (FacetBand renders each option label verbatim
-  // as its chip text), so the state type itself carries the display text.
-  // PR 3 removes this toggle entirely; this is a like-for-like case fix,
-  // not a redesign.
+  // The density chip labels are sentence case ('Comfortable'/'Compact'),
+  // not shouted caps -- these are the state's own values (FacetBand
+  // renders each option label verbatim as its chip text), so the state
+  // type itself carries the display text.
   const [density, setDensity] = useState<'Comfortable' | 'Compact'>('Comfortable')
 
   const yearCounts = useMemo(() => countBy(publications, (p) => p.year), [publications])
@@ -80,32 +78,20 @@ export function PublicationsIndex({ publications }: { publications: Publication[
         }
         accentMeta={filtered}
       />
-      {/* Task 2 fix round 1 (controller ruling): the brief's own label
-          table lists Publications' labels as "Filter" and "Record" -- the
-          original fix round removed "Filter" along with the rail
-          entirely, leaving no Filter label anywhere and a visible
-          misalignment (the band's chips started at the page gutter while
-          the Record rows started at the content column). Wrapping
-          `FacetBand` in its own `Section` restores the label and lines the
-          chips up with the rows below. `padTop`/`padBottom` "0px":
-          `FacetBand` already owns its own vertical rhythm (border, chip-row
-          spacing) -- `Section`'s own default padding would stack with it
-          rather than replace it. `borderTop={false}`: `FacetBand` still
-          renders its own top border (unchanged), so `Section` doesn't add
-          a second one immediately above it. `labelHeading`: true --
-          `FacetBand`'s content is chips, not headings, so "Filter" is this
-          section's only one. PR 3 replaces the band's internals; this is
-          purely the alignment/label fix this task's brief called for.
+      {/* `FacetBand` wrapped in its own `Section` so the "Filter" label
+          renders and the chips line up with the Record rows below.
+          `padTop`/`padBottom` "0px": `FacetBand` already owns its own
+          vertical rhythm (border, chip-row spacing) -- `Section`'s own
+          default padding would stack with it rather than replace it.
+          `borderTop={false}`: `FacetBand` renders its own top border, so
+          `Section` doesn't add a second one immediately above it.
+          `labelHeading`: true -- `FacetBand`'s content is chips, not
+          headings, so "Filter" is this section's only one.
 
-          Fix round 2 (controller ruling): re-review found this wrap had
-          silently broken `FacetBand`'s own sticky positioning -- a sticky
-          element can only travel as far as its parent's own height, and
-          this `Section`'s content cell was exactly the band's height, so
-          it had nowhere to scroll to. Resolved by removing the band's
-          sticky behaviour entirely (PR 3 was already removing it; see
-          FacetBand.tsx's own comment), not by un-wrapping it -- so this
-          `Section` wrap, `padTop`/`padBottom`/`borderTop` all stay exactly
-          as fix round 1 left them. */}
+          Not sticky: `FacetBand` doesn't stick, because a sticky element
+          can only travel as far as its parent's own height, and this
+          `Section`'s content cell is exactly the band's height -- see
+          FacetBand.tsx's own comment. */}
       <Section label="Filter" labelHeading borderTop={false} padTop="0px" padBottom="0px">
         <FacetBand
           groups={[
@@ -144,18 +130,15 @@ export function PublicationsIndex({ publications }: { publications: Publication[
           }}
         />
       </Section>
-      {/* Task 2: `labelHeading` true -- the record list has no heading of
-          its own (a column-head row and a list of rows), so `Record` is
-          this section's only one. `padTop="32px"` matches the ui_kit's own
-          `Record` block spacing (was `32px`, not the default
-          `--spacing-stack`/44px) -- `Section` now supplies the whole
-          gutter/padding box itself, so the old `RECORD_LIST_PADDING`
-          wrapper (an exact duplicate of `Section`'s own default padding,
-          just with a different top value) is gone. */}
+      {/* `labelHeading` true -- the record list has no heading of its own
+          (a column-head row and a list of rows), so `Record` is this
+          section's only one. `padTop="32px"` matches the ui_kit's own
+          `Record` block spacing (not the default `--spacing-stack`/44px)
+          -- `Section` supplies the whole gutter/padding box itself. */}
       <Section label="Record" labelHeading borderTop={false} padTop="32px">
-        {/* `data-testid="ledger-head"` (Task 3): the one place this route's
-            uppercase mono is still allowed -- e2e/label-budget.spec.ts
-            excludes anything inside it from the micro-label budget. */}
+        {/* `data-testid="ledger-head"`: the one place this route's
+            uppercase mono is allowed -- e2e/label-budget.spec.ts excludes
+            anything inside it from the micro-label budget. */}
         <div data-testid="ledger-head" className={`${COLUMN_HEADS} ${LABEL}`}>
           <span>Year</span>
           <span>Title · Authors · Tags</span>

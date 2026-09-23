@@ -219,16 +219,12 @@ test.describe('/', () => {
     expect(await readMemberCount(block)).toBe(expected)
   })
 
-  // Fix round 1, IMPORTANT 1: cross-checks Home's own rendered count
-  // against /people's own rendered "N current members" meta, rather than
-  // re-deriving the same rule a second time (which couldn't have caught
-  // the original bug -- both implementations agreed with each other while
-  // disagreeing with /people). Only compared when the two pages' lab-head
-  // visibility flags agree (both pages then exclude, or both include, the
-  // same person) and both member-count elements are actually rendered --
-  // when the flags genuinely differ, the two pages are allowed to show
-  // different numbers (one page's PI is visible there and not the other),
-  // which is a valid configuration, not a bug.
+  // Cross-checks Home's own rendered count against /people's own rendered
+  // "N current members" meta, rather than re-deriving the same rule a
+  // second time -- two independent implementations agreeing is a stronger
+  // signal than one re-derivation agreeing with itself. Only compared when
+  // the two pages' lab-head visibility flags agree; when they genuinely
+  // differ, the pages are allowed to show different numbers.
   test("the current-member count equals /people's own rendered count, whenever the two pages' lab-head visibility agree and both blocks are visible", async ({
     page,
   }) => {
@@ -276,17 +272,11 @@ test.describe('/', () => {
     }
   })
 
-  // Task 2 fix round 1 (review Important 1): the document-level
-  // `scrollWidth`-vs-`clientWidth` check above cannot see a cell that
-  // overflows its own grid track without ever growing the page past the
-  // viewport -- exactly what happened to the "Recent work" ledger's title
-  // column between 1024 and ~1090px once `Section`'s narrower `lg` content
-  // column left the old `lg`-activated `PUBLICATION_GRID` too little room
-  // (see tokens.ts's own comment). Scoped to comfortable density only --
-  // `PublicationRow`'s `compact` density truncates by design, so a
-  // `text-overflow: ellipsis` cell there is not a defect this check should
-  // ever flag. Home only ever renders the `home` variant (no density
-  // toggle), which is comfortable-shaped.
+  // The document-level `scrollWidth`-vs-`clientWidth` check above cannot
+  // see a cell that overflows its own grid track without ever growing the
+  // page past the viewport, so this checks each publication row's cells
+  // directly. Home only ever renders the comfortable-density `home`
+  // variant, so there's no need to exempt a truncating compact mode here.
   test.describe('publication ledger cells never overflow their own track', () => {
     for (const width of [1024, 1280, 1440]) {
       test(`at ${width}px`, async ({ page }) => {
@@ -337,14 +327,10 @@ test.describe('/preview/components gallery: home', () => {
     expect(fits).toBe(true)
   })
 
-  // Task 2 fix round 2 (re-review Minor 3): at 1280px and above, the
-  // publication ledger's `xl:` grid activates on *viewport* width, not the
-  // gallery's own demo-frame width -- before this fix, `gallery-home-a/b/c`
-  // sat inside `<main>`'s `max-w-5xl` (1024px) cap even at wider viewports
-  // (8 titles measured overflowing their cells at 1280/1440), so this
-  // extends the same per-row overflow check `e2e/home.spec.ts`'s live `/`
-  // describe block above already uses to the gallery fixtures the fix
-  // (`Gallery.tsx`'s `FULL_BLEED` wrapper) targets.
+  // The publication ledger's `xl:` grid activates on *viewport* width, not
+  // the gallery's own demo-frame width, so this applies the same per-row
+  // overflow check used against the live `/` route above to the gallery
+  // fixtures at the same breakpoints.
   test.describe('publication ledger cells never overflow their own track', () => {
     for (const width of [1280, 1440]) {
       test(`at ${width}px`, async ({ page }) => {

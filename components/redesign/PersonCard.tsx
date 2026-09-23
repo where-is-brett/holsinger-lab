@@ -86,11 +86,8 @@ export function PortraitFrame({
       <Image src={img} alt={name} fill sizes={sizes} className={IMAGE_FILTER} />
     </div>
   ) : (
-    // Task 3 fix round 1: the "[ NO PORTRAIT ON FILE ]" line is deleted --
-    // it's system-explaining copy (the kind item 1 of the brief removes),
-    // and it rendered on live `/people` any time a profile has no image.
-    // The initials plus the quiet striped background are enough; PR 4 adds
-    // a real initials tile.
+    // No system-explaining copy here -- the initials plus the quiet
+    // striped background are enough for a profile with no image.
     <div className={`${FOOTPRINT_FALLBACK} ${className ?? ''}`} style={{ backgroundImage: STRIPE_BG }}>
       <span className="font-mono text-[26px] leading-none font-medium text-text-muted">
         {initials}
@@ -137,11 +134,11 @@ export function PersonCard({ name, role, detail, img, initials, href }: PersonCa
       </div>
       {/* `role` and `detail` are free text from the CMS -- printed verbatim,
           including any misspelling in the source data. Never corrected
-          here. `data-cms-verbatim` (Task 3 fix round 2, re-review N1):
-          e2e/label-budget.spec.ts's source-caps check must never depend on
-          whether a given lab's own role text ("MD (UNSW)") happens to read
-          as shouted caps -- the budget is about labels this repo writes,
-          not about the shape of a real dataset. */}
+          here. `data-cms-verbatim` marks that for e2e/label-budget.spec.ts's
+          source-caps check, so it never depends on whether a given lab's
+          own role text ("MD (UNSW)") happens to read as shouted caps --
+          the budget is about labels this repo writes, not the shape of a
+          real dataset. */}
       <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] break-words text-text-faint" data-cms-verbatim>
         {role}
       </div>

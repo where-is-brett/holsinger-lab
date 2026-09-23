@@ -57,10 +57,9 @@ test.describe('/resources', () => {
     expect(meta).toBe(`${n} resource${n === 1 ? '' : 's'}`)
   })
 
-  // Task 2 fix round 1 (review Important 2): `kind` is a lower-case schema
-  // enum (`schemas/documents/resource.ts`'s `RESOURCE_KINDS`); the section
-  // label must render it through `kindLabel` (resourceModel.ts), sentence
-  // case, never the raw enum value.
+  // `kind` is a lower-case schema enum (`schemas/documents/resource.ts`'s
+  // `RESOURCE_KINDS`); the section label must render it through `kindLabel`
+  // (resourceModel.ts) in sentence case, never the raw enum value.
   test('each section-label starts with an upper-case letter', async ({ page }) => {
     const resources = await fetchLiveResources()
     test.skip(resources.length === 0, 'no resource documents in this dataset')

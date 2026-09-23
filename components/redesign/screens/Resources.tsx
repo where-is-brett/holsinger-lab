@@ -29,19 +29,13 @@ export function Resources({ resources }: { resources: ResourcePayload[] }) {
           <p className="text-[14px] leading-[1.5] text-text-muted">No resources are listed yet.</p>
         </Section>
       ) : (
-        // Task 2 fix round 2 (controller ruling, option (b)): back to one
-        // `Section` per resource, in the query's own order (`title asc`) --
-        // fix round 1's per-`kind` grouping reordered the list relative to
-        // that query whenever kinds were interleaved, which broke
-        // `e2e/resources.spec.ts`'s "renders one block per resource
-        // document" check for any dataset where that happens (re-review,
-        // "New Breakage 2"). `kindLabel` still gives the label its required
-        // sentence case, but it's rendered as this `Section`'s default
-        // `<p>` (`labelHeading` unset), not an `<h2>` -- two resources
-        // sharing a kind now render two identical `<p>` labels, which is
-        // fine (a `<p>` is never a heading-order concern), rather than two
-        // identical `<h2>`s. `ResourceBlock`'s own title is now the real
-        // heading for each resource (`ResourceBlock.tsx`, fix round 2).
+        // One `Section` per resource, in the query's own order (`title
+        // asc`). `kindLabel` gives the label its sentence case, but it
+        // renders as this `Section`'s default `<p>` (`labelHeading` unset),
+        // not an `<h2>` -- two resources can share a kind, and a `<p>`
+        // avoids duplicate `<h2>`s (a heading-order concern) where that
+        // happens. `ResourceBlock`'s own title is the real heading for
+        // each resource.
         resources.map((resource, index) => (
           <Section key={resource._id} label={kindLabel(resource.kind)} borderTop={index !== 0}>
             <ResourceBlock title={resource.title ?? ''} meta={buildResourceMeta(resource)}>

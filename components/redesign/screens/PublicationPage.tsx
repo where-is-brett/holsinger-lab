@@ -14,10 +14,10 @@ import { MICRO_LABEL } from '../tokens'
 // reproduced here via Tailwind 4's trailing-bang form.
 const IDENTIFIER = 'text-link normal-case! break-all'
 
-// Task 3: the ui_kit's "The DOI is the paper's permanent address. Where a
-// paper has none, the recorded publisher URL stands in." explanation is
+// The ui_kit's "The DOI is the paper's permanent address. Where a paper has
+// none, the recorded publisher URL stands in." explanation is
 // developer-facing copy explaining the system's own fallback rule, not
-// content for a visitor -- removed outright, not converted.
+// content for a visitor -- omitted here rather than rendered.
 
 function PaperBlock({ pub }: { pub: Publication }) {
   return (
@@ -25,22 +25,18 @@ function PaperBlock({ pub }: { pub: Publication }) {
       <Link href="/publications" className="text-[13px] leading-none font-medium text-link">
         ← All publications
       </Link>
-      {/* `break-words`: see PageTitle.tsx's canonical note (`hyphens-auto`
-          removed in the final-review fix round). Live proof site, fix
-          round 2: the DOI paper "INPP5D/SHIP1:
-          Expression, Regulation and Roles in Alzheimer's Disease
-          Pathophysiology" is title-case, so "Pathophysiology" never
-          hyphenates (Blink skips capitalised words) -- at the old fixed
-          2.3125rem/37px size it was 42px too wide for this column at
-          320px and overflowed. This role's size is now `clamp(1.75rem,
-          4.5vw,2.3125rem)`: same floor and slope as `--text-title`
-          (reusing the "title" level's own fit budget -- "Pathophysiology"
-          measured 218px against a 246px column at the 28px floor,
-          task-1-report.md), same 2.3125rem ceiling as before once the
-          viewport is wide enough that 4.5vw exceeds it -- so desktop is
-          unchanged, and this is still a documented exception to the
-          generic `--text-title` token (a smaller ceiling for these longer
-          scientific titles), just a fluid one now instead of fixed. */}
+      {/* `break-words`: see PageTitle.tsx's canonical note. The DOI paper
+          title "INPP5D/SHIP1: Expression, Regulation and Roles in
+          Alzheimer's Disease Pathophysiology" is title-case, so
+          "Pathophysiology" never hyphenates (Blink skips capitalised
+          words) -- at a fixed 2.3125rem it overflows this column at
+          320px. Sized as `clamp(1.75rem,4.5vw,2.3125rem)` instead: same
+          floor and slope as `--text-title` (reusing that level's own fit
+          budget), same 2.3125rem ceiling once the viewport is wide enough
+          that 4.5vw exceeds it, so desktop is unchanged -- still a
+          documented exception to the generic `--text-title` token (a
+          smaller ceiling for these longer scientific titles), just fluid
+          now instead of fixed. */}
       <h1
         data-testid="paper-title"
         className="mt-[26px] max-w-[1060px] text-[clamp(1.75rem,4.5vw,2.3125rem)] leading-[1.22] font-semibold tracking-[-0.012em] text-pretty break-words"
@@ -91,10 +87,9 @@ function AbstractBlock({ pub }: { pub: Publication }) {
           this column narrows to at 320px, and `text-pretty` alone
           (`text-wrap`) doesn't stop that; `break-words` (`overflow-wrap`)
           is a different property, so it's additive here too. */}
-      {/* Task 1 fix round 2: this was `text-[1.0625rem] leading-[1.7]` --
-          the right font-size (17px) but the wrong line-height (spec §1.2's
-          reading size is 17px/1.6, not 1.7). Swapped for the `text-body`
-          token itself so this can never drift from the token again. */}
+      {/* Uses the `text-body` token (17px/1.6 per spec §1.2) instead of a
+          hand-written size/line-height pair, so this can't drift from the
+          token. */}
       {pub.abstract.map((paragraph, index) => (
         <p
           key={index}
@@ -122,9 +117,9 @@ function CiteAndAccessBlock({ pub }: { pub: Publication }) {
     >
       {hasLink && (
         <div>
-          {/* Task 3: sentence-case Archivo, not uppercase mono (was LABEL) --
-              this is a genuine label, not a data column head, so the
-              micro-label budget rule applies. */}
+          {/* Sentence-case Archivo, not uppercase mono -- this is a genuine
+              label, not a data column head, so the micro-label budget rule
+              applies. */}
           <div className={MICRO_LABEL}>Canonical link — {pub.linkKind}</div>
           <a
             href={pub.linkHref}
@@ -184,13 +179,13 @@ function ResourceSectionBlock({ pub }: { pub: Publication }) {
 // block (Abstract when there's none, Resource when there are none -- both
 // true for most of today's dataset) simply isn't pushed.
 export function PublicationPage({ pub }: { pub: Publication }) {
-  // Task 2: `Paper`'s `Section` label stays a `<p>` -- `PaperBlock` already
-  // renders the page's real `<h1 data-testid="paper-title">`, so its label
-  // isn't the section's only heading. `Abstract` and `Cite and access` have
-  // no heading of their own (plain paragraphs / mono labels), so their
-  // labels are `<h2>`s. `Resource` stays a `<p>` (fix round 2):
-  // `ResourceBlock`'s own title is now a real `<h2>`, so a second `<h2>`
-  // label here would be a redundant, sibling heading.
+  // `Paper`'s `Section` label stays a `<p>` -- `PaperBlock` already renders
+  // the page's real `<h1 data-testid="paper-title">`, so its label isn't
+  // the section's only heading. `Abstract` and `Cite and access` have no
+  // heading of their own (plain paragraphs / mono labels), so their labels
+  // are `<h2>`s. `Resource` stays a `<p>`: `ResourceBlock`'s own title is a
+  // real `<h2>`, so a second `<h2>` label here would be a redundant,
+  // sibling heading.
   const blocks: Array<{ label: string; labelHeading?: boolean; content: ReactNode }> = [
     { label: 'Paper', content: <PaperBlock pub={pub} /> },
   ]

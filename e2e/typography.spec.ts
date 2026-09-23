@@ -1,22 +1,15 @@
 import { expect, test } from '@playwright/test'
 
-// Task 1 ("Fonts and type scale"): Brett's review of the preview found the
-// root cause was typographic -- `--font-sans` pointed at the old site's
-// mono face, and Archivo (the design's reading/display face) was loaded
-// nowhere, so every heading, abstract and bio rendered mono, and at 375px
-// Home's `<h1>` broke "Laborato/ry" mid-word. Fix round 2 (review) found
-// Chromium never hyphenates a capitalised word, so `hyphens-auto` was inert
-// on nearly every heading here anyway; the final-review fix round removed
-// `hyphens-auto` from every heading entirely (it also hyphenated some
-// lowercase words nobody needed hyphenated, on platforms whose Chromium
-// ships a dictionary, which is platform-dependent polish this app doesn't
-// want) -- `break-words` alone now decides whether a long word splits raw
-// or a level's clamp floor genuinely fits it. This file proves:
-// (a) live routes never overflow (the unconditional floor);
+// The body font is Archivo, not the old site's mono face, and headings rely
+// on `break-words` alone to decide whether a long word splits raw or a
+// level's clamp floor genuinely fits it -- `hyphens-auto` is not used
+// (Chromium never hyphenates a capitalised word, so it was inert on nearly
+// every heading here, and would hyphenate lowercase words unpredictably
+// depending on whether the platform's Chromium ships a dictionary). This
+// file proves: (a) live routes never overflow (the unconditional floor);
 // (b) on the gallery's dedicated full-width fixtures, each type level's
-// budget word fits *without* relying on a raw `overflow-wrap` split --
-// see task-1-report.md's "Word-fit budgets"; (c) the body font is Archivo;
-// (d) mono stays on data (a DOI).
+// budget word fits *without* relying on a raw `overflow-wrap` split; (c)
+// the body font is Archivo; (d) mono stays on data (a DOI).
 
 // -- (a) live routes: no h1/h2 word overflows its own line ------------------
 //
@@ -111,37 +104,24 @@ test.describe('no h1/h2 word overflows its own line', () => {
 // split can only ever happen via `overflow-wrap`, so proving the heading
 // survives without it is exactly proving no raw split occurred.
 //
-// Fix round 2 (re-review), two corrections, still both load-bearing even
-// though the final-review fix round later removed `hyphens-auto` from
-// every heading's CSS entirely:
-//
-// 1. **`el.style.hyphens = 'manual'` joins `overflow-wrap: normal` in the
-//    toggle.** Originally this neutralised a live `hyphens: auto` that
-//    might otherwise let a word hyphenate its way around the missing
-//    fallback (platform-dependently -- CI's Linux Chromium ships no
-//    hyphenation dictionaries, a developer's macOS Chromium does). No
-//    heading declares `hyphens: auto` any more (removed final-review
-//    fix round, finding 1), so this line is now a no-op belt-and-braces
-//    against the CSS initial value -- kept rather than removed, since a
-//    future heading site could still reintroduce `hyphens: auto` and this
-//    check should keep proving the budget holds without it regardless.
-// 2. **Each fixture's non-budget words are short enough to fit at 320px on
-//    their own** (fixtures.ts), rather than a long lowercase word chosen to
-//    demonstrate hyphenation -- with (1) above, a long word that only fit
-//    locally via hyphenation would now correctly go red on a runner with no
-//    dictionaries, which is exactly the platform-dependence this fix
-//    removes, not a case this suite still needs to prove.
+// `el.style.hyphens = 'manual'` joins `overflow-wrap: normal` in the
+// toggle as a belt-and-braces guard against the CSS initial value -- no
+// heading currently declares `hyphens: auto`, but a future one might, and
+// this check should keep proving the budget holds without it regardless.
+// Each fixture's non-budget words are also kept short enough to fit at
+// 320px on their own (fixtures.ts), so the check never depends on
+// platform-dependent hyphenation (CI's Linux Chromium ships no hyphenation
+// dictionaries; a developer's macOS Chromium does).
 //
 // Scoped to the gallery's dedicated "typography budget" section
 // (Gallery.tsx) by an explicit selector per fixture, not the first `h1`/`h2`
 // inside its container: `typography-budget-heading` wraps a full `Research`
 // render, whose own `PageTitle` ("Research") is a heading that sits before
-// the project title this fixture exists to test -- `querySelector('h1,
-// h2')` silently measured that wrong heading instead (re-review New
-// Breakage 1). Other gallery sections keep their narrower demo frames on
-// purpose (isolated component previews, not page simulations), so they're
-// intentionally out of scope for this stronger check -- they're still
-// covered by (a) above.
+// the project title this fixture exists to test, so a generic `querySelector
+// ('h1, h2')` would measure the wrong heading. Other gallery sections keep
+// their narrower demo frames on purpose (isolated component previews, not
+// page simulations), so they're intentionally out of scope for this
+// stronger check -- they're still covered by (a) above.
 const BUDGET_TOLERANCE_PX = 1
 
 const BUDGET_FIXTURES = [
@@ -210,12 +190,9 @@ test.describe('gallery typography budget: each level fits its budget word withou
     test(`/preview/components at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 })
       await page.goto('/preview/components')
-      // Final review, finding 10: `load` normally covers preloaded
-      // next/font files, so this was deterministic in practice, but on a
-      // runner whose fallback stack (Helvetica Neue/Helvetica/Arial)
-      // resolves wider than Archivo, an unloaded Archivo would turn this
-      // tight-margin (down to ~15px at 320px) budget check red for a font
-      // reason, not a layout one. Cheap insurance.
+      // Waits for fonts so an unloaded Archivo (fallback stack resolves
+      // wider) can't turn this tight-margin (down to ~15px at 320px)
+      // budget check red for a font-loading reason rather than a layout one.
       await page.evaluate(() => document.fonts.ready)
 
       const violations: RawSplitResult[] = []

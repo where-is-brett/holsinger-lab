@@ -30,12 +30,12 @@ export interface TagProps {
 // "nowrap", color: var(--sem-text-muted)) -- the vendored source is the
 // port's authority, even where it differs from LABEL's baked-in faint.
 //
-// Task 3: `CONTROL_BASE`, not `LABEL_BASE` -- a tag's text is CMS content
-// (a publication type, a topic title), not a label, and forcing it
-// uppercase both blew the micro-label budget (a tags row renders one per
-// type/topic) and silently violated constraints.md's "CMS text prints
-// verbatim" rule (a topic title has its own real case). `CONTROL_BASE`
-// keeps the mono chip geometry without either problem.
+// `CONTROL_BASE`, not `LABEL_BASE`: a tag's text is CMS content (a
+// publication type, a topic title), not a label -- forcing it uppercase
+// would blow the micro-label budget (a tags row renders one per
+// type/topic) and violate constraints.md's "CMS text prints verbatim" rule
+// (a topic title has its own real case). `CONTROL_BASE` keeps the mono
+// chip geometry without either problem.
 const BASE_COMMON = `${CONTROL_BASE} text-text-muted ${HAIRLINE} inline-block px-[13px] py-2 leading-none`
 // Exactly one of these two is ever composed into `BASE` below -- `wrap`
 // picks a whole string, not a class to layer on top of the other, so

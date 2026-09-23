@@ -40,12 +40,9 @@
      line-height/tracking/weight companions (Tailwind 4's convention for
      attaching those to a named text step), replacing the old aliases onto
      Tailwind's default scale. */
-  /* Fluid clamp() steps (task brief "Fonts and type scale", spec §1.2) --
-     each scales between a floor and ceiling by viewport width instead of
-     jumping between fixed sizes at breakpoints, which is what stopped the
-     old fixed `--text-display` (64px flat) from ever shrinking enough at
-     375px to keep "Laboratory" on one word -- `break-words` was doing the
-     job fluid type should have done. */
+  /* Fluid clamp() steps: each scales between a floor and ceiling by
+     viewport width instead of jumping between fixed sizes at breakpoints
+     (spec §1.2). */
   --text-display: clamp(2.25rem, 6vw, 4rem);
   --text-display--line-height: 1.05;
   --text-display--letter-spacing: -0.02em;
@@ -136,13 +133,8 @@
   --sem-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   /* Single authority for the height of the site header, at both breakpoints.
-     Both navbars set their own height FROM this. Jump-nav offsets used to be
-     positioned against it too (that desync was defect D8: a bar pinned at a
-     literal 64px while the desktop nav measured 70px) -- jump-links are gone
-     (spec §7), and the Publications FacetBand that once keyed its own sticky
-     `top` off this token no longer does, having lost its sticky positioning
-     entirely (Task 2 fix round 2; see SiteChrome.tsx's own comment).
-     Modern Instrument direction: 3rem / 3.25rem (was 4rem / 4.75rem). */
+     Both navbars set their own height FROM this token, so they can't drift
+     out of sync with each other. Modern Instrument direction: 3rem / 3.25rem. */
   --nav-height: 3rem;
 
   --spacing-row: 1.125rem;
@@ -340,13 +332,10 @@
   }
 }
 
-/* Task 1 fix (root cause of the preview review, spec "Why"): this used to
-   point --font-sans at the old site's mono face, so every heading,
-   abstract and bio rendered mono. Archivo (loaded in app/layout.tsx) is
-   the redesign's reading and display face; the legacy faces
-   (--font-antarctican, --font-ariana, --font-serif) stay mapped above for
-   `/[slug]`, `/projects/*`, the old contact form and the Logo wordmark,
-   which still consume them. */
+/* Archivo (loaded in app/layout.tsx) is the redesign's reading and display
+   face. The legacy faces (--font-antarctican, --font-ariana, --font-serif)
+   stay mapped above for `/[slug]`, `/projects/*`, the old contact form and
+   the Logo wordmark, which still consume them. */
 :root {
   --font-sans: var(--font-archivo), 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }

@@ -27,13 +27,12 @@ const mono = IBM_Plex_Mono({
   weight: ['400', '500', '700'],
 })
 
-// Archivo -- the redesign's reading and display face (task brief "Fonts and
-// type scale", spec §1.1). Never loaded before this task: `--font-sans` in
-// styles/index.css pointed at the old site's mono face instead, which is
-// the root cause every heading, abstract and bio rendered mono in the
-// redesign preview. `display: 'swap'` avoids invisible text while the
-// webfont loads; weights 400/500/600/700 match `--text-*--font-weight`'s
-// range across the type roles (body 400, section labels 500, headings 600).
+// Archivo -- the redesign's reading and display face (spec §1.1).
+// `--font-sans` in styles/index.css otherwise points at the mono face,
+// which would render every heading, abstract and bio in mono. `display:
+// 'swap'` avoids invisible text while the webfont loads; weights
+// 400/500/600/700 match `--text-*--font-weight`'s range across the type
+// roles (body 400, section labels 500, headings 600).
 const archivo = Archivo({
   variable: '--font-archivo',
   subsets: ['latin'],

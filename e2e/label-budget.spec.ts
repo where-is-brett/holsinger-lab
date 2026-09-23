@@ -4,95 +4,55 @@ import { expect, test } from '@playwright/test'
 // Task 3 (spec §1.5): uppercase mono labels are for data column heads only
 // (the publication ledger's Year/Title/Journal/Link heads, and any
 // equivalent data table head -- marked with `data-testid="ledger-head"`).
-// Everything else must be sentence case, or deleted. This is enforced here
-// by measuring, not by trusting a visual read.
+// Everything else must be sentence case, or deleted, enforced here by
+// measuring computed style and literal text, not by a visual read.
 //
-// Fix round 1 (review Important 1): the first version of this file only
-// caught a leaf *element* whose own computed `text-transform` was
-// `uppercase`. That missed two whole classes of violation live routes were
-// still shipping:
-//   - a shouted string baked into the source ("REGISTER — …", "COMFORTABLE"/
-//     "COMPACT", "[ NO PORTRAIT ON FILE ]") renders with no CSS transform
-//     at all -- the text is just already all-caps -- so `textTransform !==
-//     'uppercase'` let it straight through.
-//   - `el.children.length > 0` skipped any element that had *any* element
-//     child, which drops a text node that sits beside a sibling element
-//     (e.g. a kicker's own text next to a `<span>` inside it) even though
-//     that text node is exactly as visible and exactly as capitalised.
-//
-// This version walks every text node in the scope (`document.
-// createTreeWalker(scope, NodeFilter.SHOW_TEXT)`), not just leaf elements,
-// and judges each node by its own parent's computed style plus the node's
-// own literal text -- so a shouted source string is caught even with zero
-// CSS transform involved, and a text node beside a sibling element is
-// never skipped.
-//
-// Fix round 2 (re-review N1): a text node's parent's computed style and
-// font-size alone can't tell CMS/identifier data from a hand-written UI
-// label -- a real dataset can legitimately contain a journal called "PLOS
-// ONE", a DOI with capital letters, or a `roleDetail` like "MD (UNSW)", and
-// none of those are a label this task exists to cut. `[data-cms-verbatim]`
-// is the marker every such site now carries (PublicationRow.tsx's journal/
-// kicker text and DOI/URL identifier, PersonCard.tsx's role/detail lines,
-// every element that already carried `[data-identifier]` -- see each
-// site's own comment). A node inside either marker is skipped by the
-// *source-caps* check below entirely; the CSS `uppercase`/`small-caps`
-// checks still apply everywhere, marker or not, because a component this
-// repo styles is never entitled to force-uppercase CMS text regardless of
-// what the text says.
-//
-// A text node counts when its parent's computed font-size is <= 12px and
-// at least one of:
+// This walks every text node in the scope (not just leaf elements, so a
+// text node beside a sibling element is never skipped) and judges each one
+// by its own parent's computed style plus the node's own literal text. A
+// text node counts when its parent's computed font-size is <= 12px and at
+// least one of:
 //   - the parent's `text-transform` is `uppercase`;
 //   - the parent's `font-variant-caps` includes `small-caps` (covers both
 //     `small-caps` and `all-small-caps`);
 //   - the node is outside `[data-cms-verbatim]`/`[data-identifier]`, and
-//     its own text is "shouted caps" in the source: at least two
-//     alphabetic words that are each entirely upper-case, OR one
-//     alphabetic run of 4+ letters that's entirely upper-case and is in
-//     neither the CMS-verbatim marker nor the small explicit allowlist
-//     below.
+//     its own text is "shouted caps" in the source (all-caps with no CSS
+//     transform at all): at least two alphabetic words that are each
+//     entirely upper-case, OR one alphabetic run of 4+ letters that's
+//     entirely upper-case and not in `ACRONYM_ALLOWLIST` below.
 //
-// Fix round 2 (re-review N2): the single-run branch used to also exempt
-// any upper-case run of 5 letters or fewer, on the theory that a short run
-// "reads like an acronym". That let a genuine shouted label through
-// ("CITE", "VIEW", "MORE", "KIND", ...) the instant someone typed it in
-// caps instead of relying on a `text-transform` this repo could catch --
-// exactly the regression this task removed. Now that CMS content
-// (including real short acronyms, gene symbols, journal abbreviations) has
-// its own marker, the length-based exemption is gone: the single-run
-// branch exempts only the four identifiers in `ACRONYM_ALLOWLIST` below,
-// nothing else.
+// `[data-cms-verbatim]`/`[data-identifier]` exempt a node from the
+// *source-caps* check only -- a real dataset can legitimately contain a
+// journal called "PLOS ONE", a DOI with capital letters, or a `roleDetail`
+// like "MD (UNSW)", none of which are a UI label. The CSS
+// `uppercase`/`small-caps` checks still apply everywhere, marker or not: a
+// component is never entitled to force-uppercase CMS text regardless of
+// what the text says.
 //
-// Fix round 2 (re-review N3): `::before`/`::after` pseudo-element content
-// is scanned too -- see `findPseudoElementShouts` below. No redesign
-// component renders text through a pseudo-element today (the only
-// `content` in this codebase is `HIT_AREA`'s empty `content-['']`), but a
-// budget spec that only ever looked at real DOM text would have the same
-// blind spot Important 1 found, just one property over -- so this is
-// covered rather than left as a documented gap.
+// `::before`/`::after` pseudo-element content is scanned too (see
+// `findPseudoElementShouts` below), since a shouted label can be injected
+// via CSS `content` as easily as rendered in the DOM.
 //
 // Nothing inside `[data-testid="ledger-head"]` counts (the one place
-// tracked uppercase mono is still allowed). Nav links and the footer count
-// toward the budget like everything else -- no exception is made for them
-// here; if a route goes over budget because of the shared chrome, the
-// chrome itself has to lose its uppercase treatment, not this test.
+// tracked uppercase mono is allowed). Nav links and the footer count
+// toward the budget like everything else -- if a route goes over budget
+// because of the shared chrome, the chrome itself has to lose its
+// uppercase treatment, not this test.
 
 const LEDGER_HEAD_SELECTOR = '[data-testid="ledger-head"]'
-// Fix round 2: either marker exempts a node from the *source-caps* check
-// only (see the file-header comment above) -- `[data-identifier]` already
-// meant "this is case-sensitive data, never re-cased" before this task
-// existed, so it doubles as a CMS-verbatim marker without needing every
-// call site to carry both attributes, though most now do for clarity (see
-// each site's own comment).
+// Either marker exempts a node from the *source-caps* check only (see the
+// file-header comment above) -- `[data-identifier]` already means "this is
+// case-sensitive data, never re-cased", so it doubles as a CMS-verbatim
+// marker without needing every call site to carry both attributes, though
+// most now do for clarity (see each site's own comment).
 const CMS_VERBATIM_SELECTOR = '[data-cms-verbatim], [data-identifier]'
 
-// Fix round 2 (re-review N2): the *only* exemption left in the single-run
-// branch -- DOI/URL are `linkKind` values this repo renders directly, PMID
-// and ORCID are named defensively for the same shape of future identifier.
-// No length-based "short words are probably fine" rule any more: a real
-// gene symbol or journal abbreviation is CMS data and gets `[data-cms-
-// verbatim]` at its render site instead (see the file-header comment).
+// The only exemption left in the single-run branch -- DOI/URL are
+// `linkKind` values this repo renders directly, PMID and ORCID are named
+// defensively for the same shape of future identifier. No length-based
+// "short words are probably fine" rule: a real gene symbol or journal
+// abbreviation is CMS data and gets `[data-cms-verbatim]` at its render
+// site instead (see the file-header comment).
 const ACRONYM_ALLOWLIST = ['DOI', 'URL', 'PMID', 'ORCID']
 
 async function findShoutedText(page: Page, root?: string): Promise<string[]> {
@@ -138,7 +98,7 @@ async function findShoutedText(page: Page, root?: string): Promise<string[]> {
         }
       }
 
-      // -- ::before / ::after pseudo-element content (fix round 2, N3) --
+      // -- ::before / ::after pseudo-element content --
       // `content` computes to the CSS-quoted string (e.g. `"CITE NOW"`) or
       // the keyword `none` -- an element with no matching rule still
       // returns `none`, so this only ever inspects a pseudo-element a
@@ -181,11 +141,10 @@ async function findShoutedText(page: Page, root?: string): Promise<string[]> {
 
 const BUDGET = 6
 
-// Fix round 1 (controller ruling): held at 375px as well as 1440px --
-// Brett's original feedback was largely about mobile, and the two widths
-// exercise different layouts (the ledger's own grid only activates from
-// `xl`, so a mobile-only kicker like PublicationRow's `KICKER` is only
-// ever visible to this check at 375px).
+// Held at 375px as well as 1440px -- the two widths exercise different
+// layouts (the ledger's own grid only activates from `xl`, so a
+// mobile-only kicker like PublicationRow's `KICKER` is only ever visible
+// to this check at 375px).
 const WIDTHS = [1440, 375]
 
 const ROUTES = ['/', '/publications', '/people', '/research', '/resources']
@@ -199,11 +158,9 @@ test.describe('Uppercase micro-label budget', () => {
         // e.g. /people when showPeople is false -- a real skip shows in the
         // output, rather than an early return passing silently.
         test.skip(response !== null && response.status() === 404, `${route} 404s for this dataset`)
-        // Final review, finding 10: the budget's ≤12px gate is font-size
-        // sensitive -- on a runner where Archivo hasn't finished loading yet,
-        // the fallback stack resolves wider, which could shift what counts
-        // as ≤12px. `load` normally covers preloaded next/font files, so
-        // this is cheap insurance, not a fix for an observed flake.
+        // The budget's ≤12px gate is font-size sensitive -- waits for fonts
+        // so an unloaded Archivo (fallback stack resolves wider) can't
+        // shift what counts as ≤12px.
         await page.evaluate(() => document.fonts.ready)
         const found = await findShoutedText(page)
         console.log(`[label-budget] ${route} @ ${width}px: ${found.length} (${JSON.stringify(found)})`)
@@ -234,18 +191,16 @@ test.describe('Uppercase micro-label budget', () => {
   }
 })
 
-// Fix round 2 (re-review N1): proves the CMS-verbatim marker actually does
-// its job, on fixture rows the live dataset can't guarantee carry a
-// shouted-looking journal name or DOI at all. Scoped to the gallery's own
-// `PublicationRow`/`PersonCard` demo sections, not a whole route, so this
-// stays independent of whatever `/publications`/`/people` happen to render
-// today.
+// Proves the CMS-verbatim marker actually does its job, on fixture rows
+// the live dataset can't guarantee carry a shouted-looking journal name or
+// DOI at all. Scoped to the gallery's own `PublicationRow`/`PersonCard`
+// demo sections, not a whole route, so this stays independent of whatever
+// `/publications`/`/people` happen to render today.
 test.describe('CMS-verbatim text never trips the source-caps check', () => {
-  // Re-review round 2 (R2-3): 375 alone missed the desktop path -- below
-  // `xl` the journal name renders through PublicationRow's mobile kicker,
-  // but at 1440 it renders through the desktop `META` cell/spans instead
-  // (both marked, but a different DOM path each). Looping over the same
-  // `WIDTHS` the budget itself runs at proves both paths, not just one.
+  // Below `xl` the journal name renders through PublicationRow's mobile
+  // kicker, but at 1440 it renders through the desktop `META` cell/spans
+  // instead (both marked, but a different DOM path each) -- looping over
+  // the same `WIDTHS` the budget itself runs at proves both paths.
   for (const width of WIDTHS) {
     test(`a journal called "PLOS ONE", a capitalised DOI and a "MD (UNSW)" roleDetail all count 0 at ${width}px`, async ({
       page,
@@ -259,16 +214,11 @@ test.describe('CMS-verbatim text never trips the source-caps check', () => {
   }
 })
 
-// Fix round 2 (re-review N2): proves the spec actually catches a shouted
-// UI word once it's typed into the source instead of produced by
-// `text-transform: uppercase` -- this is exactly the regression the old
-// "<=5 letters is an acronym" exemption would have let through silently.
-// The probe element (Gallery.tsx's `gallery-shouted-word-probe`) is a
-// **permanent regression-guard fixture, not production copy -- do not
-// remove it.** This test depends on it existing; removing the fixture
-// would break this test, not "clean up" a stale one (final review,
-// finding 3 -- an earlier version of this comment called it "temporary,"
-// which was wrong and self-contradicting with Gallery.tsx's own comment).
+// Proves the spec catches a shouted UI word once it's typed into the
+// source, not only when produced by `text-transform: uppercase`. The probe
+// element (Gallery.tsx's `gallery-shouted-word-probe`) is a **permanent
+// regression-guard fixture, not production copy -- do not remove it.**
+// This test depends on it existing.
 test.describe('A shouted UI word with no CSS transform still counts', () => {
   test('"CITE" and "VIEW" typed in caps in a non-verbatim element are caught', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 })

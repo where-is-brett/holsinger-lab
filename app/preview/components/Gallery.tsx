@@ -64,56 +64,31 @@ import { useMemo, useState } from 'react'
 // (onOpen, onClick, onChange, onToggle, onNavigate) into a real host
 // element, and a function prop cannot cross the RSC boundary.
 
-// Task 2 fix round 2 (re-review Minor 3): `-mx-6` alone (the technique
-// Task 1's own typography-budget fixtures use) only cancels `<main>`'s own
-// `px-6` padding -- it does nothing about `<main>`'s `max-w-5xl` (1024px)
-// cap, so at a genuine 1280/1440px viewport a `-mx-6`-only frame still
-// measured a fixed 1024px wide (confirmed empirically: `gallery-home-a`'s
-// own bounding box stayed 1024px at both 1280 and 1440), leaving the
-// publication ledger's `xl:` grid (which activates on *viewport* width,
-// not the element's own box width) 5-40px too narrow for its title
-// column and colliding with the journal cell beside it -- the exact
-// defect the re-review's Minor 3 flagged.
-//
-// Task 2 fix round 3 (re-review round 2, new Important 1): the fix round 2
-// attempt (`relative left-1/2 right-1/2 w-screen -mx-[50vw]`) resolved
-// against `100vw`, which includes a classic scrollbar's own width in any
-// browser that reserves layout space for one -- Playwright's own headless
-// Chromium hides its scrollbar by default, so the check that round added
-// passed there while genuinely overflowing by ~8px per side under a real
-// scrollbar (macOS "always show scrollbars", Windows, or any browser
-// launched with `ignoreDefaultArgs: ['--hide-scrollbars']` removed --
-// confirmed by the re-review's own measurement, and reproduced below by
-// this file's `e2e/preview-scrollbar.spec.ts`).
-//
-// `BLEED_GRID` replaces the whole vw-based trick with a pure CSS Grid
-// pattern instead: `<main>` itself becomes this 3-column grid (no
-// `max-w-5xl`, no `mx-auto`, no `px-6` of its own), with `1fr` edge tracks
-// and a `min(64rem,100%)` centre track -- every "normal" child gets
-// `col-start-2 px-6` (this section's own padding, since `<main>` no longer
-// has any), landing it in that centre track, which behaves exactly like
-// the old `max-w-5xl mx-auto px-6` did: capped at 1024px and centred once
-// the viewport exceeds it, full width below that. A full-bleed child gets
-// `col-span-full` instead, spanning all three tracks -- i.e. the grid's
-// own content box, which is sized by ordinary block layout against
-// `<main>`'s real available width and so, unlike `100vw`, never includes
-// scrollbar space. `gallery-home`'s own content needs *both* roles at
-// once (its `Heading` stays centre-column width; its Home instances go
-// full-bleed) -- since only a grid's own *direct* children can be placed
-// on its tracks, that section is itself given `col-span-full` and nests
-// a second `BLEED_GRID` inside itself for exactly this reason (see its own
-// comment below), rather than moving the full-bleed div out from under
+// `<main>` is this 3-column grid (no `max-w-5xl`, no `mx-auto`, no `px-6`
+// of its own), with `1fr` edge tracks and a `min(64rem,100%)` centre
+// track. A "normal" child gets `col-start-2 px-6` (its own padding, since
+// `<main>` no longer has any), landing it in that centre track, which
+// behaves like the old `max-w-5xl mx-auto px-6` did: capped at 1024px and
+// centred once the viewport exceeds it, full width below that. A
+// full-bleed child gets `col-span-full` instead, spanning all three
+// tracks -- the grid's own content box, sized by ordinary block layout
+// against `<main>`'s real available width, so (unlike a `100vw`-based
+// technique) it never includes scrollbar space. `gallery-home` needs both
+// roles at once (its `Heading` stays centre-column width; its Home
+// instances go full-bleed) -- since only a grid's own *direct* children
+// can be placed on its tracks, that section is itself `col-span-full` and
+// nests a second `BLEED_GRID` inside itself (see its own comment below),
+// rather than moving the full-bleed div out from under
 // `data-testid="gallery-home"` (which `e2e/home.spec.ts` scopes several
 // queries to as a common ancestor).
 const BLEED_GRID = 'grid grid-cols-[1fr_min(64rem,100%)_1fr]'
 
 function Heading({ children, className = '' }: { children: ReactNode; className?: string }) {
-  // `break-words` (see components/redesign/PageTitle.tsx's canonical note;
-  // `hyphens-auto` removed in the final-review fix round).
-  // Task 2 fix round 3: optional `className` exists only for `gallery-home`'s
-  // own nested `BLEED_GRID` (its own `col-start-2 px-6`) -- every other
-  // call site already gets that placement from its own `<section>` wrapper
-  // and passes nothing, so this defaults to `''`.
+  // `break-words` (see components/redesign/PageTitle.tsx's canonical note).
+  // The optional `className` exists only for `gallery-home`'s own nested
+  // `BLEED_GRID` (its own `col-start-2 px-6`) -- every other call site
+  // already gets that placement from its own `<section>` wrapper and
+  // passes nothing, so this defaults to `''`.
   return <h2 className={`text-title mb-4 text-[22px] leading-none break-words ${className}`}>{children}</h2>
 }
 
@@ -274,15 +249,15 @@ export default function Gallery() {
         </p>
       </section>
 
-      {/* Task 3 fix round 2 (re-review N1): proves `[data-cms-verbatim]`
-          actually exempts real-dataset shapes that happen to read as
-          shouted caps -- a journal called "PLOS ONE", a journal abbreviated
-          to "FEBS J", a DOI recorded with capital letters, and a
-          `roleDetail` like "MD (UNSW)". `e2e/label-budget.spec.ts`'s own
-          "CMS-verbatim text never trips the source-caps check" test scopes
-          to this section's testid and asserts it counts 0. */}
+      {/* Proves `[data-cms-verbatim]` exempts real-dataset shapes that
+          happen to read as shouted caps -- a journal called "PLOS ONE", a
+          journal abbreviated to "FEBS J", a DOI recorded with capital
+          letters, and a `roleDetail` like "MD (UNSW)".
+          `e2e/label-budget.spec.ts`'s "CMS-verbatim text never trips the
+          source-caps check" test scopes to this section's testid and
+          asserts it counts 0. */}
       <section data-testid="gallery-cms-verbatim-probe" className="col-start-2 px-6">
-        <Heading>CMS-verbatim probe (Task 3 fix round 2)</Heading>
+        <Heading>CMS-verbatim probe</Heading>
         <SubHeading>Journal names and a capitalised DOI</SubHeading>
         <div className="mb-8">
           <PublicationRow pub={CMS_VERBATIM_PUB_PLOS_ONE} />
@@ -294,18 +269,16 @@ export default function Gallery() {
         </div>
       </section>
 
-      {/* Task 3 fix round 2 (re-review N2): a regression guard, not
-          production copy -- proves the budget spec still catches a shouted
-          UI word ("CITE", "VIEW") typed directly into the source with no
-          CSS `text-transform` involved, now that the old "<=5 letters is an
-          acronym" exemption is gone. `e2e/label-budget.spec.ts`'s "A
-          shouted UI word with no CSS transform still counts" test scopes
-          to this section's testid. Deliberately outside every other
-          section this file's own `GALLERY_SECTIONS`/route budget checks
-          scan, so it can never itself push a real page over the ≤6
-          budget. */}
+      {/* Regression guard, not production copy -- proves the budget spec
+          still catches a shouted UI word ("CITE", "VIEW") typed directly
+          into the source with no CSS `text-transform` involved.
+          `e2e/label-budget.spec.ts`'s "A shouted UI word with no CSS
+          transform still counts" test scopes to this section's testid.
+          Deliberately outside every other section this file's own
+          `GALLERY_SECTIONS`/route budget checks scan, so it can never
+          itself push a real page over the ≤6 budget. */}
       <section data-testid="gallery-shouted-word-probe" className="col-start-2 px-6">
-        <Heading>Shouted-word probe (Task 3 fix round 2 -- regression guard)</Heading>
+        <Heading>Shouted-word probe</Heading>
         <p className="text-[11px] text-text-muted">CITE</p>
         <p className="text-[11px] text-text-muted">VIEW</p>
       </section>
@@ -472,20 +445,19 @@ export default function Gallery() {
 
       <section data-testid="gallery-publication-page" className="col-start-2 px-6">
         <Heading>Publication page</Heading>
-        {/* Task 5 fix round 1: the only place `PublicationPage` actually
-            renders outside a real `/publications/[slug]` route, proving
-            (a) `ResourceBlock`'s Resource section with a fixture that has
-            one -- the live dataset has zero `resource` documents today, so
-            without this the block would ship unrendered on real content --
-            and (b) `Cite and access` falls back to a full-width citation
-            column when there is no canonical link (`PUBLICATION_PAGE_FIXTURE`
-            has neither a DOI nor a URL). `PublicationPage` renders its own
+        {/* The only place `PublicationPage` actually renders outside a real
+            `/publications/[slug]` route, proving (a) `ResourceBlock`'s
+            Resource section with a fixture that has one -- the live
+            dataset has zero `resource` documents today, so without this
+            the block would ship unrendered on real content -- and (b)
+            `Cite and access` falls back to a full-width citation column
+            when there is no canonical link (`PUBLICATION_PAGE_FIXTURE` has
+            neither a DOI nor a URL). `PublicationPage` renders its own
             `<h1>`; axe's default ruleset only requires at least one `<h1>`
             per page (`page-has-heading-one`) and only flags a heading level
             jumping forward by more than one, never a later heading
             returning to `h1` -- so a second `<h1>` here does not trip axe,
-            and no extra scoping/exclusion is needed (verified empirically:
-            see the fix-round-1 report). */}
+            and no extra scoping/exclusion is needed. */}
         <div className="border border-rule">
           <PublicationPage pub={PUBLICATION_PAGE_FIXTURE} />
         </div>
@@ -568,33 +540,29 @@ export default function Gallery() {
         </div>
       </section>
 
-      {/* Task 2 fix round 3: this section carries `col-span-full` (a full-
-          width item of `<main>`'s own `BLEED_GRID`) AND is itself a second,
-          nested `BLEED_GRID` -- the only way to give `Heading` the normal
-          centre-column width while the Home instances below it go genuinely
-          full-bleed, without moving them out from under this element's own
-          `data-testid="gallery-home"` (see `BLEED_GRID`'s own comment for
-          why that matters). `Heading`'s `col-start-2 px-6` here places it in
-          *this* grid's centre track, not `<main>`'s. */}
+      {/* This section carries `col-span-full` (a full-width item of
+          `<main>`'s own `BLEED_GRID`) AND is itself a second, nested
+          `BLEED_GRID` -- the only way to give `Heading` the normal
+          centre-column width while the Home instances below it go
+          genuinely full-bleed, without moving them out from under this
+          element's own `data-testid="gallery-home"` (see `BLEED_GRID`'s
+          own comment for why that matters). `Heading`'s `col-start-2 px-6`
+          here places it in *this* grid's centre track, not `<main>`'s. */}
       <section data-testid="gallery-home" className={`col-span-full ${BLEED_GRID}`}>
         <Heading className="col-start-2 px-6">Home screen</Heading>
-        {/* Task 3: production today has no resource, an unset labHead, and
-            no `support-our-research` page (spec §2) -- this is the only
-            place Home's populated PI panel, Resources block, and Support
-            link actually render. The `maestro` project *does* exist live,
-            but the fixture's own copy proves the block independent of
+        {/* Production today has no resource, an unset labHead, and no
+            `support-our-research` page (spec §2) -- this is the only place
+            Home's populated PI panel, Resources block, and Support link
+            actually render. The `maestro` project *does* exist live, but
+            the fixture's own copy proves the block independent of
             live-data drift.
 
-            Task 2 fix round 2: all three instances now render inside one
-            shared full-bleed wrapper instead of each being its own
-            narrower demo frame -- at 1280/1440px this is what stops
-            "Recent work"'s publication ledger from colliding with itself,
-            matching the treatment Task 1's own
-            `gallery-typography-budget-inner` already uses at 320/375px.
-            Fix round 3: that wrapper is now `col-span-full` on *this*
-            section's own nested grid (see the section's own comment
-            above), not the vw-based `FULL_BLEED` (removed -- it overflowed
-            under a real scrollbar; see `BLEED_GRID`'s own comment). */}
+            All three instances render inside one shared full-bleed wrapper
+            (`col-span-full` on this section's own nested grid) instead of
+            each being its own narrower demo frame -- at 1280/1440px this
+            is what stops "Recent work"'s publication ledger from colliding
+            with itself, matching the treatment
+            `gallery-typography-budget-inner` uses at 320/375px. */}
         <div className="col-span-full">
           <SubHeading>(a) labHead set, showLabHeadOnHome true -- PI panel shows, PI excluded from the count</SubHeading>
           <div className="mb-8 border border-rule" data-testid="gallery-home-a">
@@ -664,28 +632,24 @@ export default function Gallery() {
         </div>
       </section>
 
-      {/* Task 1 ("Fonts and type scale") fix round 2: the review found the
-          gallery's other sections undercount the real page column, because
-          `<main>`'s own `px-6` (48px) stacks on top of each component's
-          own gutter -- a heading here measures ~196px wide at 320px
-          instead of a real route's ~246px, so a word that's actually
-          within budget on every live route can still split inside this
-          narrower demo frame (reviewer's finding: the Home gallery `<h1>`
-          split "Neuroscien|ce" here while the live Home route did not).
+      {/* The gallery's other sections undercount the real page column,
+          because `<main>`'s own `px-6` (48px) stacks on top of each
+          component's own gutter -- a heading here would measure narrower
+          than a real route's, so a word that's actually within budget on
+          every live route could still split inside a narrower demo frame.
           `-mx-6` cancels `<main>`'s padding so everything inside renders
           at the page's real gutter width, matching production exactly --
           this is what "at full page width" means below, not a wider demo
           box. Each fixture carries its level's budget word, capitalised
           (Blink never hyphenates it) -- see each fixture's own comment in
-          fixtures.ts. Fix round 3 (re-review New Breakage 2): every other
-          word in each title is short enough to fit at 320px on its own,
-          without relying on hyphenation CI's Linux Chromium doesn't have.
-          e2e/typography.spec.ts's raw-split probe (fix round 2) targets
-          each fixture's own heading by an explicit `data-testid`, not the
-          first `h1`/`h2` inside its container -- `typography-budget-heading`
-          wraps a full `Research` render, whose own `PageTitle` ("Research")
-          is a *different* heading that sits before the project title this
-          fixture actually exists to test (re-review New Breakage 1). */}
+          fixtures.ts. Every other word in each title is short enough to
+          fit at 320px on its own, without relying on hyphenation CI's
+          Linux Chromium doesn't have. `e2e/typography.spec.ts`'s raw-split
+          probe targets each fixture's own heading by an explicit
+          `data-testid`, not the first `h1`/`h2` inside its container --
+          `typography-budget-heading` wraps a full `Research` render, whose
+          own `PageTitle` ("Research") is a *different* heading that sits
+          before the project title this fixture actually exists to test. */}
       <section data-testid="gallery-typography-budget" className="col-start-2 px-6">
         <Heading>Typography budget (full page width)</Heading>
         <div className="-mx-6" data-testid="gallery-typography-budget-inner">

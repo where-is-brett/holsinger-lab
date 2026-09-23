@@ -87,17 +87,14 @@ export const SAMPLE_PUBLICATIONS: Publication[] = [
   ),
 ]
 
-// Task 3 fix round 2 (re-review N1): `e2e/label-budget.spec.ts`'s
-// source-caps check must never depend on whether a lab's own journal names
-// or DOIs happen to read as shouted caps -- these two fixtures give the
-// gallery's CMS-verbatim probe section (Gallery.tsx) real examples of
-// both: a journal that just is called "PLOS ONE", a journal abbreviated to
-// three letters ("FEBS J"), and a DOI recorded with capital letters (a
-// real, if less common, shape -- DOIs are case-insensitive on resolution,
-// so a publisher's own casing varies). Not added to SAMPLE_PUBLICATIONS
-// itself: that array's length is assumed elsewhere in this gallery
-// (facet-band result counts), so a probe this narrow gets its own fixture
-// instead of perturbing a shared one.
+// `e2e/label-budget.spec.ts`'s source-caps check must not fire on a lab's
+// own journal names or DOIs that happen to read as shouted caps -- these
+// give the gallery's CMS-verbatim probe section (Gallery.tsx) real
+// examples: a journal literally called "PLOS ONE", one abbreviated to
+// three letters ("FEBS J"), and a DOI recorded with capital letters (DOIs
+// are case-insensitive on resolution, so publisher casing varies). Kept
+// out of SAMPLE_PUBLICATIONS because that array's length is assumed
+// elsewhere in the gallery (facet-band result counts).
 export const CMS_VERBATIM_PUB_PLOS_ONE: Publication = make(
   '2024',
   'A record whose journal and DOI happen to read as shouted caps',
@@ -194,18 +191,14 @@ export const PUBLICATION_PAGE_FIXTURE: Publication = {
   resources: [{ id: 'resource-fixture-1', title: 'Cell culture chamber CAD files', kind: 'hardware' }],
 }
 
-// Task 1 (Fonts and type scale) fix round 2: the "title" level's budget
-// word, capitalised ("Pathophysiology" -- the same word, and the same
-// mechanism, that overflowed the real DOI paper this task proved live; see
-// PaperBlock's own comment in PublicationPage.tsx). Fix round 3 (re-review
-// New Breakage 2): every OTHER word is short enough to fit whole at 320px
-// without hyphenation -- CI's Linux Chromium ships no hyphenation
-// dictionaries, so a fixture that only fit because macOS Chromium
-// hyphenates a long lowercase word (the previous "neuroinflammation") would
-// go red on CI while staying green locally. Consumed only by the
-// full-width "typography budget" gallery section in Gallery.tsx -- a
-// separate fixture from `PUBLICATION_PAGE_FIXTURE` above (whose title is
-// prose, not built to carry this specific word).
+// Carries the "title" level's budget word, capitalised ("Pathophysiology"
+// -- see PaperBlock's own comment in PublicationPage.tsx). Every other word
+// is short enough to fit whole at 320px without hyphenation, since CI's
+// Linux Chromium ships no hyphenation dictionaries and would go red on a
+// fixture that only fit locally via macOS Chromium's hyphenation. Consumed
+// only by the full-width "typography budget" gallery section in
+// Gallery.tsx -- kept separate from `PUBLICATION_PAGE_FIXTURE` above, whose
+// title is prose, not built to carry this specific word.
 export const TYPOGRAPHY_BUDGET_PUBLICATION_FIXTURE: Publication = {
   ...PUBLICATION_PAGE_FIXTURE,
   id: 'typography-budget-publication',
@@ -782,23 +775,15 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
   }),
 ]
 
-// Task 1 (Fonts and type scale) fix round 2: the review found the original
-// `fixture-research-7` here tested nothing -- its 22px `text-heading`
-// column inside this gallery section's narrow demo frame let all three of
-// its words fit without ever needing to split, and all three were
-// capitalised anyway, so it couldn't show hyphenation even if a word did
-// split. Replaced with a standalone fixture (not part of
-// `RESEARCH_PROJECTS_FIXTURE`, so it doesn't disturb that array's own
-// fixture-count assertions) consumed only by the dedicated full-width
-// "typography budget" gallery section in Gallery.tsx, which renders the
-// real `Research` component at the page's actual gutter width rather than
-// this file's narrower demo frame. The title carries the "heading" level's
-// budget word, capitalised ("Neurodegenerative", which Blink never
-// hyphenates). Fix round 3 (re-review New Breakage 2): its companion word
-// is short ("repair"), not a long lowercase word relying on hyphenation --
-// CI's Linux Chromium has no hyphenation dictionaries, so a fixture that
-// only fit locally because macOS Chromium hyphenates a long word would go
-// red on CI.
+// Standalone fixture (not part of `RESEARCH_PROJECTS_FIXTURE`, so it
+// doesn't disturb that array's own fixture-count assertions) consumed only
+// by the dedicated full-width "typography budget" gallery section in
+// Gallery.tsx, which renders the real `Research` component at the page's
+// actual gutter width rather than this file's narrower demo frame. The
+// title carries the "heading" level's budget word, capitalised
+// ("Neurodegenerative", which Blink never hyphenates); its companion word
+// is short ("repair") rather than relying on hyphenation, since CI's Linux
+// Chromium ships no hyphenation dictionaries.
 export const TYPOGRAPHY_BUDGET_RESEARCH_PROJECT_FIXTURE: ResearchProjectView = researchProjectView({
   id: 'typography-budget-research',
   title: 'Neurodegenerative repair',
@@ -873,15 +858,13 @@ export const HOME_PAGE_FIXTURE: HomePagePayload = {
   showcaseProjects: [],
 }
 
-// Task 1 (Fonts and type scale) fix round 2: the "display" level's budget
-// word, capitalised ("Neuroscience", already the lab name's own word --
-// see HOME_PAGE_FIXTURE above, which is why this couldn't stay a plain
-// literal for the gallery to typo-check against). Fix round 3 (re-review
-// New Breakage 2): its companions are short words ("and", "ageing"), not a
-// long lowercase word relying on hyphenation -- CI's Linux Chromium ships
-// no hyphenation dictionaries, so a fixture that only fit locally because
-// macOS Chromium hyphenates a long word would go red on CI. Consumed only
-// by the full-width "typography budget" gallery section in Gallery.tsx.
+// Carries the "display" level's budget word, capitalised ("Neuroscience",
+// already the lab name's own word -- see HOME_PAGE_FIXTURE above, which is
+// why this couldn't stay a plain literal for the gallery to typo-check
+// against). Its companions are short words ("and", "ageing") rather than
+// relying on hyphenation, since CI's Linux Chromium ships no hyphenation
+// dictionaries. Consumed only by the full-width "typography budget"
+// gallery section in Gallery.tsx.
 export const TYPOGRAPHY_BUDGET_HOME_FIXTURE: HomePagePayload = {
   ...HOME_PAGE_FIXTURE,
   _id: 'typography-budget-home',

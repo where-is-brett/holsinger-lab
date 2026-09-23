@@ -13,16 +13,10 @@ import type { ResourceBlockMeta } from './ResourceBlock'
 // copy already carried a fix-round comment nobody would have seen repeated
 // in Home.tsx).
 
-// Task 2 fix round 1 (review Important 2): `kind` is a fixed schema enum
-// (`schemas/documents/resource.ts`'s `RESOURCE_KINDS`, all lower case --
-// `'hardware' | 'protocol' | 'software' | 'dataset'`), not free CMS text,
-// so constraints.md's "CMS text prints verbatim" rule doesn't cover it --
-// it's a label, and the brief's own "sentence case" rule (and the label
-// table's "the kind") both apply to it. The old numbered rail uppercased
-// every label with CSS regardless of the string's own case, which hid
-// this; removing that transform (Task 2) exposed the raw lower-case enum
-// value rendering as-is (`<h2>hardware</h2>` on the live `/resources`
-// page).
+// `kind` is a fixed schema enum (`schemas/documents/resource.ts`'s
+// `RESOURCE_KINDS`: `'hardware' | 'protocol' | 'software' | 'dataset'`, all
+// lower case), not free CMS text -- this table gives it a sentence-case
+// display label instead of printing the raw enum value.
 const RESOURCE_KIND_LABELS: Record<string, string> = {
   hardware: 'Hardware',
   protocol: 'Protocol',
@@ -43,20 +37,6 @@ export function kindLabel(kind: string | null | undefined): string {
   return RESOURCE_KIND_LABELS[kind] ?? 'Resource'
 }
 
-// Task 2 fix round 1 (review Minor 7) added a `groupByKind` here so
-// `Resources.tsx` could render one `Section` per kind instead of one per
-// resource, avoiding duplicate `<h2>` labels for two resources sharing a
-// kind. Fix round 2 (controller ruling, option (b)) reverted that: grouping
-// silently reordered the list relative to the query's own `title asc` order
-// whenever kinds were interleaved, breaking `e2e/resources.spec.ts`'s
-// "renders one block per resource document" check for a dataset that valid
-// (re-review, "New Breakage 2") -- constraints.md's "every e2e assertion
-// must hold for any valid dataset" rules that out. `Resources.tsx` is back
-// to one `Section` per resource, in query order, with `kindLabel`'s output
-// rendered as a `<p>` (not an `<h2>`) so duplicate labels are never a
-// heading-order problem either. `groupByKind` and its tests are removed;
-// `kindLabel` itself is kept and unchanged.
-
 /**
  * "journal ref · year", each half dropped rather than leaving a dangling
  * separator when the linked publication is missing a piece.
@@ -73,21 +53,12 @@ export function formatSource(journal: string, ref: string, year: string): string
  * because both queries share `resourcesQuery`'s projection verbatim.
  */
 export function buildResourceMeta(resource: ResourcePayload | HomeResourcePayload): ResourceBlockMeta[] {
-  // Task 3 (spec §1.5): sentence-case labels ("Kind"/"Source"), not
-  // uppercase mono -- `ResourceBlock` renders these as `<dt>`s now, never a
-  // CSS-uppercased span, and a `<dt>`'s own text is exactly what a screen
-  // reader announces, so this must already read correctly on its own.
-  // Final-review fix round, finding 7: the *value* now goes through
-  // `kindLabel` too -- it was the raw lower-case schema enum ("hardware"),
-  // printing inconsistently with the same page's own `Section` label (the
-  // resource's `kindLabel(resource.kind)`, e.g. "Hardware") sitting right
-  // above it. `kind` is a fixed schema enum, not free CMS text, so
-  // constraints.md's "CMS text prints verbatim" rule was never in tension
-  // with sentence-casing it here -- it's a label-shaped value, same as the
-  // `Section` label already treats it.
-  // `identifier` (Task 4, re-review round 2 R2-1): still unmarked -- Kind's
-  // value is a fixed schema enum, not CMS free text or an identifier;
-  // Source and the DOI/URL row below are the identifier data.
+  // Sentence-case labels ("Kind"/"Source") render as `<dt>`s, so their own
+  // text is exactly what a screen reader announces. The Kind value goes
+  // through `kindLabel` too, so it matches the same page's `Section` label
+  // instead of printing the raw lower-case schema enum. `identifier` marks
+  // Source and the DOI/URL row as identifier data; Kind's value is a fixed
+  // schema enum, not CMS free text or an identifier, so it stays unmarked.
   const meta: ResourceBlockMeta[] = [{ label: 'Kind', value: kindLabel(resource.kind) }]
   const pub = resource.publication
   if (pub) {

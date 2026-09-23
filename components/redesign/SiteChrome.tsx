@@ -19,9 +19,7 @@ export interface SiteChromeProps {
 // (spec decision 6). One sticky header at every width (decision 4).
 // `--nav-height` (styles/index.css) is this element's height by
 // construction -- MobileHeader.tsx/SiteNav.tsx both set their own height
-// from it. The Publications FacetBand used to key its own sticky `top` off
-// it too; it no longer does, having lost its sticky positioning entirely
-// (Task 2 fix round 2).
+// from it.
 export function SiteChrome({ items, wordmark, logo }: SiteChromeProps) {
   const current = currentNavId(usePathname(), items)
   return (

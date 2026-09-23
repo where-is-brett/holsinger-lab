@@ -60,18 +60,17 @@ function IdentityBlock({
 
   return (
     <div>
-      {/* Task 3: sentence-case Archivo, not uppercase mono -- a kicker is
-          exactly the label shape the micro-label budget rule targets. */}
+      {/* Sentence-case Archivo, not uppercase mono -- a kicker is exactly
+          the label shape the micro-label budget rule targets. */}
       <div className="flex items-center gap-4">
         <span className="h-px w-9 bg-text" />
         <span className={MICRO_LABEL}>The University of Sydney</span>
       </div>
-      {/* `break-words`: see PageTitle.tsx's canonical note (`hyphens-auto`
-          removed in the final-review fix round). `text-balance` (spec
-          §1.2 "keep text-wrap: balance on display headings") replaces
-          `text-pretty` here -- this is the one display-role heading, and
-          the display floor is sized so its budget word ("Neuroscience")
-          fits at 320px (task-1-report.md). */}
+      {/* `break-words`: see PageTitle.tsx's canonical note. `text-balance`
+          (spec §1.2, "keep text-wrap: balance on display headings")
+          replaces `text-pretty` here -- this is the one display-role
+          heading, and the display floor is sized so its longest word
+          ("Neuroscience") fits at 320px. */}
       <Heading
         data-testid="home-identity-title"
         className="mt-[30px] max-w-[1180px] text-balance break-words text-display font-semibold"
@@ -125,32 +124,24 @@ const IDENTITY_GRID_SOLO = 'mt-[38px] grid grid-cols-1'
 
 // -- Block 2: Recent work ------------------------------------------------
 
-// Final-review fix round, finding 9: composes `LABEL` (tokens.ts) instead
-// of hand-writing its geometry again -- `LABEL`'s own doc comment already
-// named this file's `COLUMN_HEAD` as a consumer, but the code didn't match
-// it. `PublicationsIndex.tsx`'s own `COLUMN_HEADS` already does this
-// (`${COLUMN_HEADS} ${LABEL}`); confirmed identical rendered output before
-// the swap (`text-label`'s theme companions -- 11px/1/0.12em/500 -- are the
-// exact size/line-height/tracking/weight the hand-written string set).
+// Composes `LABEL` (tokens.ts) instead of hand-writing its geometry,
+// matching PublicationsIndex.tsx's own `COLUMN_HEADS` (`${COLUMN_HEADS}
+// ${LABEL}`).
 const COLUMN_HEAD = `hidden ${PUBLICATION_GRID} pb-3 ${LABEL}`
 
 function RecentWorkBlock({ publications, count }: { publications: Publication[]; count: number }) {
   return (
     <div data-testid="home-recent-work">
-      {/* Task 3 fix round 1 (review Minor 1): "Latest five · by date" moved
-          out of the ledger-head row -- it's a sentence-case sort-order
-          note about the block's content, not a fifth column head, and the
-          `ledger-head` exclusion only ever covered it because of where it
-          sat. Same `xl`-only visibility as the head row below it (the
-          annotation is meaningless once the row stacks below `xl`), just
-          its own sentence-case sibling instead of a shouted mono span
-          inside the head row. */}
+      {/* "Latest five, by date" sits outside the ledger-head row -- it's a
+          sentence-case sort-order note about the block's content, not a
+          column head. Same `xl`-only visibility as the head row below
+          (meaningless once the row stacks below `xl`). */}
       <div className="hidden justify-end pb-1 xl:flex">
         <span className="text-[13px] leading-[1.4] text-text-faint">Latest five, by date</span>
       </div>
-      {/* `data-testid="ledger-head"` (Task 3): the one place this block's
-          uppercase mono is still allowed -- e2e/label-budget.spec.ts
-          excludes anything inside it from the micro-label budget. */}
+      {/* `data-testid="ledger-head"`: the one place this block's uppercase
+          mono is allowed -- e2e/label-budget.spec.ts excludes anything
+          inside it from the micro-label budget. */}
       <div data-testid="ledger-head" className={COLUMN_HEAD}>
         <span>Year</span>
         <span>Title</span>
@@ -158,16 +149,15 @@ function RecentWorkBlock({ publications, count }: { publications: Publication[];
         <span>Link</span>
       </div>
       {publications.map((pub) => (
-        // `data-testid="pub-row"` (Task 2 fix round 1): matches
-        // PublicationsIndex.tsx's own row wrapper, so the ledger-cell
-        // overflow guard (`e2e/home.spec.ts`, review Important 1) can
-        // target Home's rows the same way it targets `/publications`'s.
+        // `data-testid="pub-row"`: matches PublicationsIndex.tsx's own row
+        // wrapper, so the ledger-cell overflow guard (`e2e/home.spec.ts`)
+        // can target Home's rows the same way it targets `/publications`'s.
         <div key={pub.id} data-testid="pub-row">
           <PublicationRow pub={pub} variant="home" href={pub.href} />
         </div>
       ))}
-      {/* Task 3: sentence case, not uppercase mono -- links to another
-          route become sentence case per the brief's own example. */}
+      {/* Sentence case, not uppercase mono -- links to another route are
+          sentence case per the brief. */}
       <Link href="/publications" className="mt-5 inline-block text-[14px] font-medium text-link">
         All {count} publication{count === 1 ? '' : 's'} →
       </Link>
@@ -205,9 +195,9 @@ function siteLabel(site: string): string {
 function OutreachBlock({ maestro }: { maestro: MaestroProjectPayload }) {
   return (
     <div data-testid="home-maestro">
-      {/* `break-words` (see PageTitle.tsx's canonical note; `hyphens-auto`
-          removed in the final-review fix round) -- the MAESTRO project
-          title is CMS text this repo doesn't control the shape of. */}
+      {/* `break-words` (see PageTitle.tsx's canonical note) -- the MAESTRO
+          project title is CMS text this repo doesn't control the shape
+          of. */}
       <div className="max-w-[720px] text-pretty break-words text-heading font-semibold" data-testid="maestro-title">
         {maestro.title}
       </div>
@@ -218,12 +208,8 @@ function OutreachBlock({ maestro }: { maestro: MaestroProjectPayload }) {
         // not the bare identifier -- e2e/redesign-components.spec.ts's
         // generic `[data-identifier]` contract asserts the *whole* element
         // text (scheme/`www.` stripped) is contained in `href`, which a
-        // "Register — " prefix would trip.
-        //
-        // Task 3 fix round 1 (review Important 2): was a shouted, tracked
-        // mono literal ("REGISTER — …") -- the brief's own "links become
-        // sentence case" rule applies to it too, so it now matches "All
-        // resources →"'s own sentence-case link style (14px, not mono).
+        // "Register — " prefix would trip. Sentence case, not mono,
+        // matching "All resources →"'s own link style.
         <a
           href={maestro.site}
           className="mt-5 inline-block break-all text-[14px] font-medium text-text-inverse underline underline-offset-4"
@@ -450,16 +436,14 @@ export function Home({
   // no content beneath it).
   const showTheLab = showPiPanel || showMembersLine || Boolean(supportPage)
 
-  // Task 2 (spec §1.3): the numbered rail (and its `num` array) is gone --
-  // each block below carries its own React `key` (the identity block has no
-  // visible `label` at all: it's the hero, not a labelled section, matching
-  // the task brief's Home label table, which lists only the other four).
+  // Each block carries its own React `key` (the identity block has no
+  // visible `label` at all: it's the hero, not a labelled section).
   // `labelHeading` is set per block: `true` for "Recent work"/"Outreach"/
   // "The lab" (none of `RecentWorkBlock`/`OutreachBlock`/`TheLabBlock`
   // render a heading of their own -- plain `<div>`s and mono labels), but
-  // `false` for "Resources" (fix round 2: `ResourceBlock`'s own title is
-  // now a real `<h2>`, so a second `<h2>` label here would be a redundant,
-  // sibling heading) -- see task-2-report.md's per-screen table.
+  // `false` for "Resources", since `ResourceBlock`'s own title is a real
+  // `<h2>` and a second `<h2>` label here would be a redundant sibling
+  // heading.
   const blocks: Array<{ key: string; label?: string; labelHeading?: boolean; inverse?: boolean; content: ReactNode }> = [
     {
       key: 'identity',

@@ -50,10 +50,10 @@ import { MICRO_LABEL } from '../tokens'
 const SPOTLIGHT_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr] md:items-start md:gap-x-11 md:gap-y-0'
 const SPOTLIGHT_PORTRAIT = 'max-w-[220px] md:max-w-none'
 
-// Task 3: sentence-case Archivo, reusing the MICRO_LABEL token rather than
-// hand-rolling the same font-sans/13px/500 triad again -- was mono-caps
-// uppercase (LABEL) before, which the micro-label budget rule now forbids
-// for anything that isn't a data column head.
+// Sentence-case Archivo, reusing the MICRO_LABEL token rather than
+// hand-rolling the same font-sans/13px/500 triad again -- the micro-label
+// budget rule forbids mono-caps uppercase for anything that isn't a data
+// column head.
 const SPOTLIGHT_LABEL_CLASS = MICRO_LABEL
 
 const PROFILE_LINK_LABEL = 'mt-5 inline-block text-[14px] font-medium text-link'
@@ -65,21 +65,17 @@ const PROFILE_LINK_LABEL = 'mt-5 inline-block text-[14px] font-medium text-link'
 const EMAIL_LINK = 'mt-5 block font-mono text-[12.5px] text-link'
 
 const SECTION_HEADING_ROW = 'mb-5 flex items-baseline gap-3.5 border-t border-rule pt-[18px]'
-// Task 3: sentence-case Archivo, not uppercase mono (was LABEL_BASE) -- a
-// role-group title is real CMS content (constraints.md's "CMS text prints
-// verbatim"), so forcing it into caps was always presentational overreach,
-// and it also blew the micro-label budget on /people whenever more than a
-// couple of groups render. `break-words` stays: a long `title` can still
-// overflow this column (see PageTitle.tsx's canonical note; `hyphens-auto`
-// removed in the final-review fix round -- it was never inert here, since
-// the text isn't forced upper-case, but it hyphenated inconsistently
-// across platforms for no benefit the word-fit budget doesn't already
-// cover).
+// Sentence-case Archivo, not uppercase mono -- a role-group title is real
+// CMS content (constraints.md's "CMS text prints verbatim"), so forcing it
+// into caps is presentational overreach, and it would blow the
+// micro-label budget whenever more than a couple of groups render.
+// `break-words` guards against a long `title` overflowing this column (see
+// PageTitle.tsx's canonical note).
 const SECTION_TITLE = `${MICRO_LABEL} break-words`
-// The member-count badge next to it: same mono digits as before, just no
-// `text-transform` -- a bare number renders identically either way, but the
-// computed style still reported 'uppercase' (LABEL_BASE), which counted
-// toward the budget regardless of there being no letters to transform.
+// The member-count badge next to it: mono digits with no `text-transform`
+// -- a bare number renders identically without it, and omitting
+// `uppercase` keeps it out of the micro-label budget, which counts the
+// computed style regardless of whether there are letters to transform.
 const SECTION_COUNT = 'font-mono text-[11px] leading-none font-medium text-link'
 
 // 2 columns on phone, 3 from `md`, 6 from `lg` (spec §5 point 3). Gap matches
@@ -124,8 +120,8 @@ function SpotlightBlock({ labHead }: { labHead: LabHead }) {
           edit narrows the track back to a bare `1fr`. */}
       <div className="min-w-0">
         <div className={SPOTLIGHT_LABEL_CLASS}>Head of laboratory · Principal investigator</div>
-        {/* `break-words` (see PageTitle.tsx's canonical note; `hyphens-auto`
-            removed in the final-review fix round) -- a name is CMS text. */}
+        {/* `break-words` (see PageTitle.tsx's canonical note) -- a name is
+            CMS text. */}
         <h2 className="mt-3 text-heading break-words">{labHead.name}</h2>
         <PortableBody blocks={labHead.fullBio} bio={labHead.bio} />
         {labHead.email && (
@@ -262,7 +258,7 @@ export function People({
   const g = members.filter((section) => section.title).length
   const meta = formatPeopleMeta({ showSpotlight, n, g })
 
-  // Task 2: `labelHeading` per block -- `Lab head` and `Members` already
+  // `labelHeading` per block -- `Lab head` and `Members` already
   // have their own in-content heading (`SpotlightBlock`'s labHead-name
   // `<h2>`; each role group's own `<h2 data-testid="people-section-title">`
   // inside `MembersBlock`), so their `Section` label stays a `<p>`.

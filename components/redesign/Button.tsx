@@ -10,9 +10,9 @@ export interface ButtonProps {
   active?: boolean
 }
 
-// CONTROL_BASE (Task 3: not LABEL_BASE -- a button's own text is caller
-// content, e.g. "Clear filters", never a data column head) gives the mono
-// font/size with no colour baked in: Button's rest colour is text-muted,
+// CONTROL_BASE, not LABEL_BASE: a button's own text is caller content
+// (e.g. "Clear filters"), never a data column head. It gives the mono
+// font/size with no colour baked in -- Button's rest colour is text-muted,
 // and `active` swaps colour and border to the link/accent colour, so those
 // two utilities are chosen per branch below rather than layered on top of a
 // fixed class -- otherwise two same-property utilities (e.g.

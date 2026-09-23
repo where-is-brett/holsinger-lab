@@ -59,9 +59,9 @@ function resource(overrides: Partial<ResourcePayload> = {}): ResourcePayload {
 }
 
 describe('buildResourceMeta', () => {
-  // Final-review fix round, finding 7: KIND's value now goes through
-  // `kindLabel` (sentence case, "Hardware"), matching the same resource's
-  // own `Section` label instead of printing the raw lower-case enum.
+  // KIND's value goes through `kindLabel` (sentence case, "Hardware"),
+  // matching the same resource's own `Section` label instead of printing
+  // the raw lower-case enum.
   it('always includes KIND, sentence-cased via kindLabel', () => {
     expect(buildResourceMeta(resource({ kind: 'protocol' }))).toEqual([{ label: 'Kind', value: 'Protocol' }])
   })

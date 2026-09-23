@@ -52,12 +52,11 @@ const NARRATIVE_GRID_SOLO = 'grid grid-cols-1'
 function ProjectKicker({ project }: { project: ResearchProjectView }) {
   if (!project.kicker && !project.tagLine) return null
 
-  // Task 3: sentence-case Archivo, not uppercase mono -- `kicker` mixes a
-  // derived "Since <year>" string with the project's own CMS `category`
-  // (researchModel.ts's `researchKicker`), so forcing it upper-case both
-  // blew the micro-label budget (once per project on /research and the
-  // gallery) and, for the `category` half, ran against constraints.md's
-  // "CMS text prints verbatim" rule.
+  // Sentence-case Archivo, not uppercase mono -- `kicker` mixes a derived
+  // "Since <year>" string with the project's own CMS `category`
+  // (researchModel.ts's `researchKicker`), so forcing it upper-case would
+  // blow the micro-label budget and, for the `category` half, run against
+  // constraints.md's "CMS text prints verbatim" rule.
   return (
     <div className={MICRO_LABEL}>
       {project.kicker}
@@ -74,9 +73,8 @@ function Narrative({ project }: { project: ResearchProjectView }) {
     <div className={cover ? NARRATIVE_GRID : NARRATIVE_GRID_SOLO}>
       <div className="min-w-0">
         <ProjectKicker project={project} />
-        {/* `break-words` (see PageTitle.tsx's canonical note; `hyphens-auto`
-            removed in the final-review fix round) -- a project title is
-            CMS text. */}
+        {/* `break-words` (see PageTitle.tsx's canonical note) -- a project
+            title is CMS text. */}
         <h2
           data-testid="research-project-title"
           className="mt-4 max-w-[640px] text-pretty break-words text-heading font-semibold"
@@ -183,8 +181,8 @@ export function Research({
           </p>
         </Section>
       ) : (
-        // Task 2: `labelHeading` is `false` here -- each project's own
-        // `Narrative` already renders a real
+        // `labelHeading` is `false` here -- each project's own `Narrative`
+        // already renders a real
         // `<h2 data-testid="research-project-title">` (the project title),
         // so a second `<h2>` for the label would be a redundant heading.
         projects.map((project, index) => (

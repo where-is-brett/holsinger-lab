@@ -54,18 +54,12 @@ test.describe('redesign component gallery', () => {
       // The rendered label must not have been case-transformed. `href`
       // containment only applies to identifiers that are *links to that
       // identifier* (a DOI/URL/mailto/tel anchor whose label is the
-      // identifier itself) -- fix round 1 added a `data-identifier` case
-      // this doesn't cover: the citation box's cite string (plain text, no
-      // `href` at all -- per the Task 5 brief, "a bordered box with the
-      // cite text (data-identifier, mono)"). Task 4 (re-review round 2,
-      // R2-1): ResourceBlock's `More` meta entry (the hard-coded
-      // "Resources" link PublicationPage.tsx passes) no longer carries
-      // `data-identifier` at all -- its label is repo copy, not an
-      // identifier, so the marker no longer needs a same-site-nav
-      // exception. Every remaining `data-identifier` element's `href` is
-      // either absent (the cite string) or contains the identifier text,
-      // so the `href !== null` branch below is only ever an `http(s)`,
-      // `mailto:` or `tel:` link now.
+      // identifier itself); the citation box's cite string is plain text
+      // with no `href` at all, so it's exempt from the containment check
+      // but still checked for case. Every `data-identifier` element's
+      // `href` is either absent (the cite string) or contains the
+      // identifier text, so the `href !== null` branch below is only ever
+      // an `http(s)`, `mailto:` or `tel:` link.
       if (href !== null && !href.startsWith('/')) {
         // the href must carry the full identifier even when the label is truncated.
         expect(href).toContain(text.replace(/^https?:\/\//, '').replace(/^www\./, ''))
@@ -150,10 +144,10 @@ test.describe('redesign component gallery', () => {
   test('PublicationRow: comfortable index row is a grid from xl, stacked below xl', async ({
     page,
   }) => {
-    // Task 2 fix round 1: the ledger's own grid activation moved from `lg`
-    // to `xl` (tokens.ts's `PUBLICATION_GRID` comment) -- `Section`'s
-    // narrower `lg` content column left too little room for the title
-    // track between 1024 and ~1090px.
+    // The ledger's own grid activates at `xl` (tokens.ts's
+    // `PUBLICATION_GRID`), not `lg` -- `Section`'s narrower `lg` content
+    // column leaves too little room for the title track between 1024 and
+    // ~1090px.
     const row = page.locator('[data-testid="publication-row-comfortable"] > div').first()
 
     await page.setViewportSize({ width: 1280, height: 900 })
@@ -166,9 +160,9 @@ test.describe('redesign component gallery', () => {
   test('PublicationRow: comfortable index row still shows authors and CopyCitation below xl', async ({
     page,
   }) => {
-    // Fix round 1: the journal column collapses into the mobile kicker
-    // below `xl`, but the authors line and CopyCitation control must not --
-    // this settles it with a live viewport check, not just markup presence.
+    // The journal column collapses into the mobile kicker below `xl`, but
+    // the authors line and CopyCitation control must not -- this settles it
+    // with a live viewport check, not just markup presence.
     await page.setViewportSize({ width: 900, height: 900 })
     const row = page.locator('[data-testid="publication-row-comfortable"] > div').first()
 
@@ -219,14 +213,12 @@ test.describe('redesign component gallery', () => {
   }) => {
     const section = page.getByTestId('gallery-person-card')
     await expect(section.getByRole('img', { name: 'Haochen Wu' })).toBeVisible()
-    // The fallback case: no <img>, initials only (Task 3 fix round 1: the
-    // "[ NO PORTRAIT ON FILE ]" system-explaining text is deleted -- PR 4
-    // adds the initials tile). Several fixture cards use the fallback, so
-    // this is scoped to Jiyoo Choi's card specifically -- found via her
-    // unique role text, then walked up to the card's own wrapping div --
-    // rather than asserting on the page-wide (non-unique) "JC" text alone,
-    // which could pass even if a different card's fallback rendered instead
-    // of hers.
+    // The fallback case: no <img>, initials tile only. Several fixture
+    // cards use the fallback, so this is scoped to Jiyoo Choi's card
+    // specifically -- found via her unique role text, then walked up to the
+    // card's own wrapping div -- rather than asserting on the page-wide
+    // (non-unique) "JC" text alone, which could pass even if a different
+    // card's fallback rendered instead of hers.
     const jiyooRole = section.getByText('Ungergraduate student - Diagnostic Radiography')
     await expect(jiyooRole).toBeVisible()
     const jiyooCard = jiyooRole.locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " group ")][1]')

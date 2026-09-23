@@ -101,11 +101,11 @@ export function toPublication(p: PublicationPayload): Publication {
 
 /**
  * `PageTitle`'s `/publications` meta line (unfiltered), sentence case
- * (Task 2, spec §1.3): "19 publications, 2020–2025" (spec's own example),
- * or "1 publication" with no years on file. Moved out of
- * `PublicationsIndex.tsx` (Task 2 fix round 1, review Minor 6) so its
- * singular/plural, single-year (`min === max`) and no-year branches get
- * direct unit coverage instead of only the e2e's regex-based cross-check.
+ * (spec §1.3): "19 publications, 2020–2025" (spec's own example), or
+ * "1 publication" with no years on file. Lives here rather than in
+ * `PublicationsIndex.tsx` so its singular/plural, single-year
+ * (`min === max`) and no-year branches get direct unit coverage instead of
+ * relying only on an e2e regex check.
  */
 export function formatPublicationsMeta(pubs: Pick<Publication, 'year'>[]): string {
   const years = pubs.map((p) => p.year).filter(Boolean)
@@ -122,10 +122,9 @@ export function formatPublicationsMeta(pubs: Pick<Publication, 'year'>[]): strin
  * (`PublicationsIndex.tsx`'s `accentMeta` state). A separate function, not
  * a branch inside `formatPublicationsMeta`, because it takes a different
  * shape of input (two counts, not a list to derive a year range from).
- * Unconditionally plural (unchanged from the pre-move behaviour): a
- * filtered view implies at least one chip is active against a real
- * dataset, which is never the single-publication case in practice, and no
- * caller has asked for a singular branch here.
+ * Unconditionally plural: a filtered view implies at least one chip is
+ * active against a real dataset, which is never the single-publication
+ * case in practice.
  */
 export function formatFilteredPublicationsMeta(shownCount: number, totalCount: number): string {
   return `${shownCount} of ${totalCount} publications shown`

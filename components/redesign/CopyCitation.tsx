@@ -10,9 +10,9 @@ export interface CopyCitationProps {
   copiedLabel?: string
 }
 
-// CONTROL_BASE (Task 3: not LABEL_BASE -- this renders once per publication
-// row, so keeping it a shouted mono-caps label blew the micro-label budget
-// on /publications by itself) gives the mono font/size with no colour baked
+// CONTROL_BASE, not LABEL_BASE: this renders once per publication row, so
+// a shouted mono-caps label would blow the micro-label budget on
+// /publications by itself. Gives the mono font/size with no colour baked
 // in -- see the matching comment in Button.tsx for why the colour and
 // border utilities are chosen per branch instead of layered on a fixed
 // class.
@@ -55,10 +55,9 @@ export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitatio
     }
   }
 
-  // Task 3: sentence case, not shouted caps ("CITE"/"COPY CITATION") --
-  // the uppercasing was CSS-driven (LABEL_BASE) before, so these literal
-  // strings are what the accessible name and the rendered text actually
-  // are now that the transform is gone.
+  // Sentence case, not shouted caps: these literal strings are what the
+  // accessible name and the rendered text actually are -- no CSS transform
+  // uppercases them.
   const restLabel = compact ? 'Cite' : 'Copy citation'
   const doneLabel = compact ? '✓' : copiedLabel || '✓ Copied'
   const border = copied ? 'border border-link' : HAIRLINE

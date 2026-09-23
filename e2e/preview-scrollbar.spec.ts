@@ -1,24 +1,15 @@
 import { chromium, expect, test } from '@playwright/test'
 
-// Task 2 fix round 3 (re-review round 2, new Important 1): Playwright's
-// default Chromium launch hides its scrollbar (`--hide-scrollbars`), so
-// `document.documentElement.scrollWidth <= clientWidth` reads true at every
-// width regardless of whether a fixture's own width genuinely exceeds the
-// viewport -- fix round 2's `FULL_BLEED` (`w-screen`/`-mx-[50vw]`, both
-// resolved against `100vw`) passed every existing overflow check for
-// exactly this reason, while actually overflowing by ~8px per side under a
-// real scrollbar (measured by the re-review, relaunching Chromium with
-// `ignoreDefaultArgs: ['--hide-scrollbars']` removed to restore one).
-// `BLEED_GRID` (Gallery.tsx) replaced the whole vw-based approach with a
-// pure CSS Grid pattern instead, which resolves its tracks against the
-// grid's own content box -- ordinary block layout, not `100vw`, so it
-// never includes scrollbar space in the first place.
+// Playwright's default Chromium launch hides its scrollbar
+// (`--hide-scrollbars`), so `scrollWidth <= clientWidth` reads true at
+// every width regardless of whether layout genuinely exceeds the
+// viewport -- a `100vw`-based width can overflow by a real scrollbar's
+// width while still passing that check under the default launch.
 //
-// This file reproduces the re-review's own launch configuration directly
-// (the default project-wide `chromium` in `playwright.config.ts` cannot
-// express `ignoreDefaultArgs` per-test), so it's the one place in this
-// suite that can actually fail on a `100vw`-based overflow the rest of the
-// suite is blind to.
+// This file relaunches Chromium with `ignoreDefaultArgs: ['--hide-scrollbars']`
+// to restore a real scrollbar (the project-wide `chromium` project in
+// playwright.config.ts can't express that per-test), so it's the one place
+// in this suite that can catch a `100vw`-based overflow the rest is blind to.
 const WIDTHS = [320, 1280, 1440]
 const ROUTES = ['/preview/components', '/', '/publications']
 

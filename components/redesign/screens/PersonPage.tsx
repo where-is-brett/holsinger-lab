@@ -13,9 +13,9 @@ import { Section } from '../Section'
 // verbatim -- both CMS strings printed exactly as stored, never uppercased
 // or otherwise "corrected" here (constraints.md, "CMS text prints
 // verbatim"). PageTitle itself no longer applies any text-transform to
-// `meta` (Task 2, spec §1.3 -- it's a plain sentence-case line now), so
-// the DOM text these two values are concatenated into stays byte-identical
-// to the source fields.
+// `meta` (spec §1.3) -- it's a plain sentence-case line now, so the DOM
+// text these two values are concatenated into stays byte-identical to the
+// source fields.
 function metaOf(person: ProfileBySlugPayload): string | undefined {
   if (!person.role) {
     return undefined
@@ -98,14 +98,13 @@ export function PersonPage({ person }: { person: ProfileBySlugPayload }) {
   return (
     <div>
       <PageTitle title={person.name ?? ''} meta={metaOf(person)} />
-      {/* Task 2: `labelHeading` true -- `ProfileBlock` has no heading of its
-          own (just a bio and identifier links), so `Profile` is this
-          section's only one. */}
+      {/* `labelHeading` true -- `ProfileBlock` has no heading of its own
+          (just a bio and identifier links), so `Profile` is this section's
+          only one. */}
       <Section label="Profile" labelHeading borderTop={false}>
-        {/* Copied from PublicationPage.tsx's own back-link styling -- same
-            "← All ..." sentence-case link, linking back to the index route
-            this detail page belongs under. Task 3: no longer uppercase mono
-            -- see PublicationPage.tsx's own identical fix. */}
+        {/* Same "← All ..." sentence-case link as PublicationPage.tsx's own
+            back-link, linking back to the index route this detail page
+            belongs under. */}
         <Link href="/people" className="text-[13px] leading-none font-medium text-link">
           ← All people
         </Link>

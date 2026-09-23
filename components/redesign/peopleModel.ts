@@ -161,10 +161,10 @@ export function memberCount<T>(sections: RoleGroupSection<T>[]): number {
 }
 
 /**
- * `PageTitle`'s `/people` meta line, sentence case (Task 2, spec §1.3):
- * "Lab head + 3 current members · 2 groups". Moved out of `People.tsx`
- * (Task 2 fix round 1, review Minor 6) so its singular/plural branches get
- * direct unit coverage instead of only the e2e's regex-based cross-check.
+ * `PageTitle`'s `/people` meta line, sentence case (spec §1.3):
+ * "Lab head + 3 current members · 2 groups". Lives here rather than in
+ * `People.tsx` so its singular/plural branches get direct unit coverage
+ * instead of relying only on an e2e regex check.
  */
 export function formatPeopleMeta({
   showSpotlight,

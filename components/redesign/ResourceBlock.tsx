@@ -10,11 +10,8 @@ export interface ResourceBlockMeta {
    * True when `value` is CMS or identifier data (a DOI, a URL, a source
    * ref) that must print verbatim -- gets `data-identifier`/
    * `data-cms-verbatim` so the label-budget e2e's source-caps check
-   * exempts it (see PublicationRow.tsx's Identifier() comment for the
-   * marker's full contract). Omit/false for hard-coded UI copy (e.g. the
-   * "Resources" link text PublicationPage.tsx passes as `More`) so a
-   * future all-caps regression there is still caught (Task 3 re-review
-   * round 2, R2-1).
+   * exempts it (see PublicationRow.tsx's Identifier() comment). Omit/false
+   * for hard-coded UI copy so an all-caps regression there is still caught.
    */
   identifier?: boolean
 }
@@ -36,14 +33,11 @@ export interface ResourceBlockProps {
 // Purely presentational, no state or handlers -- no 'use client'.
 
 // Meta values print VERBATIM -- a DOI is a case-sensitive identifier.
-// Task 3 (spec §1.5): labels are sentence-case definition terms now, not
-// uppercased by style -- `Kind`/`Source`/`DOI` are real `<dt>`s (a
-// definition-list pairing reads better to assistive tech than an
-// unstructured `<span>` beside a value anyway), each carrying its
-// resourceModel.ts-supplied sentence-case text verbatim, never forced
-// upper-case by CSS. `normal-case!` is Tailwind 4's trailing-bang form,
-// emitting `text-transform: none !important` -- reproducing
-// components.css's `.hl-identifier` guard (same technique as
+// Labels (`Kind`/`Source`/`DOI`) are sentence-case `<dt>`s (spec §1.5) --
+// a definition-list pairing reads better to assistive tech than an
+// unstructured `<span>` beside a value. `normal-case!` is Tailwind 4's
+// trailing-bang form, emitting `text-transform: none !important` --
+// reproducing components.css's `.hl-identifier` guard (same technique as
 // PublicationRow.tsx's IDENTIFIER constant) so an ambient uppercasing
 // context can never mangle an identifier.
 //
@@ -96,21 +90,13 @@ export function ResourceBlock({ title, meta = [], figureLabel, children }: Resou
             in `title` can be wider than this column at 320px, and
             `break-words` (`overflow-wrap: break-word`) is a different
             property than anything else already set here, so it's additive.
-            Task 1 fix round 1 added `hyphens-auto` alongside it; removed
-            again in the final-review fix round -- see PageTitle.tsx's
-            canonical note on why `break-words` alone is now the fallback.
-            Task 2 fix round 2 (controller ruling): a real `<h2>`, not a
-            `<div>` -- `Resources.tsx` went back to one `Section` per
-            resource with a `<p>` kind label (not an `<h2>`, so two
-            resources sharing a kind can't produce duplicate headings), so
-            this title is now the only heading each resource section has.
-            `ResourceBlock`'s other two call sites (`Home.tsx`'s single
-            Resources block, `PublicationPage.tsx`'s Resource block) both
-            already wrap this in a `Section` whose own label is an `<h2>`
-            -- a second, sibling `<h2>` here doesn't skip or duplicate a
-            level either way. Same visual style as before (this class
-            string is unchanged); Preflight already zeroes `h2`'s default
-            margin, so no layout shift. */}
+            A real `<h2>`, not a `<div>`: each resource section otherwise
+            has no heading of its own (`Resources.tsx` labels it with a
+            `<p>`, not an `<h2>`, since two resources can share a kind). The
+            other two call sites (`Home.tsx`'s Resources block,
+            `PublicationPage.tsx`'s Resource block) already wrap this in a
+            `Section` whose own label is an `<h2>`, so a sibling `<h2>` here
+            doesn't skip or duplicate a level. */}
         <h2
           data-testid="resource-block-title"
           className="max-w-[640px] text-heading font-semibold break-words"
@@ -121,15 +107,14 @@ export function ResourceBlock({ title, meta = [], figureLabel, children }: Resou
           {meta.map((m) => (
             <div key={m.label}>
               <dt className="inline-block min-w-16 text-text-faint">{m.label}</dt>
-              {/* `data-cms-verbatim` (Task 3 fix round 2, re-review N1):
-                  `m.value` is CMS/identifier data (a DOI, a journal ref, a
-                  resource kind) -- see PublicationRow.tsx's Identifier()
-                  comment for the marker's full contract. Only when
-                  `m.identifier` is true (re-review round 2, R2-1): a
-                  hard-coded UI string (PublicationPage.tsx's `More` ->
-                  "Resources" link) must stay outside the marker so the
-                  label-budget e2e's source-caps check still catches a
-                  future all-caps regression there. */}
+              {/* `data-cms-verbatim`/`data-identifier` only when
+                  `m.identifier` is true -- `m.value` is then CMS or
+                  identifier data (a DOI, a journal ref, a resource kind),
+                  exempted from the label-budget e2e's source-caps check
+                  (see PublicationRow.tsx's Identifier() comment). A
+                  hard-coded UI string (e.g. `More`'s "Resources" link)
+                  omits it, so an all-caps regression there is still
+                  caught. */}
               <dd className="inline">
                 {m.href ? (
                   <a

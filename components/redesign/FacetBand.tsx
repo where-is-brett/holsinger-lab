@@ -15,22 +15,11 @@ export interface FacetBandProps {
 // Presentational only -- the parent owns filter state and counts; this
 // component just renders chips and forwards their onClick.
 //
-// Task 2 fix round 2 (controller ruling): the band is no longer sticky.
-// It used to pin at `top: var(--nav-height)` from a combined
-// `min-width:64rem`/`min-height:56rem` breakpoint (spec §4.2, fix round
-// 3) -- removed because PR 3 was already going to remove sticky filtering
-// entirely (Brett's own feedback), and fix round 1's `Section label=
-// "Filter"` wrap (below) left the band's sticky positioning broken anyway:
-// a sticky element can only travel as far as its parent's own height, and
-// `Section`'s content cell is exactly the band's height, so it had nowhere
-// to scroll to (re-review, "New Breakage 1"). No replacement top-offset or
-// z-index is needed -- both existed only to support the sticky pin, never
-// for anything else (the band was never meant to render above other
-// content once it's back in normal flow). `data-testid="facet-band"`
-// (new) is what `e2e/nav-logo.spec.ts`/`e2e/publications-interactive.spec.ts`
-// now locate this element by, replacing the old `z-[5]`-ancestor lookup
-// that existed purely because `z-[5]` was otherwise this element's only
-// unique, stable class.
+// Not sticky: the band renders inside `Section`'s content cell, which is
+// exactly the band's own height, so a sticky element here has nowhere to
+// scroll to. It stays in normal flow with no top-offset or z-index.
+// `data-testid="facet-band"` is what `e2e/nav-logo.spec.ts`/
+// `e2e/publications-interactive.spec.ts` locate this element by.
 // Two variants, not one ROW plus an appended `items-center` override:
 // Tailwind utilities of equal specificity win by generation order in the
 // build's CSS, not by position in the className string, and `.items-center`
@@ -48,15 +37,12 @@ export interface FacetBandProps {
 // minimum directly, so this stays a real fix rather than a dead class.
 const ROW = 'grid grid-cols-[72px_minmax(0,1fr)] gap-x-5 items-start'
 const ROW_CENTER = 'grid grid-cols-[72px_minmax(0,1fr)] gap-x-5 items-center'
-// Task 3 (spec §1.5): sentence-case Archivo, not uppercase mono -- "Year" /
-// "Type" / "Topic" / "Density" are facet-group labels, not data column
-// heads, so the micro-label budget rule applies to them too. `leading-[26px]`
-// (a fixed pixel value, not a unitless multiplier) keeps this row's own
-// vertical rhythm identical to the old `leading-[2.6]` (2.6 x the old 10px
-// mono size = 26px) even though the font-size itself changed -- the wrapped
-// chip rows beside it (ROW's own vertical-clearance math, see the comment
-// below) never had anything to do with this label's own line-height, so
-// this is a like-for-like geometry swap, not a redesign of the row.
+// Sentence-case Archivo, not uppercase mono (spec §1.5): "Year" / "Type" /
+// "Topic" / "Density" are facet-group labels, not data column heads, so
+// the micro-label budget rule applies to them too. `leading-[26px]` is a
+// fixed pixel value, not a unitless multiplier, matching this row's own
+// vertical rhythm -- unrelated to the wrapped chip rows' own
+// vertical-clearance math below.
 const ROW_LABEL = 'font-sans text-[0.8125rem] leading-[26px] font-medium text-text-faint'
 // Density's label sits in a `items-center` row (no wrapped chip rows to
 // vertically center against), so it doesn't need ROW_LABEL's own leading --
@@ -69,19 +55,13 @@ const ROW_LABEL = 'font-sans text-[0.8125rem] leading-[26px] font-medium text-te
 // relying on override order (same fix shape as ROW/ROW_CENTER above it).
 const DENSITY_ROW_LABEL = 'font-sans text-[0.8125rem] leading-none font-medium text-text-faint'
 
-// Task 2 (spec §1.3): the "01 / Filter" rail label and its column are gone
-// -- PR 3 replaces this whole band; this task only removes the numbering
-// and rail so no screen is left broken between PRs.
-//
-// Task 2 fix round 1 (controller ruling): the brief's own label table lists
-// Publications' labels as "Filter" and "Record" -- `PublicationsIndex.tsx`
-// now renders this component inside a `Section label="Filter"`, so the
-// component itself no longer owns any horizontal gutter (`Section`
-// supplies it, the same way it already does for the "Record" list below).
-// This is what lines the chip rows up with the ledger rows beneath them,
-// both starting at `Section`'s own content column. `pt-8`/`pb-9` stay: the
-// vertical rhythm inside the band (chip-row spacing, the density row's own
-// separator) is this component's own concern, not `Section`'s.
+// This component owns no horizontal gutter -- it renders inside
+// `PublicationsIndex.tsx`'s `Section label="Filter"`, which supplies it
+// (the same way it does for the "Record" list below), lining the chip rows
+// up with the ledger rows beneath them at `Section`'s own content column.
+// `pt-8`/`pb-9` stay here: the vertical rhythm inside the band (chip-row
+// spacing, the density row's own separator) is this component's own
+// concern, not `Section`'s.
 export function FacetBand({ groups = [], density, note }: FacetBandProps) {
   const visibleGroups = groups.filter((g) => g.chips.length > 0)
   return (
@@ -133,10 +113,8 @@ export function FacetBand({ groups = [], density, note }: FacetBandProps) {
           </div>
         </div>
       )}
-      {/* Task 3: sentence-case Archivo, not uppercase mono -- `note` is a
-          status line (the gallery's own "N of M publications" demo), never
-          the ui_kit's old instructional copy, which is deleted entirely
-          (PublicationsIndex.tsx no longer passes a `note` at all). */}
+      {/* Sentence-case Archivo, not uppercase mono -- `note` is a status
+          line (the gallery's own "N of M publications" demo). */}
       {note && <div className="font-sans text-[13px] leading-[1.5] text-text-faint">{note}</div>}
     </div>
   )
