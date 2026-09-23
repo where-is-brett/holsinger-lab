@@ -10,8 +10,8 @@ Names used below: Sanity project `j3f9z8os`; Vercel project `holsingerlab` in te
 
 ## 0. Before sending the email
 
-- [ ] Merge this docs PR, or change the email's `HANDOVER.md` link to point at the branch. The
-      email links `blob/main/docs/HANDOVER.md`, and until this merges `main` still has v1.
+- [ ] Merge this docs PR immediately before sending. The email links
+      `blob/main/docs/HANDOVER.md`, and until this merges `main` still has v1.
 - [ ] Both preview URLs load and show current `wix-preview` content.
 - [ ] Redesign chosen? Wait for the in-flight revision PRs (PR 3 Publications, PR 4
       People/Research/Contact) to land on `redesign/integration` before cutover.
@@ -25,17 +25,16 @@ Run it from a `redesign/wix` checkout whichever design wins. The import needs a 
 - [ ] Production `settings.labHead` is set (the classic's Team page leans on it to exclude the PI).
 - [ ] Dry run:
       `npm run import:wix -- --dataset production`
-- [ ] Live-impact check (spec section 8, gate G2). Diff the dry run against
-      `dryrun-production.txt` in the wix-lookalike ledger
+- [ ] Live-impact check (spec section 8, gate G2): **drift check** (chosen path). Diff the
+      fresh dry run against `dryrun-production.txt` in the wix-lookalike ledger
       (`.superpowers/sdd/2026-09-22-wix-lookalike/`, vigorous-wu worktree). Any new or changed
-      line means production drifted since `wix-preview` was copied. Review each one.
-- [ ] Keep the import-to-merge window short. `main` (old design) renders production until
-      step 2 lands, so its `/people` briefly shows about 22 new, mostly photo-less alumni and
-      intern profiles and Wix role wording. Run steps 1 and 2 back to back.
-- [ ] Decide on the spec's full report (import into a temp copy, render `main` against it). It
-      needs a spare dataset: the Free plan allows two, `production` and `wix-preview` use both,
-      and `sanity dataset copy` is Enterprise-only. Either delete `wix-preview` first (the
-      previews break, which is fine after the choice) or accept the diff above as the check.
+      line means production drifted since `wix-preview` was copied. Review each one before
+      committing. No rendered "after" of old `main` is needed: the chosen design goes live
+      minutes later, and it was already reviewed on `wix-preview`, which is the same data by
+      construction.[^g2]
+- [ ] Before committing, have the step 2 merge PR open with CI green, so the merge can follow
+      the import immediately. Until it lands, old `main` renders production, and its `/people`
+      shows about 22 new, mostly photo-less alumni and intern profiles.
 - [ ] Backup:
       `npx sanity dataset export production ./backups/production-$(date +%F).tar.gz`
 - [ ] Commit (Brett's yes first):
@@ -45,8 +44,12 @@ Run it from a `redesign/wix` checkout whichever design wins. The import needs a 
 
 ## 2. Code: merge the chosen branch
 
-- [ ] Open a PR from the chosen branch into `main`. CI green. Merge. Vercel deploys production.
-- [ ] Smoke test holsingerlab.vercel.app: every nav route returns 200, `/studio` loads.
+Order: **import (step 1) → merge immediately → post-deploy smoke test.**
+
+- [ ] Merge the PR opened in step 1 as soon as the import commit succeeds. Vercel deploys
+      production.
+- [ ] Post-deploy smoke test on holsingerlab.vercel.app: every nav route returns 200, `/studio`
+      loads, and the imported content (team, news or resources, publications) shows.
 - [ ] Paste `docs/tutorial-copy.md` into the Studio `/tutorial` page (a `page` document).
 - [ ] Trim `HANDOVER.md` to the chosen design: drop section 1 and the other design's
       "only" lines. Small follow-up PR.
@@ -112,3 +115,9 @@ Golden rule: Damian has working access before you remove yourself from anything.
       whether to mention it.
 - [ ] Remove yourself from GitHub, Vercel and Sanity last.
 - [ ] Never run `npm audit fix --force` here. It downgrades the CMS.
+
+[^g2]:
+    Alternative, not taken: the spec's full report (import into a temp copy of production,
+    render old `main` against it). It needs a spare dataset. The Free plan allows two,
+    `production` and `wix-preview` use both, and `sanity dataset copy` is Enterprise-only. So
+    it would mean deleting `wix-preview` first, which takes down both previews.
