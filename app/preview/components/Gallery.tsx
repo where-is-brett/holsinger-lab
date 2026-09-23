@@ -9,12 +9,15 @@ import {
   CMS_VERBATIM_PUB_PLOS_ONE,
   HOME_MAESTRO_FIXTURE,
   HOME_PAGE_FIXTURE,
+  HOME_PAGE_NO_OVERVIEW_FIXTURE,
   HOME_PUBLICATION_COUNT_FIXTURE,
   HOME_PUBLICATIONS_FIXTURE,
   HOME_RESOURCE_FIXTURE,
   HOME_SETTINGS_FIXTURE,
   HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE,
+  HOME_SETTINGS_NAME_ONLY_FIXTURE,
   HOME_SETTINGS_PORTRAIT_FIXTURE,
+  HOME_SITE_COPY_FIXTURE,
   HOME_SUPPORT_PAGE_FIXTURE,
   LINKED_PUB,
   NO_LINK_PUB,
@@ -564,12 +567,13 @@ export default function Gallery() {
             with itself, matching the treatment
             `gallery-typography-budget-inner` uses at 320/375px. */}
         <div className="col-span-full">
-          <SubHeading>(a) labHead set, showLabHeadOnHome true -- PI panel shows, PI excluded from the count</SubHeading>
+          <SubHeading>(a) labHead set, showLabHeadOnHome true -- lab-head card shows, PI excluded from the count</SubHeading>
           <div className="mb-8 border border-rule" data-testid="gallery-home-a">
             <Home
               home={HOME_PAGE_FIXTURE}
               settings={HOME_SETTINGS_FIXTURE}
               siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
               publications={HOME_PUBLICATIONS_FIXTURE}
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
@@ -587,12 +591,13 @@ export default function Gallery() {
               instance's count is instance (a)'s count plus exactly one, the
               PI herself) instead of being silently subtracted while
               appearing nowhere on the page. */}
-          <SubHeading>(b) labHead set, showLabHeadOnHome false -- no PI panel, PI included in the count</SubHeading>
+          <SubHeading>(b) labHead set, showLabHeadOnHome false -- no lab-head card, PI included in the count</SubHeading>
           <div className="mb-8 border border-rule" data-testid="gallery-home-b">
             <Home
               home={HOME_PAGE_FIXTURE}
               settings={HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE}
               siteName="Holsinger Lab"
+              siteCopy={null}
               publications={HOME_PUBLICATIONS_FIXTURE}
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
@@ -614,11 +619,36 @@ export default function Gallery() {
               Covered by this file's own whole-page axe checks (light and
               dark, below) same as every other gallery section. */}
           <SubHeading>(c) labHead set with a portrait -- PiPortrait64&apos;s image branch, decorative alt</SubHeading>
-          <div className="border border-rule" data-testid="gallery-home-c">
+          <div className="mb-8 border border-rule" data-testid="gallery-home-c">
             <Home
               home={HOME_PAGE_FIXTURE}
               settings={HOME_SETTINGS_PORTRAIT_FIXTURE}
               siteName="Holsinger Lab"
+              siteCopy={null}
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              profiles={PEOPLE_PROFILES_FIXTURE}
+              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+
+          {/* Review Focus 1 / 3: production's `siteCopy` singleton is
+              empty today, and `home.overview` is unset here too -- this is
+              the only place the hero statement's whole fallback chain
+              bottoms out at the shared `IA_TAGLINE`. The lab head here has
+              a name only (no photo, no role, no email), so the card's
+              initials fallback renders and neither optional line appears. */}
+          <SubHeading>(d) no siteCopy, no home.overview, labHead name only -- statement falls back to the IA tagline</SubHeading>
+          <div className="border border-rule" data-testid="gallery-home-no-sitecopy">
+            <Home
+              home={HOME_PAGE_NO_OVERVIEW_FIXTURE}
+              settings={HOME_SETTINGS_NAME_ONLY_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={null}
               publications={HOME_PUBLICATIONS_FIXTURE}
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
@@ -658,6 +688,7 @@ export default function Gallery() {
               home={TYPOGRAPHY_BUDGET_HOME_FIXTURE}
               settings={HOME_SETTINGS_FIXTURE}
               siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
               publications={HOME_PUBLICATIONS_FIXTURE}
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}

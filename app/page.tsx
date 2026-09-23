@@ -9,6 +9,7 @@ import {
   homePageQuery,
   homeRecentPublicationsQuery,
   homeResourceQuery,
+  homeSiteCopyQuery,
   maestroProjectQuery,
   profileQuery,
   publicationCountQuery,
@@ -27,6 +28,7 @@ import type {
   PublicationPayload,
   RoleGroupPayload,
   SettingsPayload,
+  SiteCopyPayload,
   SupportPagePayload,
 } from 'types'
 import { fallbackSettings } from 'types'
@@ -47,15 +49,17 @@ const fallbackPage: HomePagePayload = {
 //
 // Task 3 brief: everything the rebuilt Home screen needs, fetched in one
 // `Promise.all` -- the settings/home-page pair `generateMetadata` already
-// depended on, plus the five new Home-only queries (recent publications,
+// depended on, plus the six new Home-only queries (recent publications,
 // the live publication count, the first resource, the `maestro` project,
-// and the `support-our-research` page) and the People data Home's own
-// member count and PI panel need (`currentMemberCount`,
+// the `support-our-research` page, and the shared `siteCopy` singleton
+// behind the hero statement) and the People data Home's own member count
+// and lab-head card need (`currentMemberCount`,
 // `shouldShowLabHeadCard`/`resolveLabHeadHref`, both from homeModel.ts).
 const getData = cache(async () => {
   const [
     { data: settingsData },
     { data: pageData },
+    { data: siteCopyData },
     { data: publicationsData },
     { data: publicationCountData },
     { data: resourceData },
@@ -66,6 +70,7 @@ const getData = cache(async () => {
   ] = await Promise.all([
     sanityFetch({ query: settingsQuery, stega: false }),
     sanityFetch({ query: homePageQuery }),
+    sanityFetch({ query: homeSiteCopyQuery, stega: false }),
     // `stega: false`, matching /publications and /resources: this data
     // feeds row titles, journal refs and identifier hrefs, none of which
     // should carry invisible Presentation-mode stega characters.
@@ -79,6 +84,7 @@ const getData = cache(async () => {
   ])
   const settings = (settingsData as SettingsPayload | null) ?? fallbackSettings
   const page = (pageData as HomePagePayload | null) ?? fallbackPage
+  const siteCopy = (siteCopyData as SiteCopyPayload | null) ?? null
   const publications = (publicationsData as PublicationPayload[] | null) ?? []
   const publicationCount = (publicationCountData as number | null) ?? 0
   const resource = (resourceData as HomeResourcePayload | null) ?? null
@@ -89,6 +95,7 @@ const getData = cache(async () => {
   return {
     settings,
     page,
+    siteCopy,
     publications,
     publicationCount,
     resource,
@@ -119,6 +126,7 @@ export default async function Page() {
   const {
     settings,
     page,
+    siteCopy,
     publications,
     publicationCount,
     resource,
@@ -135,6 +143,7 @@ export default async function Page() {
         home={page}
         settings={settings}
         siteName={siteName}
+        siteCopy={siteCopy}
         publications={publications.map(toPublication)}
         publicationCount={publicationCount}
         resource={resource}

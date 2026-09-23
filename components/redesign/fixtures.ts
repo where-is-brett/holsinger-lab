@@ -7,6 +7,7 @@ import type {
   ResourcePayload,
   RoleGroupPayload,
   SettingsPayload,
+  SiteCopyPayload,
   SupportPagePayload,
 } from 'types'
 import { fallbackSettings } from 'types'
@@ -933,4 +934,51 @@ export const HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE: SettingsPayload = {
   ...fallbackSettings,
   labHead: HOME_LAB_HEAD_FIXTURE,
   showLabHeadOnHome: false,
+}
+
+// Task 2 brief, gallery-home-a: a populated `siteCopy` singleton, so the
+// gallery proves the hero statement's top-of-chain source
+// (`siteCopy.about.body`) independent of live data, where the singleton is
+// empty today (Review Focus 1).
+export const HOME_SITE_COPY_FIXTURE: SiteCopyPayload = {
+  hero: { subheading: 'A fixture subheading, unused while about.body is set.' },
+  about: {
+    body: [
+      portableParagraph(
+        'site-copy-about-p1',
+        'The laboratory studies the molecular mechanisms that drive Alzheimer’s disease and related neurodegenerative disorders.'
+      ),
+      portableParagraph(
+        'site-copy-about-p2',
+        'Our work combines cell biology, biochemistry and animal models to find new therapeutic targets.'
+      ),
+    ],
+    themes: [],
+  },
+}
+
+// Task 2 brief, gallery-home-no-sitecopy: a lab head with a name only --
+// no photo (PiPortrait64's initials fallback), no role line, no mailto.
+// Paired with `siteCopy={null}` and an empty `home.overview` on that
+// instance, this is the one place the whole hero fallback chain bottoms
+// out at the shared `IA_TAGLINE` (Review Focus 1), and the one place the
+// lab-head card's role/email lines are both provably absent rather than
+// merely unset in a fixture that happens not to be asserted against
+// (Review Focus 3).
+export const HOME_LAB_HEAD_NAME_ONLY_FIXTURE: NonNullable<SettingsPayload['labHead']> = {
+  ...HOME_LAB_HEAD_FIXTURE,
+  role: null,
+  email: null,
+}
+
+export const HOME_SETTINGS_NAME_ONLY_FIXTURE: SettingsPayload = {
+  ...fallbackSettings,
+  labHead: HOME_LAB_HEAD_NAME_ONLY_FIXTURE,
+  showLabHeadOnHome: true,
+}
+
+export const HOME_PAGE_NO_OVERVIEW_FIXTURE: HomePagePayload = {
+  ...HOME_PAGE_FIXTURE,
+  _id: 'fixture-home-no-overview',
+  overview: [],
 }

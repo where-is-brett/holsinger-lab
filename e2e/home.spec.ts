@@ -1,5 +1,5 @@
 import { expect, type Locator, test } from '@playwright/test'
-import { currentMemberCount } from 'components/redesign/homeModel'
+import { currentMemberCount, IA_TAGLINE } from 'components/redesign/homeModel'
 import { resolveBranding } from 'lib/branding'
 
 import { e2eClient } from './support/sanity'
@@ -249,14 +249,38 @@ test.describe('/', () => {
     expect(await readMemberCount(homeBlock)).toBe(peopleCount)
   })
 
-  test('the PI panel is present exactly when labHead is set and showLabHeadOnHome !== false', async ({
+  test('the lab-head card is present exactly when labHead is set and showLabHeadOnHome !== false', async ({
     page,
   }) => {
     const settings = await fetchLiveSettings()
     const expected = Boolean(settings.labHeadId) && settings.showLabHeadOnHome !== false
 
     await page.goto('/')
-    await expect(page.getByTestId('home-pi-panel')).toHaveCount(expected ? 1 : 0)
+    await expect(page.getByTestId('home-lab-head-card')).toHaveCount(expected ? 1 : 0)
+  })
+
+  test('hero: statement comes from siteCopy → hero.subheading → home.overview → IA tagline', async ({ page }) => {
+    const siteCopy = await e2eClient.fetch(`*[_type=="siteCopy"][0]{hero{subheading}, about{body}}`)
+    const home = await e2eClient.fetch(`*[_type=="home"][0]{overview}`)
+    await page.goto('/')
+    const text = (await page.getByTestId('home-statement').innerText()).replace(/\s+/g, ' ').trim()
+    expect(text.length).toBeGreaterThan(0)
+    // Recompute the expected chain with the same pure function the screen uses.
+    const { homeStatement } = await import('../components/redesign/homeModel')
+    expect(text).toBe(homeStatement(siteCopy, home?.overview))
+  })
+
+  test('hero: lab-head card shows only the parts that are set, and names the PI once', async ({ page }) => {
+    const s = await e2eClient.fetch(`*[_type=="settings"][0]{showLabHeadOnHome, labHead->{name, role, email, image}}`)
+    await page.goto('/')
+    const card = page.getByTestId('home-lab-head-card')
+    const shown = Boolean(s?.labHead?.name?.trim()) && s?.showLabHeadOnHome !== false
+    await expect(card).toHaveCount(shown ? 1 : 0)
+    if (!shown) return
+    await expect(card.getByTestId('home-lab-head-link')).toContainText(s.labHead.name.trim())
+    if (s.labHead.role?.trim()) await expect(card).toContainText(s.labHead.role.trim())
+    await expect(card.locator('a[href^="mailto:"]')).toHaveCount(s.labHead.email ? 1 : 0)
+    await expect(card.locator('a[href="mailto:undefined"], a[href="mailto:null"]')).toHaveCount(0)
   })
 
   test.describe('no horizontal overflow', () => {
@@ -314,7 +338,7 @@ test.describe('/preview/components gallery: home', () => {
     // and a support page -- so all five `Section` blocks render at once,
     // which live data (no resource, no labHead) never does.
     const a = section.getByTestId('gallery-home-a')
-    await expect(a.getByTestId('home-pi-panel')).toBeVisible()
+    await expect(a.getByTestId('home-lab-head-card')).toBeVisible()
     await expect(a.getByTestId('home-recent-work')).toBeVisible()
     await expect(a.getByTestId('home-resources')).toBeVisible()
     await expect(a.getByTestId('home-maestro')).toBeVisible()
@@ -405,11 +429,31 @@ test.describe('/preview/components gallery: home', () => {
     const a = page.getByTestId('gallery-home-a')
     const b = page.getByTestId('gallery-home-b')
 
-    await expect(b.getByTestId('home-pi-panel')).toHaveCount(0)
+    await expect(b.getByTestId('home-lab-head-card')).toHaveCount(0)
     await expect(b.getByTestId('home-member-count')).toBeVisible()
 
     const countA = await readMemberCount(a.getByTestId('home-member-count'))
     const countB = await readMemberCount(b.getByTestId('home-member-count'))
     expect(countB).toBe(countA + 1)
+  })
+
+  // Review Focus 1: production's siteCopy is empty today -- this is the
+  // only place the "no siteCopy at all" leg of the fallback chain actually
+  // renders (home.overview is also unset on this instance), and the lab
+  // head here has a name only, so the card's optional role/email lines
+  // must both be absent.
+  test('gallery-home-no-sitecopy: statement falls back to the IA tagline, and the card has no role line and no mailto', async ({
+    page,
+  }) => {
+    await page.goto('/preview/components')
+    const instance = page.getByTestId('gallery-home-no-sitecopy')
+
+    const text = (await instance.getByTestId('home-statement').innerText()).replace(/\s+/g, ' ').trim()
+    expect(text).toBe(IA_TAGLINE)
+
+    const card = instance.getByTestId('home-lab-head-card')
+    await expect(card).toBeVisible()
+    await expect(card.locator('a[href^="mailto:"]')).toHaveCount(0)
+    await expect(card.getByTestId('home-lab-head-role')).toHaveCount(0)
   })
 })
