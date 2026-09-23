@@ -997,3 +997,216 @@ round changed markup/tokens/docs/e2e assertions, not test coverage) |
 
 `next-env.d.ts` restored again after this round's build/e2e; `git status` clean apart from the
 tracked files this round touches.
+
+## Revision PR 2 — Home
+
+Written 2026-09-23. Branch `redesign/revision-home`, off `redesign/integration` at `cac3940`.
+Companion to `docs/superpowers/specs/2026-09-23-redesign-revision-design.md`'s "PR 2 — Home"
+section, which this expands on and corrects to match what shipped. Five feature tasks plus this
+docs task, each reviewed and re-reviewed before the next started — see
+`.superpowers/sdd/2026-09-23-redesign-revision-2-home/` for the full task reports and review
+ledger.
+
+### `siteCopy` relaxes the IA's "zero editorial fields on Home" rule
+
+Home now reads the shared `siteCopy` singleton for three things: `about.body` and
+`hero.subheading` (the hero statement) and `about.themes` (the research-card fallback). The IA's
+original rule was that Home carries no field of its own — every block is derived from other
+documents (papers, people, projects). Reading `siteCopy` is a deliberate, narrow exception: it
+reuses a source of truth that already exists for other pages rather than adding a Home-only
+field, and both readers (the statement and the research fallback) already have a non-editorial
+fallback chain under them. **Accepted by the command centre on Brett's behalf, 2026-09-23.**
+
+### Statement fallback chain: `about.body` → `hero.subheading` → `home.overview` → IA tagline
+
+The spec's original chain (`about.body` → `hero.subheading` → IA tagline) skipped straight from
+the CMS to the fixed IA sentence. **Deviation, recorded here and in the spec:** `home.overview`
+was inserted as a third step, between `hero.subheading` and the IA tagline, because production
+has no `siteCopy` document at all today — without this step, shipping PR 2 would have silently
+replaced production's existing, lab-written Home overview text with the generic IA tagline the
+moment this PR merged. `home.overview` is the field the pre-revision Home already showed in this
+position, so the chain now degrades to exactly what production already had, rather than to
+boilerplate, until Brett or Damian creates a `siteCopy` document. `homeStatement(siteCopy,
+home.overview)` (`components/redesign/homeModel.ts`) implements all four steps; each step falls
+through only when the previous one is empty or whitespace-only, never merely unset-vs-empty.
+
+### Lab-head card
+
+One card in the hero (`data-testid="home-lab-head-card"`), replacing the old `home-pi-panel` and
+`TheLabBlock`'s separate PI column. It shows the photo (or `PortraitFrame`'s initials tile when
+there's no photo), the name as a link, the role verbatim and a trimmed email — each part renders
+only when its field is set, so a lab head with just a name shows just a name. `shouldShowLabHeadCard`
+now also requires a non-blank `labHead.name`, moved into the one function so every call site
+(the card's own gate, and the People-page member-count comparison) shares one rule instead of
+each re-deriving it.
+
+**The card's link must never be `display: contents`.** An earlier attempt at this fix round put
+the portrait and name in one `Link` set to `display: contents` (row-spanning the portrait across
+the card) to get role/email to line up under the name. That made the link keyboard-unfocusable
+in Chromium — a real regression, caught immediately by the existing hover/focus e2e, not a test
+bug. The shipped layout reaches the same visual alignment (the card and the `Link` share the
+same `grid-cols-[4rem_minmax(0,1fr)]` column template) without ever detaching the link from
+layout.
+
+**The statement and the card sit side by side only from `xl` (1280px)**, not `lg` as the review's
+first pass suggested — ruled by the coordinator during Task 2's fix round, since `Section`'s
+narrower content column (Revision PR 1) left too little room for both at `lg`.
+
+### The PI named once
+
+The old "The lab" block (a separate PI column plus a members/support strip) is removed entirely.
+The people strip always excludes the lab head by id, independent of whether her hero card is
+showing (`peopleStrip(profiles, roleGroups, labHead?._id ?? null)`) — a deliberately different
+gate from the hero card's own `shouldShowLabHeadCard`, and from the member-count's gate (which
+only excludes her from the count when the card is actually visible). An e2e counts the lab
+head's name inside `<main>` and asserts it appears exactly once, derived from live data via
+`e2eClient` so it holds on any dataset.
+
+### Recent papers
+
+The newest publication renders as a lead row (`data-testid="home-lead-paper"`) above the existing
+`PublicationRow` ledger: a kicker (`{year} · {journal}`), an `<h3>` title linked with `next/link`
+only when the publication has a slug (plain text otherwise — never `href="null"`), authors with
+the PI's token bolded, and an identifier link (DOI/URL), reusing `PublicationRow`'s own
+`IDENTIFIER` class and `data-identifier`/`data-cms-verbatim` contract. The lead carries no top
+rule of its own — `Section`'s own top rule already separates "Recent papers" from the block
+above, and the first `PublicationRow` below the lead already carries a `border-t` — so removing
+the lead's redundant `pt-6`/`border-t` lets the "Recent papers" label align with the lead's own
+first line instead of sitting above an extra rule. The "Latest five, by date" developer-facing
+note is removed, matching Revision PR 1's "copy removed" sweep.
+
+### Author bolding, fixed here (PR 3's item, landed early)
+
+The review's own author-bolding fix (spec's PR 3 section) surfaced through this lead row and was
+fixed in this PR instead, since the defect is in the shared `splitAuthors` (`publicationModel.ts`)
+that `/publications` and the paper page already use — they get the fix for free. `splitAuthors`
+now bolds only the PI's own token: it scans from "Holsinger" to the nearer of a comma, a
+semicolon, or an "and"/"&" conjunction, then — if that boundary was a comma — checks whether the
+segment right after it is initials-only (`INITIALS_ONLY`, e.g. "R.M.D.", "RMD", "R. M. D.") and
+folds it into the same bolded run if so, so the common "Holsinger, R.M.D." comma-initials format
+still bolds with its initials rather than stopping at the comma. Checked against all 40 real
+`publication.author` strings across both datasets (production 19, wix-preview 21) with a
+throwaway read-only script: 0 lossy splits (`pre + pi + post === author` on every record), and no
+record bolds a bare "Holsinger" without its initials.
+
+### Research cards
+
+The "Research" block (`data-testid="home-research"`) builds cards from `researchOrder` projects
+first; only when there are none does it fall back to `siteCopy.about.themes` (title and summary,
+with a leading "- " stripped, matching the raw string shape the Wix import writes). With neither
+source, the block is omitted — there's no empty-state copy for it. A project or theme with a
+blank/unset title is dropped from its list rather than rendering an empty card.
+
+The excerpt is `firstSentence`, a boundary-scan (not a single regex) that skips known
+abbreviations (`Dr`, `Prof`, `Fig`, `et al`, `e.g`, `i.e`, `vs`, ...) and single-capital initials,
+handles a closing curly quote and an opening quote starting the next sentence, and matches
+non-ASCII uppercase (`\p{Lu}` with the `u` flag) so a sentence boundary after a name like
+"Émile" is found correctly. Capped at 200 characters with a trailing "…" when the excerpt itself
+runs long.
+
+**Covers are all-or-none**: if any card in the set has no cover, `researchCards` nulls every
+card's cover rather than showing a mixed grid. **wix-preview's Home therefore shows no covers
+today**, because 2 of its 4 `researchOrder` projects don't have one yet — a content step for
+Damian, not a defect. Cover `alt` is always empty (`alt=""`); the card's own `<h3>` already
+labels it.
+
+Cards link to `/research#slug` for a project with a slug, `/research` for one without. Every
+`Section` that carries an anchor `id` (the per-project sections on `/research`, which these
+links target) gets `scroll-mt-(--nav-height)`, so a jump doesn't land under the sticky header. A
+CI-safe gallery-based anchor check (`e2e/home.spec.ts`, against `/preview/components`, which
+always renders a `Research` fixture regardless of live content) proves this holds even on
+production, which has zero `researchOrder` projects today and would otherwise leave the
+scroll-margin rule with only a dataset-skippable live test covering it.
+
+### People strip
+
+At most **6** people (not the spec's "6–8" and not `peopleStrip`'s own 8-person default) —
+capped by design ruling during Task 5's fix round, after a rendered-height check showed 8
+portraits ran ~950px tall at 375px and outweighed the hero and the papers ledger above it. Each
+entry needs a photo and a non-blank name, in `orderRank` order; alumni are excluded (including a
+profile whose own `roleGroup.title` reads as alumni even when its `_id` isn't in the current
+`roleGroups` list — a stale-list safeguard), and the lab head is always excluded, by id, whether
+or not her hero card is showing.
+
+Layout: 3 columns below `md` (768px), 6 from `md` — moved from an original `lg` (1024px)
+breakpoint in a follow-up fix round, after a manual height check found the 3-column layout held
+for the whole 640–1023px tablet range at 600–816px tall. Each portrait reuses `PersonCard.tsx`'s
+own `PortraitFrame` (not a bespoke component — an earlier attempt at a dedicated
+`PeoplePortrait` duplicated it on the false premise that `PortraitFrame` couldn't take an empty
+`alt`; it can, via `name=""`) wrapped in a `ring-1 ring-rule` div for a shared frame edge.
+
+Link text reads "Meet the lab — N people", where N matches `/people`'s own member count exactly
+(proven by a live e2e cross-check that skips only when the two pages' `showLabHeadOnHome`/
+`showLabHeadOnPeople` flags disagree), plus "Support our research →" when the Support page
+exists. This is the old "The lab" block's member-count and Support link, moved here.
+
+**Measured strip heights**, production dataset, `next start` build:
+
+| Viewport | Columns | Portrait width | Strip height |
+|---|---|---|---|
+| 375px | 3 | 105px | 430px |
+| 768px (`md`) | 6 | 91.5px | 202.7px |
+| 1023px | 6 | 134px | 255.8px |
+| 1440px | 6 | 171.5px | 285.8px |
+
+### MAESTRO as a normal card
+
+MAESTRO is a normal-weight card under the "Outreach" section (no longer an inverted band): the
+CMS title renders verbatim as an `<h3>`, and there is exactly one "Register for MAESTRO talks →"
+link (`data-testid="home-maestro-register"`), removing the old duplicate.
+
+`maestroOverview` drops a block from the CMS overview when it would only echo or re-link the
+register URL: a block whose plain text is empty; a block that's entirely a mark-linked span
+pointing at the register URL (normalised — case, a leading `www.`, trailing punctuation and a
+trailing slash all folded together) *and* whose own visible text is at most 40 characters or
+itself normalises to the URL. That 40-character ceiling exists so a genuinely informative,
+fully-linked sentence (e.g. a real schedule line an editor linked to the register page) isn't
+silently deleted the same way a bare "Register here" link is — dropping only short, purely
+decorative echoes keeps `constraints.md`'s "CMS text prints verbatim" rule intact, because the
+one link the card does keep always carries the same register URL the dropped text pointed at, so
+no information is lost, only a duplicate is.
+
+### Revalidation
+
+The `siteCopy` webhook case is new (`app/api/revalidate/route.ts`, `case 'siteCopy':
+revalidatePath('/')`), covered by a unit test. **Confirmed by the command centre:** the
+production Sanity webhook that calls `/api/revalidate` is unfiltered (no `_type` allowlist),
+with projection `{type, slug}`, so `siteCopy` edits already trigger the endpoint today — no
+manual webhook-config change is needed in sanity.io/manage. `newsItem` and `mediaAppearance`
+(document types the route doesn't special-case) fall through to the route's own default
+"revalidate everything" branch, same as before this PR.
+
+### Content steps for Damian
+
+- **Production needs a `siteCopy` document** ("About the laboratory"), so Home shows the
+  plain-English, two-sentence Alzheimer's statement instead of falling through to the existing
+  `home.overview` text (see the fallback chain above).
+- **The 2 wix-preview `researchOrder` projects without a cover need one** — covers are
+  all-or-none, so today wix-preview's Home research cards show no covers at all.
+- **Portrait photos have mixed crops**: some carry a baked-in white background that glares in
+  dark mode, Dr Johnny Chan's photo is already pre-cropped to a circle (clashing with the
+  strip's square frame), and Alan Yan's has visible white margins. Consistent re-crops (same
+  aspect, no baked-in background) would make the people strip and `/people` look uniform.
+
+### Closed from Revision PR 1's deferred list
+
+Finding 11 (a `Section` label immediately followed by a same-style `MICRO_LABEL` reading as one
+level on mobile) is closed for Home's two instances: "The lab" / "Principal investigator" no
+longer exist as stacked labels (the block they belonged to is removed), and the PI is named
+exactly once rather than twice (in the old tagline area and in "The lab" block). The paper page's
+own instance of finding 11 is still open, deferred to whichever PR next touches
+`PublicationPage.tsx`. The floating "Filter" label (finding 6) remains deferred to PR 3.
+
+### Verification (this PR, final — the docs task, 2026-09-23)
+
+| Check | Result |
+|---|---|
+| `npm run type-check` | clean, no output |
+| `npm run lint` | **0 errors, 4 warnings** (unchanged baseline: 3 `no-img-element` in `Logo.tsx`, 1 import-sort in `e2e/brand-colour.spec.ts`) |
+| `npm run typegen` | **23 queries / 40 schema types**, no diff to `sanity.types.ts` |
+| `npx vitest run` | **42 files, 551 tests, all passed** |
+| `npm run build` | succeeded, all routes generated |
+| `npx playwright test` (full suite, `-c playwright.alt.config.ts`, port 3100) | **295 passed, 4 skipped, 0 failed** |
+
+`next-env.d.ts` restored via `git checkout origin/redesign/integration -- next-env.d.ts` after
+every build; `playwright.alt.config.ts` deleted before committing, never tracked.

@@ -27,13 +27,33 @@ Measured against the live dataset on 2026-09-23:
 ## Screen by screen
 
 ### Home
-**Shows now:** the lab name and tagline, the five most recent papers with links,
-the MAESTRO talks block with its register link, and the lab block with the member
-count and a link to Support.
+**Shows now:** the lab name, then a plain-English statement (currently the site's
+existing overview text, since no `siteCopy` document exists yet — see below), then
+the five most recent papers (the newest as a larger lead row, the next four as a
+list, each with authors and a link), the MAESTRO talks card with its register
+link, and the people strip's "Meet the lab — N people" and "Support our research"
+links.
 
-**Empty:** the resource block, and the principal-investigator panel.
+**Empty:** the resource block, the lab-head card in the hero, and the research
+cards (no project has a "Position on the Research page" set, and there's no
+`siteCopy` to fall back to). The people strip itself is also empty today — no
+profile has a photo yet — though its links still show.
 
-**To fill:** add the chamber resource (below), and set Settings → Lab head.
+**To fill:**
+- **Add a `siteCopy` document** ("About the laboratory") with a two-sentence
+  plain-English statement mentioning Alzheimer's. This replaces the current
+  overview text as Home's statement, and also fills the research-cards fallback
+  if no project has a Research-page position set.
+- **Set Settings → Lab head.** Turns on the hero's lab-head card (photo, name,
+  role and email — each shown only if set) and People's spotlight, and excludes
+  that person from the people strip and the member count.
+- **Set "Position on the Research page"** on the projects to show as cards; each
+  needs a cover image for the covers to show at all (covers are all-or-none — one
+  project without a cover hides every card's cover).
+- **Add photos to profiles.** The people strip shows up to 6 current members who
+  have a photo, in the order set on their profile; without any, only the "Meet
+  the lab"/"Support our research" links show.
+- Add the chamber resource (below).
 
 ### Publications
 **Shows now:** all 19 papers, filters for year and topic, a density toggle, and
@@ -68,22 +88,27 @@ list. Each one then shows its since-year, tags, overview and cover image.
 ### Contact and the other pages
 Unchanged by the redesign, restyled to match.
 
-## The four content steps, in the order that helps most
+## The content steps, in the order that helps most
 
 1. **Set Settings → Lab head.** One click. It turns on the People spotlight and
-   Home's PI panel.
+   Home's lab-head card, and excludes that person from the people strip.
 2. **Run the publication-type backfill.** It reveals the Type filter on
    Publications. Needs a write token:
    `node --env-file=.env.local scripts/backfill-publication-types.ts --commit`
    (run it without `--commit` first to see what it would change).
 3. **Set "Position on the Research page"** on the projects to show, which fills
-   the Research page.
+   the Research page and Home's research cards (add a cover image to each one
+   too — one project without a cover hides every card's cover on Home).
 4. **Add the electrical-stimulation chamber resource** — title, kind
    (hardware), a short summary, how to obtain it, and a link to the 2024
    Biomedicines paper. This fills the Resources page, Home's resource block, and
    the "linked resource" section on that paper's page. **The summary and
    how-to-obtain wording have to come from the lab**; nobody has written them
    yet, and the site will not invent them.
+5. **Add a `siteCopy` document**, with a two-sentence plain-English statement
+   mentioning Alzheimer's. This becomes Home's statement in place of the
+   current overview text, and can also fill the research cards if no project
+   has a Research-page position set.
 
 ## Two things worth saying out loud in the walkthrough
 
