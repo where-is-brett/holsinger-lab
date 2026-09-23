@@ -10,6 +10,31 @@ export function fileBase(pub: CitationInput): string {
 
 const isMac = () => typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform ?? navigator.userAgent)
 
+// `navigator.platform`/`navigator.userAgent` say what OS the device runs,
+// not whether it has a keyboard -- an Android phone can read as neither Mac
+// nor "not Mac" in any way that implies a keyboard exists, and a Mac laptop
+// in tablet mode is still keyboard-equipped. `(pointer: coarse)` asks the
+// right question instead: is the primary input imprecise (touch), as
+// opposed to a mouse/trackpad. A phone or tablet with no keyboard at all
+// matches this regardless of its OS, so "Press ⌘C"/"Press Ctrl+C" (both
+// wrong -- there is no key to press) is never shown there.
+const isCoarsePointer = () => typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
+
+/**
+ * The message shown after the manual-select fallback (`selectHiddenCitationText()`)
+ * runs, when the Clipboard API isn't available or its call failed. Exported
+ * as a pure function, independent of the component's rendering, so its
+ * device-dependent branching can be unit tested without mounting React or
+ * mocking `navigator`/`matchMedia` deeply.
+ */
+export function copyFallbackMessage({ coarsePointer, mac }: { coarsePointer: boolean; mac: boolean }): string {
+  // A coarse (touch) pointer has no keyboard to press a key on -- the
+  // citation text is already selected, so point the reader at their
+  // platform's own copy action instead of an invented keystroke.
+  if (coarsePointer) return 'Citation selected -- use your device’s copy action'
+  return `Press ${mac ? '⌘C' : 'Ctrl+C'}`
+}
+
 /**
  * Copy / BibTeX / RIS actions for a single publication, rendered directly
  * under the citation and DOI lines. Deliberately styled as part of the
@@ -58,7 +83,7 @@ export function CitationActions({ pub }: { pub: CitationInput }) {
       }
     }
     selectHiddenCitationText()
-    showFeedback(`Press ${isMac() ? '⌘C' : 'Ctrl+C'}`)
+    showFeedback(copyFallbackMessage({ coarsePointer: isCoarsePointer(), mac: isMac() }))
   }
 
   function handleBibtex() {

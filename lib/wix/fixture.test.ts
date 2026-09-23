@@ -43,6 +43,13 @@ describe('fixture dataset', () => {
     expect(ofType('profile')).toHaveLength(40)
     expect(ofType('publication')).toHaveLength(17)
     expect(ofType('siteCopy')).toHaveLength(1)
+    // One per fake image asset id (hero, project covers, people portraits) --
+    // without these, `image.asset->metadata.lqip` (the hero's
+    // "heroImageLqip" projection) always resolves to null in fixture mode.
+    expect(ofType('sanity.imageAsset').length).toBeGreaterThan(0)
+    for (const doc of ofType('sanity.imageAsset')) {
+      expect((doc as { metadata: { lqip: string } }).metadata.lqip).toMatch(/^data:image\/png;base64,[A-Za-z0-9+/=]+$/)
+    }
   })
   it('evaluates real queries through wixFetch', async () => {
     vi.stubEnv('WIX_FIXTURE', '1')

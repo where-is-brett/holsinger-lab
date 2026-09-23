@@ -36,19 +36,44 @@ for (const [w, h1, body] of [
 
     if (w === 390) {
       test('mobile hero text clears 4.5:1 contrast against its background', async ({ page }) => {
-        await page.goto('/')
+        // WIX_FIXTURE=1's hero src is a fake asset id that always 404s, and
+        // Next.js clears the blur `background-image` placeholder on ANY
+        // settlement of that request -- success OR error (see
+        // node_modules/next/dist/client/image-component.js's `onError`:
+        // "If the real image fails to load, this will still remove the
+        // placeholder") -- which happens almost immediately against a local
+        // dev server. Waiting for `img.complete` (needed on the non-fixture
+        // path, to know the real photo has actually painted) would race
+        // straight past that and land after the placeholder is already gone,
+        // measuring the section's bare `bg-black` instead of anything real.
+        // So in fixture mode, delay the underlying image request via
+        // page.route and read the still-painted placeholder before that
+        // delayed request can resolve, instead of waiting for `complete`.
+        const isFixture = process.env.WIX_FIXTURE === '1'
+        if (isFixture) {
+          await page.route('**/_next/image**', async (route) => {
+            await new Promise((resolve) => setTimeout(resolve, 5000))
+            await route.continue()
+          })
+        }
+        await page.goto('/', { waitUntil: isFixture ? 'domcontentloaded' : 'load' })
 
-        // `img.complete` becomes true both when the photo finishes loading
-        // AND when it errors out (WIX_FIXTURE=1's hero src points at a fake
-        // asset id and 404s) -- so waiting for it, then checking
-        // `naturalWidth`, tells us which case we're in without a fixed
-        // sleep.
         const heroImg = page.locator('[data-wix-block="hero"] img')
-        await page.waitForFunction(() => {
-          const img = document.querySelector('[data-wix-block="hero"] img')
-          return img instanceof HTMLImageElement && img.complete
-        })
-        const loaded = await heroImg.evaluate((img: HTMLImageElement) => img.naturalWidth > 0)
+        let loaded: boolean
+        if (isFixture) {
+          // The placeholder is rendered server-side (see the LQIP guard
+          // test below), so it's already present in the DOM the instant
+          // `domcontentloaded` fires -- no fixed sleep needed, and none
+          // wanted: any wait here risks racing the 5s delayed request above.
+          await expect(heroImg).toHaveCSS('background-image', /^url\("data:image\/svg\+xml/)
+          loaded = false
+        } else {
+          await page.waitForFunction(() => {
+            const img = document.querySelector('[data-wix-block="hero"] img')
+            return img instanceof HTMLImageElement && img.complete
+          })
+          loaded = await heroImg.evaluate((img: HTMLImageElement) => img.naturalWidth > 0)
+        }
 
         const heading = page.locator('[data-wix="hero-heading"]')
         const subheading = page.locator('[data-wix="hero-subheading"]')
@@ -57,12 +82,13 @@ for (const [w, h1, body] of [
         if (!headingBox || !subheadingBox) throw new Error('hero text did not render a bounding box')
 
         // Hide the glyphs themselves so they don't pollute the sample -- we
-        // want the worst-case pixel of the scrim/photo behind them. When
-        // `loaded` is false (WIX_FIXTURE=1: the hero src is a fake asset id
-        // and 404s), this measures the scrim against the section's own
-        // `bg-black` fallback instead of the real photo -- a real
-        // measurement, just not the one that matters. The scrim was tuned
-        // against the real photo, and that full measurement is the manual
+        // want the worst-case pixel of the scrim/photo (or, in fixture mode,
+        // scrim/placeholder) behind them. When `loaded` is false
+        // (WIX_FIXTURE=1), this measures the scrim against the real hero
+        // asset's LQIP placeholder (data/wix/fixture.ndjson's shared
+        // `sanity.imageAsset.metadata.lqip`, itself extracted from the real
+        // photo -- see build-fixture.ts) rather than the full-resolution
+        // photo itself. That full-photo measurement is the manual
         // wix-preview acceptance run (see the comment above the scrim div in
         // Hero.tsx). Either way this asserts something real rather than
         // silently passing with zero assertions (Phase 4C lesson).
@@ -109,33 +135,48 @@ for (const [w, h1, body] of [
 }
 
 test.describe('hero blur placeholder (LQIP)', () => {
-  test('the hero <img> carries a background-image data URL before the real photo loads', async ({ page }) => {
-    // Delay the optimized image response so the <img> is inspected before
-    // Next removes the placeholder `background-image` on load.
-    await page.route('**/_next/image**', async (route) => {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      await route.continue()
-    })
-    await page.goto('/')
-    const heroImg = page.locator('[data-wix-block="hero"] img')
-    const backgroundImage = await heroImg.evaluate((img) => getComputedStyle(img).backgroundImage)
+  test('the hero <img> carries a background-image data URL, in the server HTML', async ({ request }) => {
+    // Asserted against the raw server-rendered HTML, not a browser page:
+    // Next.js clears the placeholder `background-image` the moment the real
+    // image request settles client-side -- on success (page load) AND on
+    // error alike (see node_modules/next/dist/client/image-component.js's
+    // `onError`: "If the real image fails to load, this will still remove
+    // the placeholder"). WIX_FIXTURE=1's hero src is a fake asset id that
+    // always 404s against the (real) Sanity CDN, and that 404 settles fast
+    // enough locally that any browser-driven check -- even one delaying the
+    // image response via page.route -- ends up racing the network and
+    // losing (measured: `page.goto` with the default `waitUntil: 'load'`
+    // always sees the placeholder already cleared, since `load` itself
+    // waits for the delayed request to settle first). The server HTML has
+    // no such race: it's what Next renders before any client-side load/error
+    // event can fire, so it always carries the placeholder when
+    // `heroImageLqip` resolved.
+    const response = await request.get('/')
+    const html = await response.text()
+    const heroSection = html.match(/<section data-wix-block="hero"[\s\S]*?<\/section>/)?.[0]
+    if (!heroSection) throw new Error('hero section not found in server HTML')
+    const style = heroSection.match(/<img[^>]*\sstyle="([^"]*)"/)?.[1]
 
-    if (backgroundImage === 'none') {
-      // WIX_FIXTURE=1's dataset has no `sanity.imageAsset` document for the
-      // hero image (scripts/wix/build-fixture.ts only fabricates a
-      // reference id, never a matching asset with `metadata.lqip`), so
-      // `heroImageLqip` is always null here and there is no placeholder to
-      // assert against. That's expected in fixture mode specifically --
-      // assert it's the reason, so this doesn't silently pass for some
-      // other reason too (Phase 4C lesson). The real regression guard for
-      // stega-corrupting the LQIP is `cleanLqip`'s unit test in
-      // lib/wix/format.test.ts; this assertion is the one that runs for
-      // real against a live dataset (e.g. the local `npm run start` /
-      // wix-preview acceptance run).
-      expect(process.env.WIX_FIXTURE).toBe('1')
-      return
+    if (!style || !style.includes('background-image')) {
+      // No `heroImageLqip` reached the component at all (e.g. the hero has
+      // no image configured), so there's no placeholder to assert on. Assert
+      // that's genuinely why, so this doesn't silently pass for some other
+      // reason too (Phase 4C lesson). The fixture dataset
+      // (data/wix/fixture.ndjson, via scripts/wix/build-fixture.ts) always
+      // gives the hero a real `sanity.imageAsset` with a real LQIP, so this
+      // branch is not expected to be taken under WIX_FIXTURE=1 -- if it is,
+      // that's itself a sign something upstream regressed.
+      throw new Error(`hero <img> has no background-image in server HTML (style: ${style ?? '<none>'})`)
     }
 
-    expect(backgroundImage).toMatch(/^url\("data:image\/[a-z+.-]+;base64,[A-Za-z0-9+/=]+"\)$/)
+    // Next always wraps a blur placeholder in an inline `data:image/svg+xml`
+    // (a Gaussian-blur filter over the raw LQIP, never a bare base64 raster
+    // background-image directly -- see node_modules/next/dist/shared/lib/
+    // image-blur-svg.js's `getImageBlurSvg`), so assert that shape, then
+    // decode the HTML entities and check the SVG actually wraps a real
+    // base64 raster image (the LQIP itself), not just an empty scaffold.
+    expect(style).toContain('background-image:url(&quot;data:image/svg+xml')
+    const decoded = style.replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&amp;/g, '&')
+    expect(decoded).toMatch(/href='data:image\/[a-z+.-]+;base64,[A-Za-z0-9+/=]+'/)
   })
 })
