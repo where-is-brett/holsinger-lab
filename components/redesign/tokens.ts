@@ -3,16 +3,46 @@
 // token change is a one-file edit.
 
 /**
- * Mono caps label geometry, no colour. Callers add their own text colour --
- * split out because Tag, Button and CopyCitation each need a different,
- * state-dependent colour (muted / link / faint), and LABEL below bakes in
- * one fixed colour that only suits column heads and the footer.
+ * Mono caps label geometry, no colour. Task 3 (spec §1.5, "micro-label
+ * budget"): uppercase mono is for **data column heads only** now -- the
+ * publication ledger's Year/Title/Journal/Link head row (Home.tsx's
+ * `COLUMN_HEAD`, PublicationsIndex.tsx's `COLUMN_HEADS`, both carrying
+ * `data-testid="ledger-head"` so `e2e/label-budget.spec.ts` can exclude
+ * them). Every other consumer that used to share this geometry (Tag,
+ * Button, CopyCitation, FormField, FacetBand's group/density labels, the
+ * site nav/footer/mobile header, People's role-group heading) has moved to
+ * `CONTROL_BASE` (controls) or `MICRO_LABEL` (small sentence-case labels)
+ * below -- see each file's own Task 3 comment for why.
  */
 export const LABEL_BASE = 'font-mono text-label uppercase'
-/** Mono caps label: column heads, footer. Faint by default. */
+/** Mono caps label: the publication ledger's column-head row only. */
 export const LABEL = `${LABEL_BASE} text-text-faint`
 /** Mono metadata: journal refs, counts, identifiers. */
 export const META = 'font-mono text-meta text-text-muted'
+/**
+ * Task 3: the non-uppercase replacement for `LABEL_BASE` on every control
+ * that isn't a data column head -- Tag, Button, CopyCitation, FormField.
+ * Same mono family and roughly the same size as `LABEL_BASE`, but no
+ * `text-transform` and much lighter tracking: these render caller-supplied
+ * sentence-case text (`Copy citation`, `Clear filters`, a CMS topic title),
+ * not shouted mono caps. Colour is still per-branch (not baked in), same
+ * reasoning as `LABEL_BASE`'s own comment.
+ */
+export const CONTROL_BASE = 'font-mono text-[11px] leading-none font-medium tracking-[0.02em]'
+/**
+ * Task 3: the sentence-case Archivo replacement for every uppercase mono
+ * kicker/meta-label that isn't a data column head -- "Principal
+ * investigator", "Current members", "Support", role-group headings, the
+ * lab-head spotlight's role line, "Recent lab alumni", a research project's
+ * kicker line, and the "Canonical link"/"Formatted citation" labels on a
+ * paper page. Same 13px/500/Archivo geometry `Section.tsx`'s own label
+ * uses, so a converted micro-label reads as the same visual weight as a
+ * `Section` label elsewhere on the page. Colour is `text-text-muted` by
+ * default; callers needing the inverse (dark-surface) variant compose their
+ * own `text-text-inverse-muted` instead of this baked-in colour, same
+ * "colour chosen per branch" reasoning as `LABEL_BASE`/`CONTROL_BASE`.
+ */
+export const MICRO_LABEL = 'font-sans text-[0.8125rem] leading-none font-medium text-text-muted'
 /** The system's only border treatment: 1px, square corners, no shadow. */
 export const HAIRLINE = 'border border-rule-strong'
 /**

@@ -73,7 +73,14 @@ export function formatSource(journal: string, ref: string, year: string): string
  * because both queries share `resourcesQuery`'s projection verbatim.
  */
 export function buildResourceMeta(resource: ResourcePayload | HomeResourcePayload): ResourceBlockMeta[] {
-  const meta: ResourceBlockMeta[] = [{ label: 'KIND', value: resource.kind ?? '' }]
+  // Task 3 (spec §1.5): sentence-case labels ("Kind"/"Source"), not
+  // uppercase mono -- `ResourceBlock` renders these as `<dt>`s now, never a
+  // CSS-uppercased span, and a `<dt>`'s own text is exactly what a screen
+  // reader announces, so this must already read correctly on its own. The
+  // *value* (`resource.kind`, the raw lower-case schema enum) stays
+  // untouched here -- that's `Resources.tsx`'s `kindLabel`'s job, for its
+  // own different purpose (a `Section` label), not this function's.
+  const meta: ResourceBlockMeta[] = [{ label: 'Kind', value: resource.kind ?? '' }]
   const pub = resource.publication
   if (pub) {
     const year = pub.date ? pub.date.slice(0, 4) : ''
@@ -86,7 +93,7 @@ export function buildResourceMeta(resource: ResourcePayload | HomeResourcePayloa
     const source = formatSource(pub.journal ?? '', ref, year) || (pub.title ?? '').trim()
     if (source) {
       meta.push({
-        label: 'SOURCE',
+        label: 'Source',
         value: source,
         href: pub.slug ? `/publications/${pub.slug}` : undefined,
       })

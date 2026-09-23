@@ -48,17 +48,26 @@ export interface FacetBandProps {
 // minimum directly, so this stays a real fix rather than a dead class.
 const ROW = 'grid grid-cols-[72px_minmax(0,1fr)] gap-x-5 items-start'
 const ROW_CENTER = 'grid grid-cols-[72px_minmax(0,1fr)] gap-x-5 items-center'
-const ROW_LABEL = 'font-mono text-[10px] leading-[2.6] tracking-[0.14em] text-text-faint uppercase'
+// Task 3 (spec §1.5): sentence-case Archivo, not uppercase mono -- "Year" /
+// "Type" / "Topic" / "Density" are facet-group labels, not data column
+// heads, so the micro-label budget rule applies to them too. `leading-[26px]`
+// (a fixed pixel value, not a unitless multiplier) keeps this row's own
+// vertical rhythm identical to the old `leading-[2.6]` (2.6 x the old 10px
+// mono size = 26px) even though the font-size itself changed -- the wrapped
+// chip rows beside it (ROW's own vertical-clearance math, see the comment
+// below) never had anything to do with this label's own line-height, so
+// this is a like-for-like geometry swap, not a redesign of the row.
+const ROW_LABEL = 'font-sans text-[0.8125rem] leading-[26px] font-medium text-text-faint'
 // Density's label sits in a `items-center` row (no wrapped chip rows to
-// vertically center against), so it doesn't need ROW_LABEL's `leading-[2.6]`
-// -- but `${ROW_LABEL} leading-none` doesn't override that, it collides
-// with it: both set `line-height` on the same element at the same
-// (unprefixed) breakpoint, and Tailwind resolves the tie by generation
-// order in the build's CSS, not by position in the className string, so
-// `leading-[2.6]` was silently still winning. A separate constant with its
-// own single `line-height` declaration sidesteps the collision instead of
+// vertically center against), so it doesn't need ROW_LABEL's own leading --
+// but `${ROW_LABEL} leading-none` doesn't override that, it collides with
+// it: both set `line-height` on the same element at the same (unprefixed)
+// breakpoint, and Tailwind resolves the tie by generation order in the
+// build's CSS, not by position in the className string, so ROW_LABEL's own
+// leading was silently still winning. A separate constant with its own
+// single `line-height` declaration sidesteps the collision instead of
 // relying on override order (same fix shape as ROW/ROW_CENTER above it).
-const DENSITY_ROW_LABEL = 'font-mono text-[10px] leading-none tracking-[0.14em] text-text-faint uppercase'
+const DENSITY_ROW_LABEL = 'font-sans text-[0.8125rem] leading-none font-medium text-text-faint'
 
 // Task 2 (spec §1.3): the "01 / Filter" rail label and its column are gone
 // -- PR 3 replaces this whole band; this task only removes the numbering
@@ -124,11 +133,11 @@ export function FacetBand({ groups = [], density, note }: FacetBandProps) {
           </div>
         </div>
       )}
-      {note && (
-        <div className="font-mono text-[10px] leading-[1.5] tracking-[0.08em] text-text-faint uppercase">
-          {note}
-        </div>
-      )}
+      {/* Task 3: sentence-case Archivo, not uppercase mono -- `note` is a
+          status line (the gallery's own "N of M publications" demo), never
+          the ui_kit's old instructional copy, which is deleted entirely
+          (PublicationsIndex.tsx no longer passes a `note` at all). */}
+      {note && <div className="font-sans text-[13px] leading-[1.5] text-text-faint">{note}</div>}
     </div>
   )
 }

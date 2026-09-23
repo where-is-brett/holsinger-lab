@@ -6,7 +6,7 @@ import type { Publication } from '../publicationModel'
 import { ResourceBlock } from '../ResourceBlock'
 import { Section } from '../Section'
 import { Tag } from '../Tag'
-import { LABEL } from '../tokens'
+import { MICRO_LABEL } from '../tokens'
 
 // The identifier -- DOI or URL -- must print verbatim: never uppercased,
 // never re-typed. Same guard as PublicationRow.tsx's IDENTIFIER constant
@@ -14,19 +14,15 @@ import { LABEL } from '../tokens'
 // reproduced here via Tailwind 4's trailing-bang form.
 const IDENTIFIER = 'text-link normal-case! break-all'
 
-// Generic explanatory line (spec §4.4) -- the ui_kit's "For the 9 papers
-// without one" is mockup text pinned to today's dataset; this holds for any
-// count.
-const CANONICAL_LINK_EXPLANATION =
-  "The DOI is the paper's permanent address. Where a paper has none, the recorded publisher URL stands in."
+// Task 3: the ui_kit's "The DOI is the paper's permanent address. Where a
+// paper has none, the recorded publisher URL stands in." explanation is
+// developer-facing copy explaining the system's own fallback rule, not
+// content for a visitor -- removed outright, not converted.
 
 function PaperBlock({ pub }: { pub: Publication }) {
   return (
     <>
-      <Link
-        href="/publications"
-        className="font-mono text-[11px] leading-none font-medium tracking-[0.1em] text-link uppercase"
-      >
+      <Link href="/publications" className="text-[13px] leading-none font-medium text-link">
         ← All publications
       </Link>
       {/* `break-words`/`hyphens-auto`: see PageTitle.tsx's canonical note.
@@ -125,7 +121,10 @@ function CiteAndAccessBlock({ pub }: { pub: Publication }) {
     >
       {hasLink && (
         <div>
-          <div className={LABEL}>Canonical link — {pub.linkKind}</div>
+          {/* Task 3: sentence-case Archivo, not uppercase mono (was LABEL) --
+              this is a genuine label, not a data column head, so the
+              micro-label budget rule applies. */}
+          <div className={MICRO_LABEL}>Canonical link — {pub.linkKind}</div>
           <a
             href={pub.linkHref}
             data-identifier
@@ -133,13 +132,10 @@ function CiteAndAccessBlock({ pub }: { pub: Publication }) {
           >
             {pub.linkHref}
           </a>
-          <div className="mt-[14px] max-w-[380px] font-mono text-[11px] leading-[1.7] tracking-[0.02em] text-text-faint uppercase">
-            {CANONICAL_LINK_EXPLANATION}
-          </div>
         </div>
       )}
       <div className={hasLink ? 'mt-8 lg:mt-0' : ''}>
-        <div className={LABEL}>Formatted citation</div>
+        <div className={MICRO_LABEL}>Formatted citation</div>
         <div className="mt-[14px] border border-rule px-[22px] py-5" data-testid="pub-citation-box">
           {/* Fix round 1: `pub.cite` (lib/citation.ts's `formatApaCitation`)
               ends with a bare DOI/publisher URL -- a single unbreakable
@@ -156,7 +152,7 @@ function CiteAndAccessBlock({ pub }: { pub: Publication }) {
             {pub.cite}
           </div>
           <div className="mt-4">
-            <CopyCitation cite={pub.cite} copiedLabel="✓ COPIED — CITATION ON CLIPBOARD" />
+            <CopyCitation cite={pub.cite} copiedLabel="✓ Copied — citation on clipboard" />
           </div>
         </div>
       </div>
@@ -172,8 +168,8 @@ function ResourceSectionBlock({ pub }: { pub: Publication }) {
           key={resource.id}
           title={resource.title}
           meta={[
-            { label: 'KIND', value: resource.kind ?? '—' },
-            { label: 'MORE', value: 'Resources', href: '/resources' },
+            { label: 'Kind', value: resource.kind ?? '—' },
+            { label: 'More', value: 'Resources', href: '/resources' },
           ]}
         />
       ))}

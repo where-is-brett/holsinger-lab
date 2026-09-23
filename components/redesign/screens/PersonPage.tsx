@@ -103,12 +103,10 @@ export function PersonPage({ person }: { person: ProfileBySlugPayload }) {
           section's only one. */}
       <Section label="Profile" labelHeading borderTop={false}>
         {/* Copied from PublicationPage.tsx's own back-link styling -- same
-            "← All ..." mono-caps label geometry, linking back to the index
-            route this detail page belongs under. */}
-        <Link
-          href="/people"
-          className="font-mono text-[11px] leading-none font-medium tracking-[0.1em] text-link uppercase"
-        >
+            "← All ..." sentence-case link, linking back to the index route
+            this detail page belongs under. Task 3: no longer uppercase mono
+            -- see PublicationPage.tsx's own identical fix. */}
+        <Link href="/people" className="text-[13px] leading-none font-medium text-link">
           ← All people
         </Link>
         <div className="mt-[26px]">

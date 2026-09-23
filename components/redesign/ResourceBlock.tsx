@@ -25,11 +25,16 @@ export interface ResourceBlockProps {
 // Purely presentational, no state or handlers -- no 'use client'.
 
 // Meta values print VERBATIM -- a DOI is a case-sensitive identifier.
-// Labels are uppercased by style; values are not. `normal-case!` is
-// Tailwind 4's trailing-bang form, emitting `text-transform: none
-// !important` -- reproducing components.css's `.hl-identifier` guard (same
-// technique as PublicationRow.tsx's IDENTIFIER constant) so an ambient
-// uppercasing context can never mangle an identifier.
+// Task 3 (spec §1.5): labels are sentence-case definition terms now, not
+// uppercased by style -- `Kind`/`Source`/`DOI` are real `<dt>`s (a
+// definition-list pairing reads better to assistive tech than an
+// unstructured `<span>` beside a value anyway), each carrying its
+// resourceModel.ts-supplied sentence-case text verbatim, never forced
+// upper-case by CSS. `normal-case!` is Tailwind 4's trailing-bang form,
+// emitting `text-transform: none !important` -- reproducing
+// components.css's `.hl-identifier` guard (same technique as
+// PublicationRow.tsx's IDENTIFIER constant) so an ambient uppercasing
+// context can never mangle an identifier.
 //
 // Fix round 1: a realistic DOI (e.g.
 // "10.1016/j.neurobiolaging.2023.04.012", 38 characters, no internal
@@ -101,20 +106,22 @@ export function ResourceBlock({ title, meta = [], figureLabel, children }: Resou
         >
           {title}
         </h2>
-        <div className="mt-[26px] flex flex-col gap-2.5 font-mono text-[12.5px] leading-[1.5]">
+        <dl className="mt-[26px] flex flex-col gap-2.5 font-mono text-[12.5px] leading-[1.5]">
           {meta.map((m) => (
             <div key={m.label}>
-              <span className="inline-block min-w-16 uppercase text-text-faint">{m.label}</span>
-              {m.href ? (
-                <a className={`text-link ${IDENTIFIER}`} href={m.href} data-identifier>
-                  {m.value}
-                </a>
-              ) : (
-                <span className={IDENTIFIER}>{m.value}</span>
-              )}
+              <dt className="inline-block min-w-16 text-text-faint">{m.label}</dt>
+              <dd className="inline">
+                {m.href ? (
+                  <a className={`text-link ${IDENTIFIER}`} href={m.href} data-identifier>
+                    {m.value}
+                  </a>
+                ) : (
+                  <span className={IDENTIFIER}>{m.value}</span>
+                )}
+              </dd>
             </div>
           ))}
-        </div>
+        </dl>
         {children && <div className="mt-6">{children}</div>}
       </div>
       {figureLabel && (

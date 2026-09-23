@@ -22,7 +22,7 @@ import { PublicationRow } from '../PublicationRow'
 import { ResourceBlock } from '../ResourceBlock'
 import { buildResourceMeta } from '../resourceModel'
 import { Section } from '../Section'
-import { LABEL, PUBLICATION_GRID, STRIPE_BG } from '../tokens'
+import { MICRO_LABEL, PUBLICATION_GRID, STRIPE_BG } from '../tokens'
 
 // Composition follows
 // docs/redesign-experiment/design-system/ui_kits/site/Home.jsx (task brief
@@ -60,11 +60,11 @@ function IdentityBlock({
 
   return (
     <div>
+      {/* Task 3: sentence-case Archivo, not uppercase mono -- a kicker is
+          exactly the label shape the micro-label budget rule targets. */}
       <div className="flex items-center gap-4">
         <span className="h-px w-9 bg-text" />
-        <span className="font-mono text-[12px] leading-none font-medium tracking-[0.2em] uppercase">
-          The University of Sydney
-        </span>
+        <span className={MICRO_LABEL}>The University of Sydney</span>
       </div>
       {/* `break-words`/`hyphens-auto`: see PageTitle.tsx's canonical note.
           `text-balance` (spec §1.2 "keep text-wrap: balance on display
@@ -98,7 +98,7 @@ function IdentityBlock({
         </p>
         {showPiPanel && labHead && (
           <div className="min-w-0 border-l border-rule pl-6" data-testid="home-pi-panel">
-            <div className={LABEL}>Principal investigator</div>
+            <div className={MICRO_LABEL}>Principal investigator</div>
             <Link href={resolveLabHeadHref(labHead)} className="mt-[9px] block text-[21px] font-semibold tracking-[-0.01em] break-words">
               {labHead.name}
             </Link>
@@ -128,7 +128,10 @@ const COLUMN_HEAD = `hidden ${PUBLICATION_GRID} pb-3 font-mono text-[11px] leadi
 function RecentWorkBlock({ publications, count }: { publications: Publication[]; count: number }) {
   return (
     <div data-testid="home-recent-work">
-      <div className={COLUMN_HEAD}>
+      {/* `data-testid="ledger-head"` (Task 3): the one place this block's
+          uppercase mono is still allowed -- e2e/label-budget.spec.ts
+          excludes anything inside it from the micro-label budget. */}
+      <div data-testid="ledger-head" className={COLUMN_HEAD}>
         <span>Year</span>
         <span>Title</span>
         <span>Journal</span>
@@ -146,10 +149,9 @@ function RecentWorkBlock({ publications, count }: { publications: Publication[];
           <PublicationRow pub={pub} variant="home" href={pub.href} />
         </div>
       ))}
-      <Link
-        href="/publications"
-        className="mt-5 inline-block font-mono text-[12px] font-medium tracking-[0.1em] text-link uppercase"
-      >
+      {/* Task 3: sentence case, not uppercase mono -- links to another
+          route become sentence case per the brief's own example. */}
+      <Link href="/publications" className="mt-5 inline-block text-[14px] font-medium text-link">
         All {count} publication{count === 1 ? '' : 's'} →
       </Link>
     </div>
@@ -167,10 +169,7 @@ function ResourcesBlock({ resource }: { resource: HomeResourcePayload }) {
   return (
     <div data-testid="home-resources">
       <ResourceBlock title={resource.title ?? ''} meta={buildResourceMeta(resource)} />
-      <Link
-        href="/resources"
-        className="mt-5 inline-block font-mono text-[12px] font-medium tracking-[0.1em] text-link uppercase"
-      >
+      <Link href="/resources" className="mt-5 inline-block text-[14px] font-medium text-link">
         All resources →
       </Link>
     </div>
@@ -320,7 +319,7 @@ function TheLabBlock({
           existing "min-w-0 column" shape below, not a redesign of it. */}
       {showPiPanel && labHead && (
         <div className="min-w-0">
-          <div className={`${LABEL} mb-2.5`}>Principal investigator</div>
+          <div className={`${MICRO_LABEL} mb-2.5`}>Principal investigator</div>
           <Link
             href={resolveLabHeadHref(labHead)}
             className="group flex min-w-0 items-center gap-5"
@@ -349,20 +348,16 @@ function TheLabBlock({
           `showPeople` as sufficient on its own either. */}
       {showMembersLine && (
         <div className="min-w-0" data-testid="home-member-count">
-          <div className={`${LABEL} mb-2.5`}>Current members</div>
+          <div className={`${MICRO_LABEL} mb-2.5`}>Current members</div>
           <Link href="/people" className="text-[24px] font-semibold">
-            {memberCount}{' '}
-            <span className="font-mono text-[12px] font-normal text-text-faint">— PEOPLE →</span>
+            {memberCount} <span className="text-[13px] font-normal text-text-faint">— People →</span>
           </Link>
         </div>
       )}
       {supportPage && (
         <div className="min-w-0" data-testid="home-support">
-          <div className={`${LABEL} mb-3`}>Support</div>
-          <Link
-            href={`/${supportPage.slug}`}
-            className="font-mono text-[13px] leading-[1.5] font-medium tracking-[0.06em] text-link uppercase"
-          >
+          <div className={`${MICRO_LABEL} mb-3`}>Support</div>
+          <Link href={`/${supportPage.slug}`} className="text-[14px] font-medium text-link">
             Support our research →
           </Link>
         </div>

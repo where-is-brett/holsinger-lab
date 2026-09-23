@@ -22,8 +22,13 @@ import type { NavId, NavItem } from './navModel'
 const BAND =
   'flex h-(--nav-height) items-stretch justify-between box-border border-b border-rule px-(--spacing-gutter)'
 
-const WORDMARK =
-  'flex min-w-0 items-center font-mono text-[9.5px] leading-none font-medium tracking-[0.1em] uppercase'
+// Task 3: sentence-case Archivo, not uppercase mono -- matches SiteNav.tsx's
+// own identical fix (this is the mobile equivalent of the same wordmark).
+// Not exercised by e2e/label-budget.spec.ts's 1440px check (this band is
+// `md:hidden`), but the brief names "THE UNIVERSITY OF SYDNEY" explicitly
+// as a kicker to convert, and this file renders that same string too (the
+// open sheet's own footer line, below).
+const WORDMARK = 'flex min-w-0 items-center font-sans text-[12px] leading-none font-medium'
 
 // `w-16`: a FIXED width, not just the source's ~43px min-width floor. Open
 // and closed render different labels ("Menu" vs "Close ✕"), and a
@@ -34,11 +39,15 @@ const WORDMARK =
 // which both clears the 44px tap-target floor and is the geometry decision
 // 3 depends on. The band's full height already clears the target
 // vertically (`items-stretch`).
+// Task 3: sentence-case Archivo, not uppercase mono ("Menu"/"Close ✕" is a
+// button label, not a data column head).
 const TOGGLE =
-  'flex w-16 shrink-0 items-center justify-center px-1 font-mono text-[9.5px] leading-none font-medium tracking-[0.14em] uppercase text-link'
+  'flex w-16 shrink-0 items-center justify-center px-1 font-sans text-[12px] leading-none font-medium text-link'
 
+// Task 3: sentence-case Archivo, not uppercase mono -- these are the sheet's
+// own nav links, same fix as SiteNav.tsx's desktop `NAV`.
 const SHEET_ROW =
-  'flex min-h-14 items-center gap-4 box-border border-b border-rule px-(--spacing-gutter) font-mono text-[14px] leading-none font-medium tracking-[0.12em] uppercase'
+  'flex min-h-14 items-center gap-4 box-border border-b border-rule px-(--spacing-gutter) font-sans text-[15px] leading-none font-medium'
 
 const SHEET_NUMBER = 'w-[18px] font-mono text-[10px] leading-none text-text-faint'
 
@@ -118,7 +127,9 @@ export function MobileNavRows({ items, current, onNavigate, label = 'Primary' }:
           )
         })}
       </nav>
-      <div className="px-(--spacing-gutter) pt-4 pb-5 font-mono text-[8.5px] leading-[1.5] tracking-[0.1em] uppercase text-text-faint">
+      {/* Task 3: sentence-case Archivo, not uppercase mono -- matches
+          Home.tsx's IdentityBlock kicker, the brief's own named example. */}
+      <div className="px-(--spacing-gutter) pt-4 pb-5 font-sans text-[13px] leading-[1.5] text-text-faint">
         The University of Sydney
       </div>
     </>

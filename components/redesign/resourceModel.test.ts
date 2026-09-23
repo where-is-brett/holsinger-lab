@@ -60,11 +60,11 @@ function resource(overrides: Partial<ResourcePayload> = {}): ResourcePayload {
 
 describe('buildResourceMeta', () => {
   it('always includes KIND', () => {
-    expect(buildResourceMeta(resource({ kind: 'protocol' }))).toEqual([{ label: 'KIND', value: 'protocol' }])
+    expect(buildResourceMeta(resource({ kind: 'protocol' }))).toEqual([{ label: 'Kind', value: 'protocol' }])
   })
 
   it('KIND value is "" when kind is unset', () => {
-    expect(buildResourceMeta(resource({ kind: null }))).toEqual([{ label: 'KIND', value: '' }])
+    expect(buildResourceMeta(resource({ kind: null }))).toEqual([{ label: 'Kind', value: '' }])
   })
 
   it('adds a SOURCE row linking to the publication page when journal/ref/year resolve', () => {
@@ -85,7 +85,7 @@ describe('buildResourceMeta', () => {
       })
     )
     expect(meta).toContainEqual({
-      label: 'SOURCE',
+      label: 'Source',
       value: 'Journal of Neuroscience Methods 401(2) · 110-118 · 2024',
       href: '/publications/a-paper',
     })
@@ -108,7 +108,7 @@ describe('buildResourceMeta', () => {
         },
       })
     )
-    expect(meta).toContainEqual({ label: 'SOURCE', value: 'A titled fallback', href: undefined })
+    expect(meta).toContainEqual({ label: 'Source', value: 'A titled fallback', href: undefined })
   })
 
   it('drops the SOURCE row entirely when there is neither a formatted source nor a title', () => {
@@ -128,7 +128,7 @@ describe('buildResourceMeta', () => {
         },
       })
     )
-    expect(meta.find((m) => m.label === 'SOURCE')).toBeUndefined()
+    expect(meta.find((m) => m.label === 'Source')).toBeUndefined()
   })
 
   it('adds a DOI row when the linked publication has a doi', () => {
@@ -156,6 +156,6 @@ describe('buildResourceMeta', () => {
   })
 
   it('adds no SOURCE/DOI/URL rows when there is no linked publication', () => {
-    expect(buildResourceMeta(resource({ publication: null }))).toEqual([{ label: 'KIND', value: 'hardware' }])
+    expect(buildResourceMeta(resource({ publication: null }))).toEqual([{ label: 'Kind', value: 'hardware' }])
   })
 })

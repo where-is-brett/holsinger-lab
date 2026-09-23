@@ -87,9 +87,9 @@ test.describe('/publications/[slug]', () => {
 
     const citationText = (await page.getByTestId('pub-cite-text').textContent())!.trim()
 
-    const copyButton = page.getByRole('button', { name: 'COPY CITATION' })
+    const copyButton = page.getByRole('button', { name: 'Copy citation' })
     await copyButton.click()
-    await expect(copyButton).toHaveText(/COPIED/)
+    await expect(copyButton).toHaveText(/Copied/)
 
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
     expect(clipboardText).toBe(citationText)

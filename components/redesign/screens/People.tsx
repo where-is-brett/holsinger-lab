@@ -18,7 +18,7 @@ import {
 import { PersonCard, PortraitFrame } from '../PersonCard'
 import { PortableBody } from '../PortableBody'
 import { Section } from '../Section'
-import { LABEL, LABEL_BASE } from '../tokens'
+import { MICRO_LABEL } from '../tokens'
 
 // Composition follows docs/redesign-experiment/design-system/ui_kits/site/People.jsx
 // (task brief §"Visual authority"). Blocks render as an ordered list of
@@ -50,12 +50,13 @@ import { LABEL, LABEL_BASE } from '../tokens'
 const SPOTLIGHT_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr] md:items-start md:gap-x-11 md:gap-y-0'
 const SPOTLIGHT_PORTRAIT = 'max-w-[220px] md:max-w-none'
 
-// Mono caps, faint -- ui_kit's "Head of laboratory · Principal investigator"
-// label geometry, reusing the LABEL token rather than hand-rolling the same
-// font-mono/uppercase/tracking triad again.
-const SPOTLIGHT_LABEL_CLASS = LABEL
+// Task 3: sentence-case Archivo, reusing the MICRO_LABEL token rather than
+// hand-rolling the same font-sans/13px/500 triad again -- was mono-caps
+// uppercase (LABEL) before, which the micro-label budget rule now forbids
+// for anything that isn't a data column head.
+const SPOTLIGHT_LABEL_CLASS = MICRO_LABEL
 
-const PROFILE_LINK_LABEL = 'mt-5 inline-block font-mono text-[12px] font-medium tracking-[0.1em] text-link uppercase'
+const PROFILE_LINK_LABEL = 'mt-5 inline-block text-[14px] font-medium text-link'
 // No `normal-case!`: nothing on the ancestor chain sets `text-transform:
 // uppercase` for this element (unlike PublicationPage.tsx's IDENTIFIER,
 // which guards against `.hl-identifier`'s global `text-transform: none
@@ -64,20 +65,26 @@ const PROFILE_LINK_LABEL = 'mt-5 inline-block font-mono text-[12px] font-medium 
 const EMAIL_LINK = 'mt-5 block font-mono text-[12.5px] text-link'
 
 const SECTION_HEADING_ROW = 'mb-5 flex items-baseline gap-3.5 border-t border-rule pt-[18px]'
-// `hyphens-auto` is inert here (an all-caps mono label -- LABEL_BASE
-// uppercases it -- and Blink hyphenates neither all-caps nor capitalised
-// words), kept only for consistency with every other heading;
-// `break-words` is what actually keeps a long roleGroup `title` from
-// overflowing (see PageTitle.tsx's canonical note).
-const SECTION_TITLE = `${LABEL_BASE} text-text-faint break-words hyphens-auto`
-const SECTION_COUNT = `${LABEL_BASE} text-link`
+// Task 3: sentence-case Archivo, not uppercase mono (was LABEL_BASE) -- a
+// role-group title is real CMS content (constraints.md's "CMS text prints
+// verbatim"), so forcing it into caps was always presentational overreach,
+// and it also blew the micro-label budget on /people whenever more than a
+// couple of groups render. `break-words`/`hyphens-auto` stay: a long
+// `title` can still overflow this column (see PageTitle.tsx's canonical
+// note); neither is inert now that the text isn't forced upper-case.
+const SECTION_TITLE = `${MICRO_LABEL} break-words hyphens-auto`
+// The member-count badge next to it: same mono digits as before, just no
+// `text-transform` -- a bare number renders identically either way, but the
+// computed style still reported 'uppercase' (LABEL_BASE), which counted
+// toward the budget regardless of there being no letters to transform.
+const SECTION_COUNT = 'font-mono text-[11px] leading-none font-medium text-link'
 
 // 2 columns on phone, 3 from `md`, 6 from `lg` (spec §5 point 3). Gap matches
 // the ui_kit's "28px 24px" (row, column): `gap-y-7`/`gap-x-6` are Tailwind's
 // exact 28px/24px steps, so no arbitrary value is needed.
 const CARD_GRID = 'grid grid-cols-2 gap-x-6 gap-y-7 md:grid-cols-3 lg:grid-cols-6'
 
-const ALUMNI_LABEL = LABEL
+const ALUMNI_LABEL = MICRO_LABEL
 const ALUMNI_PARAGRAPH = 'max-w-[820px] text-pretty text-body text-text-muted'
 // `underline` (not just `text-link`): axe's link-in-text-block rule flags an
 // inline link that relies on colour alone against its surrounding muted

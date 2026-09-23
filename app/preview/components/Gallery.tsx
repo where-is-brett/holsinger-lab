@@ -46,7 +46,7 @@ import { Section } from 'components/redesign/Section'
 import { SiteFooter } from 'components/redesign/SiteFooter'
 import { SiteNav } from 'components/redesign/SiteNav'
 import { Tag } from 'components/redesign/Tag'
-import { LABEL, META } from 'components/redesign/tokens'
+import { META, MICRO_LABEL } from 'components/redesign/tokens'
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 
@@ -170,7 +170,7 @@ export default function Gallery() {
   return (
     <main className={`${BLEED_GRID} gap-y-16 py-10`}>
       <div className="col-start-2 px-6">
-        <p className={LABEL}>Preview -- not indexed</p>
+        <p className={MICRO_LABEL}>Preview -- not indexed</p>
         <h1 className="text-title text-[28px] leading-none break-words hyphens-auto">Redesign component gallery</h1>
         <p className="mt-3 max-w-prose text-[14px] text-text-muted">
           Every primitive from Tasks 4-8, rendered against real lab content so Playwright and axe

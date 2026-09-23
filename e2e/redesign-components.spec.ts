@@ -77,8 +77,8 @@ test.describe('redesign component gallery', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     const button = page.getByRole('button', { name: /copy citation/i }).first()
     await button.click()
-    await expect(page.getByText('✓ COPIED')).toBeVisible()
-    await expect(page.getByText('✓ COPIED')).toBeHidden({ timeout: 4000 })
+    await expect(page.getByText('✓ Copied')).toBeVisible()
+    await expect(page.getByText('✓ Copied')).toBeHidden({ timeout: 4000 })
   })
 
   test('facet chips filter and clear, with live counts through countBy/applyFacets', async ({

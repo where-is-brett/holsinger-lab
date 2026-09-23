@@ -311,10 +311,13 @@ export function PublicationRow({
           <strong className="font-semibold text-text">{pub.authorsPI}</strong>
           {pub.authorsPost}
         </div>
+        {/* Task 3: sentence-case Archivo, not uppercase mono -- `tagLine`
+            joins the publication's own `type` and CMS `topics` (constraints.md:
+            "CMS text prints verbatim"), and this renders once per row, so
+            keeping it upper-case blew the micro-label budget on
+            /publications by itself (one violation per visible row). */}
         {tagLine(pub) !== '' && (
-          <div className="font-mono text-[10px] leading-[1.6] font-medium tracking-[0.1em] text-text-faint uppercase">
-            {tagLine(pub)}
-          </div>
+          <div className="text-[13px] leading-[1.6] font-medium text-text-faint">{tagLine(pub)}</div>
         )}
       </div>
       <div className={`hidden xl:block ${META}`}>

@@ -16,9 +16,13 @@ import { LABEL, PUBLICATION_GRID } from '../tokens'
 // facet is actually carrying, same pattern as the ui_kit's TYPES constant.
 const TYPE_ORDER = ['Article', 'Review', 'Case report']
 
-// The ui_kit's note text, verbatim (spec §4.3 point 2 / Task 4 brief).
-const NOTE =
-  'CLICK TO FILTER · CLICK AGAIN TO CLEAR — AN UNTAGGED PAPER STILL APPEARS UNDER YEAR AND TYPE · COMPACT TIGHTENS EACH ROW TO ONE SCANNING LINE'
+// Task 3: the ui_kit's instructional note ("CLICK TO FILTER · CLICK AGAIN
+// TO CLEAR -- AN UNTAGGED PAPER STILL APPEARS UNDER YEAR AND TYPE · COMPACT
+// TIGHTENS EACH ROW TO ONE SCANNING LINE") is developer-facing copy
+// explaining the system to whoever's looking, not content for a visitor --
+// removed outright, not converted. `FacetBand`'s `note` prop stays (the
+// gallery still uses it for its own "N of M publications" demo line); this
+// screen just no longer passes one.
 
 // Column heads (Year · Title · Authors · Tags · Journal · Link · Cite),
 // from `xl` only (moved from `lg` in Task 2 fix round 1 -- see
@@ -132,7 +136,6 @@ export function PublicationsIndex({ publications }: { publications: Publication[
             value: density,
             onChange: (d) => setDensity(d as 'COMFORTABLE' | 'COMPACT'),
           }}
-          note={NOTE}
         />
       </Section>
       {/* Task 2: `labelHeading` true -- the record list has no heading of
@@ -144,7 +147,10 @@ export function PublicationsIndex({ publications }: { publications: Publication[
           wrapper (an exact duplicate of `Section`'s own default padding,
           just with a different top value) is gone. */}
       <Section label="Record" labelHeading borderTop={false} padTop="32px">
-        <div className={`${COLUMN_HEADS} ${LABEL}`}>
+        {/* `data-testid="ledger-head"` (Task 3): the one place this route's
+            uppercase mono is still allowed -- e2e/label-budget.spec.ts
+            excludes anything inside it from the micro-label budget. */}
+        <div data-testid="ledger-head" className={`${COLUMN_HEADS} ${LABEL}`}>
           <span>Year</span>
           <span>Title · Authors · Tags</span>
           <span>Journal</span>

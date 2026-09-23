@@ -156,9 +156,9 @@ test.describe('publications index', () => {
 
     const firstRow = page.locator('[data-testid="pub-row"]').first()
     const title = (await firstRow.getByTestId('pub-title').textContent())!.trim()
-    const copyButton = firstRow.getByRole('button', { name: 'COPY CITATION' })
+    const copyButton = firstRow.getByRole('button', { name: 'Copy citation' })
     await copyButton.click()
-    await expect(copyButton).toHaveText(/COPIED/)
+    await expect(copyButton).toHaveText(/Copied/)
 
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
     expect(clipboardText).toContain(title)

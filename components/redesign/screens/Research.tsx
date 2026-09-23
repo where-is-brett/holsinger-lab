@@ -5,6 +5,7 @@ import { PageTitle } from '../PageTitle'
 import { PortableBody } from '../PortableBody'
 import type { ResearchProjectView } from '../researchModel'
 import { Section } from '../Section'
+import { MICRO_LABEL } from '../tokens'
 
 // Composition follows
 // docs/redesign-experiment/design-system/ui_kits/site/Research.jsx (task
@@ -51,8 +52,14 @@ const NARRATIVE_GRID_SOLO = 'grid grid-cols-1'
 function ProjectKicker({ project }: { project: ResearchProjectView }) {
   if (!project.kicker && !project.tagLine) return null
 
+  // Task 3: sentence-case Archivo, not uppercase mono -- `kicker` mixes a
+  // derived "Since <year>" string with the project's own CMS `category`
+  // (researchModel.ts's `researchKicker`), so forcing it upper-case both
+  // blew the micro-label budget (once per project on /research and the
+  // gallery) and, for the `category` half, ran against constraints.md's
+  // "CMS text prints verbatim" rule.
   return (
-    <div className="font-mono text-[11px] leading-[1.6] font-medium tracking-[0.1em] text-text-faint uppercase">
+    <div className={MICRO_LABEL}>
       {project.kicker}
       {project.kicker && project.tagLine ? ' — ' : ''}
       {project.tagLine && <span className="text-link">{project.tagLine}</span>}
