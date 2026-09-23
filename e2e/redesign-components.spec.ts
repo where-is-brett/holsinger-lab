@@ -568,6 +568,37 @@ test.describe('redesign component gallery', () => {
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
   })
 
+  // Regression guard for the gallery's static "Open sheet" MobileBand
+  // fixture (Gallery.tsx): its `aria-controls` pointed at the default
+  // `mobile-menu-panel` id, which only exists in the DOM while the live
+  // `MobileHeader` instance above it is open (its DialogPanel is unmounted
+  // while closed) -- axe's `aria-valid-attr-value` rule flags any
+  // `aria-controls` whose id doesn't resolve. 375px, not the axe tests'
+  // default viewport, because this fixture is `md:hidden` -- only visible
+  // (and only in the accessibility tree) below `md`.
+  test('every aria-controls value on the gallery resolves to a real element id', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    // `expect.poll`, not a one-shot read: the live `MobileHeader` instance
+    // above the static fixture renders its `DialogPanel` (the default
+    // `mobile-menu-panel` id) through a Headless UI `<Portal>`, which is
+    // client-mounted -- confirmed absent from the raw server-rendered HTML
+    // entirely, appearing only once hydration has mounted it. A one-shot
+    // check right after `setViewportSize` can race that mount and find the
+    // id genuinely missing for a moment, even though it always settles in.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const missing: string[] = []
+          for (const el of document.querySelectorAll('[aria-controls]')) {
+            const id = el.getAttribute('aria-controls')!
+            if (!document.getElementById(id)) missing.push(id)
+          }
+          return missing
+        })
+      )
+      .toEqual([])
+  })
+
   // Fix round 4: the two checks above run at first paint, where every
   // year/type/topic chip is OFF -- no ON facet chip with a count exists on
   // the page yet, so FacetChip's ON-state colour (`text-text-inverse-muted`)

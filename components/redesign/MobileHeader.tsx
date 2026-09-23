@@ -70,9 +70,27 @@ export interface MobileBandProps {
    * component controls) -- `data-autofocus` has no effect there.
    */
   autoFocus?: boolean
+  /**
+   * The id of the element this band's toggle controls, via `aria-controls`.
+   * Defaults to `mobile-menu-panel`, `MobileHeader`'s own `DialogPanel` id
+   * below. A caller rendering `MobileBand` against some other panel (the
+   * gallery's static, non-Dialog "open sheet" fixture) must pass that
+   * panel's own id instead -- otherwise `aria-controls` points at nothing
+   * (or, worse, at a *different* page's real panel that happens to share
+   * the default id), which axe's `aria-valid-attr-value` rule flags.
+   */
+  panelId?: string
 }
 
-export function MobileBand({ wordmark, logo, open, onToggle, onHome, autoFocus }: MobileBandProps) {
+export function MobileBand({
+  wordmark,
+  logo,
+  open,
+  onToggle,
+  onHome,
+  autoFocus,
+  panelId = 'mobile-menu-panel',
+}: MobileBandProps) {
   return (
     <div className={BAND}>
       <Link
@@ -88,7 +106,7 @@ export function MobileBand({ wordmark, logo, open, onToggle, onHome, autoFocus }
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        aria-controls="mobile-menu-panel"
+        aria-controls={panelId}
         data-autofocus={autoFocus || undefined}
         className={TOGGLE}
       >
