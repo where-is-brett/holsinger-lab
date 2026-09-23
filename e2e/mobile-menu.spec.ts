@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 
+import { createTabStepper } from './support/focus'
+
 // The trigger ("Menu") lives in the outer sticky band. The panel draws its
 // own copy of the same band, with the toggle reading "Close" there instead
 // (spec decision 3) -- so once the dialog is open, every assertion targets
@@ -22,23 +24,21 @@ test.describe('mobile menu accessibility contract', () => {
     await expect(close).toHaveAttribute('aria-expanded', 'true')
   })
 
-  test('is reachable and operable via keyboard alone', async ({ page }, testInfo) => {
-    // WebKit's default Tab policy only cycles text fields (Safari's
-    // long-standing "Full Keyboard Access" convention, off unless the user
-    // opts in), so a plain Tab never reaches the Menu button there --
-    // measured: from a fresh load, five consecutive plain Tab presses
-    // never focus it under mobile-safari. Option-Tab ("highlight each
-    // item on a webpage") is WebKit's own equivalent and does reach it
-    // (Playwright's `Alt` maps to macOS Option); Chromium reaches the
-    // button with a plain Tab and doesn't need the modifier.
-    const TAB = testInfo.project.name === 'mobile-safari' ? 'Alt+Tab' : 'Tab'
-
+  test('is reachable and operable via keyboard alone', async ({ page }) => {
     await page.goto('/')
 
+    // WebKit's default Tab policy only cycles text fields (Safari's
+    // long-standing "Full Keyboard Access" convention, off unless the
+    // user opts in), so a plain Tab doesn't always reach the Menu button.
+    // `createTabStepper` (e2e/support/focus.ts) picks Tab or Alt+Tab
+    // (Option-Tab, WebKit's own equivalent) at runtime rather than
+    // assuming one from the project name or OS -- proven only on macOS,
+    // and CI runs mobile-safari on Linux.
+    const pressTabStep = createTabStepper(page)
     const trigger = page.getByRole('button', { name: 'Menu', exact: true })
     for (let i = 0; i < 5; i++) {
       if (await trigger.evaluate((el) => el === document.activeElement)) break
-      await page.keyboard.press(TAB)
+      await pressTabStep()
     }
     await expect(trigger).toBeFocused()
 
@@ -81,11 +81,7 @@ test.describe('mobile menu accessibility contract', () => {
     await expect(trigger).toBeFocused()
   })
 
-  test('Tab stays trapped inside the open panel', async ({ page }, testInfo) => {
-    // WebKit needs Option-Tab (Alt+Tab), not a plain Tab, to move focus at
-    // all -- see the previous test's comment for the measured reason.
-    const TAB = testInfo.project.name === 'mobile-safari' ? 'Alt+Tab' : 'Tab'
-
+  test('Tab stays trapped inside the open panel', async ({ page }) => {
     await page.goto('/')
 
     await page.getByRole('button', { name: 'Menu', exact: true }).click()
@@ -96,9 +92,11 @@ test.describe('mobile menu accessibility contract', () => {
     // Tab one more time than there are links in the panel; focus should
     // still be inside the dialog, never having escaped to page content
     // behind it (e.g. the outer wordmark link, which sits outside the
-    // dialog while it is open).
+    // dialog while it is open). `createTabStepper` picks Tab or Alt+Tab
+    // at runtime -- see the previous test's comment.
+    const pressTabStep = createTabStepper(page)
     for (let i = 0; i < linkCount + 1; i++) {
-      await page.keyboard.press(TAB)
+      await pressTabStep()
     }
     const activeElementIsInDialog = await page.evaluate(() => {
       const dialog = document.querySelector('[role="dialog"]')
