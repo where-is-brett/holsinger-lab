@@ -162,20 +162,22 @@ export const PUBLICATION_PAGE_FIXTURE: Publication = {
 
 // Task 1 (Fonts and type scale) fix round 2: the "title" level's budget
 // word, capitalised ("Pathophysiology" -- the same word, and the same
-// mechanism, that overflowed the real DOI paper this task proved live;
-// see PaperBlock's own comment in PublicationPage.tsx), paired with a
-// long lowercase word ("neuroinflammation") so e2e/typography.spec.ts's
-// raw-split probe can prove one hyphenates and the other legitimately
-// can't, neither overflowing. Consumed only by the full-width "typography
-// budget" gallery section in Gallery.tsx -- a separate fixture from
-// `PUBLICATION_PAGE_FIXTURE` above (whose title is prose, not built to
-// carry these specific words).
+// mechanism, that overflowed the real DOI paper this task proved live; see
+// PaperBlock's own comment in PublicationPage.tsx). Fix round 3 (re-review
+// New Breakage 2): every OTHER word is short enough to fit whole at 320px
+// without hyphenation -- CI's Linux Chromium ships no hyphenation
+// dictionaries, so a fixture that only fit because macOS Chromium
+// hyphenates a long lowercase word (the previous "neuroinflammation") would
+// go red on CI while staying green locally. Consumed only by the
+// full-width "typography budget" gallery section in Gallery.tsx -- a
+// separate fixture from `PUBLICATION_PAGE_FIXTURE` above (whose title is
+// prose, not built to carry this specific word).
 export const TYPOGRAPHY_BUDGET_PUBLICATION_FIXTURE: Publication = {
   ...PUBLICATION_PAGE_FIXTURE,
   id: 'typography-budget-publication',
   href: '/publications/typography-budget-publication',
-  title: 'Pathophysiology of neuroinflammation',
-  cite: 'Fixture author (2026). Pathophysiology of neuroinflammation. Journal of Fixtures 1(1) · 1.',
+  title: 'Pathophysiology of ageing',
+  cite: 'Fixture author (2026). Pathophysiology of ageing. Journal of Fixtures 1(1) · 1.',
 }
 
 export const SAMPLE_PEOPLE: {
@@ -756,14 +758,16 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
 // fixture-count assertions) consumed only by the dedicated full-width
 // "typography budget" gallery section in Gallery.tsx, which renders the
 // real `Research` component at the page's actual gutter width rather than
-// this file's narrower demo frame. The title pairs the "heading" level's
+// this file's narrower demo frame. The title carries the "heading" level's
 // budget word, capitalised ("Neurodegenerative", which Blink never
-// hyphenates), with a long lowercase word ("pathophysiology", which does)
-// so e2e/typography.spec.ts's per-element raw-split probe exercises both
-// outcomes on one heading.
+// hyphenates). Fix round 3 (re-review New Breakage 2): its companion word
+// is short ("repair"), not a long lowercase word relying on hyphenation --
+// CI's Linux Chromium has no hyphenation dictionaries, so a fixture that
+// only fit locally because macOS Chromium hyphenates a long word would go
+// red on CI.
 export const TYPOGRAPHY_BUDGET_RESEARCH_PROJECT_FIXTURE: ResearchProjectView = researchProjectView({
   id: 'typography-budget-research',
-  title: 'Neurodegenerative pathophysiology',
+  title: 'Neurodegenerative repair',
   body: [
     overviewParagraph(
       'typography-budget-research-p1',
@@ -838,16 +842,16 @@ export const HOME_PAGE_FIXTURE: HomePagePayload = {
 // Task 1 (Fonts and type scale) fix round 2: the "display" level's budget
 // word, capitalised ("Neuroscience", already the lab name's own word --
 // see HOME_PAGE_FIXTURE above, which is why this couldn't stay a plain
-// literal for the gallery to typo-check against), paired with a long
-// lowercase word ("neurodegeneration") so e2e/typography.spec.ts's
-// raw-split probe can prove Blink hyphenates the lowercase word and
-// legitimately can't hyphenate the capitalised one, both without
-// overflowing. Consumed only by the full-width "typography budget" gallery
-// section in Gallery.tsx.
+// literal for the gallery to typo-check against). Fix round 3 (re-review
+// New Breakage 2): its companions are short words ("and", "ageing"), not a
+// long lowercase word relying on hyphenation -- CI's Linux Chromium ships
+// no hyphenation dictionaries, so a fixture that only fit locally because
+// macOS Chromium hyphenates a long word would go red on CI. Consumed only
+// by the full-width "typography budget" gallery section in Gallery.tsx.
 export const TYPOGRAPHY_BUDGET_HOME_FIXTURE: HomePagePayload = {
   ...HOME_PAGE_FIXTURE,
   _id: 'typography-budget-home',
-  title: 'Neuroscience and neurodegeneration',
+  title: 'Neuroscience and ageing',
 }
 
 // Real routes carry `href` (Home's Recent work rows link to the paper

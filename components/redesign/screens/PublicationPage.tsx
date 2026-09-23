@@ -44,7 +44,10 @@ function PaperBlock({ pub }: { pub: Publication }) {
           unchanged, and this is still a documented exception to the
           generic `--text-title` token (a smaller ceiling for these longer
           scientific titles), just a fluid one now instead of fixed. */}
-      <h1 className="mt-[26px] max-w-[1060px] text-[clamp(1.75rem,4.5vw,2.3125rem)] leading-[1.22] font-semibold tracking-[-0.012em] text-pretty break-words hyphens-auto">
+      <h1
+        data-testid="paper-title"
+        className="mt-[26px] max-w-[1060px] text-[clamp(1.75rem,4.5vw,2.3125rem)] leading-[1.22] font-semibold tracking-[-0.012em] text-pretty break-words hyphens-auto"
+      >
         {pub.title}
       </h1>
       <p className="mt-5 max-w-[900px] text-[16px] leading-[1.6] text-text-muted">

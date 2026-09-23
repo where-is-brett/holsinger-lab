@@ -72,7 +72,10 @@ function IdentityBlock({
           headings") replaces `text-pretty` here -- this is the one
           display-role heading, and the display floor is sized so its
           budget word ("Neuroscience") fits at 320px (task-1-report.md). */}
-      <Heading className="mt-[30px] max-w-[1180px] text-balance break-words hyphens-auto text-display font-semibold">
+      <Heading
+        data-testid="home-identity-title"
+        className="mt-[30px] max-w-[1180px] text-balance break-words hyphens-auto text-display font-semibold"
+      >
         {title}
       </Heading>
       {/* Two-column grid ([tagline | PI panel]) from `lg`, stacked below --

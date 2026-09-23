@@ -76,7 +76,12 @@ export function PageTitle({ title, meta, accentMeta = false, headingLevel = 'h1'
             overflows. `hyphens`/`overflow-wrap` are different CSS
             properties, so this is additive, not a same-property
             collision. */}
-        <Heading className="m-0 min-w-0 text-title leading-none break-words hyphens-auto">{title}</Heading>
+        <Heading
+          data-testid="page-title-heading"
+          className="m-0 min-w-0 text-title leading-none break-words hyphens-auto"
+        >
+          {title}
+        </Heading>
         {meta && (
           /* PageTitle.jsx specifies 400 12px/1 mono at 0.1em tracking in
              --sem-text-faint (or --sem-link when accentMeta) -- this

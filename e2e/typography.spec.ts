@@ -108,24 +108,63 @@ test.describe('no h1/h2 word overflows its own line', () => {
 // split can only ever happen via `overflow-wrap`, so proving the heading
 // survives without it is exactly proving no raw split occurred.
 //
+// Fix round 2 (re-review), two corrections:
+//
+// 1. **`hyphens: manual` joins `overflow-wrap: normal` in the toggle.** CI
+//    runs Playwright's Chromium on `ubuntu-latest`, which ships no
+//    hyphenation dictionaries (Chrome normally gets them via component
+//    updater, which this Chromium build never runs) -- so `hyphens: auto`
+//    may do nothing there even for a lowercase word a developer's own
+//    machine hyphenates happily. Forcing `hyphens: manual` here makes the
+//    check assert exactly the ruling it's meant to prove -- "the budget
+//    word fits on one line" -- independent of whether the runner's browser
+//    can hyphenate anything at all, not "the budget word's line survives
+//    losing the raw-split fallback, assuming hyphenation still covers
+//    every other word in the title."
+// 2. **Each fixture's non-budget words are short enough to fit at 320px on
+//    their own** (fixtures.ts), rather than a long lowercase word chosen to
+//    demonstrate hyphenation -- with (1) above, a long word that only fit
+//    locally via hyphenation would now correctly go red on a runner with no
+//    dictionaries, which is exactly the platform-dependence this fix
+//    removes, not a case this suite still needs to prove.
+//
 // Scoped to the gallery's dedicated "typography budget" section
-// (Gallery.tsx), not every heading on the page: those fixtures render the
-// real Home/PageTitle/PublicationPage/Research components at the page's
-// actual gutter width (a `-mx-6` full-width wrapper, cancelling out
-// `<main>`'s own padding -- see that section's comment), and each one's
-// title pairs its level's budget word, capitalised, with a long lowercase
-// word, so this exercises both the "can't hyphenate" and "does hyphenate"
-// outcomes deliberately. Other gallery sections keep their narrower demo
-// frames on purpose (isolated component previews, not page simulations),
-// so they're intentionally out of scope for this stronger check -- they're
-// still covered by (a) above.
+// (Gallery.tsx) by an explicit selector per fixture, not the first `h1`/`h2`
+// inside its container: `typography-budget-heading` wraps a full `Research`
+// render, whose own `PageTitle` ("Research") is a heading that sits before
+// the project title this fixture exists to test -- `querySelector('h1,
+// h2')` silently measured that wrong heading instead (re-review New
+// Breakage 1). Other gallery sections keep their narrower demo frames on
+// purpose (isolated component previews, not page simulations), so they're
+// intentionally out of scope for this stronger check -- they're still
+// covered by (a) above.
 const BUDGET_TOLERANCE_PX = 1
 
 const BUDGET_FIXTURES = [
-  { testId: 'typography-budget-display', level: 'display', word: 'Neuroscience' },
-  { testId: 'typography-budget-title', level: 'title (page title)', word: 'Pathophysiology' },
-  { testId: 'typography-budget-paper-title', level: 'title (paper title)', word: 'Pathophysiology' },
-  { testId: 'typography-budget-heading', level: 'heading', word: 'Neurodegenerative' },
+  {
+    testId: 'typography-budget-display',
+    level: 'display',
+    word: 'Neuroscience',
+    selector: '[data-testid="home-identity-title"]',
+  },
+  {
+    testId: 'typography-budget-title',
+    level: 'title (page title)',
+    word: 'Pathophysiology',
+    selector: '[data-testid="page-title-heading"]',
+  },
+  {
+    testId: 'typography-budget-paper-title',
+    level: 'title (paper title)',
+    word: 'Pathophysiology',
+    selector: '[data-testid="paper-title"]',
+  },
+  {
+    testId: 'typography-budget-heading',
+    level: 'heading',
+    word: 'Neurodegenerative',
+    selector: '[data-testid="research-project-title"]',
+  },
 ]
 
 interface RawSplitResult {
@@ -138,20 +177,28 @@ interface RawSplitResult {
 
 async function checkNoRawSplit(
   page: import('@playwright/test').Page,
-  testId: string
+  containerTestId: string,
+  headingSelector: string
 ): Promise<{ found: boolean; overflowPx: number }> {
-  return page.evaluate((id: string) => {
-    const container = document.querySelector(`[data-testid="${id}"]`)
-    const heading = container?.querySelector('h1, h2')
-    if (!heading) return { found: false, overflowPx: 0 }
+  return page.evaluate(
+    ({ containerTestId, headingSelector }) => {
+      const container = document.querySelector(`[data-testid="${containerTestId}"]`)
+      const heading = container?.querySelector(headingSelector)
+      if (!heading) return { found: false, overflowPx: 0 }
 
-    const original = (heading as HTMLElement).style.overflowWrap
-    ;(heading as HTMLElement).style.overflowWrap = 'normal'
-    const overflowPx = heading.scrollWidth - heading.clientWidth
-    ;(heading as HTMLElement).style.overflowWrap = original
+      const el = heading as HTMLElement
+      const originalWrap = el.style.overflowWrap
+      const originalHyphens = el.style.hyphens
+      el.style.overflowWrap = 'normal'
+      el.style.hyphens = 'manual'
+      const overflowPx = heading.scrollWidth - heading.clientWidth
+      el.style.overflowWrap = originalWrap
+      el.style.hyphens = originalHyphens
 
-    return { found: true, overflowPx }
-  }, testId)
+      return { found: true, overflowPx }
+    },
+    { containerTestId, headingSelector }
+  )
 }
 
 test.describe('gallery typography budget: each level fits its budget word without a raw split', () => {
@@ -162,7 +209,7 @@ test.describe('gallery typography budget: each level fits its budget word withou
 
       const violations: RawSplitResult[] = []
       for (const fixture of BUDGET_FIXTURES) {
-        const result = await checkNoRawSplit(page, fixture.testId)
+        const result = await checkNoRawSplit(page, fixture.testId, fixture.selector)
         if (!result.found || result.overflowPx > BUDGET_TOLERANCE_PX) {
           violations.push({ ...fixture, ...result })
         }

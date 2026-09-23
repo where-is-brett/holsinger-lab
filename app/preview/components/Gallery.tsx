@@ -572,11 +572,17 @@ export default function Gallery() {
           `-mx-6` cancels `<main>`'s padding so everything inside renders
           at the page's real gutter width, matching production exactly --
           this is what "at full page width" means below, not a wider demo
-          box. Each fixture pairs its level's budget word, capitalised
-          (Blink never hyphenates it), with a long lowercase word (which
-          does) -- see each fixture's own comment in fixtures.ts.
-          e2e/typography.spec.ts's raw-split probe (fix round 2) is scoped
-          to exactly these four elements. */}
+          box. Each fixture carries its level's budget word, capitalised
+          (Blink never hyphenates it) -- see each fixture's own comment in
+          fixtures.ts. Fix round 3 (re-review New Breakage 2): every other
+          word in each title is short enough to fit at 320px on its own,
+          without relying on hyphenation CI's Linux Chromium doesn't have.
+          e2e/typography.spec.ts's raw-split probe (fix round 2) targets
+          each fixture's own heading by an explicit `data-testid`, not the
+          first `h1`/`h2` inside its container -- `typography-budget-heading`
+          wraps a full `Research` render, whose own `PageTitle` ("Research")
+          is a *different* heading that sits before the project title this
+          fixture actually exists to test (re-review New Breakage 1). */}
       <section data-testid="gallery-typography-budget">
         <Heading>Typography budget (full page width)</Heading>
         <div className="-mx-6" data-testid="gallery-typography-budget-inner">
@@ -597,7 +603,7 @@ export default function Gallery() {
           </div>
           <div className="mt-8 border border-rule" data-testid="typography-budget-title">
             <PageTitle
-              title="Pathophysiology and immunohistochemistry"
+              title="Pathophysiology of the brain"
               meta="Typography budget fixture"
               headingLevel="h2"
             />
