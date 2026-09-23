@@ -15,6 +15,7 @@ import {
   HOME_RESOURCE_FIXTURE,
   HOME_SETTINGS_FIXTURE,
   HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE,
+  HOME_SETTINGS_LONG_ROLE_FIXTURE,
   HOME_SETTINGS_NAME_ONLY_FIXTURE,
   HOME_SETTINGS_PORTRAIT_FIXTURE,
   HOME_SITE_COPY_FIXTURE,
@@ -555,8 +556,8 @@ export default function Gallery() {
         <Heading className="col-start-2 px-6">Home screen</Heading>
         {/* Production today has no resource, an unset labHead, and no
             `support-our-research` page (spec §2) -- this is the only place
-            Home's populated PI panel, Resources block, and Support link
-            actually render. The `maestro` project *does* exist live, but
+            Home's populated lab-head card, Resources block, and Support
+            link actually render. The `maestro` project *does* exist live, but
             the fixture's own copy proves the block independent of
             live-data drift.
 
@@ -585,11 +586,10 @@ export default function Gallery() {
             />
           </div>
 
-          {/* Fix round 1, IMPORTANT 1: the exact shape of the bug this fixes
-              -- labHead set, but showLabHeadOnHome false, so the PI panel is
-              hidden. The PI must now count as an ordinary member (this
-              instance's count is instance (a)'s count plus exactly one, the
-              PI herself) instead of being silently subtracted while
+          {/* labHead set, but showLabHeadOnHome false, so the lab-head
+              card is hidden. The PI counts as an ordinary member (this
+              instance's count is instance (a)'s count plus exactly one,
+              the PI herself) instead of being silently subtracted while
               appearing nowhere on the page. */}
           <SubHeading>(b) labHead set, showLabHeadOnHome false -- no lab-head card, PI included in the count</SubHeading>
           <div className="mb-8 border border-rule" data-testid="gallery-home-b">
@@ -636,17 +636,37 @@ export default function Gallery() {
             />
           </div>
 
-          {/* Review Focus 1 / 3: production's `siteCopy` singleton is
-              empty today, and `home.overview` is unset here too -- this is
-              the only place the hero statement's whole fallback chain
-              bottoms out at the shared `IA_TAGLINE`. The lab head here has
-              a name only (no photo, no role, no email), so the card's
-              initials fallback renders and neither optional line appears. */}
+          {/* Production's `siteCopy` singleton is empty today, and
+              `home.overview` is unset here too -- this is the only place
+              the hero statement's whole fallback chain bottoms out at the
+              shared `IA_TAGLINE`. The lab head here has a name only (no
+              photo, no role, no email), so the card's initials fallback
+              renders and neither optional line appears. */}
           <SubHeading>(d) no siteCopy, no home.overview, labHead name only -- statement falls back to the IA tagline</SubHeading>
-          <div className="border border-rule" data-testid="gallery-home-no-sitecopy">
+          <div className="mb-8 border border-rule" data-testid="gallery-home-no-sitecopy">
             <Home
               home={HOME_PAGE_NO_OVERVIEW_FIXTURE}
               settings={HOME_SETTINGS_NAME_ONLY_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={null}
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              profiles={PEOPLE_PROFILES_FIXTURE}
+              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+
+          {/* An unbroken role long enough to overflow a narrow viewport if
+              the role line has no `break-words` of its own. */}
+          <SubHeading>(e) labHead with a long unbroken role -- the role line must not overflow at 320px</SubHeading>
+          <div className="border border-rule" data-testid="gallery-home-long-role">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_LONG_ROLE_FIXTURE}
               siteName="Holsinger Lab"
               siteCopy={null}
               publications={HOME_PUBLICATIONS_FIXTURE}

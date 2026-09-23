@@ -14,8 +14,6 @@ import {
   splitLead,
 } from './homeModel'
 
-// Moved unchanged from components/pages/home/shouldShowLabHeadCard.test.ts
-// (Task 3 brief) -- same assertions, only the import path changed.
 describe('shouldShowLabHeadCard', () => {
   it('is false when labHead is unset', () => {
     expect(
@@ -23,16 +21,26 @@ describe('shouldShowLabHeadCard', () => {
     ).toBe(false)
   })
 
-  it('is true when labHead is set and showLabHeadOnHome is unset', () => {
-    expect(shouldShowLabHeadCard({ labHead: { _id: 'p1' } })).toBe(true)
+  it('is true when labHead has a name and showLabHeadOnHome is unset', () => {
+    expect(shouldShowLabHeadCard({ labHead: { _id: 'p1', name: 'Dr Test' } })).toBe(true)
     expect(
-      shouldShowLabHeadCard({ labHead: { _id: 'p1' }, showLabHeadOnHome: null })
+      shouldShowLabHeadCard({ labHead: { _id: 'p1', name: 'Dr Test' }, showLabHeadOnHome: null })
     ).toBe(true)
   })
 
-  it('is false when showLabHeadOnHome is explicitly false, even with labHead set', () => {
+  it('is false when showLabHeadOnHome is explicitly false, even with a named labHead', () => {
     expect(
-      shouldShowLabHeadCard({ labHead: { _id: 'p1' }, showLabHeadOnHome: false })
+      shouldShowLabHeadCard({ labHead: { _id: 'p1', name: 'Dr Test' }, showLabHeadOnHome: false })
+    ).toBe(false)
+  })
+
+  // Home.tsx used to add its own `labHead?.name?.trim()` check on top of
+  // this function at every call site; folding it in here means every
+  // caller (and every e2e mirror) shares one rule instead of repeating it.
+  it('is false when labHead.name is missing or blank', () => {
+    expect(shouldShowLabHeadCard({ labHead: { _id: 'p1' }, showLabHeadOnHome: true })).toBe(false)
+    expect(
+      shouldShowLabHeadCard({ labHead: { _id: 'p1', name: '   ' }, showLabHeadOnHome: true })
     ).toBe(false)
   })
 })

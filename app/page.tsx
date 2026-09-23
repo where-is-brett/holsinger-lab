@@ -47,7 +47,7 @@ const fallbackPage: HomePagePayload = {
 // `SanityQueries` lookup can't match and `data` resolves to `unknown`. Falling
 // back to explicit casts here, per this task's documented fallback.
 //
-// Task 3 brief: everything the rebuilt Home screen needs, fetched in one
+// Everything the rebuilt Home screen needs, fetched in one
 // `Promise.all` -- the settings/home-page pair `generateMetadata` already
 // depended on, plus the six new Home-only queries (recent publications,
 // the live publication count, the first resource, the `maestro` project,

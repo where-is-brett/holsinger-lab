@@ -5,8 +5,8 @@ import { isAlumniGroup } from './peopleModel'
 import type { ResearchProjectCover, ResearchProjectView } from './researchModel'
 
 /**
- * The IA's fixed fallback tagline (spec, agreed-ia.md). Shared by
- * `homeStatement` below and Home's own fallback tagline (`Home.tsx`).
+ * The IA's fixed fallback tagline (spec, agreed-ia.md) -- the last step of
+ * `homeStatement`'s fallback chain below.
  */
 export const IA_TAGLINE =
   'Advancing the Understanding and Treatment of Neurological Disorders through Molecular Research'
@@ -15,17 +15,16 @@ export const IA_TAGLINE =
  * `showLabHeadOnHome` unset (null/undefined) means on -- the live
  * `settings` singleton predates this field, so every already-published
  * document has no key for it, and `!== false` is what keeps that document
- * showing the card rather than silently hiding it after deploy.
- *
- * Moved unchanged from `components/pages/home/shouldShowLabHeadCard.ts`
- * (Task 3 brief) -- same function, same tests, only the import path
- * changed at call sites.
+ * showing the card rather than silently hiding it after deploy. A
+ * `labHead` with a missing or blank `name` also counts as "don't show" --
+ * the card has nothing to link or label without one, so callers don't
+ * each need their own `labHead?.name?.trim()` check alongside this one.
  */
 export function shouldShowLabHeadCard(settings: {
-  labHead?: { _id: string } | null
+  labHead?: { _id: string; name?: string | null } | null
   showLabHeadOnHome?: boolean | null
 }): boolean {
-  return Boolean(settings.labHead) && settings.showLabHeadOnHome !== false
+  return Boolean(settings.labHead?.name?.trim()) && settings.showLabHeadOnHome !== false
 }
 
 /**

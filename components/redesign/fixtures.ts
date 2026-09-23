@@ -921,25 +921,21 @@ export const HOME_SUPPORT_PAGE_FIXTURE: SupportPagePayload = {
   slug: 'support-our-research',
 }
 
-// Fix round 1, IMPORTANT 1: a second settings fixture, `labHead` set but
-// `showLabHeadOnHome: false` -- the exact shape of the bug this fix
-// addresses (Home hid the PI panel *and* still subtracted the PI from the
-// member count, an internal inconsistency within the same render). With
-// the PI panel genuinely hidden, `currentMemberCount` must now count the
-// PI as an ordinary member (`homeModel.ts`'s `currentMemberCount` is only
-// ever told to exclude the id Home decided *not* to show a panel for) --
-// `e2e/home.spec.ts`'s own gallery assertions prove the two `gallery-home*`
-// instances' counts differ by exactly one, the PI herself.
+// A second settings fixture, `labHead` set but `showLabHeadOnHome: false`
+// -- with the lab-head card genuinely hidden, `currentMemberCount` counts
+// the PI as an ordinary member (`homeModel.ts`'s `currentMemberCount` is
+// only ever told to exclude the id Home decided *not* to show a card for)
+// -- `e2e/home.spec.ts`'s own gallery assertions prove the two
+// `gallery-home*` instances' counts differ by exactly one, the PI herself.
 export const HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE: SettingsPayload = {
   ...fallbackSettings,
   labHead: HOME_LAB_HEAD_FIXTURE,
   showLabHeadOnHome: false,
 }
 
-// Task 2 brief, gallery-home-a: a populated `siteCopy` singleton, so the
-// gallery proves the hero statement's top-of-chain source
-// (`siteCopy.about.body`) independent of live data, where the singleton is
-// empty today (Review Focus 1).
+// gallery-home-a: a populated `siteCopy` singleton, so the gallery proves
+// the hero statement's top-of-chain source (`siteCopy.about.body`)
+// independent of live data, where the singleton is empty today.
 export const HOME_SITE_COPY_FIXTURE: SiteCopyPayload = {
   hero: { subheading: 'A fixture subheading, unused while about.body is set.' },
   about: {
@@ -957,14 +953,13 @@ export const HOME_SITE_COPY_FIXTURE: SiteCopyPayload = {
   },
 }
 
-// Task 2 brief, gallery-home-no-sitecopy: a lab head with a name only --
-// no photo (PiPortrait64's initials fallback), no role line, no mailto.
-// Paired with `siteCopy={null}` and an empty `home.overview` on that
-// instance, this is the one place the whole hero fallback chain bottoms
-// out at the shared `IA_TAGLINE` (Review Focus 1), and the one place the
-// lab-head card's role/email lines are both provably absent rather than
-// merely unset in a fixture that happens not to be asserted against
-// (Review Focus 3).
+// gallery-home-no-sitecopy: a lab head with a name only -- no photo
+// (PiPortrait64's initials fallback), no role line, no mailto. Paired with
+// `siteCopy={null}` and an empty `home.overview` on that instance, this is
+// the one place the whole hero fallback chain bottoms out at the shared
+// `IA_TAGLINE`, and the one place the lab-head card's role/email lines are
+// both provably absent rather than merely unset in a fixture that happens
+// not to be asserted against.
 export const HOME_LAB_HEAD_NAME_ONLY_FIXTURE: NonNullable<SettingsPayload['labHead']> = {
   ...HOME_LAB_HEAD_FIXTURE,
   role: null,
@@ -981,4 +976,18 @@ export const HOME_PAGE_NO_OVERVIEW_FIXTURE: HomePagePayload = {
   ...HOME_PAGE_FIXTURE,
   _id: 'fixture-home-no-overview',
   overview: [],
+}
+
+// gallery-home-long-role: an unbroken role long enough to overflow the
+// lab-head card's 20rem column at 320px if the role line has no
+// `break-words` of its own.
+export const HOME_LAB_HEAD_LONG_ROLE_FIXTURE: NonNullable<SettingsPayload['labHead']> = {
+  ...HOME_LAB_HEAD_FIXTURE,
+  role: 'ProfessorOfMolecularNeuroscienceAndDementiaResearch',
+}
+
+export const HOME_SETTINGS_LONG_ROLE_FIXTURE: SettingsPayload = {
+  ...fallbackSettings,
+  labHead: HOME_LAB_HEAD_LONG_ROLE_FIXTURE,
+  showLabHeadOnHome: true,
 }

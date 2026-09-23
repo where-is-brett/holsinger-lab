@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { shouldShowLabHeadCard } from 'components/redesign/homeModel'
 
 import { e2eClient } from './support/sanity'
 
@@ -141,7 +142,10 @@ test('the home page renders, and the lab-head card matches settings.labHead / sh
       showLabHeadOnHome
     }`
   )
-  const showCard = Boolean(settings?.labHeadId) && settings?.showLabHeadOnHome !== false
+  const showCard = shouldShowLabHeadCard({
+    labHead: settings?.labHeadId ? { _id: settings.labHeadId, name: settings.labHeadName } : null,
+    showLabHeadOnHome: settings?.showLabHeadOnHome,
+  })
 
   await page.goto('/')
 

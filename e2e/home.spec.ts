@@ -1,5 +1,5 @@
 import { expect, type Locator, test } from '@playwright/test'
-import { currentMemberCount, IA_TAGLINE } from 'components/redesign/homeModel'
+import { currentMemberCount, homeStatement, IA_TAGLINE, shouldShowLabHeadCard } from 'components/redesign/homeModel'
 import { resolveBranding } from 'lib/branding'
 
 import { e2eClient } from './support/sanity'
@@ -47,6 +47,7 @@ async function fetchLiveMaestro(): Promise<LiveMaestro> {
 
 type LiveSettings = {
   labHeadId: string | null
+  labHeadName: string | null
   showLabHeadOnHome: boolean | null
   showLabHeadOnPeople: boolean | null
   showPublications: boolean | null
@@ -57,6 +58,7 @@ async function fetchLiveSettings(): Promise<LiveSettings> {
   const settings = await e2eClient.fetch<LiveSettings | null>(
     `*[_type == "settings"][0]{
       "labHeadId": labHead->_id,
+      "labHeadName": labHead->name,
       showLabHeadOnHome,
       showLabHeadOnPeople,
       showPublications,
@@ -66,12 +68,24 @@ async function fetchLiveSettings(): Promise<LiveSettings> {
   return (
     settings ?? {
       labHeadId: null,
+      labHeadName: null,
       showLabHeadOnHome: null,
       showLabHeadOnPeople: null,
       showPublications: null,
       showPeople: null,
     }
   )
+}
+
+// The single shared gate (`shouldShowLabHeadCard`, homeModel.ts), fed from
+// the live `labHead->{_id, name}` reference -- every e2e mirror of "is the
+// lab-head card showing" goes through this one call instead of
+// re-deriving the `labHeadId`-only rule.
+function liveShowsLabHeadCard(settings: LiveSettings): boolean {
+  return shouldShowLabHeadCard({
+    labHead: settings.labHeadId ? { _id: settings.labHeadId, name: settings.labHeadName } : null,
+    showLabHeadOnHome: settings.showLabHeadOnHome,
+  })
 }
 
 type LiveProfile = { _id: string; roleGroupId: string | null }
@@ -191,22 +205,22 @@ test.describe('/', () => {
     await expect(page.getByTestId('maestro-title')).toHaveText(maestro.title)
   })
 
-  test('the current-member count equals currentMemberCount computed from live profiles, roleGroups and labHead, excluding the PI only when the PI panel itself is showing', async ({
+  test('the current-member count equals currentMemberCount computed from live profiles, roleGroups and labHead, excluding the PI only when the lab-head card itself is showing', async ({
     page,
   }) => {
     const [{ profiles, roleGroups }, settings] = await Promise.all([
       fetchLiveMembers(),
       fetchLiveSettings(),
     ])
-    // Mirrors Home.tsx's own `showPiPanel` gate exactly (fix round 1,
-    // IMPORTANT 1) -- the PI is excluded from the count only when Home's
-    // own PI panel is the reason she isn't double-counted, not merely
-    // because `labHead` happens to be set.
-    const showPiPanel = Boolean(settings.labHeadId) && settings.showLabHeadOnHome !== false
+    // Mirrors Home.tsx's own gate exactly -- the PI is excluded from the
+    // count only when the hero's own lab-head card is the reason she
+    // isn't double-counted, not merely because `labHead` happens to be
+    // set.
+    const showLabHeadCard = liveShowsLabHeadCard(settings)
     const expected = currentMemberCount(
       profiles.map((p) => ({ _id: p._id, roleGroup: p.roleGroupId ? { _id: p.roleGroupId, title: null } : null })),
       roleGroups,
-      showPiPanel ? settings.labHeadId : null
+      showLabHeadCard ? settings.labHeadId : null
     )
 
     await page.goto('/')
@@ -249,11 +263,11 @@ test.describe('/', () => {
     expect(await readMemberCount(homeBlock)).toBe(peopleCount)
   })
 
-  test('the lab-head card is present exactly when labHead is set and showLabHeadOnHome !== false', async ({
+  test('the lab-head card is present exactly when shouldShowLabHeadCard says so', async ({
     page,
   }) => {
     const settings = await fetchLiveSettings()
-    const expected = Boolean(settings.labHeadId) && settings.showLabHeadOnHome !== false
+    const expected = liveShowsLabHeadCard(settings)
 
     await page.goto('/')
     await expect(page.getByTestId('home-lab-head-card')).toHaveCount(expected ? 1 : 0)
@@ -265,22 +279,36 @@ test.describe('/', () => {
     await page.goto('/')
     const text = (await page.getByTestId('home-statement').innerText()).replace(/\s+/g, ' ').trim()
     expect(text.length).toBeGreaterThan(0)
-    // Recompute the expected chain with the same pure function the screen uses.
-    const { homeStatement } = await import('../components/redesign/homeModel')
-    expect(text).toBe(homeStatement(siteCopy, home?.overview))
+    // Recompute the expected chain with the same pure function the screen
+    // uses, normalising its whitespace the same way the rendered text is
+    // normalised above -- `homeStatement` only `.trim()`s a bare
+    // `hero.subheading`, so a subheading with a double space or a newline
+    // would otherwise still differ from what the browser renders.
+    const expected = homeStatement(siteCopy, home?.overview).replace(/\s+/g, ' ').trim()
+    expect(text).toBe(expected)
   })
 
-  test('hero: lab-head card shows only the parts that are set, and names the PI once', async ({ page }) => {
+  test('hero: lab-head card shows only the parts that are set, with the PI named exactly once in <main>', async ({
+    page,
+  }) => {
     const s = await e2eClient.fetch(`*[_type=="settings"][0]{showLabHeadOnHome, labHead->{name, role, email, image}}`)
     await page.goto('/')
     const card = page.getByTestId('home-lab-head-card')
-    const shown = Boolean(s?.labHead?.name?.trim()) && s?.showLabHeadOnHome !== false
+    const shown = shouldShowLabHeadCard({
+      labHead: s?.labHead ? { _id: 'live', name: s.labHead.name } : null,
+      showLabHeadOnHome: s?.showLabHeadOnHome,
+    })
     await expect(card).toHaveCount(shown ? 1 : 0)
     if (!shown) return
-    await expect(card.getByTestId('home-lab-head-link')).toContainText(s.labHead.name.trim())
+    const name = s.labHead.name.trim()
+    await expect(card.getByTestId('home-lab-head-link')).toContainText(name)
     if (s.labHead.role?.trim()) await expect(card).toContainText(s.labHead.role.trim())
-    await expect(card.locator('a[href^="mailto:"]')).toHaveCount(s.labHead.email ? 1 : 0)
+    const email = s.labHead.email?.trim()
+    await expect(card.locator('a[href^="mailto:"]')).toHaveCount(email ? 1 : 0)
     await expect(card.locator('a[href="mailto:undefined"], a[href="mailto:null"]')).toHaveCount(0)
+
+    const mainText = await page.locator('main').innerText()
+    expect(mainText.split(name).length - 1).toBe(1)
   })
 
   test.describe('no horizontal overflow', () => {
@@ -379,19 +407,13 @@ test.describe('/preview/components gallery: home', () => {
     }
   })
 
-  test('"The lab" block: the PI name gets a colour reveal on hover and keyboard focus', async ({
+  test('hero lab-head card: the name gets a colour reveal on hover and keyboard focus', async ({
     page,
   }) => {
-    // Fix round 3 (coordinator's finding 6): removing PersonCard-style
-    // portrait grayscale left `TheLabBlock`'s PI `Link` (`group`) with
-    // nothing to trigger, since the name span never had its own
-    // `group-hover:`/`group-focus-visible:` colour reveal the way
-    // PersonCard.tsx's own name `div` does -- the whole link silently lost
-    // all hover/focus feedback. `components/redesign/screens/Home.tsx`
-    // added the same `group-hover:text-link group-focus-visible:text-link`
-    // pair to the name span; this proves it actually fires, on both
-    // pointer and keyboard, so it can't silently regress again.
-    // `npm run css:proof` (grep for `group-hover\:text-link` and
+    // The name span carries its own `group-hover:text-link`/
+    // `group-focus-visible:text-link` reveal, matching PersonCard.tsx's
+    // own name `div`; this proves it actually fires, on both pointer and
+    // keyboard. `npm run css:proof` (grep for `group-hover\:text-link` and
     // `group-focus-visible\:text-link` in the generated stylesheet)
     // confirms those utilities are emitted.
     await page.goto('/preview/components')
@@ -417,11 +439,10 @@ test.describe('/preview/components gallery: home', () => {
     expect(focusColor).not.toBe(restColor)
   })
 
-  // Fix round 1, IMPORTANT 1: instance (b) is the exact shape of the bug
-  // this fixes -- labHead set, showLabHeadOnHome false. No PI panel, and
-  // the PI must now count as an ordinary member: (b)'s count is (a)'s
-  // count plus exactly one.
-  test('(b) labHead hidden (showLabHeadOnHome: false): no PI panel, and the member count includes the PI', async ({
+  // Instance (b): labHead set, showLabHeadOnHome false. No lab-head card,
+  // and the PI counts as an ordinary member: (b)'s count is (a)'s count
+  // plus exactly one.
+  test('(b) labHead hidden (showLabHeadOnHome: false): no lab-head card, and the member count includes the PI', async ({
     page,
   }) => {
     await page.goto('/preview/components')
@@ -437,11 +458,11 @@ test.describe('/preview/components gallery: home', () => {
     expect(countB).toBe(countA + 1)
   })
 
-  // Review Focus 1: production's siteCopy is empty today -- this is the
-  // only place the "no siteCopy at all" leg of the fallback chain actually
-  // renders (home.overview is also unset on this instance), and the lab
-  // head here has a name only, so the card's optional role/email lines
-  // must both be absent.
+  // Production's siteCopy is empty today -- this is the only place the "no
+  // siteCopy at all" leg of the fallback chain actually renders
+  // (home.overview is also unset on this instance), and the lab head here
+  // has a name only, so the card's optional role/email lines must both be
+  // absent.
   test('gallery-home-no-sitecopy: statement falls back to the IA tagline, and the card has no role line and no mailto', async ({
     page,
   }) => {
@@ -455,5 +476,20 @@ test.describe('/preview/components gallery: home', () => {
     await expect(card).toBeVisible()
     await expect(card.locator('a[href^="mailto:"]')).toHaveCount(0)
     await expect(card.getByTestId('home-lab-head-role')).toHaveCount(0)
+  })
+
+  // An unbroken role long enough to overflow the card's column without its
+  // own `break-words`.
+  test('gallery-home-long-role: the role line does not overflow at 320px', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 900 })
+    await page.goto('/preview/components')
+    const instance = page.getByTestId('gallery-home-long-role')
+
+    await expect(instance.getByTestId('home-lab-head-role')).toBeVisible()
+
+    const fits = await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+    )
+    expect(fits).toBe(true)
   })
 })

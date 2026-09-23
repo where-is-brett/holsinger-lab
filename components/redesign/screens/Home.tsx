@@ -106,7 +106,7 @@ function IdentityBlock({
   // constant itself, only the one function that already resolves it.
   const statement = homeStatement(siteCopy, home.overview)
   const labHead = settings.labHead
-  const showLabHeadCard = shouldShowLabHeadCard(settings) && Boolean(labHead?.name?.trim())
+  const showLabHeadCard = shouldShowLabHeadCard(settings)
   const Heading = headingLevel
 
   return (
@@ -128,22 +128,24 @@ function IdentityBlock({
       >
         {title}
       </Heading>
-      {/* Two-column grid ([statement | lab-head card]) from `lg`, stacked
-          below -- same `grid-cols-1` + explicit `lg:`-prefixed track
+      {/* Two-column grid ([statement | lab-head card]) from `xl`, stacked
+          below -- same `grid-cols-1` + explicit `xl:`-prefixed track
           pattern as Research.tsx's NARRATIVE_GRID / PersonPage.tsx's
           PROFILE_GRID: `grid-cols-1` zeroes the implicit stacked track's
           min-content floor so a long unbroken token (the lab head's
           email, an identifier) can't blow the column out past the
           viewport. One unprefixed `grid-template-columns` declaration
-          plus one `lg:` declaration -- never two for the same property at
-          the same breakpoint (constraints.md). Two entire, separate class
-          strings for the "with card" / "without card" cases (IDENTITY_GRID
-          / _SOLO below), same reasoning as Research.tsx's
-          NARRATIVE_GRID/_SOLO split: with no lab-head card there is no
-          second grid item, and an `lg:grid-cols-[minmax(0,1fr)_20rem]`
-          track with only one child would still reserve the 20rem column
-          as empty space instead of letting the statement use the full
-          width. */}
+          plus one `xl:` declaration -- never two for the same property at
+          the same breakpoint (constraints.md). `xl`, not `lg`: at `lg`
+          the fixed 20rem card track leaves the statement narrower than
+          its own 375px phone width, so the split waits for the wider
+          breakpoint instead. Two entire, separate class strings for the
+          "with card" / "without card" cases (IDENTITY_GRID / _SOLO
+          below), same reasoning as Research.tsx's NARRATIVE_GRID/_SOLO
+          split: with no lab-head card there is no second grid item, and
+          an `xl:grid-cols-[minmax(0,1fr)_20rem]` track with only one
+          child would still reserve the 20rem column as empty space
+          instead of letting the statement use the full width. */}
       <div className={showLabHeadCard ? IDENTITY_GRID : IDENTITY_GRID_SOLO}>
         <p
           data-testid="home-statement"
@@ -158,20 +160,35 @@ function IdentityBlock({
   )
 }
 
-const IDENTITY_GRID = 'mt-[38px] grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-x-14'
+const IDENTITY_GRID = 'mt-[38px] grid grid-cols-1 items-start gap-8 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-x-14'
 const IDENTITY_GRID_SOLO = 'mt-[38px] grid grid-cols-1'
 
-// The lab-head card: a 64px portrait beside the linked name, with an
-// optional role line and an optional mailto below -- `labHead?.name` is
-// the only field this ever assumes is set (`showLabHeadCard` above already
-// gates on it), so role and email each render only when non-blank.
+// The lab-head card is itself the two-column grid (`grid-cols-[4rem_
+// minmax(0,1fr)]`), not just its photo-plus-name row: the outer card and
+// the `Link` share the identical column template (same 4rem/gap-x-5/
+// minmax(0,1fr) split, on the same full-width row), so the role and email
+// lines below -- placed at the outer grid's `col-start-2` -- line up
+// exactly under the name without needing a second, independent alignment
+// mechanism. (An earlier version made the outer card the *only* grid and
+// set the `Link` to `display: contents` so the portrait could `row-span`
+// across it; that broke the link's keyboard focusability in Chromium --
+// caught by the hover/focus e2e below -- so the `Link` stays a real,
+// focusable box instead.) `labHead?.name` is the only field this ever
+// assumes is set (`showLabHeadCard` above already gates on it), so role
+// and email each render only when non-blank, and `break-words`/`break-all`
+// guard the two CMS-text lines against an unbroken token blowing out the
+// 20rem card column.
 function LabHeadCard({ labHead }: { labHead: NonNullable<SettingsPayload['labHead']> }) {
   const role = labHead.role?.trim()
+  const email = labHead.email?.trim()
   return (
-    <div className="min-w-0 border-l border-rule pl-6" data-testid="home-lab-head-card">
+    <div
+      className="grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] items-start gap-x-5 gap-y-2 border-l border-rule pl-6"
+      data-testid="home-lab-head-card"
+    >
       <Link
         href={resolveLabHeadHref(labHead)}
-        className="group grid grid-cols-[4rem_minmax(0,1fr)] items-center gap-x-5"
+        className="group col-span-2 grid grid-cols-[4rem_minmax(0,1fr)] items-center gap-x-5"
         data-testid="home-lab-head-link"
       >
         <PiPortrait64
@@ -187,18 +204,22 @@ function LabHeadCard({ labHead }: { labHead: NonNullable<SettingsPayload['labHea
         </span>
       </Link>
       {role && (
-        <div className="mt-2 text-[0.9375rem] text-text-muted" data-cms-verbatim data-testid="home-lab-head-role">
+        <div
+          className="col-start-2 min-w-0 break-words text-[0.9375rem] text-text-muted"
+          data-cms-verbatim
+          data-testid="home-lab-head-role"
+        >
           {role}
         </div>
       )}
-      {labHead.email && (
+      {email && (
         <a
-          href={`mailto:${labHead.email}`}
+          href={`mailto:${email}`}
           data-identifier
           data-cms-verbatim
-          className="mt-1 inline-block font-mono text-[0.8125rem] break-all text-link"
+          className="col-start-2 inline-block min-w-0 break-all font-mono text-[0.8125rem] text-link"
         >
-          {labHead.email}
+          {email}
         </a>
       )}
     </div>
@@ -387,27 +408,25 @@ export function Home({
   headingLevel?: 'h1' | 'h2'
 }) {
   const labHead = settings.labHead
-  const showLabHeadCard = shouldShowLabHeadCard(settings) && Boolean(labHead?.name?.trim())
+  const showLabHeadCard = shouldShowLabHeadCard(settings)
   const showPeople = settings.showPeople !== false
-  // Fix round 1, IMPORTANT 1: excludes the lab head from the count only
-  // when the hero's own lab-head card actually renders (`showLabHeadCard`),
-  // not unconditionally whenever `labHead` is merely set. Before this fix,
-  // with `labHead` set and `showLabHeadOnHome === false`, Home hid the
-  // card *and* still subtracted the lab head from the count -- that person
-  // appeared nowhere on the page, yet still changed the number, an
-  // internal inconsistency between what this same render shows and what
-  // it counts. Gating the exclusion on `showLabHeadCard` (this page's own
-  // "is the lab head visible here" boolean, mirroring how `People.tsx`
-  // gates `excludeLabHead` on its own `showSpotlight`) keeps Home
-  // internally consistent, and -- since `showLabHeadCard` and
-  // `People.tsx`'s `showSpotlight` are both "labHead set AND the page's
-  // own show flag" -- the two pages' counts agree whenever
-  // `showLabHeadOnHome` and `showLabHeadOnPeople` happen to carry the same
-  // value, which `e2e/home.spec.ts` now cross-checks directly against
+  // Excludes the lab head from the count only when the hero's own
+  // lab-head card actually renders (`showLabHeadCard`), not unconditionally
+  // whenever `labHead` is merely set -- otherwise, with the card hidden
+  // (`showLabHeadOnHome: false`), that person would appear nowhere on the
+  // page yet still change the number, an internal inconsistency between
+  // what this same render shows and what it counts. Gating the exclusion
+  // on `showLabHeadCard` (this page's own "is the lab head visible here"
+  // boolean, mirroring how `People.tsx` gates `excludeLabHead` on its own
+  // `showSpotlight`) keeps Home internally consistent, and -- since
+  // `showLabHeadCard` and `People.tsx`'s `showSpotlight` are both "labHead
+  // named AND the page's own show flag" -- the two pages' counts agree
+  // whenever `showLabHeadOnHome` and `showLabHeadOnPeople` happen to carry
+  // the same value, which `e2e/home.spec.ts` cross-checks directly against
   // /people's own rendered meta rather than re-deriving the rule.
   const memberCount = currentMemberCount(profiles, roleGroups, showLabHeadCard ? labHead?._id : null)
-  // Fix round 1, point 6: "0 — PEOPLE →" is never rendered -- the members
-  // line needs both the page-level flag and an actual positive count.
+  // "0 — PEOPLE →" is never rendered -- the members line needs both the
+  // page-level flag and an actual positive count.
   const showMembersLine = showPeople && memberCount > 0
 
   const showRecentWork = publications.length > 0 && settings.showPublications !== false
