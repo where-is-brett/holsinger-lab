@@ -13,7 +13,7 @@ import type {
 import { fallbackSettings } from 'types'
 
 import type { Publication } from './publicationModel'
-import { deriveLink, shortenLabel, splitAuthors } from './publicationModel'
+import { deriveLink, splitAuthors } from './publicationModel'
 import { researchKicker, type ResearchProjectView } from './researchModel'
 
 // Real lab content, not placeholder strings -- the gallery this feeds is the
@@ -53,7 +53,6 @@ function make(
     ref,
     linkKind: link.kind,
     linkLabel: link.label,
-    linkLabelShort: shortenLabel(link.label, 24),
     linkHref: link.href,
     type,
     topics,
@@ -95,7 +94,7 @@ export const SAMPLE_PUBLICATIONS: Publication[] = [
 // three letters ("FEBS J"), and a DOI recorded with capital letters (DOIs
 // are case-insensitive on resolution, so publisher casing varies). Kept
 // out of SAMPLE_PUBLICATIONS because that array's length is assumed
-// elsewhere in the gallery (facet-band result counts).
+// elsewhere in the gallery (filter bar result counts).
 export const CMS_VERBATIM_PUB_PLOS_ONE: Publication = make(
   '2024',
   'A record whose journal and DOI happen to read as shouted caps',
@@ -122,7 +121,7 @@ export const CMS_VERBATIM_PUB_FEBS_J: Publication = make(
 // Real routes carry an `href` (Task 3, spec §4.1): a clone of the first
 // fixture is enough to prove the title renders as a next/link, without
 // touching SAMPLE_PUBLICATIONS and its length-2 assumptions elsewhere in
-// this gallery (facet-band result counts).
+// this gallery (filter bar result counts).
 export const LINKED_PUB: Publication = {
   ...SAMPLE_PUBLICATIONS[0],
   id: 'linked-pub-fixture',
@@ -149,7 +148,6 @@ export const NO_LINK_PUB: Publication = {
   ref: '1(1) · 1',
   linkKind: '',
   linkLabel: '',
-  linkLabelShort: '',
   linkHref: '',
   type: '',
   topics: [],
@@ -162,11 +160,11 @@ export const NO_LINK_PUB: Publication = {
 // fixes needed a gallery fixture exercising the no-canonical-link + linked-
 // resource case together -- neither SAMPLE_PUBLICATIONS entry nor
 // NO_LINK_PUB carries an abstract or a resource. No DOI and no URL (so
-// "Cite and access" has no canonical-link column and the citation box
-// should take the full width), a two-paragraph abstract (so the Abstract
-// section renders more than one <p>), and one linked resource (so the
-// Resource section -- otherwise unrendered on real data, since the live
-// dataset has zero `resource` documents today -- gets proven at all).
+// the Paper block renders no "Read paper" button and no DOI line), a
+// two-paragraph abstract (so the Abstract section renders more than one
+// <p>), and one linked resource (so the Resource section -- otherwise
+// unrendered on real data, since the live dataset has zero `resource`
+// documents today -- gets proven at all).
 export const PUBLICATION_PAGE_FIXTURE: Publication = {
   id: 'publication-page-fixture',
   href: '/publications/publication-page-fixture',
@@ -180,13 +178,12 @@ export const PUBLICATION_PAGE_FIXTURE: Publication = {
   ref: '2(1) · 15',
   linkKind: '',
   linkLabel: '',
-  linkLabelShort: '',
   linkHref: '',
   type: 'Article',
   topics: ['Metabolism, oxidative stress & neuroprotection'],
   cite: 'Choi, J., Wu, H. and Holsinger, R.M.D. (2021). A record on file with no canonical link, an abstract, and one linked resource. Journal of Unlinked Records 2(1) · 15.',
   abstract: [
-    'The first paragraph sets up the problem: this fixture exists to prove the Abstract section renders more than one paragraph, and that Cite and access falls back to a full-width citation column when there is no DOI or URL on file.',
+    'The first paragraph sets up the problem: this fixture exists to prove the Abstract section renders more than one paragraph, and that the Paper block renders no Read paper button or DOI line when there is no DOI or URL on file.',
     'The second paragraph proves the same block renders a second <p> rather than concatenating both into one -- the two-paragraph split is the thing under test, not the prose itself.',
   ],
   resources: [{ id: 'resource-fixture-1', title: 'Cell culture chamber CAD files', kind: 'hardware' }],

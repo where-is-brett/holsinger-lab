@@ -27,6 +27,7 @@ const GALLERY_SECTIONS = [
   'form-field',
   'resource-block',
   'publication-page',
+  'paper-no-link',
   'research',
   'research-no-link',
   'research-contact-link',
@@ -491,20 +492,12 @@ test.describe('redesign component gallery', () => {
     await expect(link).toHaveAttribute('href', '/resources')
   })
 
-  test('publication page: citation box takes the full width when there is no canonical link', async ({
-    page,
-  }) => {
-    // PUBLICATION_PAGE_FIXTURE has neither a DOI nor a URL, so the Cite &
-    // access grid should collapse to a single column (fix round 1) and the
-    // citation box should span the same width as its containing block,
-    // rather than sitting in a 1fr track sized for two columns.
-    await page.setViewportSize({ width: 1280, height: 900 })
-    const section = page.getByTestId('gallery-publication-page')
-    const wrapperBox = await section.getByTestId('pub-cite-access').boundingBox()
-    const citationBox = await section.getByTestId('pub-citation-box').boundingBox()
-    expect(wrapperBox).not.toBeNull()
-    expect(citationBox).not.toBeNull()
-    expect(citationBox!.width).toBeGreaterThan(wrapperBox!.width * 0.95)
+  test('a paper with no canonical link renders no Read paper button and no DOI line', async ({ page }) => {
+    const s = page.getByTestId('gallery-paper-no-link')
+    await expect(s.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(s.getByRole('link', { name: /^Read paper/ })).toHaveCount(0)
+    await expect(s.getByTestId('paper-doi')).toHaveCount(0)
+    await expect(s.getByTestId('pub-citation-box')).toBeVisible()
   })
 
   // Fix round 1 tried a bounding-rect walk scoped to the new
@@ -587,12 +580,16 @@ test.describe('redesign component gallery', () => {
   test('filter bar: a Year select filters, and Clear restores', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 })
     const bar = page.getByTestId('gallery-filter-bar')
+    const row = bar.getByTestId('filter-row')
     const count = bar.getByTestId('filter-result-count')
     const total = await count.textContent()
-    await bar.getByTestId('filter-row').getByLabel('Year').selectOption({ index: 1 })
+    await row.getByLabel('Year').selectOption({ index: 1 })
+    await row.getByLabel('Type').selectOption({ index: 1 })
     await expect(count).not.toHaveText(total!)
     await bar.getByRole('button', { name: 'Clear' }).click()
     await expect(count).toHaveText(total!)
+    await expect(row.getByLabel('Year')).toHaveValue('')
+    await expect(row.getByLabel('Type')).toHaveValue('')
   })
 
   test('filter selects are at least 16px so iOS does not zoom on focus', async ({ page }) => {

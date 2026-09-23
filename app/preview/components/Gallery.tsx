@@ -440,9 +440,9 @@ export default function Gallery() {
             `/publications/[slug]` route, proving (a) `ResourceBlock`'s
             Resource section with a fixture that has one -- the live
             dataset has zero `resource` documents today, so without this
-            the block would ship unrendered on real content -- and (b)
-            `Cite and access` falls back to a full-width citation column
-            when there is no canonical link (`PUBLICATION_PAGE_FIXTURE` has
+            the block would ship unrendered on real content -- and (b) the
+            Paper block renders no "Read paper" button and no DOI line when
+            there is no canonical link (`PUBLICATION_PAGE_FIXTURE` has
             neither a DOI nor a URL). `PublicationPage` renders its own
             `<h1>`; axe's default ruleset only requires at least one `<h1>`
             per page (`page-has-heading-one`) and only flags a heading level
@@ -451,6 +451,20 @@ export default function Gallery() {
             and no extra scoping/exclusion is needed. */}
         <div className="border border-rule">
           <PublicationPage pub={PUBLICATION_PAGE_FIXTURE} />
+        </div>
+      </section>
+
+      <section data-testid="gallery-paper-no-link" className="col-start-2 px-6">
+        <Heading>Publication page — no canonical link</Heading>
+        {/* NO_LINK_PUB has neither a DOI nor a URL: proves the Paper block
+            renders no "Read paper" button and no DOI line, while the
+            citation box still renders. A second `PublicationPage` here
+            means a second `<h1>` on this route -- fine per
+            `PUBLICATION_PAGE_FIXTURE`'s own comment above: axe's default
+            ruleset only requires at least one `<h1>` per page and never
+            flags a later heading returning to `h1`. */}
+        <div className="border border-rule">
+          <PublicationPage pub={NO_LINK_PUB} />
         </div>
       </section>
 

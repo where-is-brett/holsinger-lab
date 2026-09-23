@@ -43,9 +43,21 @@ test.describe('/publications/[slug]', () => {
       await expect(abstractRail).toHaveCount(0)
     }
 
-    const canonicalLink = page.locator('a[data-identifier][href]').first()
-    await expect(canonicalLink).toHaveAttribute('href', identifierHref!)
-    await expect(canonicalLink).toHaveText(identifierHref!)
+    const readPaper = page.getByRole('link', { name: /^Read paper/ })
+    await expect(readPaper).toHaveAttribute('href', identifierHref!)
+    await expect(readPaper).toHaveAttribute('target', '_blank')
+    await expect(readPaper).toHaveAttribute('rel', 'noopener noreferrer')
+
+    const doi = page.getByTestId('paper-doi')
+    await expect(doi).toBeVisible()
+    expect(identifierHref).toContain((await doi.locator('[data-identifier]').textContent())!.trim())
+    expect(await doi.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/Plex Mono/i)
+
+    // No stacked sub-labels above the citation box -- the section label
+    // ("Citation") is the only label; the old "Canonical link" / "Formatted
+    // citation" micro-labels are gone.
+    await expect(page.getByText('Canonical link', { exact: false })).toHaveCount(0)
+    await expect(page.getByText('Formatted citation', { exact: true })).toHaveCount(0)
 
     const citationBox = page.locator('[data-identifier]', { hasText: rowTitle })
     await expect(citationBox).toContainText(rowTitle)
@@ -66,12 +78,39 @@ test.describe('/publications/[slug]', () => {
 
     await expect(page.locator('h1')).toHaveText(rowTitle)
 
-    const canonicalLink = page.locator('a[data-identifier][href]').first()
-    await expect(canonicalLink).toHaveAttribute('href', identifierHref!)
-    await expect(canonicalLink).toHaveText(identifierHref!)
+    const readPaper = page.getByRole('link', { name: /^Read paper/ })
+    await expect(readPaper).toHaveAttribute('href', identifierHref!)
+    await expect(readPaper).toHaveAttribute('target', '_blank')
+    await expect(readPaper).toHaveAttribute('rel', 'noopener noreferrer')
+    await expect(page.getByTestId('paper-doi')).toHaveCount(0)
 
     const citationBox = page.locator('[data-identifier]', { hasText: rowTitle })
     await expect(citationBox).toContainText(rowTitle)
+  })
+
+  test('the abstract is Archivo at 17px / 1.6', async ({ page }) => {
+    await page.goto('/publications')
+    const rows = page.locator('[data-testid="pub-row"]')
+    const count = await rows.count()
+    let href: string | null = null
+    for (let i = 0; i < count; i++) {
+      const rowHref = await rows.nth(i).getByTestId('pub-title').getAttribute('href')
+      if (rowHref && (await hasAbstract(slugFromHref(rowHref)))) {
+        href = rowHref
+        break
+      }
+    }
+    test.skip(!href, 'no publication with an abstract in this dataset')
+
+    await page.goto(href!)
+    const p = page.getByTestId('paper-abstract').first()
+    const s = await p.evaluate((el) => {
+      const c = getComputedStyle(el)
+      return { family: c.fontFamily, size: c.fontSize, lh: c.lineHeight }
+    })
+    expect(s.family).toMatch(/Archivo/i)
+    expect(s.size).toBe('17px')
+    expect(parseFloat(s.lh)).toBeCloseTo(27.2, 0)
   })
 
   test('copying the citation shows the copied state and puts the citation on the clipboard', async ({

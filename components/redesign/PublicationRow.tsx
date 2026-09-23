@@ -201,7 +201,7 @@ export function PublicationRow({
   }
 
   // Below, the responsive stacked-to-grid anatomy shared by `home` and
-  // `index` (spec §4.1, Task 3 brief point 2): one DOM tree per variant,
+  // `index` (spec §4.1): one DOM tree per variant,
   // container classes switch to the ledger grid at `xl` (`GRID`),
   // and every element sets `display` at most once per breakpoint --
   // unprefixed for its stacked-anatomy role, `xl:` for its ledger-cell role

@@ -16,7 +16,6 @@ export interface Publication {
   linkKind: 'DOI' | 'URL' | ''
   /** printed verbatim -- identifiers are case-sensitive */
   linkLabel: string
-  linkLabelShort?: string
   linkHref: string
   type: string
   topics: string[]
@@ -84,11 +83,6 @@ export function deriveLink(doi: string | null, url: string | null) {
   return null
 }
 
-export function shortenLabel(label: string, max = 32) {
-  if (label.length <= max) return label
-  return `${label.slice(0, max - 1)}…`
-}
-
 export function formatRef(volume: number | null, issue: number | null, pages: string | null): string {
   const vol = volume !== null ? `${volume}${issue !== null ? `(${issue})` : ''}` : ''
   return [vol, pages ?? ''].filter(Boolean).join(' · ')
@@ -114,7 +108,6 @@ export function toPublication(p: PublicationPayload): Publication {
     ref: formatRef(p.volume ?? null, p.issue ?? null, p.pages ?? null),
     linkKind: link?.kind ?? '',
     linkLabel: link?.label ?? '',
-    linkLabelShort: link ? shortenLabel(link.label, 26) : '',
     linkHref: link?.href ?? '',
     type: p.type ?? '',
     topics: p.topics ?? [],
