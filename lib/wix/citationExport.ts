@@ -6,9 +6,12 @@ import type { PublicationEntry } from './types'
 const clean = (v: string | null | undefined) => (v ? stegaClean(v).trim() : '')
 
 /**
- * `PublicationEntry` plus the optional `slug` Task 2's GROQ query adds
- * (`"slug": slug.current`). Kept local to this module rather than added to
- * `lib/wix/types.ts` -- nothing else here needs a shape change.
+ * `PublicationEntry` plus the optional `slug` (`"slug": slug.current`,
+ * added to `publicationsQuery` and to `PublicationEntry` itself in
+ * `lib/wix/types.ts`). Kept as an explicit intersection here -- rather than
+ * importing `PublicationEntry` and using it directly -- so this module's
+ * public signatures don't change if that field is ever removed from the
+ * shared type again.
  */
 export type CitationInput = PublicationEntry & { slug?: string | null }
 
