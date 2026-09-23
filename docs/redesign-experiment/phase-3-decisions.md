@@ -660,3 +660,270 @@ one revert had settled it for good.
 | `npm run typegen`   | 16 queries / 40 schema types                                             | **22 queries / 40 schema types**                                             |
 | `npm run build`     | 43 static pages, including 19 `/publications/[slug]` and 1 `/people/[slug]` | **45 static pages**, adding `/research` and `/resources` (`/support-our-research` is a pre-existing `page` route, not one this PR adds) |
 | `npm run test:e2e`  | 166 passed / 5 skipped                                                   | **211 passed / 6 skipped**                                                   |
+
+## Revision PR 1 — Foundations
+
+Written 2026-09-23. Branch `redesign/revision-foundations`, off `redesign/integration` at
+`a544f94`. Companion to `docs/superpowers/specs/2026-09-23-redesign-revision-design.md`, whose
+"PR 1 — Foundations" section this expands on. Four tasks (fonts/type, `Section`/rail removal,
+developer-copy/label-budget, this doc), each reviewed and re-reviewed before merge — see
+`.superpowers/sdd/2026-09-23-redesign-revision-1-foundations/` for the full task reports and
+review ledger.
+
+### Root cause: the fonts never shipped
+
+The design review's finding, confirmed directly: `styles/index.css` set `--font-sans: var(
+--font-antarctican-mono)` — the old site's mono face — and `app/layout.tsx` loaded only IBM
+Plex Mono, PT Serif and two local faces. Archivo, which the design system specifies for every
+display, heading, UI and reading role, was loaded nowhere. Every heading, abstract and bio was
+rendering in a mono face, and at narrow widths the display heading broke mid-word because
+`break-words` alone was doing the work fluid type should have done.
+
+**Fix:** Archivo loaded via `next/font/google` (weights 400/500/600/700, `--font-archivo`,
+`display: swap`); `--font-sans` repointed to it (`var(--font-archivo), "Helvetica Neue",
+Helvetica, Arial, sans-serif`). IBM Plex Mono's own weights gained 400 (now 400/500/700, per
+the design system's own spec, unblocked by the same task). `document.body`'s resolved
+`font-family` is asserted to contain "archivo" (case-insensitive) by `e2e/typography.spec.ts`,
+so this can't silently regress back to a hash or a fallback face.
+
+**Fluid type tokens and floors, as shipped** (`styles/index.css` `@theme`):
+
+| Token | Value | Line-height |
+|---|---|---|
+| `--text-display` | `clamp(2.25rem, 6vw, 4rem)` | 1.05 |
+| `--text-title` | `clamp(1.75rem, 4.5vw, 2.75rem)` | 1.1 |
+| `--text-heading` | `clamp(1.375rem, 3vw, 2rem)` | 1.2 |
+| `--text-lead` | `1.1875rem` (19px, fixed) | 1.6 |
+| `--text-body` | `1.0625rem` (17px, fixed) | 1.6 |
+| `--text-meta` / `--text-label` | unchanged (mono data sizes) | — |
+
+`PublicationPage`'s paper-title role, previously a fixed `2.3125rem` outside any clamp token,
+moved onto the title level's own clamp (`clamp(1.75rem, 4.5vw, 2.3125rem)`) — see "Word-fit
+budget" below for why. `PublicationPage`'s `AbstractBlock` also had a stray `leading-[1.7]`
+(should have been the token's own 1.6) — swapped for the `text-body` class itself so it can't
+drift from the token again.
+
+**Legacy font faces kept loaded, and why.** Antarctican Mono, Ariana Pro and PT Serif are all
+still loaded and mapped: `/[slug]`, `/projects/*`, the old contact form and the `Logo` wordmark
+all still consume them. The rule (spec §1.1) is "remove a face only when a grep shows no
+consumer left" — PR 1 confirmed all three still have one, so none were removed. PR 4 revisits
+this once Contact is rebuilt on the redesign shell.
+
+### Word-fit budget replaces "never split mid-word"
+
+The spec's original rule — display/title/heading text never breaks mid-word, enforced by
+removing `break-words` and adding `hyphens: auto` — turned out to be unenforceable as written.
+Blink (Chromium) never hyphenates a word that starts with a capital letter
+(`hyphenate_capitalized_word_` defaults to `false`), and CMS titles are almost all title-case,
+so `hyphens: auto` is inert on nearly every heading this rule was meant to cover. Removing
+`break-words` on that assumption let a real live DOI paper's title ("…Alzheimer's Disease
+Pathophysiology") overflow its column at 320px — a direct hit on the unconditional
+no-horizontal-overflow floor.
+
+**Ruling:** `break-words` stays on every display/title/heading element, as the last-resort
+fallback — `hyphens: auto` stays alongside it as a safety net for words the browser's
+dictionary does cover, and CSS text semantics mean `overflow-wrap: break-word` only ever
+engages when there's no other acceptable break, so it never changes how a word that already
+hyphenates cleanly renders. Longer words may split raw rather than overflow; this is now a
+documented exception, not a defect.
+
+Each level's own budget was measured directly (Chromium/Playwright, Archivo weight 600, real
+rendered `fontFamily`, `scrollWidth` of an offscreen probe carrying the heading's exact
+classes) against its real column width at 320px:
+
+| Level | Budget word | Fits at 320px? |
+|---|---|---|
+| display (`--text-display`, Home's `h1`) | "Neuroscience" | yes — 231px word in a 246px column |
+| title (`--text-title`, `PageTitle`'s `h1`/`h2`) | "Pathophysiology" | yes — 218px in 246px |
+| heading (`--text-heading`, e.g. a research project's `h2`) | "Neurodegenerative" | yes — 194px in 246px |
+
+**Proof, and why it's Linux-CI safe.** Live routes (`/`, `/research`, `/people`, `/preview/
+components`) keep only a no-overflow assertion per word — this holds for any valid dataset,
+since `break-words` already guarantees it by construction. The raw-split budget itself is
+proven separately, on dedicated **full-width gallery fixtures** at `/preview/components` (one
+per level, each pairing that level's budget word — capitalised, so Blink can't hyphenate it —
+with short filler words that fit on their own). The check temporarily clears both fallback
+mechanisms (`overflow-wrap: normal`, `hyphens: manual`) on the fixture's own heading and
+re-measures `scrollWidth` vs `clientWidth` before restoring them — asserting the word fits with
+*no* fallback engaged at all, rather than depending on whether the CI runner's Chromium ships a
+hyphenation dictionary (Linux Chromium typically doesn't; this was confirmed by forcing `hyphens:
+manual !important` site-wide and re-running the full suite green). Live routes are checked for
+overflow only, never for a raw split, since a raw split in real title-case CMS content is the
+accepted, documented fallback and the suite must hold for any dataset.
+
+### `Section` and `PageTitle` layout
+
+`SectionRail` is renamed `Section` and the numbered rail is gone entirely — no `num` prop, no
+render-order numbering anywhere. The label is a 13px sentence-case Archivo `<p>` (or `<h2>`
+when the section's content has no in-content heading of its own — a per-call-site rule, never
+a redundant second heading), colour `text-text-muted`. `mb-0!` (Tailwind's trailing-bang
+`!important` form) turned out to be load-bearing: `styles/index.css` has an unlayered base
+rule, `p:not(:last-child) { margin-bottom: 0.875rem }`, that beats `Section`'s own layered
+Tailwind utilities regardless of source order and only affects the `<p>`-label call sites — a
+`<p>` label without `mb-0!` sat up to 22px further from its content than an `<h2>` label did.
+
+Layout: from `lg` (1024px), a `[10rem-label | content]` grid, top-aligned, with the hairline
+rule kept; below `lg`, the label sits above the content, full width, no rail column, no
+vertical rule. `PageTitle` shares this exact grid (hoisted into `tokens.ts` as `SECTION_GRID`/
+`SECTION_GUTTER_X` so both components reference one constant, not two independently-typed
+copies) — its `<h1>` now aligns with the content column **from `lg`, on every page**, closing
+a visible jog where the page title sat at the outer page gutter while every section below it
+sat one column in.
+
+### Filters: non-sticky lands early
+
+`PublicationsIndex.tsx` wraps `FacetBand` in `<Section label="Filter" labelHeading
+borderTop={false}>`, per the spec's own label table. That wrapping had a side effect: it put
+the band inside a grid cell exactly as tall as the band itself, so `position: sticky` had
+nowhere to travel (measured: `top: -1266` after scrolling, never pinning). Rather than
+un-wrap the band to preserve sticky, the controller ruled to **drop sticky positioning
+outright** — this was already PR 3's own intent, per Brett's feedback — so PR 1 ships it now
+instead of shipping a band that would only lose sticky again one PR later. `FacetBand` no
+longer carries a `sticky` prop or any conditional sticky class; `e2e/nav-logo.spec.ts` asserts
+`position: static` at three viewport combinations, plus a behavioural test that the band
+scrolls away (negative `top`) rather than pinning near `--nav-height`. `FacetBand` stays inside
+`Section label="Filter"` — with sticky gone, the "no room to travel" problem is moot.
+
+### Resources: one `Section` per resource
+
+`Resources.tsx` renders one `Section` per resource document, in the query's own order, each
+labelled with `kindLabel(resource.kind)` (a `<p>`, sentence-case — "Hardware"/"Protocol"/
+"Software"/"Dataset"/"Resource" for null or unrecognised) as a **data label**, not a heading.
+`ResourceBlock`'s own title is the real `<h2>` for each section — this is what makes a
+per-resource `<p>` label safe even when two resources share a `kind` (two identical `<p>`s in a
+row is fine; two identical `<h2>`s would not be). An earlier attempt grouped resources by
+`kind` into one `Section` per group to avoid the duplicate-label look — reverted, because
+grouping-by-first-seen-kind silently reordered the list relative to the query's own `title asc`
+order whenever kinds were interleaved, which would break `e2e/resources.spec.ts`'s
+query-order assertion for a real, valid dataset (constraints.md's "every e2e assertion holds
+for any valid dataset").
+
+### Ledger: multi-column from `xl`, not `lg`
+
+The publication ledger's 4-column grid (`PUBLICATION_GRID`) switches to columns at `xl`
+(1280px), not `lg` (1024px) as it did before this PR. `Section`'s new, narrower content column
+(a real ~160px label track plus one shared page gutter, replacing the old rail's unguttered
+88px column) left the ledger only ~728px wide at 1024px — enough to stop the page itself
+overflowing (`minmax(0,1fr)` on the title track), but not enough room for a real title to avoid
+colliding with the journal column beside it. Measured at 1024px under the `lg:` switch: a live
+DOI paper's title wrapping onto the "Genes 14(10)" journal cell. Moving the switch to `xl`
+(clearing 1280px, well past where the review's own measurement found the squeeze cleared)
+fixes it; the stacked, single-column anatomy below `xl` was already fully responsive (every
+phone/tablet width used it already), so nothing new is exercised structurally, just a wider
+range of desktop widths that now sees it. A dedicated **per-row overflow e2e** (`e2e/home.spec.
+ts`, `e2e/publications-interactive.spec.ts`) asserts no descendant of a publication row has
+`scrollWidth - clientWidth > 1` at 1024/1280/1440px.
+
+### Gallery: grid full-bleed
+
+`/preview/components`'s gallery needed a genuinely full-viewport-width section (for the ledger
+fixtures above and the typography-budget fixtures) inside a page whose `<main>` is otherwise
+capped and centred (`max-w-5xl mx-auto`). Two approaches were tried and rejected before landing
+on the one that shipped:
+
+1. `-mx-6` alone (cancelling `<main>`'s own padding) — capped at `<main>`'s own 1024px box at
+   any viewport ≥1024px, since Tailwind's `xl:` breakpoint fires on *viewport* width, not the
+   element's own box width.
+2. A `w-screen`/`-mx-[50vw]` "break out to 100vw" trick — passed every existing overflow check,
+   because Playwright's default Chromium launch hides its scrollbar (`--hide-scrollbars`), so
+   `scrollWidth === clientWidth` held regardless of whether a real, visible scrollbar's width
+   would have made it overflow. Relaunching Chromium with that default arg removed (`{
+   ignoreDefaultArgs: ['--hide-scrollbars'] }`) measured a genuine 8px overflow per side.
+
+**Shipped:** a pure CSS Grid pattern. `<main>` becomes `grid grid-cols-[1fr_min(64rem,100%)_1fr]`
+with no `max-w-5xl`/`mx-auto`/`px-6` of its own; every normal child gets `col-start-2 px-6`
+(column 2's `min(64rem,100%)` track reproduces the old capped-and-centred behaviour exactly),
+and a full-bleed section gets `col-span-full` instead. This has no `100vw` dependency at all, so
+it can't be fooled by a hidden scrollbar. **New e2e** (`e2e/preview-scrollbar.spec.ts`) launches
+its own Chromium with `--hide-scrollbars` removed and asserts `scrollWidth <= clientWidth` on
+`/preview/components`, `/` and `/publications` at 320/1280/1440px — a **real-scrollbar e2e**,
+specifically so this class of defect can't hide behind Playwright's default launch args again.
+
+### Copy removed
+
+Every sentence addressed to the builder rather than the visitor:
+
+- `PublicationsIndex.tsx`'s `FacetBand` note: "CLICK TO FILTER · CLICK AGAIN TO CLEAR — AN
+  UNTAGGED PAPER STILL APPEARS UNDER YEAR AND TYPE · COMPACT TIGHTENS EACH ROW TO ONE SCANNING
+  LINE" (the `note` prop itself stays — the gallery's own demo still uses it legitimately).
+- `PublicationPage.tsx`'s canonical-link explanation: "The DOI is the paper's permanent
+  address. Where a paper has none, the recorded publisher URL stands in."
+- `PersonCard.tsx`'s `[ NO PORTRAIT ON FILE ]` fallback text — deleted outright rather than
+  reworded; the initials plus the striped background are the whole fallback until PR 4 adds a
+  real initials tile.
+
+A full grep across every redesign screen and primitive for other builder-addressed phrasing
+("click to/again", "for illustration", "placeholder text", "demo only", "todo:", "fixme", etc.)
+found no other rendered instances.
+
+### Label budget
+
+**The limit is 6 or fewer, at both 1440px and 375px** (the spec's original rule was 1440px
+only — the coordinator's ruling extended it to 375px, since a mobile-only element, like
+`PublicationRow`'s mobile kicker, is otherwise invisible to a desktop-only check).
+
+**How the test measures it** (`e2e/label-budget.spec.ts`): walks every **text node** in scope
+via `document.createTreeWalker(scope, NodeFilter.SHOW_TEXT)` (not just leaf elements, which
+missed a text node sitting beside a sibling element), plus a pass over every element's
+`::before`/`::after` computed `content`. A node/pseudo-element counts when its (pseudo-)parent's
+font size is ≤12px and any of:
+- CSS `text-transform: uppercase`;
+- `font-variant-caps` includes small-caps (`small-caps` or `all-small-caps`);
+- the text is **shouted in the source itself**, with no CSS transform involved: at least two
+  separate all-caps alphabetic "words", or one all-caps alphabetic run outside the allowlist.
+
+**Allowlist:** only `DOI`, `URL`, `PMID` and `ORCID` are allowlisted by name, in the
+single-run branch only — there is no length-based exemption ("5 letters or fewer") any more; an
+earlier version of the check had one, which would have let a reintroduced shouted word like
+"CITE" or "VIEW" pass silently. `data-cms-verbatim` exempts CMS and identifier text (a DOI, a
+journal name, a `roleDetail`) **from the source-caps check only** — it does not exempt CSS
+uppercase or small-caps, since a component is never entitled to force-case CMS text regardless
+of what the string itself says. Every element that already carried `data-identifier` also
+carries `data-cms-verbatim`, treated as the same exemption. Task 4 (this PR's own last commit)
+tightened the marker further: only DOI/URL/Source `ResourceBlockMeta` rows are flagged
+`identifier: true` (and so get the marker) — `Kind` (a schema enum) and the hard-coded
+"Resources" link text stay unmarked, so a future all-caps regression in hard-coded UI copy
+sitting next to CMS data is still caught.
+
+**Known limit:** the check's `content`-value parser treats a CSS string literal as the text to
+check, but a **mixed** `content` value — e.g. `content: "SEE " counter(a)` — isn't parsed; its
+literal portion is silently skipped. No redesign component renders `content` this way today
+(the only `content` in the codebase is `HIT_AREA`'s empty `content-['']`), so this is a
+documented gap, not a live defect.
+
+**Each page's measured counts**, red (before this PR's migration) vs green (after,
+re-confirmed on this PR's final commit):
+
+| Route / gallery instance | Red (1440px) | Green (1440px) | Green (375px) |
+|---|---|---|---|
+| `/` | 21 | 0 | 0 |
+| `/publications` | 56 | 0 | 0 |
+| `/people` | 22 | 0 (1 during an earlier fix round — see below) | 0 |
+| `/research` | 9 | 0 | 0 |
+| `/resources` | 9 | 0 | 0 |
+| gallery `gallery-home` | 34 | 0 | 0 |
+| gallery `gallery-people` | 12 | 0 | 0 |
+| gallery `gallery-research` | 6 | 0 | 0 |
+
+`/people`'s brief non-zero reading (1, "Research Student - MD (UNSW)") existed only between
+this task's first and second fix rounds — live CMS `roleDetail` content read as two all-caps
+"words" ("MD", "UNSW") before the `data-cms-verbatim` marker covered `PersonCard`'s role/detail
+lines; comfortably inside budget even then, and 0 once the marker landed. `/research` and
+`/resources` were **9 each in red with no page-specific label at all** — entirely the shared
+nav (7 links/wordmark) plus footer (2 lines) — which is why `SiteNav`/`SiteFooter`/
+`MobileHeader` all moved to sentence case rather than staying conditional on "only if a page
+goes over budget because of the nav": every route was already over budget from chrome alone.
+
+### Verification (this PR, final — commit A of the docs task, `dc14a64`)
+
+| Check | Result |
+|---|---|
+| `npm run type-check` | clean, no output |
+| `npm run lint` | **0 errors, 4 warnings** (unchanged baseline: 3 `no-img-element` in `Logo.tsx`, 1 import-sort in `e2e/brand-colour.spec.ts`) |
+| `npx vitest run` | **39 files, 484 tests, all passed** |
+| `npm run typegen` | **22 queries / 40 schema types**, no diff to `sanity.types.ts` |
+| `npm run build` | succeeded, all 45 pages generated |
+| `npm run test:e2e` | **279 passed, 3 skipped, 0 failed** (skips are pre-existing, live-data-dependent) |
+
+`next-env.d.ts` restored via `git checkout origin/redesign/integration -- next-env.d.ts` after
+every build, before every commit.

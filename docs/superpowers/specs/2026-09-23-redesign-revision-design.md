@@ -71,14 +71,45 @@ Tokens in `styles/index.css` `@theme`:
 | `--text-body` | **1.0625rem (17px) / 1.6**, the reading size |
 | `--text-meta` / `--text-label` | unchanged; these are mono data sizes |
 
-**Display, title and heading text never break mid-word.** Remove `break-words` from them.
-Add `hyphens: auto` as a safety net (`<html lang="en">` is already set, so hyphenation
-applies). Keep `text-wrap: balance` on display headings.
+**Word-fit budget, not an unconditional "never split mid-word" rule (revised 2026-09-23,
+PR 1).** The literal rule above turned out to be unenforceable: Blink (Chromium) never
+hyphenates a capitalised word (`hyphenate_capitalized_word_` defaults to `false`), and
+CMS titles are almost all title-case, so `hyphens: auto` is inert on nearly every heading
+this rule covers. `break-words` (`overflow-wrap: break-word`) **stays** on every display/
+title/heading element as the last-resort fallback — removing it would let an unhyphenatable
+word overflow the page, a direct violation of the unconditional no-horizontal-overflow
+floor. `hyphens: auto` stays too, as a safety net for the words the browser's hyphenation
+dictionary *does* cover.
 
-**Proof:** an e2e check at 320px and 375px that no display/title heading's text splits
-inside a word. Compare the rendered line boxes of each word with `Range#getClientRects`, or
-check that every word's width fits the line, on `/`, `/research` and `/people`. Plus the
-existing no-overflow sweep.
+Instead, each level carries a **measured word-fit budget** at 320px — the longest word its
+own column must fit without a raw mid-word split:
+
+| Level | Budget word | Fits at 320px? |
+|---|---|---|
+| display (`--text-display`, Home's `h1`) | "Neuroscience" | yes (231px word in a 246px column) |
+| title (`--text-title`, `PageTitle`'s `h1`/`h2`) | "Pathophysiology" | yes (218px in 246px) |
+| heading (`--text-heading`, e.g. a research project's `h2`) | "Neurodegenerative" | yes (194px in 246px) |
+
+A word **longer** than its level's budget may still split raw rather than overflow — this
+is a documented exception, not a defect. `PublicationPage`'s paper-title role (previously a
+fixed `2.3125rem`, outside any clamp token) moved onto the **title** level's own clamp
+(`clamp(1.75rem, 4.5vw, 2.3125rem)`) specifically so real DOI-paper titles like
+"…Alzheimer's Disease Pathophysiology" fit without a raw split at 320/375px. Keep
+`text-wrap: balance` on display headings.
+
+**Proof:**
+- **Live routes** (`/`, `/research`, `/people`, `/preview/components`) keep only a
+  no-overflow assertion per word (`Range#getClientRects`, every fragment's right edge
+  within the heading's own right edge) — this holds for any valid dataset and doesn't
+  assume a raw split never happens, since `break-words` already guarantees no overflow.
+- **The raw-split budget itself** is proven on dedicated full-width gallery fixtures at
+  `/preview/components` only, one per level, each pairing that level's budget word
+  (capitalised, so Blink can't hyphenate it) with short, non-budget filler words. The
+  check temporarily clears `overflow-wrap` and `hyphens` (`overflow-wrap: normal; hyphens:
+  manual`) on the fixture's own heading and re-measures `scrollWidth` vs `clientWidth` —
+  this is what makes the guard **Linux-CI safe**: it asserts the word fits with no
+  fallback mechanism engaged at all, rather than depending on whether the CI runner's
+  Chromium ships a hyphenation dictionary (Linux Chromium typically doesn't).
 
 ### 1.3 The numbered rail goes; `SectionLabel` replaces it
 - **`SectionRail` becomes `Section`.** The file is renamed, and every import is updated.
@@ -161,7 +192,13 @@ The review counted about 25 tracked, uppercase, 10–11px labels on Home.
 
 ## PR 3 — Publications
 
-- **Filters are not sticky.**
+- **Filters are not sticky.** This landed early, in PR 1: wrapping `FacetBand` in a
+  `Section label="Filter"` (needed for the label/alignment fix) left the band's grid cell
+  exactly as tall as the band itself, so `position: sticky` had nowhere to travel. Rather
+  than un-wrap it to preserve sticky, the controller ruled to drop sticky positioning
+  outright — this was already PR 3's own intent (Brett's feedback) — so PR 1 shipped it
+  ahead of schedule instead of shipping a band that would only lose sticky again one PR
+  later. `phase-3-decisions.md`'s Revision PR 1 section has the full history.
   - From `md` (768px): **one row of three native `<select>`s** (Year ▾, Type ▾, Topic ▾), each
     with an "All" option, plus a "Clear" text button when any filter is set.
   - Below `md`: a **"Filter (n)" button**, where n is the number of active filters, opening a
@@ -229,3 +266,9 @@ The review counted about 25 tracked, uppercase, 10–11px labels on Home.
 - **Two Wix-imported publications in wix-preview have no `slug`**, including the newest, "Non-invasive
   Bdnf mRNA therapy…" (2026-04-20). They have no paper page, and their row title does not link.
   `slug` is `required()` in the schema, so the importer should set it.
+- **2026-09-23, command centre:** the Wix importer will set slugs going forward; this hasn't
+  landed in `wix-preview` yet (next data window). Until it does, **PR 2's Home must render a
+  lead or recent paper with no slug as an unlinked title, with no crash** — the same shape as
+  the still-unslugged live rows above, since PR 2's own dataset window may still predate the
+  importer fix. Cover it with a gallery fixture (an unslugged lead paper on `/preview/
+  components`) and a `homeModel` unit test, not a live-data-dependent e2e.
