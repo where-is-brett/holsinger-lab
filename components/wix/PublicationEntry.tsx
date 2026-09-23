@@ -2,6 +2,8 @@ import { doiHref, formatCitationLine } from 'lib/wix/format'
 import type { PublicationEntry as P } from 'lib/wix/types'
 import { stegaClean } from 'next-sanity'
 
+import { CitationActions } from './CitationActions'
+
 export function PublicationEntry({ pub }: { pub: P }) {
   const citation = formatCitationLine(pub)
   const doi = doiHref(pub.doi)
@@ -37,6 +39,7 @@ export function PublicationEntry({ pub }: { pub: P }) {
           </a>
         </p>
       ) : null}
+      <CitationActions pub={pub} />
     </li>
   )
 }

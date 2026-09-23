@@ -33,7 +33,16 @@ export interface NewsLine { _id: string; title: string; summary?: string | null 
 export interface CitationSource {
   journal?: string | null; date?: string | null; volume?: number | null; issue?: number | null; pages?: string | null
 }
-export interface PublicationEntry extends CitationSource { _id: string; title: string; author?: string | null; doi?: string | null; url?: string | null }
+export interface PublicationEntry extends CitationSource {
+  _id: string
+  title: string
+  author?: string | null
+  doi?: string | null
+  url?: string | null
+  // `slug.current` (publicationsQuery) -- stable per-entry identifier used
+  // for citation export filenames and BibTeX keys (lib/wix/citationExport.ts).
+  slug?: string | null
+}
 
 export interface TeamProfile {
   _id: string; name: string; role?: string | null; roleDetail?: string | null; group: string | null; image?: AltImage | null

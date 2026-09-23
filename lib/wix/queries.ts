@@ -29,7 +29,7 @@ export const newsQuery = groq`*[_type == "newsItem" && showOnNewsPage != false] 
 // row survives to PublicationEntry with `pub.title` undefined, and
 // `pub.title.trim()` throws (I4).
 export const publicationsQuery = groq`*[_type == "publication" && defined(title)] | order(date desc) {
-  _id, title, author, journal, volume, issue, pages, date, doi, url
+  _id, title, author, journal, volume, issue, pages, date, doi, url, "slug": slug.current
 }`
 
 export const teamQuery = groq`{
