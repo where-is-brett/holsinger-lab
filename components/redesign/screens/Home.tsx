@@ -373,9 +373,10 @@ function peoplePortraits(strip: ReturnType<typeof peopleStrip>): PeoplePortraitV
   })
 }
 
-// Two rows of 3 below `lg`, one row of 6 from `lg` -- matches /people's own
-// `CARD_GRID` breakpoint for the 6-column row.
-const PORTRAIT_GRID = 'grid grid-cols-3 gap-x-3 gap-y-5 lg:grid-cols-6 lg:gap-x-5'
+// Two rows of 3 below `md`, one row of 6 from `md` -- `md`, not `lg`: at
+// `lg` the 3-column strip stayed 600-816px tall through the whole tablet
+// range (640-1023px), still heavier than the block needs to be.
+const PORTRAIT_GRID = 'grid grid-cols-3 gap-x-3 gap-y-5 md:grid-cols-6 md:gap-x-5'
 
 function PeopleBlock({
   strip,
@@ -402,7 +403,7 @@ function PeopleBlock({
                   own footprint/aspect-ratio classes. `name=""` -- decorative
                   alt; the figcaption below names them. */}
               <div className="ring-1 ring-rule">
-                <PortraitFrame name="" img={person.img} sizes="(min-width: 1024px) 12vw, 33vw" />
+                <PortraitFrame name="" img={person.img} sizes="(min-width: 768px) 12vw, 33vw" />
               </div>
               <figcaption className="mt-2 text-[0.8125rem] leading-[1.3] font-medium break-words">
                 {person.name}
@@ -537,9 +538,8 @@ export function Home({
   // (not gated on `showLabHeadCard`, unlike `memberCount` above): the hero
   // is where she's named, and a second portrait of her among ordinary
   // members would be a second naming even on a page where her own card is
-  // switched off. Capped at 6, not `peopleStrip`'s own 8-person default --
-  // 8 (two rows of 4, or four rows of 2 on a phone) overpowered the page,
-  // heavier than the hero and taller than the papers ledger.
+  // switched off. Capped at 6: one row from `md`, two rows of 3 below;
+  // more portraits outweigh the hero and the papers ledger.
   const strip = peopleStrip(profiles, roleGroups, labHead?._id ?? null, 6)
   // "People" renders whenever there's something to show: a strip/count, or
   // a support link -- omitted only when both are empty (a `showPeople:
