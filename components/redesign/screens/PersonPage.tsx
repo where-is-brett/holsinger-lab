@@ -75,12 +75,12 @@ function ProfileBlock({ person }: { person: ProfileBySlugPayload }) {
       <div className="min-w-0">
         <PortableBody blocks={person.fullBio} bio={person.bio} />
         {person.email && (
-          <a href={`mailto:${person.email}`} data-identifier className={IDENTIFIER_LINK}>
+          <a href={`mailto:${person.email}`} data-identifier data-cms-verbatim className={IDENTIFIER_LINK}>
             {person.email}
           </a>
         )}
         {person.phone && (
-          <a href={`tel:${person.phone}`} data-identifier className={IDENTIFIER_LINK}>
+          <a href={`tel:${person.phone}`} data-identifier data-cms-verbatim className={IDENTIFIER_LINK}>
             {person.phone}
           </a>
         )}

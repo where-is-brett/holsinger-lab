@@ -126,7 +126,7 @@ function SpotlightBlock({ labHead }: { labHead: LabHead }) {
         <h2 className="mt-3 text-heading break-words hyphens-auto">{labHead.name}</h2>
         <PortableBody blocks={labHead.fullBio} bio={labHead.bio} />
         {labHead.email && (
-          <a href={`mailto:${labHead.email}`} data-identifier className={EMAIL_LINK}>
+          <a href={`mailto:${labHead.email}`} data-identifier data-cms-verbatim className={EMAIL_LINK}>
             {labHead.email}
           </a>
         )}

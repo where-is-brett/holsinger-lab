@@ -130,6 +130,7 @@ function Enquiries({ email, showContactForm }: { email: string | null; showConta
             href={`mailto:${email}`}
             className="font-mono text-[20px] leading-[1.4] break-all text-link-inverse underline underline-offset-[5px]"
             data-identifier
+            data-cms-verbatim
           >
             {email}
           </a>

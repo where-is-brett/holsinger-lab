@@ -106,6 +106,7 @@ function IdentityBlock({
               <a
                 href={`mailto:${labHead.email}`}
                 data-identifier
+                data-cms-verbatim
                 className="mt-[7px] inline-block font-mono text-[11.5px] leading-[1.4] break-all text-link"
               >
                 {labHead.email}

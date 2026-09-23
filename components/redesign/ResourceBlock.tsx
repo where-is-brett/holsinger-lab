@@ -110,13 +110,19 @@ export function ResourceBlock({ title, meta = [], figureLabel, children }: Resou
           {meta.map((m) => (
             <div key={m.label}>
               <dt className="inline-block min-w-16 text-text-faint">{m.label}</dt>
+              {/* `data-cms-verbatim` (Task 3 fix round 2, re-review N1):
+                  `m.value` is CMS/identifier data (a DOI, a journal ref, a
+                  resource kind) -- see PublicationRow.tsx's Identifier()
+                  comment for the marker's full contract. */}
               <dd className="inline">
                 {m.href ? (
-                  <a className={`text-link ${IDENTIFIER}`} href={m.href} data-identifier>
+                  <a className={`text-link ${IDENTIFIER}`} href={m.href} data-identifier data-cms-verbatim>
                     {m.value}
                   </a>
                 ) : (
-                  <span className={IDENTIFIER}>{m.value}</span>
+                  <span className={IDENTIFIER} data-cms-verbatim>
+                    {m.value}
+                  </span>
                 )}
               </dd>
             </div>

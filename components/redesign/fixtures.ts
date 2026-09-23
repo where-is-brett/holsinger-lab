@@ -87,6 +87,40 @@ export const SAMPLE_PUBLICATIONS: Publication[] = [
   ),
 ]
 
+// Task 3 fix round 2 (re-review N1): `e2e/label-budget.spec.ts`'s
+// source-caps check must never depend on whether a lab's own journal names
+// or DOIs happen to read as shouted caps -- these two fixtures give the
+// gallery's CMS-verbatim probe section (Gallery.tsx) real examples of
+// both: a journal that just is called "PLOS ONE", a journal abbreviated to
+// three letters ("FEBS J"), and a DOI recorded with capital letters (a
+// real, if less common, shape -- DOIs are case-insensitive on resolution,
+// so a publisher's own casing varies). Not added to SAMPLE_PUBLICATIONS
+// itself: that array's length is assumed elsewhere in this gallery
+// (facet-band result counts), so a probe this narrow gets its own fixture
+// instead of perturbing a shared one.
+export const CMS_VERBATIM_PUB_PLOS_ONE: Publication = make(
+  '2024',
+  'A record whose journal and DOI happen to read as shouted caps',
+  'Holsinger, R.M.D.',
+  'PLOS ONE',
+  '19(3) · 100',
+  '10.1371/JOURNAL.PONE.0290000',
+  null,
+  'Article',
+  [],
+)
+export const CMS_VERBATIM_PUB_FEBS_J: Publication = make(
+  '2021',
+  'A second record whose journal abbreviation happens to read as shouted caps',
+  'Holsinger, R.M.D.',
+  'FEBS J',
+  '288(4) · 1200',
+  '10.1111/febs.15678',
+  null,
+  'Review',
+  [],
+)
+
 // Real routes carry an `href` (Task 3, spec §4.1): a clone of the first
 // fixture is enough to prove the title renders as a next/link, without
 // touching SAMPLE_PUBLICATIONS and its length-2 assumptions elsewhere in

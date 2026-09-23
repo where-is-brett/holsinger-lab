@@ -137,10 +137,19 @@ export function PersonCard({ name, role, detail, img, initials, href }: PersonCa
       </div>
       {/* `role` and `detail` are free text from the CMS -- printed verbatim,
           including any misspelling in the source data. Never corrected
-          here. */}
-      <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] break-words text-text-faint">{role}</div>
+          here. `data-cms-verbatim` (Task 3 fix round 2, re-review N1):
+          e2e/label-budget.spec.ts's source-caps check must never depend on
+          whether a given lab's own role text ("MD (UNSW)") happens to read
+          as shouted caps -- the budget is about labels this repo writes,
+          not about the shape of a real dataset. */}
+      <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] break-words text-text-faint" data-cms-verbatim>
+        {role}
+      </div>
       {detail && (
-        <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] break-words text-text-faint">
+        <div
+          className="mt-[3px] font-mono text-[10.5px] leading-[1.5] break-words text-text-faint"
+          data-cms-verbatim
+        >
           {detail}
         </div>
       )}

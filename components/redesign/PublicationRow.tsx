@@ -142,7 +142,12 @@ function Identifier({
   return (
     <span className={`font-mono ${fontSize} leading-[1.5] break-all`}>
       <span className="text-text-faint">{pub.linkKind} </span>
-      <a className={IDENTIFIER} href={pub.linkHref} data-identifier>
+      {/* `data-cms-verbatim` (Task 3 fix round 2): a DOI/URL is
+          case-sensitive CMS data, not a label -- e2e/label-budget.spec.ts's
+          source-caps check skips it, the same way it already skips
+          anything inside `[data-identifier]`'s sibling `[data-cms-verbatim]`
+          marker everywhere else in this direction. */}
+      <a className={IDENTIFIER} href={pub.linkHref} data-identifier data-cms-verbatim>
         {label}
       </a>
     </span>
@@ -168,7 +173,13 @@ export function PublicationRow({
       <div className="group border-t border-rule py-[13px]">
         <div className={KICKER}>
           <span className="text-accent">{pub.year}</span>
-          <span className="text-text-faint">
+          {/* `data-cms-verbatim` (Task 3 fix round 2, re-review N1): the
+              journal name is CMS data, not a label -- the budget spec's
+              source-caps check must never depend on whether a given lab's
+              journal names happen to read as shouted caps ("PLOS ONE",
+              "FEBS J"). See Identifier()'s own comment above for the
+              marker's full contract. */}
+          <span className="text-text-faint" data-cms-verbatim>
             {' '}
             — {pub.journal} {pub.ref}
           </span>
@@ -193,7 +204,7 @@ export function PublicationRow({
         {pub.linkHref !== '' && (
           <div className="relative mt-1.5 truncate font-mono text-[9.5px] leading-[1.4]">
             <span className="text-text-faint">{pub.linkKind} </span>
-            <a className={IDENTIFIER} href={pub.linkHref} data-identifier>
+            <a className={IDENTIFIER} href={pub.linkHref} data-identifier data-cms-verbatim>
               {pub.linkLabel}
             </a>
           </div>
@@ -221,7 +232,7 @@ export function PublicationRow({
         </span>
         <div className={`${KICKER} xl:hidden`}>
           <span className="text-accent">{pub.year}</span>
-          <span className="text-text-faint">
+          <span className="text-text-faint" data-cms-verbatim>
             {' '}
             — {pub.journal} {pub.ref}
           </span>
@@ -232,7 +243,7 @@ export function PublicationRow({
           onOpen={onOpen}
           className="mt-1.5 xl:mt-0 xl:pr-3 text-[17.5px] leading-[1.35] font-semibold tracking-[-0.005em] text-pretty"
         />
-        <span className="hidden font-mono text-[12.5px] leading-[1.5] text-text-muted xl:block">
+        <span className="hidden font-mono text-[12.5px] leading-[1.5] text-text-muted xl:block" data-cms-verbatim>
           {pub.journal} {pub.ref}
         </span>
         {/* `relative` (see the HIT_AREA comment in tokens.ts and the `narrow`
@@ -262,7 +273,7 @@ export function PublicationRow({
         </span>
         <div className={`${KICKER} xl:hidden`}>
           <span className="text-accent">{pub.year}</span>
-          <span className="text-text-faint">
+          <span className="text-text-faint" data-cms-verbatim>
             {' '}
             — {pub.journal} {pub.ref}
           </span>
@@ -273,7 +284,10 @@ export function PublicationRow({
           onOpen={onOpen}
           className="mt-1.5 xl:mt-0 xl:truncate xl:pr-3 text-[14.5px] leading-[1.5] font-semibold tracking-[-0.005em]"
         />
-        <span className="hidden truncate font-mono text-[11.5px] leading-[1.6] text-text-muted xl:block">
+        <span
+          className="hidden truncate font-mono text-[11.5px] leading-[1.6] text-text-muted xl:block"
+          data-cms-verbatim
+        >
           {pub.journal} · {pub.ref}
         </span>
         {/* `relative` + `mt-1.5 xl:mt-0`: same title-hit-area protection and
@@ -283,7 +297,7 @@ export function PublicationRow({
           {pub.linkHref !== '' && (
             <span className="overflow-hidden text-ellipsis">
               <span className="text-text-faint">{pub.linkKind} </span>
-              <a className={IDENTIFIER} href={pub.linkHref} data-identifier>
+              <a className={IDENTIFIER} href={pub.linkHref} data-identifier data-cms-verbatim>
                 {pub.linkLabelShort || pub.linkLabel}
               </a>
             </span>
@@ -301,7 +315,7 @@ export function PublicationRow({
       </span>
       <div className={`${KICKER} xl:hidden`}>
         <span className="text-accent">{pub.year}</span>
-        <span className="text-text-faint">
+        <span className="text-text-faint" data-cms-verbatim>
           {' '}
           — {pub.journal} {pub.ref}
         </span>
@@ -322,12 +336,19 @@ export function PublicationRow({
             joins the publication's own `type` and CMS `topics` (constraints.md:
             "CMS text prints verbatim"), and this renders once per row, so
             keeping it upper-case blew the micro-label budget on
-            /publications by itself (one violation per visible row). */}
+            /publications by itself (one violation per visible row).
+            `data-cms-verbatim` (fix round 2): this is a 13px line today, so
+            it's already outside the budget spec's <=12px gate, but marked
+            defensively -- CMS type/topic values, same category as the
+            journal name below, and a future size tweak shouldn't quietly
+            reopen N1 here. */}
         {tagLine(pub) !== '' && (
-          <div className="text-[13px] leading-[1.6] font-medium text-text-faint">{tagLine(pub)}</div>
+          <div className="text-[13px] leading-[1.6] font-medium text-text-faint" data-cms-verbatim>
+            {tagLine(pub)}
+          </div>
         )}
       </div>
-      <div className={`hidden xl:block ${META}`}>
+      <div className={`hidden xl:block ${META}`} data-cms-verbatim>
         {pub.journal}
         <br />
         {pub.ref}

@@ -128,6 +128,7 @@ function CiteAndAccessBlock({ pub }: { pub: Publication }) {
           <a
             href={pub.linkHref}
             data-identifier
+            data-cms-verbatim
             className={`mt-[14px] inline-block font-mono text-[15px] leading-[1.5] font-medium ${IDENTIFIER}`}
           >
             {pub.linkHref}
@@ -147,6 +148,7 @@ function CiteAndAccessBlock({ pub }: { pub: Publication }) {
           <div
             className="font-mono text-[12.5px] leading-[1.75] break-words normal-case!"
             data-identifier
+            data-cms-verbatim
             data-testid="pub-cite-text"
           >
             {pub.cite}

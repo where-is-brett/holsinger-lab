@@ -5,6 +5,8 @@ import { CopyCitation } from 'components/redesign/CopyCitation'
 import { FacetBand, type FacetChipSpec } from 'components/redesign/FacetBand'
 import { applyFacets, countBy, toggleFacet } from 'components/redesign/facets'
 import {
+  CMS_VERBATIM_PUB_FEBS_J,
+  CMS_VERBATIM_PUB_PLOS_ONE,
   HOME_MAESTRO_FIXTURE,
   HOME_PAGE_FIXTURE,
   HOME_PUBLICATION_COUNT_FIXTURE,
@@ -272,6 +274,42 @@ export default function Gallery() {
         <p className={META}>
           last opened: <span data-testid="opened-publication">{openedPub?.title ?? 'none'}</span>
         </p>
+      </section>
+
+      {/* Task 3 fix round 2 (re-review N1): proves `[data-cms-verbatim]`
+          actually exempts real-dataset shapes that happen to read as
+          shouted caps -- a journal called "PLOS ONE", a journal abbreviated
+          to "FEBS J", a DOI recorded with capital letters, and a
+          `roleDetail` like "MD (UNSW)". `e2e/label-budget.spec.ts`'s own
+          "CMS-verbatim text never trips the source-caps check" test scopes
+          to this section's testid and asserts it counts 0. */}
+      <section data-testid="gallery-cms-verbatim-probe" className="col-start-2 px-6">
+        <Heading>CMS-verbatim probe (Task 3 fix round 2)</Heading>
+        <SubHeading>Journal names and a capitalised DOI</SubHeading>
+        <div className="mb-8">
+          <PublicationRow pub={CMS_VERBATIM_PUB_PLOS_ONE} />
+          <PublicationRow pub={CMS_VERBATIM_PUB_FEBS_J} />
+        </div>
+        <SubHeading>A roleDetail that reads as an acronym pair</SubHeading>
+        <div className="grid max-w-xs grid-cols-1">
+          <PersonCard name="CMS Verbatim Probe" role="Research Student" detail="MD (UNSW)" initials="CV" />
+        </div>
+      </section>
+
+      {/* Task 3 fix round 2 (re-review N2): a regression guard, not
+          production copy -- proves the budget spec still catches a shouted
+          UI word ("CITE", "VIEW") typed directly into the source with no
+          CSS `text-transform` involved, now that the old "<=5 letters is an
+          acronym" exemption is gone. `e2e/label-budget.spec.ts`'s "A
+          shouted UI word with no CSS transform still counts" test scopes
+          to this section's testid. Deliberately outside every other
+          section this file's own `GALLERY_SECTIONS`/route budget checks
+          scan, so it can never itself push a real page over the ≤6
+          budget. */}
+      <section data-testid="gallery-shouted-word-probe" className="col-start-2 px-6">
+        <Heading>Shouted-word probe (Task 3 fix round 2 -- regression guard)</Heading>
+        <p className="text-[11px] text-text-muted">CITE</p>
+        <p className="text-[11px] text-text-muted">VIEW</p>
       </section>
 
       <section data-testid="gallery-facet-band" className="col-start-2 px-6">
