@@ -324,26 +324,32 @@ test.describe('/', () => {
   test('research cards come from researchOrder projects, else siteCopy themes, else no block', async ({
     page,
   }) => {
-    const projects = await e2eClient.fetch<{ title: string | null; slug: string | null }[]>(
+    const rawProjects = await e2eClient.fetch<{ title: string | null; slug: string | null }[]>(
       `*[_type=="project" && defined(researchOrder)]|order(researchOrder asc){title, "slug": slug.current}`
     )
     const rawThemes = await e2eClient.fetch<{ title: string | null }[] | null>(
       `*[_type=="siteCopy"][0].about.themes[defined(title) && title != ""]{title}`
     )
-    // `researchCards` (homeModel.ts) trims a theme's title before deciding
-    // whether it counts -- the query's own `title != ""` check doesn't
-    // catch a whitespace-only title, so this filters the same way the
-    // function does to avoid a count mismatch on that edge case.
+    // `researchCards` (homeModel.ts) drops a project or a theme whose title
+    // is blank (or unset) after trimming -- there's nothing for its card
+    // to say -- so this filters the same way the function does to avoid a
+    // count mismatch on that edge case. Per `toResearchView`'s
+    // `title: p.title ?? ''` (researchModel.ts), a project's title is
+    // never actually `null` by the time it reaches `researchCards`, but
+    // the live query itself can return one, so the filter still guards it.
+    const projects = rawProjects.filter((p) => p.title?.trim())
     const themes = (rawThemes ?? []).filter((t) => t.title?.trim())
     await page.goto('/')
     const cards = page.getByTestId('home-research-card')
-    if (projects.length > 0) {
+    if (rawProjects.length > 0) {
+      // `researchCards` picks the projects branch whenever there's at
+      // least one researchOrder project, even if every one of them is
+      // untitled -- themes are never consulted in that case. `cards`
+      // reflects the *filtered* (titled) list, since an untitled project
+      // renders no card at all.
       await expect(cards).toHaveCount(projects.length)
       for (const [i, p] of projects.entries()) {
-        // A project with a null/blank title still renders a card (an empty
-        // one, per `researchCards`'s `title: p.title ?? ''`) -- only assert
-        // the text match when there's a real title to compare against.
-        if (p.title?.trim()) await expect(cards.nth(i).locator('h3')).toContainText(p.title.trim())
+        await expect(cards.nth(i).locator('h3')).toContainText(p.title!.trim())
         if (p.slug) await expect(cards.nth(i).locator(`h3 a[href="/research#${p.slug}"]`)).toHaveCount(1)
       }
     } else if (themes.length > 0) {
@@ -402,6 +408,35 @@ test.describe('/', () => {
           expect(targetBox.y).toBeLessThanOrEqual(headerBottom + 4)
         }
       }
+    }
+  })
+
+  // Dataset-independent: the anchor test above skips whenever there are no
+  // researchOrder projects (production/CI today), so it never actually
+  // runs there -- this always does, since `/preview/components` renders
+  // `Research`'s `id="fixture-research-*"` Sections
+  // (`RESEARCH_PROJECTS_FIXTURE`) regardless of live content. That route
+  // has no sticky header of its own (confirmed: no `site-header` testid
+  // renders there), so a fragment navigation there lands the section at
+  // its own `scroll-margin-top` value, not at a real header's bottom
+  // edge -- this measures the live header's height on `/` only to get
+  // that value, then checks the gallery section's top against it. In
+  // other words, this asserts "top ≈ --nav-height", not "top is below a
+  // header" (the anchor test above is what proves the latter, whenever it
+  // can run).
+  test('an id-bearing Section lands at --nav-height on anchor navigation, measured against the live header height (dataset-independent)', async ({
+    page,
+  }) => {
+    for (const width of [1280, 375]) {
+      await page.setViewportSize({ width, height: 900 })
+      await page.goto('/')
+      const header = await page.getByTestId('site-header').boundingBox()
+      if (!header) throw new Error('missing site-header box')
+      await page.goto('/preview/components#fixture-research-1')
+      const box = await page.locator('#fixture-research-1').boundingBox()
+      if (!box) throw new Error('missing anchor target box')
+      expect(box.y).toBeGreaterThanOrEqual(header.height - 1)
+      expect(box.y).toBeLessThanOrEqual(header.height + 4)
     }
   })
 

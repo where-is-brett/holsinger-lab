@@ -166,13 +166,21 @@ export function researchCards(
   themes: { title?: string | null; summary?: string | null }[] | null | undefined
 ): ResearchCard[] {
   if (projects.length > 0) {
-    const cards = projects.map((p) => ({
-      key: p.id,
-      title: p.title,
-      excerpt: firstSentence(plainText(p.body)),
-      href: p.slug ? `/research#${p.slug}` : '/research',
-      cover: p.cover,
-    }))
+    // A project with a blank (or unset) title gets no card, same as a
+    // blank-titled theme below -- there's nothing for its card to say.
+    const cards = projects.flatMap((p) => {
+      const title = p.title?.trim()
+      if (!title) return []
+      return [
+        {
+          key: p.id,
+          title,
+          excerpt: firstSentence(plainText(p.body)),
+          href: p.slug ? `/research#${p.slug}` : '/research',
+          cover: p.cover,
+        },
+      ]
+    })
     // Covers show only when every card in the set has one -- a mixed row
     // (one covered card beside a bare one) leaves a large uneven void next
     // to the shorter card, so a single missing cover drops every card's

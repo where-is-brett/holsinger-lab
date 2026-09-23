@@ -268,6 +268,13 @@ describe('researchCards', () => {
     const cards = researchCards([a, b] as never, null)
     expect(cards.map((c) => c.cover)).toEqual([cover, cover])
   })
+  it('drops a project with a blank (or unset) title, same as a blank-titled theme', () => {
+    const untitled = { ...view('p1', 'a', 'X.'), title: '  ' }
+    const unset = { ...view('p2', 'b', 'Y.'), title: null }
+    const titled = view('p3', 'c', 'Z.')
+    const cards = researchCards([untitled, unset, titled] as never, null)
+    expect(cards).toEqual([{ key: 'p3', title: 'T p3', excerpt: 'Z.', href: '/research#c', cover: null }])
+  })
 })
 
 describe('peopleStrip', () => {
