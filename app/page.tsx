@@ -1,5 +1,6 @@
 import { toPlainText } from '@portabletext/react'
 import { toPublication } from 'components/redesign/publicationModel'
+import { toResearchView } from 'components/redesign/researchModel'
 import { Home } from 'components/redesign/screens/Home'
 import Layout from 'components/shared/Layout'
 import { resolveBranding } from 'lib/branding'
@@ -13,6 +14,7 @@ import {
   maestroProjectQuery,
   profileQuery,
   publicationCountQuery,
+  researchProjectsQuery,
   roleGroupQuery,
   settingsQuery,
   supportPageQuery,
@@ -26,6 +28,7 @@ import type {
   MaestroProjectPayload,
   ProfilePayload,
   PublicationPayload,
+  ResearchProjectPayload,
   RoleGroupPayload,
   SettingsPayload,
   SiteCopyPayload,
@@ -64,6 +67,7 @@ const getData = cache(async () => {
     { data: publicationCountData },
     { data: resourceData },
     { data: maestroData },
+    { data: researchProjectsData },
     { data: supportPageData },
     { data: profilesData },
     { data: roleGroupsData },
@@ -78,6 +82,7 @@ const getData = cache(async () => {
     sanityFetch({ query: publicationCountQuery, stega: false }),
     sanityFetch({ query: homeResourceQuery, stega: false }),
     sanityFetch({ query: maestroProjectQuery, stega: false }),
+    sanityFetch({ query: researchProjectsQuery, stega: false }),
     sanityFetch({ query: supportPageQuery, stega: false }),
     sanityFetch({ query: profileQuery, stega: false }),
     sanityFetch({ query: roleGroupQuery, stega: false }),
@@ -89,6 +94,7 @@ const getData = cache(async () => {
   const publicationCount = (publicationCountData as number | null) ?? 0
   const resource = (resourceData as HomeResourcePayload | null) ?? null
   const maestro = (maestroData as MaestroProjectPayload | null) ?? null
+  const researchProjects = (researchProjectsData as ResearchProjectPayload[] | null) ?? []
   const supportPage = (supportPageData as SupportPagePayload | null) ?? null
   const profiles = (profilesData as ProfilePayload[] | null) ?? []
   const roleGroups = (roleGroupsData as RoleGroupPayload[] | null) ?? []
@@ -100,6 +106,7 @@ const getData = cache(async () => {
     publicationCount,
     resource,
     maestro,
+    researchProjects,
     supportPage,
     profiles,
     roleGroups,
@@ -131,6 +138,7 @@ export default async function Page() {
     publicationCount,
     resource,
     maestro,
+    researchProjects,
     supportPage,
     profiles,
     roleGroups,
@@ -148,6 +156,7 @@ export default async function Page() {
         publicationCount={publicationCount}
         resource={resource}
         maestro={maestro}
+        researchProjects={researchProjects.map(toResearchView)}
         profiles={profiles}
         roleGroups={roleGroups}
         supportPage={supportPage}

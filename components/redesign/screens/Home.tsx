@@ -14,13 +14,14 @@ import type {
   SupportPagePayload,
 } from 'types'
 
-import { currentMemberCount, homeStatement, resolveLabHeadHref, shouldShowLabHeadCard, splitLead } from '../homeModel'
+import { currentMemberCount, homeStatement, researchCards, resolveLabHeadHref, shouldShowLabHeadCard, splitLead } from '../homeModel'
 import { LeadPublication } from '../LeadPublication'
 import { initialsOf } from '../peopleModel'
 import { PORTRAIT_IMAGE_CLASS } from '../PersonCard'
 import { PortableBody } from '../PortableBody'
 import type { Publication } from '../publicationModel'
 import { PublicationRow } from '../PublicationRow'
+import type { ResearchProjectView } from '../researchModel'
 import { ResourceBlock } from '../ResourceBlock'
 import { buildResourceMeta } from '../resourceModel'
 import { Section } from '../Section'
@@ -280,6 +281,66 @@ function RecentWorkBlock({ publications, count }: { publications: Publication[];
   )
 }
 
+// -- Block 2b: Research as cards -------------------------------------------
+
+// `grid-cols-1` + explicit `md:`-prefixed track -- same reasoning as every
+// other CMS-text grid in this direction (constraints.md's grid-overflow
+// rule): below `md` there is only one implicit track, and a long unbroken
+// title or excerpt token could otherwise set its min-content width past
+// the viewport.
+const RESEARCH_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-2'
+
+function ResearchCardView({ card }: { card: ReturnType<typeof researchCards>[number] }) {
+  const cover = card.cover
+  return (
+    <article data-testid="home-research-card" className="min-w-0 border-t border-rule pt-5">
+      {cover && (
+        <div className="overflow-hidden">
+          <Image
+            src={cover.src}
+            alt={cover.alt}
+            width={cover.width}
+            height={cover.height}
+            sizes="(min-width: 768px) 50vw, 100vw"
+            className="aspect-[16/10] w-full object-cover"
+          />
+        </div>
+      )}
+      {/* `break-words` (PageTitle.tsx's canonical note) -- CMS text, so also
+          `data-cms-verbatim`. A project card links to its /research#slug
+          anchor; a theme (no project backing it) is plain text. */}
+      <h3 className="mt-4 text-pretty break-words text-[1.25rem] font-semibold leading-[1.25]">
+        {card.href ? (
+          <Link href={card.href} data-cms-verbatim>
+            {card.title}
+          </Link>
+        ) : (
+          <span data-cms-verbatim>{card.title}</span>
+        )}
+      </h3>
+      {card.excerpt && <p className="mt-2 text-body text-text-muted">{card.excerpt}</p>}
+    </article>
+  )
+}
+
+function ResearchBlock({ cards }: { cards: ReturnType<typeof researchCards> }) {
+  return (
+    <div data-testid="home-research">
+      <div className={RESEARCH_GRID}>
+        {cards.map((card) => (
+          <ResearchCardView key={card.key} card={card} />
+        ))}
+      </div>
+      {/* No show flag for Research (unlike Resources/Outreach/The lab) --
+          /research always exists, even listing nothing, so this link is
+          unconditional. */}
+      <Link href="/research" className="mt-5 inline-block text-[0.9375rem] font-medium text-link">
+        Our research →
+      </Link>
+    </div>
+  )
+}
+
 // -- Block 3: Resources ---------------------------------------------------
 
 // `buildResourceMeta` (KIND / SOURCE / DOI-or-URL) moved to
@@ -395,6 +456,7 @@ export function Home({
   publicationCount,
   resource,
   maestro,
+  researchProjects,
   profiles,
   roleGroups,
   supportPage,
@@ -408,6 +470,7 @@ export function Home({
   publicationCount: number
   resource: HomeResourcePayload | null
   maestro: MaestroProjectPayload | null
+  researchProjects: ResearchProjectView[]
   profiles: ProfilePayload[]
   roleGroups: RoleGroupPayload[]
   supportPage: SupportPagePayload | null
@@ -441,6 +504,12 @@ export function Home({
   const showMembersLine = showPeople && memberCount > 0
 
   const showRecentWork = publications.length > 0 && settings.showPublications !== false
+  // researchOrder projects first, siteCopy.about.themes only when there
+  // are none (researchCards, homeModel.ts) -- there's no show flag: the
+  // block is omitted only when both sources are genuinely empty, since
+  // /research itself always exists.
+  const cards = researchCards(researchProjects, siteCopy?.about?.themes)
+  const showResearch = cards.length > 0
   const showResources = Boolean(resource)
   const showOutreach = Boolean(maestro)
   // "The lab" itself still renders whenever either of its two parts has
@@ -478,6 +547,14 @@ export function Home({
       label: 'Recent papers',
       labelHeading: true,
       content: <RecentWorkBlock publications={publications} count={publicationCount} />,
+    })
+  }
+  if (showResearch) {
+    blocks.push({
+      key: 'research',
+      label: 'Research',
+      labelHeading: true,
+      content: <ResearchBlock cards={cards} />,
     })
   }
   if (showResources && resource) {

@@ -13,6 +13,7 @@ import {
   HOME_PUBLICATION_COUNT_FIXTURE,
   HOME_PUBLICATIONS_FIXTURE,
   HOME_PUBLICATIONS_UNSLUGGED_FIXTURE,
+  HOME_RESEARCH_PROJECTS_FIXTURE,
   HOME_RESOURCE_FIXTURE,
   HOME_SETTINGS_FIXTURE,
   HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE,
@@ -20,6 +21,7 @@ import {
   HOME_SETTINGS_NAME_ONLY_FIXTURE,
   HOME_SETTINGS_PORTRAIT_FIXTURE,
   HOME_SITE_COPY_FIXTURE,
+  HOME_SITE_COPY_THEMES_FIXTURE,
   HOME_SUPPORT_PAGE_FIXTURE,
   LINKED_PUB,
   NO_LINK_PUB,
@@ -570,7 +572,10 @@ export default function Gallery() {
             with itself, matching the treatment
             `gallery-typography-budget-inner` uses at 320/375px. */}
         <div className="col-span-full">
-          <SubHeading>(a) labHead set, showLabHeadOnHome true -- lab-head card shows, PI excluded from the count</SubHeading>
+          <SubHeading>
+            (a) labHead set, showLabHeadOnHome true -- lab-head card shows, PI excluded from the count; three
+            researchOrder project cards, one linked cover
+          </SubHeading>
           <div className="mb-8 border border-rule" data-testid="gallery-home-a">
             <Home
               home={HOME_PAGE_FIXTURE}
@@ -581,6 +586,7 @@ export default function Gallery() {
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={HOME_RESEARCH_PROJECTS_FIXTURE}
               profiles={PEOPLE_PROFILES_FIXTURE}
               roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
@@ -592,18 +598,25 @@ export default function Gallery() {
               card is hidden. The PI counts as an ordinary member (this
               instance's count is instance (a)'s count plus exactly one,
               the PI herself) instead of being silently subtracted while
-              appearing nowhere on the page. */}
-          <SubHeading>(b) labHead set, showLabHeadOnHome false -- no lab-head card, PI included in the count</SubHeading>
+              appearing nowhere on the page. No researchOrder projects here
+              -- the research cards fall back to `HOME_SITE_COPY_THEMES_FIXTURE`'s
+              themes instead, proving the fallback and its "- " strip
+              independently of instance (a)'s project cards. */}
+          <SubHeading>
+            (b) labHead set, showLabHeadOnHome false -- no lab-head card, PI included in the count; no
+            researchOrder projects, so research cards fall back to siteCopy themes
+          </SubHeading>
           <div className="mb-8 border border-rule" data-testid="gallery-home-b">
             <Home
               home={HOME_PAGE_FIXTURE}
               settings={HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE}
               siteName="Holsinger Lab"
-              siteCopy={null}
+              siteCopy={HOME_SITE_COPY_THEMES_FIXTURE}
               publications={HOME_PUBLICATIONS_FIXTURE}
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
               profiles={PEOPLE_PROFILES_FIXTURE}
               roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
@@ -631,6 +644,7 @@ export default function Gallery() {
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
               profiles={PEOPLE_PROFILES_FIXTURE}
               roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
@@ -655,6 +669,7 @@ export default function Gallery() {
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
               profiles={PEOPLE_PROFILES_FIXTURE}
               roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
@@ -675,6 +690,7 @@ export default function Gallery() {
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
               profiles={PEOPLE_PROFILES_FIXTURE}
               roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
@@ -696,6 +712,7 @@ export default function Gallery() {
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
               profiles={PEOPLE_PROFILES_FIXTURE}
               roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
@@ -736,6 +753,7 @@ export default function Gallery() {
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
               profiles={PEOPLE_PROFILES_FIXTURE}
               roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
@@ -770,6 +788,7 @@ export default function Gallery() {
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
               profiles={PEOPLE_PROFILES_FIXTURE}
               roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}

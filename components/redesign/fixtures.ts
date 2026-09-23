@@ -807,6 +807,26 @@ export const TYPOGRAPHY_BUDGET_RESEARCH_PROJECT_FIXTURE: ResearchProjectView = r
   cover: null,
 })
 
+// gallery-home-a's research cards: the first three `RESEARCH_PROJECTS_FIXTURE`
+// views (fixture-research-1/2/3), each already carrying a real cover -- "at
+// least one with a cover" (task brief), proven here by all three.
+export const HOME_RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = RESEARCH_PROJECTS_FIXTURE.slice(0, 3)
+
+// gallery-home-b's siteCopy: no researchOrder projects, so `researchCards`
+// (homeModel.ts) falls back to these themes. Each summary carries a leading
+// "- " marker -- the same shape a Studio editor pastes from a bullet list --
+// proving the card's excerpt strips it rather than printing it verbatim.
+export const HOME_SITE_COPY_THEMES_FIXTURE: SiteCopyPayload = {
+  hero: { subheading: 'Unused while researchOrder projects are empty and themes are set.' },
+  about: {
+    body: null,
+    themes: [
+      { title: 'Gut-brain axis', summary: '- How microbiome shifts influence cognition and pathology.' },
+      { title: 'Glial signalling', summary: '- Astrocyte and microglial responses in disease progression.' },
+    ],
+  },
+}
+
 // Task 3 (Home): production today has no resource, an unset labHead, and no
 // `support-our-research` page (spec §2) -- the states this fixture proves
 // are exactly the ones live data can't show (constraints.md), reusing the

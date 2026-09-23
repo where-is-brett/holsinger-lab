@@ -67,11 +67,16 @@ export function Section({
   const rule = !inverse && borderTop ? 'border-t border-rule' : ''
   const surface = inverse ? 'bg-surface-inverse text-text-inverse' : ''
   const LabelTag = labelHeading ? 'h2' : 'p'
+  // Only a section with an `id` is ever a same-page anchor target
+  // (Research.tsx's `id={project.slug}`) -- `scroll-mt-(--nav-height)`
+  // keeps the sticky header (SiteChrome.tsx, `--nav-height` tall) from
+  // covering it after an in-page jump or a `/research#slug` navigation.
+  const anchorOffset = id ? 'scroll-mt-(--nav-height)' : ''
 
   return (
     <section
       id={id}
-      className={`${SECTION_GRID} ${SECTION_GUTTER_X} ${surface} ${rule}`}
+      className={`${SECTION_GRID} ${SECTION_GUTTER_X} ${surface} ${rule} ${anchorOffset}`}
       style={{ paddingTop: padTop, paddingBottom: padBottom }}
     >
       {label && (

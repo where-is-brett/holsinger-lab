@@ -320,6 +320,64 @@ test.describe('/', () => {
     expect(mainText.split(name).length - 1).toBe(1)
   })
 
+  test('research cards come from researchOrder projects, else siteCopy themes, else no block', async ({
+    page,
+  }) => {
+    const projects = await e2eClient.fetch<{ title: string; slug: string | null }[]>(
+      `*[_type=="project" && defined(researchOrder)]|order(researchOrder asc){title, "slug": slug.current}`
+    )
+    const themes = await e2eClient.fetch<{ title: string }[] | null>(
+      `*[_type=="siteCopy"][0].about.themes[defined(title) && title != ""]{title}`
+    )
+    await page.goto('/')
+    const cards = page.getByTestId('home-research-card')
+    if (projects.length > 0) {
+      await expect(cards).toHaveCount(projects.length)
+      for (const [i, p] of projects.entries()) {
+        await expect(cards.nth(i).locator('h3')).toContainText(p.title.trim())
+        if (p.slug) await expect(cards.nth(i).locator(`h3 a[href="/research#${p.slug}"]`)).toHaveCount(1)
+      }
+    } else if ((themes ?? []).length > 0) {
+      await expect(cards).toHaveCount((themes ?? []).length)
+      await expect(cards.locator('h3 a')).toHaveCount(0)
+    } else {
+      await expect(page.getByTestId('home-research')).toHaveCount(0)
+    }
+  })
+
+  test('/research#<slug> targets exist for every project card link, below the sticky header', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    const hrefs = await page
+      .getByTestId('home-research-card')
+      .locator('h3 a')
+      .evaluateAll((as) => as.map((a) => a.getAttribute('href')))
+    const anchors = hrefs.filter((h): h is string => Boolean(h?.includes('#')))
+    // Carried from Task 1 review: the anchor e2e must hold for any valid
+    // dataset -- production has no researchOrder projects today, so this
+    // dataset has no slugged card links to check.
+    test.skip(anchors.length === 0, 'no /research#<slug> card links in this dataset')
+
+    for (const href of anchors) {
+      await page.goto(href)
+      const id = href.split('#')[1]
+      const target = page.locator(`[id="${id}"]`)
+      await expect(target).toHaveCount(1)
+      const heading = target.getByTestId('research-project-title')
+      await expect(heading).toBeVisible()
+      const [headerBox, headingBox] = await Promise.all([
+        page.getByTestId('site-header').boundingBox(),
+        heading.boundingBox(),
+      ])
+      if (!headerBox || !headingBox) throw new Error('missing bounding box for header or target heading')
+      // The target heading's top must sit at or below the sticky header's
+      // own bottom edge -- otherwise the header would cover it after the
+      // anchor scroll.
+      expect(headingBox.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height - 1)
+    }
+  })
+
   test.describe('no horizontal overflow', () => {
     for (const width of [320, 375, 768, 1024, 1280]) {
       test(`at ${width}px`, async ({ page }) => {
@@ -493,6 +551,34 @@ test.describe('/preview/components gallery: home', () => {
     await expect(card).toBeVisible()
     await expect(card.locator('a[href^="mailto:"]')).toHaveCount(0)
     await expect(card.getByTestId('home-lab-head-role')).toHaveCount(0)
+  })
+
+  // Instance (a): three researchOrder project cards, reusing the Research
+  // gallery fixture views, at least one with a cover.
+  test('gallery-home-a: three research cards, linked, with at least one cover', async ({ page }) => {
+    await page.goto('/preview/components')
+    const cards = page.getByTestId('gallery-home-a').getByTestId('home-research-card')
+    await expect(cards).toHaveCount(3)
+    await expect(cards.locator('h3 a')).toHaveCount(3)
+    await expect(page.getByTestId('gallery-home-a').getByTestId('home-research').locator('img')).not.toHaveCount(0)
+  })
+
+  // Instance (b): no researchOrder projects, so the cards fall back to
+  // siteCopy.about.themes -- `researchCards` (homeModel.ts) strips a
+  // theme summary's leading "- " marker, and the card is unlinked (plain
+  // text, not an `<a>`).
+  test('gallery-home-b: research cards fall back to themes, with no leading "- " and no link', async ({
+    page,
+  }) => {
+    await page.goto('/preview/components')
+    const cards = page.getByTestId('gallery-home-b').getByTestId('home-research-card')
+    const count = await cards.count()
+    expect(count).toBeGreaterThan(0)
+    await expect(cards.locator('h3 a')).toHaveCount(0)
+    const excerpts = await cards.locator('p').allTextContents()
+    for (const excerpt of excerpts) {
+      expect(excerpt.trim().startsWith('-')).toBe(false)
+    }
   })
 
   // An unbroken role long enough to overflow the card's column without its
