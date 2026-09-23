@@ -40,22 +40,28 @@
      line-height/tracking/weight companions (Tailwind 4's convention for
      attaching those to a named text step), replacing the old aliases onto
      Tailwind's default scale. */
-  --text-display: 4rem;
-  --text-display--line-height: 1.04;
+  /* Fluid clamp() steps (task brief "Fonts and type scale", spec §1.2) --
+     each scales between a floor and ceiling by viewport width instead of
+     jumping between fixed sizes at breakpoints, which is what stopped the
+     old fixed `--text-display` (64px flat) from ever shrinking enough at
+     375px to keep "Laboratory" on one word -- `break-words` was doing the
+     job fluid type should have done. */
+  --text-display: clamp(2.25rem, 6vw, 4rem);
+  --text-display--line-height: 1.05;
   --text-display--letter-spacing: -0.02em;
   --text-display--font-weight: 600;
-  --text-title: 2.75rem;
-  --text-title--line-height: 1.08;
+  --text-title: clamp(1.75rem, 4.5vw, 2.75rem);
+  --text-title--line-height: 1.1;
   --text-title--letter-spacing: -0.015em;
   --text-title--font-weight: 600;
-  --text-heading: 2.0625rem;
-  --text-heading--line-height: 1.15;
+  --text-heading: clamp(1.375rem, 3vw, 2rem);
+  --text-heading--line-height: 1.2;
   --text-heading--letter-spacing: -0.01em;
   --text-heading--font-weight: 600;
-  --text-lead: 1.0625rem;
-  --text-lead--line-height: 1.65;
-  --text-body: 0.96875rem;
-  --text-body--line-height: 1.65;
+  --text-lead: 1.1875rem;
+  --text-lead--line-height: 1.6;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.6;
   --text-meta: 0.78125rem;
   --text-meta--line-height: 1.6;
   --text-label: 0.6875rem;
@@ -335,8 +341,15 @@
   }
 }
 
+/* Task 1 fix (root cause of the preview review, spec "Why"): this used to
+   point --font-sans at the old site's mono face, so every heading,
+   abstract and bio rendered mono. Archivo (loaded in app/layout.tsx) is
+   the redesign's reading and display face; the legacy faces
+   (--font-antarctican, --font-ariana, --font-serif) stay mapped above for
+   `/[slug]`, `/projects/*`, the old contact form and the Logo wordmark,
+   which still consume them. */
 :root {
-  --font-sans: var(--font-antarctican-mono);
+  --font-sans: var(--font-archivo), 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 html,

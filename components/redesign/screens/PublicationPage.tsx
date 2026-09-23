@@ -29,17 +29,32 @@ function PaperBlock({ pub }: { pub: Publication }) {
       >
         ← All publications
       </Link>
-      {/* Fix round 1: at 375px, SectionRail's content column narrows to
-          roughly 233px, and a single long word (e.g. "Neuroprotective") set
-          at this heading's large 2.3125rem font-size can be wider than
-          that column on its own -- normal word-wrapping only breaks at
-          spaces, so without `break-words` (`overflow-wrap: break-word`)
-          that one word pushes past the column and (like the Tag row above)
-          inflates the page's horizontal scroll width. `break-words` sets a
-          different CSS property (`overflow-wrap`) than `text-pretty`
-          (`text-wrap`), so this is additive, not a same-property
-          collision. */}
-      <h1 className="mt-[26px] max-w-[1060px] text-[2.3125rem] leading-[1.22] font-semibold tracking-[-0.012em] text-pretty break-words">
+      {/* Fix round 1, revisited by Task 1 ("Fonts and type scale") fix
+          round 1: at 375px, SectionRail's content column narrows to
+          roughly 233px, and a single long word (e.g. "Neuroprotective")
+          set at this heading's large 2.3125rem font-size can be wider than
+          that column on its own. The original fix was `break-words`
+          (`overflow-wrap: break-word`), which stopped the horizontal
+          overflow but split the word at an arbitrary character with no
+          visual mark -- Brett's review flagged exactly this on Home's
+          "Laborato/ry". Task 1 tried removing `break-words` in favour of
+          `hyphens-auto` alone (`<html lang="en">` is already set, so
+          hyphenation applies) -- but proved against the live dataset that
+          this regresses: the DOI paper
+          "INPP5D/SHIP1: Expression, Regulation and Roles in Alzheimer's
+          Disease Pathophysiology" overflows at 320px with `hyphens-auto`
+          alone, because Chromium's hyphenation engine renders
+          "Pathophysiology" as one unbroken line instead of finding a break
+          point -- e2e/publication-page.spec.ts's existing "no horizontal
+          overflow" sweep caught it. `break-words` stays as the fallback:
+          per the CSS Text spec, `overflow-wrap: break-word` only takes
+          effect when a line has no other acceptable break (a space, or a
+          hyphenation point), so a title that DOES hyphenate cleanly (most
+          of them) is unaffected -- this only guards the ones that don't.
+          `hyphens`/`overflow-wrap` are different CSS properties from each
+          other and from `text-pretty` (`text-wrap`), so all three are
+          additive, not a same-property collision. */}
+      <h1 className="mt-[26px] max-w-[1060px] text-[2.3125rem] leading-[1.22] font-semibold tracking-[-0.012em] text-pretty break-words hyphens-auto">
         {pub.title}
       </h1>
       <p className="mt-5 max-w-[900px] text-[16px] leading-[1.6] text-text-muted">

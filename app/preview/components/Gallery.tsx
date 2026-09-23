@@ -60,7 +60,9 @@ import { useMemo, useState } from 'react'
 // element, and a function prop cannot cross the RSC boundary.
 
 function Heading({ children }: { children: ReactNode }) {
-  return <h2 className="text-title mb-4 text-[22px] leading-none">{children}</h2>
+  // Task 1 fix round 1: `break-words` kept alongside `hyphens-auto` (see
+  // components/redesign/PageTitle.tsx's note).
+  return <h2 className="text-title mb-4 text-[22px] leading-none break-words hyphens-auto">{children}</h2>
 }
 
 function SubHeading({ children }: { children: ReactNode }) {
@@ -117,7 +119,7 @@ export default function Gallery() {
     <main className="mx-auto flex max-w-5xl flex-col gap-16 px-6 py-10">
       <div>
         <p className={LABEL}>Preview -- not indexed</p>
-        <h1 className="text-title text-[28px] leading-none">Redesign component gallery</h1>
+        <h1 className="text-title text-[28px] leading-none break-words hyphens-auto">Redesign component gallery</h1>
         <p className="mt-3 max-w-prose text-[14px] text-text-muted">
           Every primitive from Tasks 4-8, rendered against real lab content so Playwright and axe
           can assert what this repo&apos;s node-only Vitest setup cannot reach.

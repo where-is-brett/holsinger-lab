@@ -79,10 +79,13 @@ export function ResourceBlock({ title, meta = [], figureLabel, children }: Resou
             (its own fix-round-1 comment) -- a single long unbreakable word
             in `title` can be wider than this column at 320px, and
             `break-words` (`overflow-wrap: break-word`) is a different
-            property than anything else already set here, so it's additive. */}
+            property than anything else already set here, so it's additive.
+            Task 1 fix round 1: `hyphens-auto` joins it (not replaces it) --
+            see PageTitle.tsx's note on why `break-words` stays as a
+            fallback rather than being removed. */}
         <div
           data-testid="resource-block-title"
-          className="max-w-[640px] text-heading font-semibold break-words"
+          className="max-w-[640px] text-heading font-semibold break-words hyphens-auto"
         >
           {title}
         </div>

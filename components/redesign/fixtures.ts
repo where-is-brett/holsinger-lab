@@ -726,6 +726,29 @@ export const RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
     category: null,
     cover: null,
   }),
+  // Task 1 (Fonts and type scale) fix: a heading instance made of long,
+  // unhyphenated single words -- "Neuroscience", "Pathophysiology",
+  // "Microbiome" are each long enough on their own to overflow this `h2`'s
+  // narrow column at 320/375px, so e2e/typography.spec.ts's "no h1/h2
+  // splits mid-word" sweep is exercised on /preview/components regardless
+  // of what today's live research projects happen to be titled (spec §1.2,
+  // constraints.md "every e2e assertion holds for any valid dataset" --
+  // live data can't guarantee a title this shape).
+  researchProjectView({
+    id: 'fixture-research-7',
+    title: 'Neuroscience Pathophysiology Microbiome',
+    body: [
+      overviewParagraph(
+        'research-7-p1',
+        'A fixture-only title exercising the fluid type scale’s hyphenation guard against long ' +
+          'single words that have no natural break point.'
+      ),
+    ],
+    start: null,
+    tags: [],
+    category: null,
+    cover: null,
+  }),
 ]
 
 // Task 3 (Home): production today has no resource, an unset labHead, and no

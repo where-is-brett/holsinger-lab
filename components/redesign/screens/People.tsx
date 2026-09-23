@@ -63,7 +63,14 @@ const PROFILE_LINK_LABEL = 'mt-5 inline-block font-mono text-[12px] font-medium 
 const EMAIL_LINK = 'mt-5 block font-mono text-[12.5px] text-link'
 
 const SECTION_HEADING_ROW = 'mb-5 flex items-baseline gap-3.5 border-t border-rule pt-[18px]'
-const SECTION_TITLE = `${LABEL_BASE} text-text-faint`
+// `hyphens-auto` (Task 1, "Fonts and type scale"): a real `h2`, so it's in
+// scope for the e2e's "no h1/h2 overflows a word" sweep alongside every
+// other heading -- a long roleGroup `title` a future edit adds should still
+// only ever break at a syllable boundary where the browser's hyphenation
+// engine can, never overflow. `break-words` joins it as the fallback for
+// when it can't (see PageTitle.tsx's note, and PublicationPage.tsx's for
+// the live-data proof this is load-bearing, not defensive-only).
+const SECTION_TITLE = `${LABEL_BASE} text-text-faint break-words hyphens-auto`
 const SECTION_COUNT = `${LABEL_BASE} text-link`
 
 // 2 columns on phone, 3 from `md`, 6 from `lg` (spec §5 point 3). Gap matches
@@ -108,7 +115,9 @@ function SpotlightBlock({ labHead }: { labHead: LabHead }) {
           edit narrows the track back to a bare `1fr`. */}
       <div className="min-w-0">
         <div className={SPOTLIGHT_LABEL_CLASS}>Head of laboratory · Principal investigator</div>
-        <h2 className="mt-3 text-heading">{labHead.name}</h2>
+        {/* Task 1 fix round 1: `break-words` kept alongside `hyphens-auto`
+            (see PageTitle.tsx's note) -- a name is CMS text. */}
+        <h2 className="mt-3 text-heading break-words hyphens-auto">{labHead.name}</h2>
         <PortableBody blocks={labHead.fullBio} bio={labHead.bio} />
         {labHead.email && (
           <a href={`mailto:${labHead.email}`} data-identifier className={EMAIL_LINK}>

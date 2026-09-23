@@ -60,7 +60,23 @@ export function PageTitle({ title, meta, accentMeta = false, headingLevel = 'h1'
             still refused to shrink to fit its row even with `break-words`
             set, because `min-width: auto` was still winning over the
             container's available space. */}
-        <Heading className="m-0 min-w-0 text-title leading-none break-words">{title}</Heading>
+        {/* Task 1 ("Fonts and type scale") fix round 1: `hyphens-auto` is
+            the primary mechanism now (a real syllable break with a
+            rendered hyphen, `<html lang="en">` is already set) --
+            `break-words` stays alongside it as a fallback, not removed.
+            Verified against the live dataset: Chromium's hyphenation
+            engine doesn't find a break point for every real CMS title
+            (confirmed for a live publication's "…Pathophysiology" -- see
+            PublicationPage.tsx's own longer note on this), and with no
+            fallback that overflowed the page, tripping constraints.md's
+            "no horizontal overflow" floor. `hyphens` and `overflow-wrap`
+            are different CSS properties (no same-property collision), and
+            per the CSS Text spec `overflow-wrap: break-word` only takes
+            effect when no other break opportunity (a space, or a
+            hyphenation point) fits -- so this doesn't change how a title
+            that DOES hyphenate cleanly renders; it only guards the titles
+            that don't. */}
+        <Heading className="m-0 min-w-0 text-title leading-none break-words hyphens-auto">{title}</Heading>
         {meta && (
           /* PageTitle.jsx specifies 400 12px/1 mono at 0.1em tracking in
              --sem-text-faint (or --sem-link when accentMeta) -- this

@@ -190,7 +190,9 @@ test.describe('/preview/components gallery: research', () => {
     await expect(section).toBeVisible()
 
     const titles = await section.getByTestId('research-project-title').allTextContents()
-    expect(titles.length).toBe(6)
+    // 7 (Task 1 added fixture-research-7, a long-single-words title for
+    // e2e/typography.spec.ts's mid-word hyphenation sweep -- fixtures.ts).
+    expect(titles.length).toBe(7)
 
     const covers = section.getByTestId('research-cover')
     await expect(covers).toHaveCount(GALLERY_COVER_RATIOS.length)

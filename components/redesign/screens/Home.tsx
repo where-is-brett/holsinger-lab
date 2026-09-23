@@ -67,7 +67,14 @@ function IdentityBlock({
           The University of Sydney
         </span>
       </div>
-      <Heading className="mt-[30px] max-w-[1180px] text-pretty break-words text-display font-semibold">
+      {/* Task 1 fix round 1: `break-words` stays alongside `hyphens-auto`
+          as a fallback (see PageTitle.tsx's own note, and
+          PublicationPage.tsx's for the live-data proof) -- Chromium's
+          hyphenation engine doesn't reliably find a break point for every
+          real title, and this is the exact heading Brett's review flagged
+          ("Laborato/ry" breaking at 375px), so it keeps its overflow
+          guard rather than trading one defect for another. */}
+      <Heading className="mt-[30px] max-w-[1180px] text-pretty break-words hyphens-auto text-display font-semibold">
         {title}
       </Heading>
       {/* Two-column grid ([tagline | PI panel]) from `lg`, stacked below --
@@ -176,7 +183,10 @@ function siteLabel(site: string): string {
 function OutreachBlock({ maestro }: { maestro: MaestroProjectPayload }) {
   return (
     <div data-testid="home-maestro">
-      <div className="max-w-[720px] text-pretty break-words text-heading font-semibold" data-testid="maestro-title">
+      {/* Task 1 fix round 1: `break-words` kept alongside `hyphens-auto`
+          (see PageTitle.tsx's note) -- the MAESTRO project title is CMS
+          text this repo doesn't control the shape of. */}
+      <div className="max-w-[720px] text-pretty break-words hyphens-auto text-heading font-semibold" data-testid="maestro-title">
         {maestro.title}
       </div>
       <PortableBody blocks={maestro.overview} variant="inverse" />

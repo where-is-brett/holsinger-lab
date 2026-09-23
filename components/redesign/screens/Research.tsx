@@ -67,9 +67,11 @@ function Narrative({ project }: { project: ResearchProjectView }) {
     <div className={cover ? NARRATIVE_GRID : NARRATIVE_GRID_SOLO}>
       <div className="min-w-0">
         <ProjectKicker project={project} />
+        {/* Task 1 fix round 1: `break-words` kept alongside `hyphens-auto`
+            (see PageTitle.tsx's note) -- a project title is CMS text. */}
         <h2
           data-testid="research-project-title"
-          className="mt-4 max-w-[640px] text-pretty break-words text-heading font-semibold"
+          className="mt-4 max-w-[640px] text-pretty break-words hyphens-auto text-heading font-semibold"
         >
           {project.title}
         </h2>
