@@ -15,13 +15,18 @@ export function PageStrip({
   headingRight?: React.ReactNode
   children?: React.ReactNode
 }) {
+  const headingEl = <h1 className={`font-playfair ${headingClass}`}>{heading}</h1>
   return (
     <section data-wix="strip" className="bg-strip pb-[80px]">
       <div className={`wix-col ${topClass}`}>
-        <div className="flex flex-wrap items-baseline justify-between gap-x-[24px]">
-          <h1 className={`font-playfair ${headingClass}`}>{heading}</h1>
-          {headingRight}
-        </div>
+        {headingRight ? (
+          <div className="flex flex-wrap items-baseline justify-between gap-x-[24px]">
+            {headingEl}
+            {headingRight}
+          </div>
+        ) : (
+          headingEl
+        )}
         {children}
       </div>
     </section>

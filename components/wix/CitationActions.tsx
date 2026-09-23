@@ -1,22 +1,11 @@
 'use client'
 import { bibtex, type CitationInput, plainCitation, ris } from 'lib/wix/citationExport'
+import { downloadFile } from 'lib/wix/download'
 import { useEffect, useRef, useState } from 'react'
 
 /** `<slug>.<ext>`, falling back to `_id` when the entry has no slug. */
-function fileBase(pub: CitationInput): string {
+export function fileBase(pub: CitationInput): string {
   return pub.slug || pub._id
-}
-
-function downloadFile(filename: string, content: string, mime: string) {
-  const blob = new Blob([content], { type: mime })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(url)
 }
 
 const isMac = () => typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform ?? navigator.userAgent)

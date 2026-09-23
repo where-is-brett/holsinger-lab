@@ -69,7 +69,7 @@ test('download all publications as RIS covers every listed entry', async ({ page
   await page.goto('/publications')
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.locator('[data-wix="publications-download-all"]').getByRole('button', { name: '(RIS)' }).click(),
+    page.locator('[data-wix="publications-download-all"]').getByRole('button', { name: 'Download all publications as RIS' }).click(),
   ])
   expect(download.suggestedFilename()).toBe('holsinger-lab-publications.ris')
   const path = await download.path()

@@ -113,6 +113,13 @@ function escapeBibtex(s: string): string {
   // `{`/`}` it introduces would run straight into the following brace pass
   // and get escaped a second time (`\textbackslash\{\}` instead of
   // `\textbackslash{}`).
+  //
+  // Known limitation: a NUL character (`\u0000`) genuinely present in the
+  // input is indistinguishable from this placeholder and would itself
+  // expand to a spurious `\textbackslash{}`. Not a concern for publication
+  // metadata (titles, journal names, author lists never contain NULs), but
+  // worth knowing if this function is ever reused for less trusted input --
+  // compare `splitPageRange`'s documented hyphenated-id limitation below.
   const BACKSLASH_PLACEHOLDER = '\u0000'
   return s
     .replace(/\\/g, BACKSLASH_PLACEHOLDER)
