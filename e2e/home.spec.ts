@@ -1,6 +1,6 @@
 import { expect, type Locator, test } from '@playwright/test'
 import { HOME_SITE_COPY_THEMES_FIXTURE, MIXED_COVERS_RESEARCH_PROJECTS_FIXTURE } from 'components/redesign/fixtures'
-import { homeStatement, IA_TAGLINE, shouldShowLabHeadCard } from 'components/redesign/homeModel'
+import { homeStatement, IA_TAGLINE, peopleStrip, shouldShowLabHeadCard } from 'components/redesign/homeModel'
 import { resolveBranding } from 'lib/branding'
 
 import { e2eClient } from './support/sanity'
@@ -216,23 +216,34 @@ test.describe('/', () => {
     }
   })
 
-  test('people strip: ≤ 8 current members with photos, never the lab head or alumni; meet-the-lab count matches /people', async ({
+  test('people strip: exactly peopleStrip(profiles, roleGroups, labHeadId, 6), in order; meet-the-lab count matches /people', async ({
     page,
   }) => {
-    const s = await e2eClient.fetch<{
-      showPeople: boolean | null
-      showLabHeadOnHome: boolean | null
-      showLabHeadOnPeople: boolean | null
-      labHead: { _id: string; name: string | null } | null
-    } | null>(
-      `*[_type=="settings"][0]{showPeople, showLabHeadOnHome, showLabHeadOnPeople, labHead->{_id, name}}`
-    )
+    // Same query shape the page itself uses (profileQuery/roleGroupQuery,
+    // lib/sanity.queries.ts) -- order(orderRank), the fields `peopleStrip`
+    // reads, and `roleGroup->{_id, title}` so the alumni check resolves the
+    // same way it does on the real page.
+    const [profiles, roleGroups, s] = await Promise.all([
+      e2eClient.fetch<
+        { _id: string; name: string | null; image: unknown; roleGroup: { _id: string; title: string | null } | null }[]
+      >(`*[_type == "profile"] | order(orderRank) { _id, image, name, roleGroup->{_id, title} }`),
+      e2eClient.fetch<{ _id: string; title: string | null }[]>(
+        `*[_type == "roleGroup"] | order(orderRank) { _id, title }`
+      ),
+      e2eClient.fetch<{
+        showPeople: boolean | null
+        showLabHeadOnHome: boolean | null
+        showLabHeadOnPeople: boolean | null
+        labHead: { _id: string; name: string | null } | null
+      } | null>(`*[_type=="settings"][0]{showPeople, showLabHeadOnHome, showLabHeadOnPeople, labHead->{_id, name}}`),
+    ])
+
+    const expectedNames = peopleStrip(profiles, roleGroups, s?.labHead?._id ?? null, 6).map((p) => p.name)
+
     await page.goto('/')
     const portraits = page.getByTestId('home-people-portrait')
-    expect(await portraits.count()).toBeLessThanOrEqual(8)
-    if (s?.labHead?.name) {
-      await expect(portraits.filter({ hasText: s.labHead.name.trim() })).toHaveCount(0)
-    }
+    expect(await portraits.locator('figcaption').allInnerTexts()).toEqual(expectedNames)
+
     const meet = page.getByTestId('home-meet-the-lab')
     if ((await meet.count()) > 0) {
       const n = await readMemberCount(meet)
@@ -242,10 +253,9 @@ test.describe('/', () => {
       // rendered "N current members" meta, rather than re-deriving the
       // same rule a second time -- two independent implementations
       // agreeing is a stronger signal than one re-derivation agreeing
-      // with itself. Moved unchanged from the old home-member-count
-      // test. Only compared when the two pages' lab-head visibility
-      // flags agree; when they genuinely differ, the pages are allowed
-      // to show different numbers.
+      // with itself. Only compared when the two pages' lab-head
+      // visibility flags agree; when they genuinely differ, the pages are
+      // allowed to show different numbers.
       const homeShowsPi = Boolean(s?.labHead?._id) && s?.showLabHeadOnHome !== false
       const peopleShowsSpotlight = Boolean(s?.labHead?._id) && s?.showLabHeadOnPeople !== false
       test.skip(
@@ -602,15 +612,28 @@ test.describe('/preview/components gallery: home', () => {
   })
 
   // (a): 10 current members with photos, one alumnus and the lab head
-  // herself both with photos too -- the strip caps at 8, and neither the
+  // herself both with photos too -- the strip caps at 6, and neither the
   // alumnus nor the lab head (`Dr Ilse Van Der Berg`) is ever among them.
-  test('(a) has 8 portraits, none the lab head or the alumnus', async ({ page }) => {
+  test('(a) has 6 portraits, none the lab head or the alumnus', async ({ page }) => {
     await page.goto('/preview/components')
     const a = page.getByTestId('gallery-home-a')
     const portraits = a.getByTestId('home-people-portrait')
-    await expect(portraits).toHaveCount(8)
+    await expect(portraits).toHaveCount(6)
     await expect(portraits.filter({ hasText: 'Dr Ilse Van Der Berg' })).toHaveCount(0)
     await expect(portraits.filter({ hasText: 'Alumna Withimage' })).toHaveCount(0)
+  })
+
+  // A long, unhyphenated single-word name in the strip's 3-column layout
+  // at 320px -- the tightest column width the grid ever gets.
+  test('a long single-word name in the portrait strip does not overflow at 320px', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 900 })
+    await page.goto('/preview/components')
+    const a = page.getByTestId('gallery-home-a')
+    await expect(a.getByTestId('home-people-portrait').filter({ hasText: 'Konstantinopoulos' })).toBeVisible()
+    const fits = await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+    )
+    expect(fits).toBe(true)
   })
 
   // (c): 2 current members, only one with a photo -- the strip shows

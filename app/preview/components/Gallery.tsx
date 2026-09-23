@@ -578,7 +578,7 @@ export default function Gallery() {
         <div className="col-span-full">
           <SubHeading>
             (a) labHead set, showLabHeadOnHome true -- lab-head card shows, PI excluded from the count; three
-            researchOrder project cards, one linked cover; 10 current members with photos (strip caps at 8), one
+            researchOrder project cards, one linked cover; 10 current members with photos (strip caps at 6), one
             alumnus and the lab head herself both with photos (neither shown)
           </SubHeading>
           <div className="mb-8 border border-rule" data-testid="gallery-home-a">

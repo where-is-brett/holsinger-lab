@@ -26,7 +26,7 @@ import {
 } from '../homeModel'
 import { LeadPublication } from '../LeadPublication'
 import { initialsOf } from '../peopleModel'
-import { PORTRAIT_IMAGE_CLASS } from '../PersonCard'
+import { PORTRAIT_IMAGE_CLASS, PortraitFrame } from '../PersonCard'
 import { PortableBody } from '../PortableBody'
 import type { Publication } from '../publicationModel'
 import { PublicationRow } from '../PublicationRow'
@@ -355,26 +355,6 @@ function ResearchBlock({ cards }: { cards: ReturnType<typeof researchCards> }) {
 
 // -- Block 4: People --------------------------------------------------------
 
-// A dedicated `aspect-[4/5] w-full` box, not PersonCard.tsx's
-// `PortraitFrame`: that component's footprint classes already are exactly
-// this shape (`FOOTPRINT_IMAGE`'s `relative aspect-[4/5] w-full ...`), so
-// there's no width/aspect-ratio collision to avoid there -- but
-// `PortraitFrame` always renders its image with `alt={name}`, with no prop
-// to override it, and this strip needs `alt=""` (the name already renders
-// right below in the `<figcaption>`, so a non-empty image alt would
-// announce it twice to screen-reader users, the same
-// `image-redundant-alt` concern `PiPortrait64` above already documents).
-// `PersonCard.tsx` isn't part of this change, so rather than add an alt
-// override there this composes the same footprint shape and the same
-// exported `PORTRAIT_IMAGE_CLASS` directly.
-function PeoplePortrait({ name, img }: { name: string; img: string }) {
-  return (
-    <div className="relative aspect-[4/5] w-full overflow-hidden bg-surface-raised">
-      <Image src={img} alt="" fill sizes="(min-width: 640px) 25vw, 50vw" className={PORTRAIT_IMAGE_CLASS} />
-    </div>
-  )
-}
-
 interface PeoplePortraitView {
   id: string
   name: string
@@ -382,10 +362,10 @@ interface PeoplePortraitView {
 }
 
 // `peopleStrip` (homeModel.ts) already returns only current members (never
-// the lab head or alumni) who have both a name and an image, capped at 8 --
-// this only resolves each one's Sanity image reference to a URL, and drops
-// an entry if that somehow fails (defensive; every entry here is known to
-// carry an image).
+// the lab head or alumni) who have both a name and an image -- this only
+// resolves each one's Sanity image reference to a URL, and drops an entry
+// if that somehow fails (defensive; every entry here is known to carry an
+// image).
 function peoplePortraits(strip: ReturnType<typeof peopleStrip>): PeoplePortraitView[] {
   return strip.flatMap(({ id, name, image }) => {
     const img = urlForImage(image as SanityImage)?.width(400).height(500).fit('crop').url()
@@ -393,7 +373,9 @@ function peoplePortraits(strip: ReturnType<typeof peopleStrip>): PeoplePortraitV
   })
 }
 
-const PORTRAIT_GRID = 'grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-4'
+// Two rows of 3 below `lg`, one row of 6 from `lg` -- matches /people's own
+// `CARD_GRID` breakpoint for the 6-column row.
+const PORTRAIT_GRID = 'grid grid-cols-3 gap-x-3 gap-y-5 lg:grid-cols-6 lg:gap-x-5'
 
 function PeopleBlock({
   strip,
@@ -413,8 +395,18 @@ function PeopleBlock({
         <div className={PORTRAIT_GRID}>
           {portraits.map((person) => (
             <figure key={person.id} data-testid="home-people-portrait" className="min-w-0">
-              <PeoplePortrait name={person.name} img={person.img} />
-              <figcaption className="mt-2 text-[0.875rem] font-medium break-words">{person.name}</figcaption>
+              {/* `ring-1 ring-rule` on this wrapper, not on `PortraitFrame`
+                  itself -- the portraits come from mixed sources (a baked-in
+                  white background, a pre-cropped circle on grey), and a thin
+                  rule unifies their edges without touching PortraitFrame's
+                  own footprint/aspect-ratio classes. `name=""` -- decorative
+                  alt; the figcaption below names them. */}
+              <div className="ring-1 ring-rule">
+                <PortraitFrame name="" img={person.img} sizes="(min-width: 1024px) 12vw, 33vw" />
+              </div>
+              <figcaption className="mt-2 text-[0.8125rem] leading-[1.3] font-medium break-words">
+                {person.name}
+              </figcaption>
             </figure>
           ))}
         </div>
@@ -545,8 +537,10 @@ export function Home({
   // (not gated on `showLabHeadCard`, unlike `memberCount` above): the hero
   // is where she's named, and a second portrait of her among ordinary
   // members would be a second naming even on a page where her own card is
-  // switched off.
-  const strip = peopleStrip(profiles, roleGroups, labHead?._id ?? null)
+  // switched off. Capped at 6, not `peopleStrip`'s own 8-person default --
+  // 8 (two rows of 4, or four rows of 2 on a phone) overpowered the page,
+  // heavier than the hero and taller than the papers ledger.
+  const strip = peopleStrip(profiles, roleGroups, labHead?._id ?? null, 6)
   // "People" renders whenever there's something to show: a strip/count, or
   // a support link -- omitted only when both are empty (a `showPeople:
   // false` page with zero members and no support page).

@@ -1041,7 +1041,7 @@ export const HOME_SETTINGS_LONG_ROLE_FIXTURE: SettingsPayload = {
   showLabHeadOnHome: true,
 }
 
-// -- People strip (Task 5) -------------------------------------------------
+// -- People strip -----------------------------------------------------------
 
 const HOME_CURRENT_GROUP: RoleGroupPayload = { _id: 'fixture-home-role-current', title: 'Research Scientist' }
 const HOME_ALUMNI_GROUP: RoleGroupPayload = { _id: 'fixture-home-role-alumni', title: 'Lab Alumni' }
@@ -1049,7 +1049,7 @@ const HOME_ALUMNI_GROUP: RoleGroupPayload = { _id: 'fixture-home-role-alumni', t
 export const HOME_ROLE_GROUPS_FIXTURE: RoleGroupPayload[] = [HOME_CURRENT_GROUP, HOME_ALUMNI_GROUP]
 
 // gallery-home-a / -b share this pool: 10 current members with photos (the
-// strip caps at 8, proving the cap), one alumnus with a photo (never shown
+// strip caps at 6, proving the cap), one alumnus with a photo (never shown
 // -- alumni are excluded regardless of having an image), and the lab
 // head's own profile entry, also with a photo (never shown either --
 // `peopleStrip` always excludes whichever id `settings.labHead` carries,
@@ -1058,10 +1058,14 @@ export const HOME_ROLE_GROUPS_FIXTURE: RoleGroupPayload[] = [HOME_CURRENT_GROUP,
 // `showLabHeadOnHome` shows the hero's own card -- this one shared pool
 // is what lets their member *counts* differ by exactly the PI herself
 // (`e2e/home.spec.ts`'s own cross-check).
+// Index 2 (within the strip's visible first 6) carries a long, unhyphenated
+// single-word name -- the tightest test of the 3-column grid's own
+// `break-words`, since CI's Linux Chromium ships no hyphenation
+// dictionaries and this token has no space to wrap on at all.
 const HOME_CURRENT_MEMBERS: ProfilePayload[] = Array.from({ length: 10 }, (_, index) =>
   profile({
     _id: `fixture-home-member-${index + 1}`,
-    name: `Member ${index + 1} Lastname${index + 1}`,
+    name: index === 2 ? 'Konstantinopoulos' : `Member ${index + 1} Lastname${index + 1}`,
     role: 'Research Scientist',
     image: PEOPLE_IMAGE,
     roleGroup: HOME_CURRENT_GROUP,
