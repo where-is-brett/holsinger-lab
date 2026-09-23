@@ -31,7 +31,7 @@ export function copyFallbackMessage({ coarsePointer, mac }: { coarsePointer: boo
   // A coarse (touch) pointer has no keyboard to press a key on -- the
   // citation text is already selected, so point the reader at their
   // platform's own copy action instead of an invented keystroke.
-  if (coarsePointer) return 'Citation selected -- use your device’s copy action'
+  if (coarsePointer) return 'Citation selected — use your device’s copy action'
   return `Press ${mac ? '⌘C' : 'Ctrl+C'}`
 }
 

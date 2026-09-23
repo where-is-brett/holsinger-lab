@@ -180,3 +180,79 @@ test.describe('hero blur placeholder (LQIP)', () => {
     expect(decoded).toMatch(/href='data:image\/[a-z+.-]+;base64,[A-Za-z0-9+/=]+'/)
   })
 })
+
+// The contrast test above measures the scrim *composited over the hero
+// image*, which is the thing that actually matters -- but it can only fail
+// when what is behind the text is bright. Against the real photo's LQIP
+// (what CI sees) that background is dark enough on its own that deleting
+// the scrim entirely still clears 4.5:1, so on its own it would not notice
+// the scrim disappearing. These two tests guard the scrim directly instead:
+// that it exists and covers the text below `md:`, that it is strong enough
+// to matter (measured over a white underlay, where a missing or transparent
+// scrim scores exactly 1.0), and that it stays off desktop, where Wix's own
+// rgba(0,0,0,.3) panel is the only dimming and adding more would be a
+// visible departure from the site we are copying.
+test.describe('mobile hero scrim', () => {
+  test.use({ viewport: { width: 390, height: 900 } })
+  test('covers the hero text and is strong enough to matter', async ({ page }) => {
+    await page.goto('/')
+    const scrim = page.locator('[data-wix="hero-scrim"]')
+    await expect(scrim).toBeVisible()
+
+    const [scrimBox, headingBox, subheadingBox] = await Promise.all([
+      scrim.boundingBox(),
+      page.locator('[data-wix="hero-heading"]').boundingBox(),
+      page.locator('[data-wix="hero-subheading"]').boundingBox(),
+    ])
+    if (!scrimBox || !headingBox || !subheadingBox) throw new Error('hero scrim or text did not render a bounding box')
+    expect(scrimBox.y).toBeLessThanOrEqual(headingBox.y)
+    expect(scrimBox.y + scrimBox.height).toBeGreaterThanOrEqual(subheadingBox.y + subheadingBox.height)
+
+    // Replace everything behind the scrim with white and hide the glyphs, so
+    // the only thing left in the sample is the scrim's own paint. White is
+    // the worst case any photo could present, so a scrim that clears 4.5:1
+    // here clears it over any image; a deleted or fully transparent scrim
+    // measures exactly 1.0 and fails.
+    await page.addStyleTag({
+      content: `
+        [data-wix-block="hero"] { background: #fff !important }
+        [data-wix-block="hero"] img { visibility: hidden !important }
+        [data-wix="hero-heading"], [data-wix="hero-subheading"] { visibility: hidden !important }
+      `,
+    })
+    const png = await page.screenshot({ clip: headingBox })
+    const ratio = await page.evaluate(async (dataUrl) => {
+      const img = new Image()
+      img.src = dataUrl
+      await img.decode()
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0)
+      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const channel = (c: number) => {
+        const cs = c / 255
+        return cs <= 0.03928 ? cs / 12.92 : ((cs + 0.055) / 1.055) ** 2.4
+      }
+      let worstL = -1
+      for (let i = 0; i < data.length; i += 4) {
+        const l = 0.2126 * channel(data[i]) + 0.7152 * channel(data[i + 1]) + 0.0722 * channel(data[i + 2])
+        if (l > worstL) worstL = l
+      }
+      return (1 + 0.05) / (worstL + 0.05)
+    }, `data:image/png;base64,${png.toString('base64')}`)
+    expect(ratio, 'scrim over a white underlay').toBeGreaterThanOrEqual(4.5)
+  })
+})
+
+test.describe('desktop hero has no scrim', () => {
+  test.use({ viewport: { width: 1280, height: 900 } })
+  test('the scrim stays off desktop, where Wix has its own panel', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.locator('[data-wix="hero-scrim"]')).toBeHidden()
+    // The Wix panel itself is still there and still rgba(0,0,0,.3).
+    const panel = page.locator('[data-wix="hero-heading"]').locator('..')
+    expect(await panel.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0.3)')
+  })
+})

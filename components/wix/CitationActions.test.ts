@@ -32,8 +32,8 @@ describe('copyFallbackMessage', () => {
     // pointer means no keyboard, regardless of the device's OS (an Android
     // tablet is mac:false here; an iPad reporting as "Mac" -- iPadOS's
     // desktop-class UA -- is mac:true). Coarse-pointer wins either way.
-    expect(copyFallbackMessage({ coarsePointer: true, mac: false })).toBe("Citation selected -- use your device’s copy action")
-    expect(copyFallbackMessage({ coarsePointer: true, mac: true })).toBe("Citation selected -- use your device’s copy action")
+    expect(copyFallbackMessage({ coarsePointer: true, mac: false })).toBe("Citation selected — use your device’s copy action")
+    expect(copyFallbackMessage({ coarsePointer: true, mac: true })).toBe("Citation selected — use your device’s copy action")
   })
 
   it('shows the Mac keystroke on a fine (mouse/trackpad) pointer on a Mac', () => {

@@ -64,12 +64,15 @@ export function Hero({ hero }: { hero: NonNullable<HomeData['copy']>['hero'] }) 
           (heading/subheading) -- too close to the 4.5:1 bar to trust across
           a photo re-crop or a browser's own gradient rounding; 70% measured
           8.85:1 / 8.90:1 -- visibly heavier than it needs to be; 62% landed
-          at 6.49:1 / 6.57:1, repeatable across runs. See
-          e2e/wix-home.spec.ts for the automated measurement (against the
-          fixture's flat fallback, not the photo -- see that file's own
-          comment). */}
+          at 6.49:1 / 6.57:1, repeatable across runs. e2e/wix-home.spec.ts
+          automates two checks: the same composited measurement (in fixture
+          mode, over the real photo's LQIP placeholder rather than the photo
+          itself -- see that file's own comment), and a direct guard on this
+          scrim measured over a white underlay, which is the one that fails
+          if this div is ever deleted or made transparent. */}
       <div
         aria-hidden
+        data-wix="hero-scrim"
         className="absolute inset-x-0 top-0 h-[260px] bg-linear-to-b from-black/62 from-0% via-black/62 via-85% to-transparent to-100% md:hidden"
       />
       <div className="absolute inset-x-0 top-[10px] px-[10px] md:top-[221px] md:left-[max(0px,calc(50%_-_497px))] md:right-0 md:h-[180px] md:rounded-[5px] md:bg-hero-panel md:px-[7px] md:shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
