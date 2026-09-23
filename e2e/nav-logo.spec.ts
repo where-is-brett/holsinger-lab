@@ -63,17 +63,14 @@ test.describe('the FacetBand is never sticky', () => {
       expect(position).toBe('static')
     })
   }
-
-  // Re-review's own regression case (fix round 1's "New Breakage 1"): with
-  // `position: sticky` still set but the band's parent no shorter than
-  // the band itself, the band scrolled off-screen instead of pinning.
-  // Confirms the band now simply scrolls away with the rest of the page,
-  // never leaving `top` pinned near the header's own height.
-  test('scrolls away with the page instead of pinning under the header', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 })
-    await page.goto('/publications')
-    await page.mouse.wheel(0, 1500)
-    const top = await facetBand(page).evaluate((el) => el.getBoundingClientRect().top)
-    expect(top).toBeLessThan(0)
-  })
+  // Task 2 fix round 3 (re-review round 2 Minor 3): a "scrolls away with
+  // the page" behavioural test used to sit here, asserting the band's
+  // `top` goes negative after scrolling. Deleted -- the re-review found it
+  // could never go red: forcing `position: sticky` back onto the band (in
+  // the live page, with `Section`'s content cell still exactly the band's
+  // own height) still measured `top: -1266` after the same scroll, because
+  // the cell it's boxed into has nowhere to let it travel regardless of
+  // its own `position`. The `position: static` assertions above are what
+  // actually catch a sticky regression; this test proved nothing beyond
+  // them.
 })

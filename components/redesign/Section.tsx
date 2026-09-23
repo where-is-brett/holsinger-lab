@@ -57,7 +57,17 @@ export interface SectionProps {
 // `SECTION_GRID`/`SECTION_GUTTER_X` live in tokens.ts, not here, so
 // `PageTitle.tsx` can share the exact same grid (Task 2 fix round 1 --
 // see tokens.ts's own comment on `SECTION_GRID`).
-const LABEL_CLASS = 'font-sans text-[0.8125rem] leading-none font-medium lg:col-start-1'
+// `mb-0!` (Task 2 fix round 3, re-review round 2 Minor 2): `styles/index.css`
+// has an unlayered base rule, `p:not(:last-child) { margin-bottom:
+// 0.875rem }`, that beats Tailwind's own layered utilities regardless of
+// source order -- it applied to every `<p>` label (this component's
+// default), giving it a 14px larger gap to its content than an `<h2>`
+// label got (measured: 22px vs 8px below `lg`), even though both cases use
+// this identical `LABEL_CLASS` string. The trailing-bang form emits
+// `margin-bottom: … !important`, which is what actually beats the
+// unlayered base rule; an `<h2>` label was never affected by that rule in
+// the first place, so this is a no-op there.
+const LABEL_CLASS = 'font-sans text-[0.8125rem] leading-none font-medium mb-0! lg:col-start-1'
 
 /**
  * Ported from `SectionRail` (docs/redesign-experiment/design-system/

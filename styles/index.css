@@ -136,11 +136,12 @@
   --sem-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   /* Single authority for the height of the site header, at both breakpoints.
-     Both navbars set their own height FROM this, and the Publications sticky
-     bar and its jump-nav offsets are positioned against it -- so the nav can
-     grow (as it does in Phase 4B, when the desktop nav gains a logo) without
-     silently sliding content under it. That desync is defect D8: the bar was
-     pinned at a literal 64px while the desktop nav measured 70px.
+     Both navbars set their own height FROM this. Jump-nav offsets used to be
+     positioned against it too (that desync was defect D8: a bar pinned at a
+     literal 64px while the desktop nav measured 70px) -- jump-links are gone
+     (spec §7), and the Publications FacetBand that once keyed its own sticky
+     `top` off this token no longer does, having lost its sticky positioning
+     entirely (Task 2 fix round 2; see SiteChrome.tsx's own comment).
      Modern Instrument direction: 3rem / 3.25rem (was 4rem / 4.75rem). */
   --nav-height: 3rem;
 

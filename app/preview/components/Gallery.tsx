@@ -71,20 +71,50 @@ import { useMemo, useState } from 'react'
 // publication ledger's `xl:` grid (which activates on *viewport* width,
 // not the element's own box width) 5-40px too narrow for its title
 // column and colliding with the journal cell beside it -- the exact
-// defect the re-review's Minor 3 flagged. `FULL_BLEED` breaks out of
-// `max-w-5xl` entirely with the standard `left-1/2`/`-mx-[50vw]`/
-// `w-screen` recipe (relative positioning shifts the box to start at the
-// viewport's own left edge, `w-screen` sizes it to the viewport's full
-// width, regardless of any ancestor's own max-width or padding), so these
-// frames measure the real page's own 1280/1440px width, matching what a
-// route's own `<main>` (no `max-w-5xl` on any real route) actually gives
-// `Section`'s content column.
-const FULL_BLEED = 'relative left-1/2 right-1/2 w-screen -mx-[50vw]'
+// defect the re-review's Minor 3 flagged.
+//
+// Task 2 fix round 3 (re-review round 2, new Important 1): the fix round 2
+// attempt (`relative left-1/2 right-1/2 w-screen -mx-[50vw]`) resolved
+// against `100vw`, which includes a classic scrollbar's own width in any
+// browser that reserves layout space for one -- Playwright's own headless
+// Chromium hides its scrollbar by default, so the check that round added
+// passed there while genuinely overflowing by ~8px per side under a real
+// scrollbar (macOS "always show scrollbars", Windows, or any browser
+// launched with `ignoreDefaultArgs: ['--hide-scrollbars']` removed --
+// confirmed by the re-review's own measurement, and reproduced below by
+// this file's `e2e/preview-scrollbar.spec.ts`).
+//
+// `BLEED_GRID` replaces the whole vw-based trick with a pure CSS Grid
+// pattern instead: `<main>` itself becomes this 3-column grid (no
+// `max-w-5xl`, no `mx-auto`, no `px-6` of its own), with `1fr` edge tracks
+// and a `min(64rem,100%)` centre track -- every "normal" child gets
+// `col-start-2 px-6` (this section's own padding, since `<main>` no longer
+// has any), landing it in that centre track, which behaves exactly like
+// the old `max-w-5xl mx-auto px-6` did: capped at 1024px and centred once
+// the viewport exceeds it, full width below that. A full-bleed child gets
+// `col-span-full` instead, spanning all three tracks -- i.e. the grid's
+// own content box, which is sized by ordinary block layout against
+// `<main>`'s real available width and so, unlike `100vw`, never includes
+// scrollbar space. `gallery-home`'s own content needs *both* roles at
+// once (its `Heading` stays centre-column width; its Home instances go
+// full-bleed) -- since only a grid's own *direct* children can be placed
+// on its tracks, that section is itself given `col-span-full` and nests
+// a second `BLEED_GRID` inside itself for exactly this reason (see its own
+// comment below), rather than moving the full-bleed div out from under
+// `data-testid="gallery-home"` (which `e2e/home.spec.ts` scopes several
+// queries to as a common ancestor).
+const BLEED_GRID = 'grid grid-cols-[1fr_min(64rem,100%)_1fr]'
 
-function Heading({ children }: { children: ReactNode }) {
+function Heading({ children, className = '' }: { children: ReactNode; className?: string }) {
   // Task 1 fix round 1: `break-words` kept alongside `hyphens-auto` (see
   // components/redesign/PageTitle.tsx's note).
-  return <h2 className="text-title mb-4 text-[22px] leading-none break-words hyphens-auto">{children}</h2>
+  // Task 2 fix round 3: optional `className` exists only for `gallery-home`'s
+  // own nested `BLEED_GRID` (its own `col-start-2 px-6`) -- every other
+  // call site already gets that placement from its own `<section>` wrapper
+  // and passes nothing, so this defaults to `''`.
+  return (
+    <h2 className={`text-title mb-4 text-[22px] leading-none break-words hyphens-auto ${className}`}>{children}</h2>
+  )
 }
 
 function SubHeading({ children }: { children: ReactNode }) {
@@ -138,8 +168,8 @@ export default function Gallery() {
   const [message, setMessage] = useState('')
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-16 px-6 py-10">
-      <div>
+    <main className={`${BLEED_GRID} gap-y-16 py-10`}>
+      <div className="col-start-2 px-6">
         <p className={LABEL}>Preview -- not indexed</p>
         <h1 className="text-title text-[28px] leading-none break-words hyphens-auto">Redesign component gallery</h1>
         <p className="mt-3 max-w-prose text-[14px] text-text-muted">
@@ -148,7 +178,7 @@ export default function Gallery() {
         </p>
       </div>
 
-      <section data-testid="gallery-tag">
+      <section data-testid="gallery-tag" className="col-start-2 px-6">
         <Heading>Tag</Heading>
         <div className="flex flex-wrap items-center gap-3">
           <Tag>Informational</Tag>
@@ -162,7 +192,7 @@ export default function Gallery() {
         </div>
       </section>
 
-      <section data-testid="gallery-button">
+      <section data-testid="gallery-button" className="col-start-2 px-6">
         <Heading>Button</Heading>
         <div className="flex flex-wrap items-center gap-3">
           <Button onClick={() => setButtonClicks((c) => c + 1)}>Rest</Button>
@@ -175,7 +205,7 @@ export default function Gallery() {
         </div>
       </section>
 
-      <section data-testid="gallery-copy-citation">
+      <section data-testid="gallery-copy-citation" className="col-start-2 px-6">
         <Heading>Copy citation</Heading>
         <div className="flex flex-wrap items-center gap-6">
           <CopyCitation cite={SAMPLE_PUBLICATIONS[0].cite} />
@@ -183,12 +213,12 @@ export default function Gallery() {
         </div>
       </section>
 
-      <section data-testid="gallery-page-title">
+      <section data-testid="gallery-page-title" className="col-start-2 px-6">
         <Heading>Page title</Heading>
         <PageTitle title="Publications" meta="19 publications, 2020–2025" accentMeta />
       </section>
 
-      <section data-testid="gallery-section">
+      <section data-testid="gallery-section" className="col-start-2 px-6">
         <Heading>Section</Heading>
         <Section label="Overview">
           <p className="max-w-prose text-[14px] text-text-muted">
@@ -198,7 +228,7 @@ export default function Gallery() {
         </Section>
       </section>
 
-      <section data-testid="gallery-publication-row">
+      <section data-testid="gallery-publication-row" className="col-start-2 px-6">
         <Heading>Publication row</Heading>
 
         <SubHeading>Comfortable density</SubHeading>
@@ -244,7 +274,7 @@ export default function Gallery() {
         </p>
       </section>
 
-      <section data-testid="gallery-facet-band">
+      <section data-testid="gallery-facet-band" className="col-start-2 px-6">
         <Heading>Facet band</Heading>
         <FacetBand
           groups={[
@@ -280,7 +310,7 @@ export default function Gallery() {
         </div>
       </section>
 
-      <section data-testid="gallery-person-card">
+      <section data-testid="gallery-person-card" className="col-start-2 px-6">
         <Heading>Person card</Heading>
         <div className="grid max-w-md grid-cols-2 gap-8">
           {SAMPLE_PEOPLE.map((p) => (
@@ -297,7 +327,7 @@ export default function Gallery() {
         </div>
       </section>
 
-      <section data-testid="gallery-people">
+      <section data-testid="gallery-people" className="col-start-2 px-6">
         <Heading>People screen</Heading>
 
         <SubHeading>(a) Lab head set, no portrait, two-paragraph bio, hasPage</SubHeading>
@@ -321,7 +351,7 @@ export default function Gallery() {
         </div>
       </section>
 
-      <section data-testid="gallery-site-nav">
+      <section data-testid="gallery-site-nav" className="col-start-2 px-6">
         <Heading>Site nav</Heading>
         {/* SiteNav's <nav> carries no aria-label of its own (Tasks 4-8's
             files are off-limits to modify beyond the data-identifier
@@ -349,7 +379,7 @@ export default function Gallery() {
           siteName with all six IA items. Its test measures intrinsic widths
           against the viewport, so this container's own padding does not
           matter. */}
-      <section data-testid="gallery-site-nav-long">
+      <section data-testid="gallery-site-nav-long" className="col-start-2 px-6">
         <Heading>Site nav — long site name</Heading>
         <div className="hidden border border-rule md:block">
           <SiteNav
@@ -360,7 +390,7 @@ export default function Gallery() {
         </div>
       </section>
 
-      <section data-testid="gallery-mobile-header">
+      <section data-testid="gallery-mobile-header" className="col-start-2 px-6">
         <Heading>Mobile header</Heading>
 
         <SubHeading>Closed (live component -- Menu opens the real dialog)</SubHeading>
@@ -377,14 +407,14 @@ export default function Gallery() {
         </div>
       </section>
 
-      <section data-testid="gallery-site-footer">
+      <section data-testid="gallery-site-footer" className="col-start-2 px-6">
         <Heading>Site footer</Heading>
         <div className="border border-rule">
           <SiteFooter lines={FOOTER_FALLBACK} />
         </div>
       </section>
 
-      <section data-testid="gallery-form-field">
+      <section data-testid="gallery-form-field" className="col-start-2 px-6">
         <Heading>Form field</Heading>
         <div className="flex max-w-md flex-col gap-6">
           <FormField
@@ -404,7 +434,7 @@ export default function Gallery() {
         </div>
       </section>
 
-      <section data-testid="gallery-publication-page">
+      <section data-testid="gallery-publication-page" className="col-start-2 px-6">
         <Heading>Publication page</Heading>
         {/* Task 5 fix round 1: the only place `PublicationPage` actually
             renders outside a real `/publications/[slug]` route, proving
@@ -425,7 +455,7 @@ export default function Gallery() {
         </div>
       </section>
 
-      <section data-testid="gallery-resource-block">
+      <section data-testid="gallery-resource-block" className="col-start-2 px-6">
         <Heading>Resource block</Heading>
         <ResourceBlock
           title="Antibody validation dataset"
@@ -441,7 +471,7 @@ export default function Gallery() {
         />
       </section>
 
-      <section data-testid="gallery-research">
+      <section data-testid="gallery-research" className="col-start-2 px-6">
         <Heading>Research screen</Heading>
         {/* Task 2: production has zero `defined(researchOrder)` projects
             today (spec §2), so this fixture is the only place the
@@ -476,21 +506,21 @@ export default function Gallery() {
           one page, so e2e scopes every query through the wrapping
           `data-testid` below rather than relying on page-wide testid
           uniqueness. */}
-      <section data-testid="gallery-research-no-link">
+      <section data-testid="gallery-research-no-link" className="col-start-2 px-6">
         <Heading>Research screen -- no email, showContactForm false (no link)</Heading>
         <div className="border border-rule">
           <Research projects={[]} email={null} showContactForm={false} headingLevel="h2" />
         </div>
       </section>
 
-      <section data-testid="gallery-research-contact-link">
+      <section data-testid="gallery-research-contact-link" className="col-start-2 px-6">
         <Heading>Research screen -- no email, showContactForm true (&quot;get in touch&quot;)</Heading>
         <div className="border border-rule">
           <Research projects={[]} email={null} showContactForm headingLevel="h2" />
         </div>
       </section>
 
-      <section data-testid="gallery-resources">
+      <section data-testid="gallery-resources" className="col-start-2 px-6">
         <Heading>Resources screen</Heading>
         {/* Task 1: production carries zero `resource` documents today (spec
             §2), so this fixture is the only place the populated Resources
@@ -502,8 +532,16 @@ export default function Gallery() {
         </div>
       </section>
 
-      <section data-testid="gallery-home">
-        <Heading>Home screen</Heading>
+      {/* Task 2 fix round 3: this section carries `col-span-full` (a full-
+          width item of `<main>`'s own `BLEED_GRID`) AND is itself a second,
+          nested `BLEED_GRID` -- the only way to give `Heading` the normal
+          centre-column width while the Home instances below it go genuinely
+          full-bleed, without moving them out from under this element's own
+          `data-testid="gallery-home"` (see `BLEED_GRID`'s own comment for
+          why that matters). `Heading`'s `col-start-2 px-6` here places it in
+          *this* grid's centre track, not `<main>`'s. */}
+      <section data-testid="gallery-home" className={`col-span-full ${BLEED_GRID}`}>
+        <Heading className="col-start-2 px-6">Home screen</Heading>
         {/* Task 3: production today has no resource, an unset labHead, and
             no `support-our-research` page (spec §2) -- this is the only
             place Home's populated PI panel, Resources block, and Support
@@ -512,13 +550,16 @@ export default function Gallery() {
             live-data drift.
 
             Task 2 fix round 2: all three instances now render inside one
-            shared `FULL_BLEED` wrapper (see that constant's own comment)
-            instead of each being its own narrower demo frame -- at
-            1280/1440px this is what stops "Recent work"'s publication
-            ledger from colliding with itself, matching the treatment
-            Task 1's own `gallery-typography-budget-inner` already uses at
-            320/375px. */}
-        <div className={FULL_BLEED}>
+            shared full-bleed wrapper instead of each being its own
+            narrower demo frame -- at 1280/1440px this is what stops
+            "Recent work"'s publication ledger from colliding with itself,
+            matching the treatment Task 1's own
+            `gallery-typography-budget-inner` already uses at 320/375px.
+            Fix round 3: that wrapper is now `col-span-full` on *this*
+            section's own nested grid (see the section's own comment
+            above), not the vw-based `FULL_BLEED` (removed -- it overflowed
+            under a real scrollbar; see `BLEED_GRID`'s own comment). */}
+        <div className="col-span-full">
           <SubHeading>(a) labHead set, showLabHeadOnHome true -- PI panel shows, PI excluded from the count</SubHeading>
           <div className="mb-8 border border-rule" data-testid="gallery-home-a">
             <Home
@@ -609,7 +650,7 @@ export default function Gallery() {
           wraps a full `Research` render, whose own `PageTitle` ("Research")
           is a *different* heading that sits before the project title this
           fixture actually exists to test (re-review New Breakage 1). */}
-      <section data-testid="gallery-typography-budget">
+      <section data-testid="gallery-typography-budget" className="col-start-2 px-6">
         <Heading>Typography budget (full page width)</Heading>
         <div className="-mx-6" data-testid="gallery-typography-budget-inner">
           <div className="border border-rule" data-testid="typography-budget-display">

@@ -115,6 +115,47 @@ test.describe('Section label layout', () => {
     expect(violations).toEqual([])
   })
 
+  // Task 2 fix round 3 (re-review round 2 Minor 2): a `<p>` label and an
+  // `<h2>` label used the same `LABEL_CLASS` string, but an unlayered base
+  // rule in styles/index.css (`p:not(:last-child) { margin-bottom:
+  // 0.875rem }`) only ever applied to the `<p>` case, giving it a visibly
+  // larger gap to its content below `lg` (measured: 22px vs 8px at 375px)
+  // -- `Section.tsx`'s `mb-0!` fix makes both equal. Checked against the
+  // gallery's `gallery-home-a` instance, which is guaranteed to render at
+  // least one of each (round 2 made "Resources" a `<p>`; "Recent work" /
+  // "Outreach" / "The lab" stay `<h2>`s) -- unlike a live route, this
+  // doesn't depend on the dataset actually populating every block.
+  test('below lg, a <p> label and an <h2> label sit the same distance from their content', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 900 })
+    await page.goto('/preview/components')
+    const gaps = await page.evaluate((labelSelector) => {
+      const instance = document.querySelector('[data-testid="gallery-home-a"]')
+      if (!instance) return null
+      const results: { tag: string; text: string; gap: number }[] = []
+      for (const label of instance.querySelectorAll(labelSelector)) {
+        const content = label.parentElement?.lastElementChild
+        if (!content || content === label) continue
+        results.push({
+          tag: label.tagName,
+          text: (label.textContent ?? '').trim(),
+          gap: content.getBoundingClientRect().top - label.getBoundingClientRect().bottom,
+        })
+      }
+      return results
+    }, LABEL)
+    expect(gaps).not.toBeNull()
+    const pGap = gaps!.find((g) => g.tag === 'P')
+    const h2Gap = gaps!.find((g) => g.tag === 'H2')
+    expect(pGap, `no <p> section-label found: ${JSON.stringify(gaps)}`).toBeDefined()
+    expect(h2Gap, `no <h2> section-label found: ${JSON.stringify(gaps)}`).toBeDefined()
+    expect(
+      Math.abs(pGap!.gap - h2Gap!.gap),
+      `<p> "${pGap!.text}" gap ${pGap!.gap} vs <h2> "${h2Gap!.text}" gap ${h2Gap!.gap}`
+    ).toBeLessThanOrEqual(1)
+  })
+
   test('a real person profile page lines up too, when one exists', async ({ page }) => {
     const slug = await e2eClient.fetch<string | null>(
       `*[_type == "profile" && hasPage == true && defined(slug.current)][0].slug.current`
