@@ -72,23 +72,30 @@ Tokens in `styles/index.css` `@theme`:
 | `--text-meta` / `--text-label` | unchanged; these are mono data sizes |
 
 **Word-fit budget, not an unconditional "never split mid-word" rule (revised 2026-09-23,
-PR 1).** The literal rule above turned out to be unenforceable: Blink (Chromium) never
-hyphenates a capitalised word (`hyphenate_capitalized_word_` defaults to `false`), and
-CMS titles are almost all title-case, so `hyphens: auto` is inert on nearly every heading
-this rule covers. `break-words` (`overflow-wrap: break-word`) **stays** on every display/
-title/heading element as the last-resort fallback — removing it would let an unhyphenatable
-word overflow the page, a direct violation of the unconditional no-horizontal-overflow
-floor. `hyphens: auto` stays too, as a safety net for the words the browser's hyphenation
-dictionary *does* cover.
+PR 1; figures corrected in PR 1's final-review fix round).** The literal rule above turned
+out to be unenforceable: Blink (Chromium) never hyphenates a capitalised word
+(`hyphenate_capitalized_word_` defaults to `false`), and CMS titles are almost all
+title-case, so `hyphens: auto` was inert on nearly every heading this rule covers — and
+where it *did* fire (a lowercase word with room to spare), it hyphenated words nobody
+needed hyphenated, and only on platforms whose Chromium ships a dictionary. `hyphens-auto`
+is removed from every heading entirely (final-review fix round, finding 1); `break-words`
+(`overflow-wrap: break-word`) alone is the fallback — removing it too would let an
+unhyphenatable word overflow the page, a direct violation of the unconditional
+no-horizontal-overflow floor.
 
 Instead, each level carries a **measured word-fit budget** at 320px — the longest word its
 own column must fit without a raw mid-word split:
 
 | Level | Budget word | Fits at 320px? |
 |---|---|---|
-| display (`--text-display`, Home's `h1`) | "Neuroscience" | yes (231px word in a 246px column) |
-| title (`--text-title`, `PageTitle`'s `h1`/`h2`) | "Pathophysiology" | yes (218px in 246px) |
-| heading (`--text-heading`, e.g. a research project's `h2`) | "Neurodegenerative" | yes (194px in 246px) |
+| display (`--text-display`, Home's `h1`) | "Neuroscience" | yes (222px word in a 244px column) |
+| title (`--text-title`, `PageTitle`'s `h1`/`h2`) | "Pathophysiology" | yes (211px in 244px) |
+| heading (`--text-heading`, e.g. a research project's `h2`) | "Neurodegenerative" | yes (191px in 244px) |
+
+Re-verified at 1024px (PR 1's final whole-branch review, after `PageTitle` moved into the
+content column): the tightest case is a `/research` `h2` beside a cover, 266px in a 292px
+column — still comfortable margin, and no live title anywhere needed a raw split at that
+width either.
 
 A word **longer** than its level's budget may still split raw rather than overflow — this
 is a documented exception, not a defect. `PublicationPage`'s paper-title role (previously a
@@ -104,12 +111,14 @@ fixed `2.3125rem`, outside any clamp token) moved onto the **title** level's own
   assume a raw split never happens, since `break-words` already guarantees no overflow.
 - **The raw-split budget itself** is proven on dedicated full-width gallery fixtures at
   `/preview/components` only, one per level, each pairing that level's budget word
-  (capitalised, so Blink can't hyphenate it) with short, non-budget filler words. The
-  check temporarily clears `overflow-wrap` and `hyphens` (`overflow-wrap: normal; hyphens:
-  manual`) on the fixture's own heading and re-measures `scrollWidth` vs `clientWidth` —
-  this is what makes the guard **Linux-CI safe**: it asserts the word fits with no
-  fallback mechanism engaged at all, rather than depending on whether the CI runner's
-  Chromium ships a hyphenation dictionary (Linux Chromium typically doesn't).
+  (capitalised, so Blink couldn't have hyphenated it even before `hyphens-auto` was
+  removed) with short, non-budget filler words. The check temporarily clears
+  `overflow-wrap` (`overflow-wrap: normal`, plus `hyphens: manual` as belt-and-braces
+  against any future heading that reintroduces `hyphens: auto`) on the fixture's own
+  heading and re-measures `scrollWidth` vs `clientWidth` — this is what makes the guard
+  **Linux-CI safe**: it asserts the word fits with no fallback mechanism engaged at all,
+  independent of whether the CI runner's Chromium ships a hyphenation dictionary (Linux
+  Chromium typically doesn't).
 
 ### 1.3 The numbered rail goes; `SectionLabel` replaces it
 - **`SectionRail` becomes `Section`.** The file is renamed, and every import is updated.

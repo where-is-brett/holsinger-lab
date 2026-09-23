@@ -164,11 +164,11 @@ export const NO_LINK_PUB: Publication = {
 // fixes needed a gallery fixture exercising the no-canonical-link + linked-
 // resource case together -- neither SAMPLE_PUBLICATIONS entry nor
 // NO_LINK_PUB carries an abstract or a resource. No DOI and no URL (so
-// Cite & access has no canonical-link column and the citation box should
-// take the full width), a two-paragraph abstract (so the Abstract rail
-// renders more than one <p>), and one linked resource (so the Resource
-// rail -- otherwise unrendered on real data, since the live dataset has
-// zero `resource` documents today -- gets proven at all).
+// "Cite and access" has no canonical-link column and the citation box
+// should take the full width), a two-paragraph abstract (so the Abstract
+// section renders more than one <p>), and one linked resource (so the
+// Resource section -- otherwise unrendered on real data, since the live
+// dataset has zero `resource` documents today -- gets proven at all).
 export const PUBLICATION_PAGE_FIXTURE: Publication = {
   id: 'publication-page-fixture',
   href: '/publications/publication-page-fixture',
@@ -188,7 +188,7 @@ export const PUBLICATION_PAGE_FIXTURE: Publication = {
   topics: ['Metabolism, oxidative stress & neuroprotection'],
   cite: 'Choi, J., Wu, H. and Holsinger, R.M.D. (2021). A record on file with no canonical link, an abstract, and one linked resource. Journal of Unlinked Records 2(1) · 15.',
   abstract: [
-    'The first paragraph sets up the problem: this fixture exists to prove the Abstract rail renders more than one paragraph, and that Cite & access falls back to a full-width citation column when there is no DOI or URL on file.',
+    'The first paragraph sets up the problem: this fixture exists to prove the Abstract section renders more than one paragraph, and that Cite and access falls back to a full-width citation column when there is no DOI or URL on file.',
     'The second paragraph proves the same block renders a second <p> rather than concatenating both into one -- the two-paragraph split is the thing under test, not the prose itself.',
   ],
   resources: [{ id: 'resource-fixture-1', title: 'Cell culture chamber CAD files', kind: 'hardware' }],

@@ -25,8 +25,9 @@ function PaperBlock({ pub }: { pub: Publication }) {
       <Link href="/publications" className="text-[13px] leading-none font-medium text-link">
         ← All publications
       </Link>
-      {/* `break-words`/`hyphens-auto`: see PageTitle.tsx's canonical note.
-          Live proof site, fix round 2: the DOI paper "INPP5D/SHIP1:
+      {/* `break-words`: see PageTitle.tsx's canonical note (`hyphens-auto`
+          removed in the final-review fix round). Live proof site, fix
+          round 2: the DOI paper "INPP5D/SHIP1:
           Expression, Regulation and Roles in Alzheimer's Disease
           Pathophysiology" is title-case, so "Pathophysiology" never
           hyphenates (Blink skips capitalised words) -- at the old fixed
@@ -42,7 +43,7 @@ function PaperBlock({ pub }: { pub: Publication }) {
           scientific titles), just a fluid one now instead of fixed. */}
       <h1
         data-testid="paper-title"
-        className="mt-[26px] max-w-[1060px] text-[clamp(1.75rem,4.5vw,2.3125rem)] leading-[1.22] font-semibold tracking-[-0.012em] text-pretty break-words hyphens-auto"
+        className="mt-[26px] max-w-[1060px] text-[clamp(1.75rem,4.5vw,2.3125rem)] leading-[1.22] font-semibold tracking-[-0.012em] text-pretty break-words"
       >
         {pub.title}
       </h1>

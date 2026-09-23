@@ -96,9 +96,9 @@ export function ResourceBlock({ title, meta = [], figureLabel, children }: Resou
             in `title` can be wider than this column at 320px, and
             `break-words` (`overflow-wrap: break-word`) is a different
             property than anything else already set here, so it's additive.
-            Task 1 fix round 1: `hyphens-auto` joins it (not replaces it) --
-            see PageTitle.tsx's note on why `break-words` stays as a
-            fallback rather than being removed.
+            Task 1 fix round 1 added `hyphens-auto` alongside it; removed
+            again in the final-review fix round -- see PageTitle.tsx's
+            canonical note on why `break-words` alone is now the fallback.
             Task 2 fix round 2 (controller ruling): a real `<h2>`, not a
             `<div>` -- `Resources.tsx` went back to one `Section` per
             resource with a `<p>` kind label (not an `<h2>`, so two
@@ -113,7 +113,7 @@ export function ResourceBlock({ title, meta = [], figureLabel, children }: Resou
             margin, so no layout shift. */}
         <h2
           data-testid="resource-block-title"
-          className="max-w-[640px] text-heading font-semibold break-words hyphens-auto"
+          className="max-w-[640px] text-heading font-semibold break-words"
         >
           {title}
         </h2>

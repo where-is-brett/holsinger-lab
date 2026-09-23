@@ -4,11 +4,15 @@ import { expect, test } from '@playwright/test'
 // root cause was typographic -- `--font-sans` pointed at the old site's
 // mono face, and Archivo (the design's reading/display face) was loaded
 // nowhere, so every heading, abstract and bio rendered mono, and at 375px
-// Home's `<h1>` broke "Laborato/ry" mid-word. Fix round 2 (review):
-// Chromium never hyphenates a capitalised word, so `hyphens-auto` is inert
-// on nearly every heading here, and `break-words` alone decides whether a
-// long word splits raw or a level's clamp floor genuinely fits it. This
-// file proves: (a) live routes never overflow (the unconditional floor);
+// Home's `<h1>` broke "Laborato/ry" mid-word. Fix round 2 (review) found
+// Chromium never hyphenates a capitalised word, so `hyphens-auto` was inert
+// on nearly every heading here anyway; the final-review fix round removed
+// `hyphens-auto` from every heading entirely (it also hyphenated some
+// lowercase words nobody needed hyphenated, on platforms whose Chromium
+// ships a dictionary, which is platform-dependent polish this app doesn't
+// want) -- `break-words` alone now decides whether a long word splits raw
+// or a level's clamp floor genuinely fits it. This file proves:
+// (a) live routes never overflow (the unconditional floor);
 // (b) on the gallery's dedicated full-width fixtures, each type level's
 // budget word fits *without* relying on a raw `overflow-wrap` split --
 // see task-1-report.md's "Word-fit budgets"; (c) the body font is Archivo;
@@ -97,30 +101,30 @@ test.describe('no h1/h2 word overflows its own line', () => {
 //
 // The reviewer's detection method: for the heading inside each fixture, set
 // `overflow-wrap: normal` on it (removing `break-words`'s raw-split
-// fallback, leaving only `hyphens-auto` and ordinary space-wrapping) and
-// re-measure. If it still doesn't overflow its own box
-// (`scrollWidth <= clientWidth`), whatever wrapping happens is either a real
-// hyphenated break or a whole-word wrap -- never a raw split -- so the
-// level's clamp floor genuinely fits its budget word. If it overflows once
-// the fallback is removed, the original render was relying on a raw split
-// (or would have overflowed outright), and the test fails. This is the
-// "simpler equivalent" of the per-word toggle-and-compare probe: a raw
+// fallback, leaving only ordinary space-wrapping) and re-measure. If it
+// still doesn't overflow its own box (`scrollWidth <= clientWidth`),
+// whatever wrapping happens is a whole-word wrap -- never a raw split -- so
+// the level's clamp floor genuinely fits its budget word. If it overflows
+// once the fallback is removed, the original render was relying on a raw
+// split (or would have overflowed outright), and the test fails. This is
+// the "simpler equivalent" of the per-word toggle-and-compare probe: a raw
 // split can only ever happen via `overflow-wrap`, so proving the heading
 // survives without it is exactly proving no raw split occurred.
 //
-// Fix round 2 (re-review), two corrections:
+// Fix round 2 (re-review), two corrections, still both load-bearing even
+// though the final-review fix round later removed `hyphens-auto` from
+// every heading's CSS entirely:
 //
-// 1. **`hyphens: manual` joins `overflow-wrap: normal` in the toggle.** CI
-//    runs Playwright's Chromium on `ubuntu-latest`, which ships no
-//    hyphenation dictionaries (Chrome normally gets them via component
-//    updater, which this Chromium build never runs) -- so `hyphens: auto`
-//    may do nothing there even for a lowercase word a developer's own
-//    machine hyphenates happily. Forcing `hyphens: manual` here makes the
-//    check assert exactly the ruling it's meant to prove -- "the budget
-//    word fits on one line" -- independent of whether the runner's browser
-//    can hyphenate anything at all, not "the budget word's line survives
-//    losing the raw-split fallback, assuming hyphenation still covers
-//    every other word in the title."
+// 1. **`el.style.hyphens = 'manual'` joins `overflow-wrap: normal` in the
+//    toggle.** Originally this neutralised a live `hyphens: auto` that
+//    might otherwise let a word hyphenate its way around the missing
+//    fallback (platform-dependently -- CI's Linux Chromium ships no
+//    hyphenation dictionaries, a developer's macOS Chromium does). No
+//    heading declares `hyphens: auto` any more (removed final-review
+//    fix round, finding 1), so this line is now a no-op belt-and-braces
+//    against the CSS initial value -- kept rather than removed, since a
+//    future heading site could still reintroduce `hyphens: auto` and this
+//    check should keep proving the budget holds without it regardless.
 // 2. **Each fixture's non-budget words are short enough to fit at 320px on
 //    their own** (fixtures.ts), rather than a long lowercase word chosen to
 //    demonstrate hyphenation -- with (1) above, a long word that only fit
@@ -206,6 +210,13 @@ test.describe('gallery typography budget: each level fits its budget word withou
     test(`/preview/components at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 })
       await page.goto('/preview/components')
+      // Final review, finding 10: `load` normally covers preloaded
+      // next/font files, so this was deterministic in practice, but on a
+      // runner whose fallback stack (Helvetica Neue/Helvetica/Arial)
+      // resolves wider than Archivo, an unloaded Archivo would turn this
+      // tight-margin (down to ~15px at 320px) budget check red for a font
+      // reason, not a layout one. Cheap insurance.
+      await page.evaluate(() => document.fonts.ready)
 
       const violations: RawSplitResult[] = []
       for (const fixture of BUDGET_FIXTURES) {

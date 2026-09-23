@@ -76,14 +76,19 @@ export function buildResourceMeta(resource: ResourcePayload | HomeResourcePayloa
   // Task 3 (spec §1.5): sentence-case labels ("Kind"/"Source"), not
   // uppercase mono -- `ResourceBlock` renders these as `<dt>`s now, never a
   // CSS-uppercased span, and a `<dt>`'s own text is exactly what a screen
-  // reader announces, so this must already read correctly on its own. The
-  // *value* (`resource.kind`, the raw lower-case schema enum) stays
-  // untouched here -- that's `Resources.tsx`'s `kindLabel`'s job, for its
-  // own different purpose (a `Section` label), not this function's.
-  // `identifier` (Task 4, re-review round 2 R2-1): Kind's value is a fixed
-  // schema enum, not CMS free text or an identifier, so it stays
-  // unmarked -- Source and the DOI/URL row below are the identifier data.
-  const meta: ResourceBlockMeta[] = [{ label: 'Kind', value: resource.kind ?? '' }]
+  // reader announces, so this must already read correctly on its own.
+  // Final-review fix round, finding 7: the *value* now goes through
+  // `kindLabel` too -- it was the raw lower-case schema enum ("hardware"),
+  // printing inconsistently with the same page's own `Section` label (the
+  // resource's `kindLabel(resource.kind)`, e.g. "Hardware") sitting right
+  // above it. `kind` is a fixed schema enum, not free CMS text, so
+  // constraints.md's "CMS text prints verbatim" rule was never in tension
+  // with sentence-casing it here -- it's a label-shaped value, same as the
+  // `Section` label already treats it.
+  // `identifier` (Task 4, re-review round 2 R2-1): still unmarked -- Kind's
+  // value is a fixed schema enum, not CMS free text or an identifier;
+  // Source and the DOI/URL row below are the identifier data.
+  const meta: ResourceBlockMeta[] = [{ label: 'Kind', value: kindLabel(resource.kind) }]
   const pub = resource.publication
   if (pub) {
     const year = pub.date ? pub.date.slice(0, 4) : ''

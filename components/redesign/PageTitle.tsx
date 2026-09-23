@@ -53,26 +53,35 @@ export function PageTitle({ title, meta, accentMeta = false, headingLevel = 'h1'
             still refused to shrink to fit its row even with `break-words`
             set, because `min-width: auto` was still winning over the
             container's available space. */}
-        {/* Task 1 ("Fonts and type scale") fix round 2 (canonical note --
-            other heading sites cross-reference this one, keep it here):
-            `hyphens-auto` is declared, but Blink (Chromium) never
-            hyphenates a word that starts with a capital letter
-            (`hyphenate_capitalized_word_` defaults to false), so on
-            title-case CMS text -- nearly every heading in this app --
-            `hyphens-auto` is inert and `break-words` alone decides the
-            outcome. `break-words` stays: overflow is worse than a raw
-            mid-word split, and constraints.md's no-overflow floor is
-            unconditional. Each heading level's clamp floor is sized so its
-            budget word fits on one line in its real page column at 320px
-            (task-1-report.md, "Word-fit budgets"); a word past that
-            budget still splits raw as a documented last resort, never
-            overflows. `hyphens`/`overflow-wrap` are different CSS
-            properties, so this is additive, not a same-property
-            collision. */}
-        <Heading
-          data-testid="page-title-heading"
-          className="m-0 min-w-0 text-title leading-none break-words hyphens-auto"
-        >
+        {/* Task 1 ("Fonts and type scale") fix round 2 -- final review
+            (canonical note -- other heading sites cross-reference this one,
+            keep it here): `hyphens-auto` was declared here through Task 4's
+            first commit, but Blink (Chromium) never hyphenates a word that
+            starts with a capital letter (`hyphenate_capitalized_word_`
+            defaults to false), so on title-case CMS text -- nearly every
+            heading in this app -- it was inert almost everywhere, and where
+            it *did* fire (a lowercase word with room to spare in its
+            column) it hyphenated words nobody needed hyphenated, visibly,
+            and only on platforms whose Chromium ships a dictionary (macOS
+            does; Linux/CI typically doesn't) -- exactly the polish
+            inconsistency the final review flagged. Removed outright
+            (final-review fix round); `break-words` alone now decides the
+            outcome, same as it already did on every capitalised heading.
+            `break-words` stays: overflow is worse than a raw mid-word
+            split, and constraints.md's no-overflow floor is unconditional.
+            Each heading level's clamp floor is sized so its budget word
+            fits on one line in its real page column at 320px
+            (task-1-report.md, "Word-fit budgets"; re-verified at 1024px,
+            see phase-3-decisions.md's "Word-fit budget" section); a word
+            past that budget still splits raw as a documented last resort,
+            never overflows. */}
+        {/* `leading-none` removed (final-review finding 5): it discarded
+            `--text-title`'s own 1.1 line-height (set for exactly this
+            heading level in Task 1), invisible on a one-line title but
+            setting a wrapped one (a long person name, or a budget fixture
+            title at 320px) solid. The `items-end` flex row above doesn't
+            need it -- alignment was never what it was doing here. */}
+        <Heading data-testid="page-title-heading" className="m-0 min-w-0 text-title break-words">
           {title}
         </Heading>
         {meta && (

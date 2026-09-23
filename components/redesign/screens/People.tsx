@@ -69,10 +69,13 @@ const SECTION_HEADING_ROW = 'mb-5 flex items-baseline gap-3.5 border-t border-ru
 // role-group title is real CMS content (constraints.md's "CMS text prints
 // verbatim"), so forcing it into caps was always presentational overreach,
 // and it also blew the micro-label budget on /people whenever more than a
-// couple of groups render. `break-words`/`hyphens-auto` stay: a long
-// `title` can still overflow this column (see PageTitle.tsx's canonical
-// note); neither is inert now that the text isn't forced upper-case.
-const SECTION_TITLE = `${MICRO_LABEL} break-words hyphens-auto`
+// couple of groups render. `break-words` stays: a long `title` can still
+// overflow this column (see PageTitle.tsx's canonical note; `hyphens-auto`
+// removed in the final-review fix round -- it was never inert here, since
+// the text isn't forced upper-case, but it hyphenated inconsistently
+// across platforms for no benefit the word-fit budget doesn't already
+// cover).
+const SECTION_TITLE = `${MICRO_LABEL} break-words`
 // The member-count badge next to it: same mono digits as before, just no
 // `text-transform` -- a bare number renders identically either way, but the
 // computed style still reported 'uppercase' (LABEL_BASE), which counted
@@ -121,9 +124,9 @@ function SpotlightBlock({ labHead }: { labHead: LabHead }) {
           edit narrows the track back to a bare `1fr`. */}
       <div className="min-w-0">
         <div className={SPOTLIGHT_LABEL_CLASS}>Head of laboratory · Principal investigator</div>
-        {/* Task 1 fix round 1: `break-words` kept alongside `hyphens-auto`
-            (see PageTitle.tsx's note) -- a name is CMS text. */}
-        <h2 className="mt-3 text-heading break-words hyphens-auto">{labHead.name}</h2>
+        {/* `break-words` (see PageTitle.tsx's canonical note; `hyphens-auto`
+            removed in the final-review fix round) -- a name is CMS text. */}
+        <h2 className="mt-3 text-heading break-words">{labHead.name}</h2>
         <PortableBody blocks={labHead.fullBio} bio={labHead.bio} />
         {labHead.email && (
           <a href={`mailto:${labHead.email}`} data-identifier data-cms-verbatim className={EMAIL_LINK}>

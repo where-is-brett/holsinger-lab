@@ -108,15 +108,13 @@ import { useMemo, useState } from 'react'
 const BLEED_GRID = 'grid grid-cols-[1fr_min(64rem,100%)_1fr]'
 
 function Heading({ children, className = '' }: { children: ReactNode; className?: string }) {
-  // Task 1 fix round 1: `break-words` kept alongside `hyphens-auto` (see
-  // components/redesign/PageTitle.tsx's note).
+  // `break-words` (see components/redesign/PageTitle.tsx's canonical note;
+  // `hyphens-auto` removed in the final-review fix round).
   // Task 2 fix round 3: optional `className` exists only for `gallery-home`'s
   // own nested `BLEED_GRID` (its own `col-start-2 px-6`) -- every other
   // call site already gets that placement from its own `<section>` wrapper
   // and passes nothing, so this defaults to `''`.
-  return (
-    <h2 className={`text-title mb-4 text-[22px] leading-none break-words hyphens-auto ${className}`}>{children}</h2>
-  )
+  return <h2 className={`text-title mb-4 text-[22px] leading-none break-words ${className}`}>{children}</h2>
 }
 
 function SubHeading({ children }: { children: ReactNode }) {
@@ -173,7 +171,7 @@ export default function Gallery() {
     <main className={`${BLEED_GRID} gap-y-16 py-10`}>
       <div className="col-start-2 px-6">
         <p className={MICRO_LABEL}>Preview -- not indexed</p>
-        <h1 className="text-title text-[28px] leading-none break-words hyphens-auto">Redesign component gallery</h1>
+        <h1 className="text-title text-[28px] leading-none break-words">Redesign component gallery</h1>
         <p className="mt-3 max-w-prose text-[14px] text-text-muted">
           Every primitive from Tasks 4-8, rendered against real lab content so Playwright and axe
           can assert what this repo&apos;s node-only Vitest setup cannot reach.
@@ -476,10 +474,10 @@ export default function Gallery() {
         <Heading>Publication page</Heading>
         {/* Task 5 fix round 1: the only place `PublicationPage` actually
             renders outside a real `/publications/[slug]` route, proving
-            (a) `ResourceBlock`'s Resource rail with a fixture that has one
-            -- the live dataset has zero `resource` documents today, so
+            (a) `ResourceBlock`'s Resource section with a fixture that has
+            one -- the live dataset has zero `resource` documents today, so
             without this the block would ship unrendered on real content --
-            and (b) `Cite & access` falls back to a full-width citation
+            and (b) `Cite and access` falls back to a full-width citation
             column when there is no canonical link (`PUBLICATION_PAGE_FIXTURE`
             has neither a DOI nor a URL). `PublicationPage` renders its own
             `<h1>`; axe's default ruleset only requires at least one `<h1>`

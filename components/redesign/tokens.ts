@@ -14,7 +14,11 @@
  * `CONTROL_BASE` (controls) or `MICRO_LABEL` (small sentence-case labels)
  * below -- see each file's own Task 3 comment for why.
  */
-export const LABEL_BASE = 'font-mono text-label uppercase'
+// Final-review fix round, finding 9: no longer exported -- `LABEL` is the
+// only real consumer (every other reference to `LABEL_BASE` across the
+// codebase is a historical comment, not an import), so there's no reason
+// to expose it as its own public token.
+const LABEL_BASE = 'font-mono text-label uppercase'
 /** Mono caps label: the publication ledger's column-head row only. */
 export const LABEL = `${LABEL_BASE} text-text-faint`
 /** Mono metadata: journal refs, counts, identifiers. */

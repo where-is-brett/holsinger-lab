@@ -22,7 +22,7 @@ import { PublicationRow } from '../PublicationRow'
 import { ResourceBlock } from '../ResourceBlock'
 import { buildResourceMeta } from '../resourceModel'
 import { Section } from '../Section'
-import { MICRO_LABEL, PUBLICATION_GRID, STRIPE_BG } from '../tokens'
+import { LABEL, MICRO_LABEL, PUBLICATION_GRID, STRIPE_BG } from '../tokens'
 
 // Composition follows
 // docs/redesign-experiment/design-system/ui_kits/site/Home.jsx (task brief
@@ -66,14 +66,15 @@ function IdentityBlock({
         <span className="h-px w-9 bg-text" />
         <span className={MICRO_LABEL}>The University of Sydney</span>
       </div>
-      {/* `break-words`/`hyphens-auto`: see PageTitle.tsx's canonical note.
-          `text-balance` (spec §1.2 "keep text-wrap: balance on display
-          headings") replaces `text-pretty` here -- this is the one
-          display-role heading, and the display floor is sized so its
-          budget word ("Neuroscience") fits at 320px (task-1-report.md). */}
+      {/* `break-words`: see PageTitle.tsx's canonical note (`hyphens-auto`
+          removed in the final-review fix round). `text-balance` (spec
+          §1.2 "keep text-wrap: balance on display headings") replaces
+          `text-pretty` here -- this is the one display-role heading, and
+          the display floor is sized so its budget word ("Neuroscience")
+          fits at 320px (task-1-report.md). */}
       <Heading
         data-testid="home-identity-title"
-        className="mt-[30px] max-w-[1180px] text-balance break-words hyphens-auto text-display font-semibold"
+        className="mt-[30px] max-w-[1180px] text-balance break-words text-display font-semibold"
       >
         {title}
       </Heading>
@@ -124,7 +125,14 @@ const IDENTITY_GRID_SOLO = 'mt-[38px] grid grid-cols-1'
 
 // -- Block 2: Recent work ------------------------------------------------
 
-const COLUMN_HEAD = `hidden ${PUBLICATION_GRID} pb-3 font-mono text-[11px] leading-none font-medium tracking-[0.12em] text-text-faint uppercase`
+// Final-review fix round, finding 9: composes `LABEL` (tokens.ts) instead
+// of hand-writing its geometry again -- `LABEL`'s own doc comment already
+// named this file's `COLUMN_HEAD` as a consumer, but the code didn't match
+// it. `PublicationsIndex.tsx`'s own `COLUMN_HEADS` already does this
+// (`${COLUMN_HEADS} ${LABEL}`); confirmed identical rendered output before
+// the swap (`text-label`'s theme companions -- 11px/1/0.12em/500 -- are the
+// exact size/line-height/tracking/weight the hand-written string set).
+const COLUMN_HEAD = `hidden ${PUBLICATION_GRID} pb-3 ${LABEL}`
 
 function RecentWorkBlock({ publications, count }: { publications: Publication[]; count: number }) {
   return (
@@ -197,10 +205,10 @@ function siteLabel(site: string): string {
 function OutreachBlock({ maestro }: { maestro: MaestroProjectPayload }) {
   return (
     <div data-testid="home-maestro">
-      {/* Task 1 fix round 1: `break-words` kept alongside `hyphens-auto`
-          (see PageTitle.tsx's note) -- the MAESTRO project title is CMS
-          text this repo doesn't control the shape of. */}
-      <div className="max-w-[720px] text-pretty break-words hyphens-auto text-heading font-semibold" data-testid="maestro-title">
+      {/* `break-words` (see PageTitle.tsx's canonical note; `hyphens-auto`
+          removed in the final-review fix round) -- the MAESTRO project
+          title is CMS text this repo doesn't control the shape of. */}
+      <div className="max-w-[720px] text-pretty break-words text-heading font-semibold" data-testid="maestro-title">
         {maestro.title}
       </div>
       <PortableBody blocks={maestro.overview} variant="inverse" />
@@ -438,7 +446,8 @@ export function Home({
   // "The lab" itself still renders whenever any one of its three parts
   // has content -- no longer keyed off `showPeople` alone, since a
   // `showPeople`-true page with zero current members (and no PI panel, no
-  // support page) would otherwise render an empty rail.
+  // support page) would otherwise render an empty `Section` (a label with
+  // no content beneath it).
   const showTheLab = showPiPanel || showMembersLine || Boolean(supportPage)
 
   // Task 2 (spec §1.3): the numbered rail (and its `num` array) is gone --

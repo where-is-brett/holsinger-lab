@@ -199,6 +199,12 @@ test.describe('Uppercase micro-label budget', () => {
         // e.g. /people when showPeople is false -- a real skip shows in the
         // output, rather than an early return passing silently.
         test.skip(response !== null && response.status() === 404, `${route} 404s for this dataset`)
+        // Final review, finding 10: the budget's ≤12px gate is font-size
+        // sensitive -- on a runner where Archivo hasn't finished loading yet,
+        // the fallback stack resolves wider, which could shift what counts
+        // as ≤12px. `load` normally covers preloaded next/font files, so
+        // this is cheap insurance, not a fix for an observed flake.
+        await page.evaluate(() => document.fonts.ready)
         const found = await findShoutedText(page)
         console.log(`[label-budget] ${route} @ ${width}px: ${found.length} (${JSON.stringify(found)})`)
         expect(found.length, `${route} @ ${width}px: ${JSON.stringify(found)}`).toBeLessThanOrEqual(BUDGET)
@@ -217,6 +223,7 @@ test.describe('Uppercase micro-label budget', () => {
       }) => {
         await page.setViewportSize({ width, height: 1000 })
         await page.goto('/preview/components')
+        await page.evaluate(() => document.fonts.ready)
         const found = await findShoutedText(page, `[data-testid="${testId}"]`)
         console.log(
           `[label-budget] /preview/components ${testId} @ ${width}px: ${found.length} (${JSON.stringify(found)})`
@@ -245,6 +252,7 @@ test.describe('CMS-verbatim text never trips the source-caps check', () => {
     }) => {
       await page.setViewportSize({ width, height: 1000 })
       await page.goto('/preview/components')
+      await page.evaluate(() => document.fonts.ready)
       const found = await findShoutedText(page, '[data-testid="gallery-cms-verbatim-probe"]')
       expect(found, JSON.stringify(found)).toEqual([])
     })
@@ -255,13 +263,17 @@ test.describe('CMS-verbatim text never trips the source-caps check', () => {
 // UI word once it's typed into the source instead of produced by
 // `text-transform: uppercase` -- this is exactly the regression the old
 // "<=5 letters is an acronym" exemption would have let through silently.
-// The probe element is temporary, rendered by the gallery only to give
-// this test something to find, and removed once this proof has run (see
-// fixtures.ts / Gallery.tsx's own comment on it).
+// The probe element (Gallery.tsx's `gallery-shouted-word-probe`) is a
+// **permanent regression-guard fixture, not production copy -- do not
+// remove it.** This test depends on it existing; removing the fixture
+// would break this test, not "clean up" a stale one (final review,
+// finding 3 -- an earlier version of this comment called it "temporary,"
+// which was wrong and self-contradicting with Gallery.tsx's own comment).
 test.describe('A shouted UI word with no CSS transform still counts', () => {
   test('"CITE" and "VIEW" typed in caps in a non-verbatim element are caught', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 })
     await page.goto('/preview/components')
+    await page.evaluate(() => document.fonts.ready)
     const found = await findShoutedText(page, '[data-testid="gallery-shouted-word-probe"]')
     expect(found).toContain('CITE')
     expect(found).toContain('VIEW')

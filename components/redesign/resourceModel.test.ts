@@ -59,12 +59,15 @@ function resource(overrides: Partial<ResourcePayload> = {}): ResourcePayload {
 }
 
 describe('buildResourceMeta', () => {
-  it('always includes KIND', () => {
-    expect(buildResourceMeta(resource({ kind: 'protocol' }))).toEqual([{ label: 'Kind', value: 'protocol' }])
+  // Final-review fix round, finding 7: KIND's value now goes through
+  // `kindLabel` (sentence case, "Hardware"), matching the same resource's
+  // own `Section` label instead of printing the raw lower-case enum.
+  it('always includes KIND, sentence-cased via kindLabel', () => {
+    expect(buildResourceMeta(resource({ kind: 'protocol' }))).toEqual([{ label: 'Kind', value: 'Protocol' }])
   })
 
-  it('KIND value is "" when kind is unset', () => {
-    expect(buildResourceMeta(resource({ kind: null }))).toEqual([{ label: 'Kind', value: '' }])
+  it('KIND value is "Resource" (kindLabel\'s own fallback) when kind is unset', () => {
+    expect(buildResourceMeta(resource({ kind: null }))).toEqual([{ label: 'Kind', value: 'Resource' }])
   })
 
   it('adds a SOURCE row linking to the publication page when journal/ref/year resolve', () => {
@@ -158,6 +161,6 @@ describe('buildResourceMeta', () => {
   })
 
   it('adds no SOURCE/DOI/URL rows when there is no linked publication', () => {
-    expect(buildResourceMeta(resource({ publication: null }))).toEqual([{ label: 'Kind', value: 'hardware' }])
+    expect(buildResourceMeta(resource({ publication: null }))).toEqual([{ label: 'Kind', value: 'Hardware' }])
   })
 })

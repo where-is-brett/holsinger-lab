@@ -715,36 +715,50 @@ The spec's original rule — display/title/heading text never breaks mid-word, e
 removing `break-words` and adding `hyphens: auto` — turned out to be unenforceable as written.
 Blink (Chromium) never hyphenates a word that starts with a capital letter
 (`hyphenate_capitalized_word_` defaults to `false`), and CMS titles are almost all title-case,
-so `hyphens: auto` is inert on nearly every heading this rule was meant to cover. Removing
+so `hyphens: auto` was inert on nearly every heading this rule was meant to cover. Removing
 `break-words` on that assumption let a real live DOI paper's title ("…Alzheimer's Disease
 Pathophysiology") overflow its column at 320px — a direct hit on the unconditional
 no-horizontal-overflow floor.
 
 **Ruling:** `break-words` stays on every display/title/heading element, as the last-resort
-fallback — `hyphens: auto` stays alongside it as a safety net for words the browser's
-dictionary does cover, and CSS text semantics mean `overflow-wrap: break-word` only ever
-engages when there's no other acceptable break, so it never changes how a word that already
-hyphenates cleanly renders. Longer words may split raw rather than overflow; this is now a
-documented exception, not a defect.
+fallback, and CSS text semantics mean `overflow-wrap: break-word` only ever engages when
+there's no other acceptable break, so it never changes how a word that already wraps cleanly
+renders. Longer words may split raw rather than overflow; this is now a documented exception,
+not a defect. **`hyphens-auto` itself was removed from every heading entirely** in PR 1's
+final-review fix round (finding 1): being inert on nearly every heading was only half the
+problem — on the minority of lowercase words where it *did* fire, it hyphenated words nobody
+needed hyphenated, visibly, and only on platforms whose Chromium ships a hyphenation
+dictionary (macOS does; Linux/CI typically doesn't), which is exactly the platform-dependent
+polish inconsistency the review was reacting to. `break-words` alone decides the outcome now.
 
 Each level's own budget was measured directly (Chromium/Playwright, Archivo weight 600, real
 rendered `fontFamily`, `scrollWidth` of an offscreen probe carrying the heading's exact
-classes) against its real column width at 320px:
+classes) against its real column width at 320px. (This task's own commit A originally
+recorded 231/218/194px in a 246px column — close, but not the figure the Task 1 re-review and
+the final whole-branch review's own probe actually measured; corrected below in the
+final-review fix round.)
 
 | Level | Budget word | Fits at 320px? |
 |---|---|---|
-| display (`--text-display`, Home's `h1`) | "Neuroscience" | yes — 231px word in a 246px column |
-| title (`--text-title`, `PageTitle`'s `h1`/`h2`) | "Pathophysiology" | yes — 218px in 246px |
-| heading (`--text-heading`, e.g. a research project's `h2`) | "Neurodegenerative" | yes — 194px in 246px |
+| display (`--text-display`, Home's `h1`) | "Neuroscience" | yes — 222px word in a 244px column |
+| title (`--text-title`, `PageTitle`'s `h1`/`h2`) | "Pathophysiology" | yes — 211px in 244px |
+| heading (`--text-heading`, e.g. a research project's `h2`) | "Neurodegenerative" | yes — 191px in 244px |
+
+Re-verified at 1024px, after `PageTitle` moved into the content column (the final whole-branch
+review's own probe): the tightest case anywhere is a `/research` `h2` beside a cover, 266px in
+a 292px column — still 26px of margin, and no live title needed a raw split at that width
+either.
 
 **Proof, and why it's Linux-CI safe.** Live routes (`/`, `/research`, `/people`, `/preview/
 components`) keep only a no-overflow assertion per word — this holds for any valid dataset,
 since `break-words` already guarantees it by construction. The raw-split budget itself is
 proven separately, on dedicated **full-width gallery fixtures** at `/preview/components` (one
-per level, each pairing that level's budget word — capitalised, so Blink can't hyphenate it —
-with short filler words that fit on their own). The check temporarily clears both fallback
-mechanisms (`overflow-wrap: normal`, `hyphens: manual`) on the fixture's own heading and
-re-measures `scrollWidth` vs `clientWidth` before restoring them — asserting the word fits with
+per level, each pairing that level's budget word — capitalised, so Blink couldn't have
+hyphenated it even before `hyphens-auto` was removed — with short filler words that fit on
+their own). The check temporarily clears `overflow-wrap` (`overflow-wrap: normal`, plus
+`hyphens: manual` kept as belt-and-braces against any future heading reintroducing
+`hyphens: auto`) on the fixture's own heading and re-measures `scrollWidth` vs `clientWidth`
+before restoring them — asserting the word fits with
 *no* fallback engaged at all, rather than depending on whether the CI runner's Chromium ships a
 hyphenation dictionary (Linux Chromium typically doesn't; this was confirmed by forcing `hyphens:
 manual !important` site-wide and re-running the full suite green). Live routes are checked for
@@ -780,9 +794,13 @@ un-wrap the band to preserve sticky, the controller ruled to **drop sticky posit
 outright** — this was already PR 3's own intent, per Brett's feedback — so PR 1 ships it now
 instead of shipping a band that would only lose sticky again one PR later. `FacetBand` no
 longer carries a `sticky` prop or any conditional sticky class; `e2e/nav-logo.spec.ts` asserts
-`position: static` at three viewport combinations, plus a behavioural test that the band
-scrolls away (negative `top`) rather than pinning near `--nav-height`. `FacetBand` stays inside
-`Section label="Filter"` — with sticky gone, the "no room to travel" problem is moot.
+`position: static` at three viewport combinations. (Task 2 fix round 2 also added a
+"scrolls away" behavioural test reproducing the regression directly — fix round 3 deleted it
+again: the re-review showed it could never fail, since forcing `position: sticky` back onto
+the band still measured a negative `top` regardless, because the wrapping cell has nowhere to
+let it travel either way. The `position: static` assertions are what actually catch a sticky
+regression.) `FacetBand` stays inside `Section label="Filter"` — with sticky gone, the "no room
+to travel" problem is moot.
 
 ### Resources: one `Section` per resource
 
@@ -914,6 +932,20 @@ nav (7 links/wordmark) plus footer (2 lines) — which is why `SiteNav`/`SiteFoo
 `MobileHeader` all moved to sentence case rather than staying conditional on "only if a page
 goes over budget because of the nav": every route was already over budget from chrome alone.
 
+### Deferred to PR 2–4
+
+The final whole-branch review's Minor findings 6 and 11 are left for the PR that owns the
+affected screen, per the review's own "why only Minor" reasoning:
+
+- **Finding 6** (the Filter label floats ~32px above its first row, and the band's hairline
+  spans only the content column, not full width): `FacetBand` is fully replaced by PR 3, so
+  fixing today's `PublicationsIndex.tsx`/`FacetBand.tsx` alignment now would be thrown away.
+- **Finding 11** (a Section label immediately followed by a same-style `MICRO_LABEL` reads as
+  one level on mobile — "The lab" → "Principal investigator" on Home, "Cite and access" →
+  "Canonical link — DOI" on the paper page, "Alumni" → "Recent lab alumni" on People): PR 2
+  removes "The lab" block entirely, and PR 4 reworks People; only the paper page's instance
+  would still need a look — deferred to whichever PR next touches `PublicationPage.tsx`.
+
 ### Verification (this PR, final — commit A of the docs task, `dc14a64`)
 
 | Check | Result |
@@ -927,3 +959,22 @@ goes over budget because of the nav": every route was already over budget from c
 
 `next-env.d.ts` restored via `git checkout origin/redesign/integration -- next-env.d.ts` after
 every build, before every commit.
+
+### Verification (final-review fix round, on top of `4b095a6`)
+
+The whole-branch final review (`.superpowers/sdd/2026-09-23-redesign-revision-1-foundations/
+final-review.md`) returned **READY WITH MINORS** — no Critical findings, one Important
+(finding 1, `hyphens-auto`) and ten Minors. This fix round addressed finding 1 and Minors
+2-5 and 7-10; findings 6 and 11 are deferred (see above).
+
+| Check | Result |
+|---|---|
+| `npm run type-check` | clean, no output |
+| `npm run lint` | **0 errors, 4 warnings** (unchanged baseline) |
+| `npx vitest run` | **39 files, 484 tests, all passed** |
+| `npm run build` | succeeded, all 45 pages generated |
+| `npm run test:e2e` | **279 passed, 3 skipped, 0 failed** (same counts as commit A — this
+round changed markup/tokens/docs/e2e assertions, not test coverage) |
+
+`next-env.d.ts` restored again after this round's build/e2e; `git status` clean apart from the
+tracked files this round touches.
