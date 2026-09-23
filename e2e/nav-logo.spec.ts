@@ -1,11 +1,19 @@
 import { expect, test } from '@playwright/test'
 
-// Header geometry against the Publications page's FacetBand. The band is
-// sticky only when the viewport is at least 64rem wide AND at least 56rem
-// tall (spec §4.2, FacetBand.tsx, fix round 3), pinned at
-// top: var(--nav-height); the header is exactly that tall, at every width,
-// because it is one sticky element (spec decision 4). Jump-links are gone
-// (spec §7) -- there is no year-anchor scroll-offset test to carry over.
+// Header geometry against the Publications page's FacetBand. The header
+// is exactly `--nav-height` tall, at every width, because it is one
+// sticky element (spec decision 4). Jump-links are gone (spec §7) -- there
+// is no year-anchor scroll-offset test to carry over.
+//
+// Task 2 fix round 2 (controller ruling): the FacetBand itself is no
+// longer sticky (removed -- PR 3 was already going to remove sticky
+// filtering, and fix round 1's `Section label="Filter"` wrap had broken
+// its sticky positioning anyway, per the re-review's "New Breakage 1").
+// This file used to assert the band pinned at `top: var(--nav-height)`
+// above a combined 64rem/56rem breakpoint; it now asserts the opposite --
+// the band never becomes sticky, at any viewport, and stays in normal
+// flow when the page scrolls -- so this coverage isn't silently dropped,
+// just inverted to match the new behaviour.
 
 for (const viewport of [
   { name: 'desktop', width: 1280, height: 900 },
@@ -33,56 +41,39 @@ for (const viewport of [
   })
 }
 
-// The FacetBand root is the ancestor div carrying its `z-[5]` utility
-// (unique to that one element -- see FacetBand.tsx), located from the
-// "Density" row label rather than by DOM position, since a broad `div`
-// selector containing that text would also match every ancestor wrapper up
-// to `<body>`.
+// `data-testid="facet-band"` (FacetBand.tsx, fix round 2) -- replaces the
+// old `z-[5]`-ancestor lookup, which existed only because `z-[5]` was this
+// element's one unique class while it was the sticky-positioning trigger.
 function facetBand(page: import('@playwright/test').Page) {
-  return page
-    .getByText('Density', { exact: true })
-    .locator('xpath=ancestor::div[contains(@class, "z-[5]")]')
-    .first()
+  return page.getByTestId('facet-band')
 }
 
-test('at 1280x1000 (>=64rem wide and >=56rem tall) the FacetBand sticks under the header', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1280, height: 1000 })
-  await page.goto('/publications')
-  const band = facetBand(page)
-  const g = await page.evaluate((el) => {
-    const header = document.querySelector('[data-testid="site-header"]')
-    if (!header || !el) return null
-    const style = getComputedStyle(el)
-    return {
-      headerHeight: header.getBoundingClientRect().height,
-      position: style.position,
-      top: Number.parseFloat(style.top),
-    }
-  }, await band.elementHandle())
-  expect(g).not.toBeNull()
-  expect(g!.position).toBe('sticky')
-  expect(g!.top).toBeCloseTo(g!.headerHeight, 0)
-})
+test.describe('the FacetBand is never sticky', () => {
+  for (const viewport of [
+    // The widest/tallest combination this file used to assert *was*
+    // sticky under the old 64rem/56rem rule -- now the opposite.
+    { width: 1280, height: 1000 },
+    { width: 1280, height: 720 },
+    { width: 375, height: 812 },
+  ]) {
+    test(`at ${viewport.width}x${viewport.height}, position is static`, async ({ page }) => {
+      await page.setViewportSize(viewport)
+      await page.goto('/publications')
+      const position = await facetBand(page).evaluate((el) => getComputedStyle(el).position)
+      expect(position).toBe('static')
+    })
+  }
 
-test('at 1280x720 (wide enough but not tall enough) the FacetBand is not sticky', async ({
-  page,
-}) => {
-  // 720px is under the 56rem (896px) height threshold, even though 1280px
-  // clears the 64rem width one -- proves the band needs both conditions,
-  // not just the width one `lg:` alone used to check.
-  await page.setViewportSize({ width: 1280, height: 720 })
-  await page.goto('/publications')
-  const band = facetBand(page)
-  const position = await band.evaluate((el) => getComputedStyle(el).position)
-  expect(position).toBe('static')
-})
-
-test('at 375x812 (narrow) the FacetBand is not sticky', async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 812 })
-  await page.goto('/publications')
-  const band = facetBand(page)
-  const position = await band.evaluate((el) => getComputedStyle(el).position)
-  expect(position).toBe('static')
+  // Re-review's own regression case (fix round 1's "New Breakage 1"): with
+  // `position: sticky` still set but the band's parent no shorter than
+  // the band itself, the band scrolled off-screen instead of pinning.
+  // Confirms the band now simply scrolls away with the rest of the page,
+  // never leaving `top` pinned near the header's own height.
+  test('scrolls away with the page instead of pinning under the header', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto('/publications')
+    await page.mouse.wheel(0, 1500)
+    const top = await facetBand(page).evaluate((el) => el.getBoundingClientRect().top)
+    expect(top).toBeLessThan(0)
+  })
 })

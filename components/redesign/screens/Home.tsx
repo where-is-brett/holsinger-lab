@@ -438,13 +438,13 @@ export function Home({
   // each block below carries its own React `key` (the identity block has no
   // visible `label` at all: it's the hero, not a labelled section, matching
   // the task brief's Home label table, which lists only the other four).
-  // `labelHeading` is `true` for every block here because none of Home's
-  // non-hero content has an in-content heading of its own (RecentWorkBlock,
-  // ResourcesBlock, OutreachBlock and TheLabBlock all render plain
-  // `<div>`s/mono labels, never an `h1`/`h2`) -- see task-2-report.md's
-  // per-screen table for the full reasoning applied consistently across
-  // every screen in this direction.
-  const blocks: Array<{ key: string; label?: string; inverse?: boolean; content: ReactNode }> = [
+  // `labelHeading` is set per block: `true` for "Recent work"/"Outreach"/
+  // "The lab" (none of `RecentWorkBlock`/`OutreachBlock`/`TheLabBlock`
+  // render a heading of their own -- plain `<div>`s and mono labels), but
+  // `false` for "Resources" (fix round 2: `ResourceBlock`'s own title is
+  // now a real `<h2>`, so a second `<h2>` label here would be a redundant,
+  // sibling heading) -- see task-2-report.md's per-screen table.
+  const blocks: Array<{ key: string; label?: string; labelHeading?: boolean; inverse?: boolean; content: ReactNode }> = [
     {
       key: 'identity',
       content: (
@@ -456,6 +456,7 @@ export function Home({
     blocks.push({
       key: 'recent-work',
       label: 'Recent work',
+      labelHeading: true,
       content: <RecentWorkBlock publications={publications} count={publicationCount} />,
     })
   }
@@ -466,6 +467,7 @@ export function Home({
     blocks.push({
       key: 'outreach',
       label: 'Outreach',
+      labelHeading: true,
       inverse: true,
       content: <OutreachBlock maestro={maestro} />,
     })
@@ -474,6 +476,7 @@ export function Home({
     blocks.push({
       key: 'the-lab',
       label: 'The lab',
+      labelHeading: true,
       content: (
         <TheLabBlock
           showPiPanel={showPiPanel}
@@ -489,7 +492,13 @@ export function Home({
   return (
     <div>
       {blocks.map((block, index) => (
-        <Section key={block.key} label={block.label} labelHeading inverse={block.inverse} borderTop={index !== 0}>
+        <Section
+          key={block.key}
+          label={block.label}
+          labelHeading={block.labelHeading}
+          inverse={block.inverse}
+          borderTop={index !== 0}
+        >
           {block.content}
         </Section>
       ))}

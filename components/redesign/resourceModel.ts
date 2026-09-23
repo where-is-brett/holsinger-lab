@@ -43,38 +43,19 @@ export function kindLabel(kind: string | null | undefined): string {
   return RESOURCE_KIND_LABELS[kind] ?? 'Resource'
 }
 
-export interface ResourceKindGroup<T> {
-  kind: string | null
-  label: string
-  resources: T[]
-}
-
-/**
- * Groups resources by `kind`, in first-seen order, so `Resources.tsx` can
- * render one `Section` per kind (Task 2 fix round 1, review Minor 7) --
- * without this, two resources sharing a `kind` would each get their own
- * `Section` and its own "Hardware" `<h2>`, an accessibility-unfriendly
- * duplicate heading (today's dataset never has two of the same kind, so
- * this was never exercised in practice, but the schema allows it and
- * nothing else prevented it). A `null`/unset `kind` groups together too,
- * under `kindLabel`'s "Resource" fallback, rather than each getting its
- * own ungrouped section.
- */
-export function groupByKind<T extends { kind: string | null }>(resources: T[]): ResourceKindGroup<T>[] {
-  const groups: ResourceKindGroup<T>[] = []
-  const byKind = new Map<string | null, ResourceKindGroup<T>>()
-  for (const resource of resources) {
-    const key = resource.kind ?? null
-    let group = byKind.get(key)
-    if (!group) {
-      group = { kind: key, label: kindLabel(key), resources: [] }
-      byKind.set(key, group)
-      groups.push(group)
-    }
-    group.resources.push(resource)
-  }
-  return groups
-}
+// Task 2 fix round 1 (review Minor 7) added a `groupByKind` here so
+// `Resources.tsx` could render one `Section` per kind instead of one per
+// resource, avoiding duplicate `<h2>` labels for two resources sharing a
+// kind. Fix round 2 (controller ruling, option (b)) reverted that: grouping
+// silently reordered the list relative to the query's own `title asc` order
+// whenever kinds were interleaved, breaking `e2e/resources.spec.ts`'s
+// "renders one block per resource document" check for a dataset that valid
+// (re-review, "New Breakage 2") -- constraints.md's "every e2e assertion
+// must hold for any valid dataset" rules that out. `Resources.tsx` is back
+// to one `Section` per resource, in query order, with `kindLabel`'s output
+// rendered as a `<p>` (not an `<h2>`) so duplicate labels are never a
+// heading-order problem either. `groupByKind` and its tests are removed;
+// `kindLabel` itself is kept and unchanged.
 
 /**
  * "journal ref · year", each half dropped rather than leaving a dangling

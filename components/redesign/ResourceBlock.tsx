@@ -82,13 +82,25 @@ export function ResourceBlock({ title, meta = [], figureLabel, children }: Resou
             property than anything else already set here, so it's additive.
             Task 1 fix round 1: `hyphens-auto` joins it (not replaces it) --
             see PageTitle.tsx's note on why `break-words` stays as a
-            fallback rather than being removed. */}
-        <div
+            fallback rather than being removed.
+            Task 2 fix round 2 (controller ruling): a real `<h2>`, not a
+            `<div>` -- `Resources.tsx` went back to one `Section` per
+            resource with a `<p>` kind label (not an `<h2>`, so two
+            resources sharing a kind can't produce duplicate headings), so
+            this title is now the only heading each resource section has.
+            `ResourceBlock`'s other two call sites (`Home.tsx`'s single
+            Resources block, `PublicationPage.tsx`'s Resource block) both
+            already wrap this in a `Section` whose own label is an `<h2>`
+            -- a second, sibling `<h2>` here doesn't skip or duplicate a
+            level either way. Same visual style as before (this class
+            string is unchanged); Preflight already zeroes `h2`'s default
+            margin, so no layout shift. */}
+        <h2
           data-testid="resource-block-title"
           className="max-w-[640px] text-heading font-semibold break-words hyphens-auto"
         >
           {title}
-        </div>
+        </h2>
         <div className="mt-[26px] flex flex-col gap-2.5 font-mono text-[12.5px] leading-[1.5]">
           {meta.map((m) => (
             <div key={m.label}>

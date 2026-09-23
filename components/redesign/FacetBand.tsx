@@ -10,27 +10,27 @@ export interface FacetBandProps {
   groups: { label: string; chips: FacetChipSpec[] }[]
   density?: { options: string[]; value: string; onChange: (d: string) => void }
   note?: string
-  sticky?: boolean
 }
 
 // Presentational only -- the parent owns filter state and counts; this
 // component just renders chips and forwards their onClick.
 //
-// Sticky facet band, sticky only when the viewport is at least 64rem wide
-// AND at least 56rem tall (spec §4.2, fix round 3): width alone isn't
-// enough -- on a short-but-wide viewport (e.g. a laptop with the window
-// resized short, or landscape tablet) three wrapped chip groups plus
-// density can be taller than the viewport itself, so pinning it at
-// `top: var(--nav-height)` would leave no way to scroll past it to reach
-// the records below. `[@media(min-width:64rem)_and_(min-height:56rem)]:`
-// is a single Tailwind 4 arbitrary variant carrying both conditions, used
-// for both `sticky` and `top-(--nav-height)` -- not `lg:` plus a bare
-// media-query wrapper, which would set `position`/`top` twice at the same
-// breakpoint (constraints.md's same-property rule). Below that combined
-// breakpoint the band stays `static`. From it, it pins at
-// `top: var(--nav-height)` -- this site's header IS sticky (unlike the
-// vendored source's own assumption), so a hardcoded `top: 0` would tuck the
-// band under the header instead of below it.
+// Task 2 fix round 2 (controller ruling): the band is no longer sticky.
+// It used to pin at `top: var(--nav-height)` from a combined
+// `min-width:64rem`/`min-height:56rem` breakpoint (spec §4.2, fix round
+// 3) -- removed because PR 3 was already going to remove sticky filtering
+// entirely (Brett's own feedback), and fix round 1's `Section label=
+// "Filter"` wrap (below) left the band's sticky positioning broken anyway:
+// a sticky element can only travel as far as its parent's own height, and
+// `Section`'s content cell is exactly the band's height, so it had nowhere
+// to scroll to (re-review, "New Breakage 1"). No replacement top-offset or
+// z-index is needed -- both existed only to support the sticky pin, never
+// for anything else (the band was never meant to render above other
+// content once it's back in normal flow). `data-testid="facet-band"`
+// (new) is what `e2e/nav-logo.spec.ts`/`e2e/publications-interactive.spec.ts`
+// now locate this element by, replacing the old `z-[5]`-ancestor lookup
+// that existed purely because `z-[5]` was otherwise this element's only
+// unique, stable class.
 // Two variants, not one ROW plus an appended `items-center` override:
 // Tailwind utilities of equal specificity win by generation order in the
 // build's CSS, not by position in the className string, and `.items-center`
@@ -73,11 +73,12 @@ const DENSITY_ROW_LABEL = 'font-mono text-[10px] leading-none tracking-[0.14em] 
 // both starting at `Section`'s own content column. `pt-8`/`pb-9` stay: the
 // vertical rhythm inside the band (chip-row spacing, the density row's own
 // separator) is this component's own concern, not `Section`'s.
-export function FacetBand({ groups = [], density, note, sticky = true }: FacetBandProps) {
+export function FacetBand({ groups = [], density, note }: FacetBandProps) {
   const visibleGroups = groups.filter((g) => g.chips.length > 0)
   return (
     <div
-      className={`${sticky ? 'static [@media(min-width:64rem)_and_(min-height:56rem)]:sticky [@media(min-width:64rem)_and_(min-height:56rem)]:top-(--nav-height)' : 'static'} z-[5] bg-surface border-t border-b border-rule min-w-0 flex flex-col gap-5 pt-8 pb-9`}
+      data-testid="facet-band"
+      className="bg-surface border-t border-b border-rule min-w-0 flex flex-col gap-5 pt-8 pb-9"
     >
       {/* Groups gap is 20px (gap-5), not the source's 14px: the same hit-area
           intrusion that forced gap-y-5 inside a group also applies across

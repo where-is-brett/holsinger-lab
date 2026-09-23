@@ -2,17 +2,14 @@ import { expect, test } from '@playwright/test'
 
 import { e2eClient } from './support/sanity'
 
-// The FacetBand root is the ancestor div carrying its `z-[5]` utility
-// (unique to that one element -- see components/redesign/FacetBand.tsx),
-// located from the always-present "Density" row label. Facet-group label
-// lookups are scoped inside it, not the whole page: the column-head row
-// (`hidden lg:grid`) also renders a plain "Year" span, and an unscoped
+// `data-testid="facet-band"` (FacetBand.tsx, Task 2 fix round 2 -- replaces
+// the old `z-[5]`-ancestor lookup, `z-[5]` having existed only to support
+// the band's now-removed sticky positioning). Facet-group label lookups
+// are scoped inside it, not the whole page: the column-head row (`hidden
+// xl:grid`) also renders a plain "Year" span, and an unscoped
 // `getByText('Year', { exact: true })` would match both.
 function facetBand(page: import('@playwright/test').Page) {
-  return page
-    .getByText('Density', { exact: true })
-    .locator('xpath=ancestor::div[contains(@class, "z-[5]")]')
-    .first()
+  return page.getByTestId('facet-band')
 }
 
 test.describe('publications index', () => {

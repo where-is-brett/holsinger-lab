@@ -11,13 +11,15 @@ export interface SectionProps {
    * `<h1>`, a role-group's `<h2 data-testid="people-section-title">`), and
    * a second `<h2>` here would be a redundant, misleading heading rather
    * than a helpful landmark. Set `true` only where the section's content
-   * has no heading of its own at all (Home's "Recent work"/"Resources"/
-   * "Outreach"/"The lab" blocks, Publications' "Record" list,
-   * PublicationPage's "Abstract"/"Cite and access"/"Resource" blocks,
-   * Research's "Enquiries" band, Resources' per-item block, People's
-   * "Alumni" paragraph, and PersonPage's "Profile" block) -- see
-   * task-2-report.md's per-screen table for the full call-by-call
-   * reasoning.
+   * has no heading of its own at all (Home's "Recent work"/"Outreach"/
+   * "The lab" blocks, Publications' "Record" list, PublicationPage's
+   * "Abstract"/"Cite and access" blocks, Research's "Enquiries" band,
+   * People's "Alumni" paragraph, and PersonPage's "Profile" block). Leave
+   * it `false` (the default) for Home's/PublicationPage's/Resources' own
+   * resource blocks -- `ResourceBlock`'s own title is a real `<h2>` (fix
+   * round 2), so a second `<h2>` label there would be a redundant sibling
+   * heading -- see task-2-report.md's per-screen table for the full
+   * call-by-call reasoning.
    */
   labelHeading?: boolean
   inverse?: boolean

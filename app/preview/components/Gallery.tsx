@@ -62,6 +62,25 @@ import { useMemo, useState } from 'react'
 // (onOpen, onClick, onChange, onToggle, onNavigate) into a real host
 // element, and a function prop cannot cross the RSC boundary.
 
+// Task 2 fix round 2 (re-review Minor 3): `-mx-6` alone (the technique
+// Task 1's own typography-budget fixtures use) only cancels `<main>`'s own
+// `px-6` padding -- it does nothing about `<main>`'s `max-w-5xl` (1024px)
+// cap, so at a genuine 1280/1440px viewport a `-mx-6`-only frame still
+// measured a fixed 1024px wide (confirmed empirically: `gallery-home-a`'s
+// own bounding box stayed 1024px at both 1280 and 1440), leaving the
+// publication ledger's `xl:` grid (which activates on *viewport* width,
+// not the element's own box width) 5-40px too narrow for its title
+// column and colliding with the journal cell beside it -- the exact
+// defect the re-review's Minor 3 flagged. `FULL_BLEED` breaks out of
+// `max-w-5xl` entirely with the standard `left-1/2`/`-mx-[50vw]`/
+// `w-screen` recipe (relative positioning shifts the box to start at the
+// viewport's own left edge, `w-screen` sizes it to the viewport's full
+// width, regardless of any ancestor's own max-width or padding), so these
+// frames measure the real page's own 1280/1440px width, matching what a
+// route's own `<main>` (no `max-w-5xl` on any real route) actually gives
+// `Section`'s content column.
+const FULL_BLEED = 'relative left-1/2 right-1/2 w-screen -mx-[50vw]'
+
 function Heading({ children }: { children: ReactNode }) {
   // Task 1 fix round 1: `break-words` kept alongside `hyphens-auto` (see
   // components/redesign/PageTitle.tsx's note).
@@ -228,7 +247,6 @@ export default function Gallery() {
       <section data-testid="gallery-facet-band">
         <Heading>Facet band</Heading>
         <FacetBand
-          sticky={false}
           groups={[
             { label: 'Year', chips: yearChips },
             { label: 'Type', chips: typeChips },
@@ -491,71 +509,81 @@ export default function Gallery() {
             place Home's populated PI panel, Resources block, and Support
             link actually render. The `maestro` project *does* exist live,
             but the fixture's own copy proves the block independent of
-            live-data drift. */}
-        <SubHeading>(a) labHead set, showLabHeadOnHome true -- PI panel shows, PI excluded from the count</SubHeading>
-        <div className="mb-8 border border-rule" data-testid="gallery-home-a">
-          <Home
-            home={HOME_PAGE_FIXTURE}
-            settings={HOME_SETTINGS_FIXTURE}
-            siteName="Holsinger Lab"
-            publications={HOME_PUBLICATIONS_FIXTURE}
-            publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
-            resource={HOME_RESOURCE_FIXTURE}
-            maestro={HOME_MAESTRO_FIXTURE}
-            profiles={PEOPLE_PROFILES_FIXTURE}
-            roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
-            supportPage={HOME_SUPPORT_PAGE_FIXTURE}
-            headingLevel="h2"
-          />
-        </div>
+            live-data drift.
 
-        {/* Fix round 1, IMPORTANT 1: the exact shape of the bug this fixes
-            -- labHead set, but showLabHeadOnHome false, so the PI panel is
-            hidden. The PI must now count as an ordinary member (this
-            instance's count is instance (a)'s count plus exactly one, the
-            PI herself) instead of being silently subtracted while
-            appearing nowhere on the page. */}
-        <SubHeading>(b) labHead set, showLabHeadOnHome false -- no PI panel, PI included in the count</SubHeading>
-        <div className="mb-8 border border-rule" data-testid="gallery-home-b">
-          <Home
-            home={HOME_PAGE_FIXTURE}
-            settings={HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE}
-            siteName="Holsinger Lab"
-            publications={HOME_PUBLICATIONS_FIXTURE}
-            publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
-            resource={HOME_RESOURCE_FIXTURE}
-            maestro={HOME_MAESTRO_FIXTURE}
-            profiles={PEOPLE_PROFILES_FIXTURE}
-            roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
-            supportPage={HOME_SUPPORT_PAGE_FIXTURE}
-            headingLevel="h2"
-          />
-        </div>
+            Task 2 fix round 2: all three instances now render inside one
+            shared `FULL_BLEED` wrapper (see that constant's own comment)
+            instead of each being its own narrower demo frame -- at
+            1280/1440px this is what stops "Recent work"'s publication
+            ledger from colliding with itself, matching the treatment
+            Task 1's own `gallery-typography-budget-inner` already uses at
+            320/375px. */}
+        <div className={FULL_BLEED}>
+          <SubHeading>(a) labHead set, showLabHeadOnHome true -- PI panel shows, PI excluded from the count</SubHeading>
+          <div className="mb-8 border border-rule" data-testid="gallery-home-a">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_FIXTURE}
+              siteName="Holsinger Lab"
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              profiles={PEOPLE_PROFILES_FIXTURE}
+              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
 
-        {/* Fix round 4 (axe regression): instance (a) deliberately keeps
-            `labHead.image: null` (proves PiPortrait64's initials fallback),
-            so this third instance is what actually renders a real portrait
-            through Home's own 64px `<Image>` branch -- the case
-            `image-redundant-alt` needs to see exercised (Home.tsx's
-            `PiPortrait64` own comment: `alt=""`, decorative, since the PI's
-            name is visible text right beside it inside the same `Link`).
-            Covered by this file's own whole-page axe checks (light and
-            dark, below) same as every other gallery section. */}
-        <SubHeading>(c) labHead set with a portrait -- PiPortrait64&apos;s image branch, decorative alt</SubHeading>
-        <div className="border border-rule" data-testid="gallery-home-c">
-          <Home
-            home={HOME_PAGE_FIXTURE}
-            settings={HOME_SETTINGS_PORTRAIT_FIXTURE}
-            siteName="Holsinger Lab"
-            publications={HOME_PUBLICATIONS_FIXTURE}
-            publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
-            resource={HOME_RESOURCE_FIXTURE}
-            maestro={HOME_MAESTRO_FIXTURE}
-            profiles={PEOPLE_PROFILES_FIXTURE}
-            roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
-            supportPage={HOME_SUPPORT_PAGE_FIXTURE}
-            headingLevel="h2"
-          />
+          {/* Fix round 1, IMPORTANT 1: the exact shape of the bug this fixes
+              -- labHead set, but showLabHeadOnHome false, so the PI panel is
+              hidden. The PI must now count as an ordinary member (this
+              instance's count is instance (a)'s count plus exactly one, the
+              PI herself) instead of being silently subtracted while
+              appearing nowhere on the page. */}
+          <SubHeading>(b) labHead set, showLabHeadOnHome false -- no PI panel, PI included in the count</SubHeading>
+          <div className="mb-8 border border-rule" data-testid="gallery-home-b">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE}
+              siteName="Holsinger Lab"
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              profiles={PEOPLE_PROFILES_FIXTURE}
+              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+
+          {/* Fix round 4 (axe regression): instance (a) deliberately keeps
+              `labHead.image: null` (proves PiPortrait64's initials fallback),
+              so this third instance is what actually renders a real portrait
+              through Home's own 64px `<Image>` branch -- the case
+              `image-redundant-alt` needs to see exercised (Home.tsx's
+              `PiPortrait64` own comment: `alt=""`, decorative, since the PI's
+              name is visible text right beside it inside the same `Link`).
+              Covered by this file's own whole-page axe checks (light and
+              dark, below) same as every other gallery section. */}
+          <SubHeading>(c) labHead set with a portrait -- PiPortrait64&apos;s image branch, decorative alt</SubHeading>
+          <div className="border border-rule" data-testid="gallery-home-c">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_PORTRAIT_FIXTURE}
+              siteName="Holsinger Lab"
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              profiles={PEOPLE_PROFILES_FIXTURE}
+              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
         </div>
       </section>
 

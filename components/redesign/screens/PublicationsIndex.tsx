@@ -85,7 +85,17 @@ export function PublicationsIndex({ publications }: { publications: Publication[
           a second one immediately above it. `labelHeading`: true --
           `FacetBand`'s content is chips, not headings, so "Filter" is this
           section's only one. PR 3 replaces the band's internals; this is
-          purely the alignment/label fix this task's brief called for. */}
+          purely the alignment/label fix this task's brief called for.
+
+          Fix round 2 (controller ruling): re-review found this wrap had
+          silently broken `FacetBand`'s own sticky positioning -- a sticky
+          element can only travel as far as its parent's own height, and
+          this `Section`'s content cell was exactly the band's height, so
+          it had nowhere to scroll to. Resolved by removing the band's
+          sticky behaviour entirely (PR 3 was already removing it; see
+          FacetBand.tsx's own comment), not by un-wrapping it -- so this
+          `Section` wrap, `padTop`/`padBottom`/`borderTop` all stay exactly
+          as fix round 1 left them. */}
       <Section label="Filter" labelHeading borderTop={false} padTop="0px" padBottom="0px">
         <FacetBand
           groups={[

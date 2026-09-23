@@ -337,6 +337,38 @@ test.describe('/preview/components gallery: home', () => {
     expect(fits).toBe(true)
   })
 
+  // Task 2 fix round 2 (re-review Minor 3): at 1280px and above, the
+  // publication ledger's `xl:` grid activates on *viewport* width, not the
+  // gallery's own demo-frame width -- before this fix, `gallery-home-a/b/c`
+  // sat inside `<main>`'s `max-w-5xl` (1024px) cap even at wider viewports
+  // (8 titles measured overflowing their cells at 1280/1440), so this
+  // extends the same per-row overflow check `e2e/home.spec.ts`'s live `/`
+  // describe block above already uses to the gallery fixtures the fix
+  // (`Gallery.tsx`'s `FULL_BLEED` wrapper) targets.
+  test.describe('publication ledger cells never overflow their own track', () => {
+    for (const width of [1280, 1440]) {
+      test(`at ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 })
+        await page.goto('/preview/components')
+        const overflowing = await page.evaluate(() => {
+          const section = document.querySelector('[data-testid="gallery-home"]')
+          const found: { tag: string; text: string; overflowPx: number }[] = []
+          if (!section) return found
+          for (const row of section.querySelectorAll('[data-testid="pub-row"]')) {
+            for (const el of row.querySelectorAll('*')) {
+              const overflowPx = el.scrollWidth - el.clientWidth
+              if (overflowPx > 1) {
+                found.push({ tag: el.tagName, text: (el.textContent ?? '').slice(0, 60), overflowPx })
+              }
+            }
+          }
+          return found
+        })
+        expect(overflowing, JSON.stringify(overflowing)).toEqual([])
+      })
+    }
+  })
+
   // Fix round 1, IMPORTANT 1: instance (b) is the exact shape of the bug
   // this fixes -- labHead set, showLabHeadOnHome false. No PI panel, and
   // the PI must now count as an ordinary member: (b)'s count is (a)'s

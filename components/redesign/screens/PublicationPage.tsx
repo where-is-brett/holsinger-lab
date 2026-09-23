@@ -187,9 +187,11 @@ function ResourceSectionBlock({ pub }: { pub: Publication }) {
 export function PublicationPage({ pub }: { pub: Publication }) {
   // Task 2: `Paper`'s `Section` label stays a `<p>` -- `PaperBlock` already
   // renders the page's real `<h1 data-testid="paper-title">`, so its label
-  // isn't the section's only heading. `Abstract`, `Cite and access` and
-  // `Resource` have no heading of their own (plain paragraphs / mono
-  // labels), so their labels are `<h2>`s.
+  // isn't the section's only heading. `Abstract` and `Cite and access` have
+  // no heading of their own (plain paragraphs / mono labels), so their
+  // labels are `<h2>`s. `Resource` stays a `<p>` (fix round 2):
+  // `ResourceBlock`'s own title is now a real `<h2>`, so a second `<h2>`
+  // label here would be a redundant, sibling heading.
   const blocks: Array<{ label: string; labelHeading?: boolean; content: ReactNode }> = [
     { label: 'Paper', content: <PaperBlock pub={pub} /> },
   ]
@@ -198,7 +200,7 @@ export function PublicationPage({ pub }: { pub: Publication }) {
   }
   blocks.push({ label: 'Cite and access', labelHeading: true, content: <CiteAndAccessBlock pub={pub} /> })
   if (pub.resources.length > 0) {
-    blocks.push({ label: 'Resource', labelHeading: true, content: <ResourceSectionBlock pub={pub} /> })
+    blocks.push({ label: 'Resource', content: <ResourceSectionBlock pub={pub} /> })
   }
 
   return (
