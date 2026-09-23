@@ -10,11 +10,14 @@ import {
   HOME_MAESTRO_FIXTURE,
   HOME_PAGE_FIXTURE,
   HOME_PAGE_NO_OVERVIEW_FIXTURE,
+  HOME_PROFILES_C_FIXTURE,
+  HOME_PROFILES_FIXTURE,
   HOME_PUBLICATION_COUNT_FIXTURE,
   HOME_PUBLICATIONS_FIXTURE,
   HOME_PUBLICATIONS_UNSLUGGED_FIXTURE,
   HOME_RESEARCH_PROJECTS_FIXTURE,
   HOME_RESOURCE_FIXTURE,
+  HOME_ROLE_GROUPS_FIXTURE,
   HOME_SETTINGS_FIXTURE,
   HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE,
   HOME_SETTINGS_LONG_ROLE_FIXTURE,
@@ -575,7 +578,8 @@ export default function Gallery() {
         <div className="col-span-full">
           <SubHeading>
             (a) labHead set, showLabHeadOnHome true -- lab-head card shows, PI excluded from the count; three
-            researchOrder project cards, one linked cover
+            researchOrder project cards, one linked cover; 10 current members with photos (strip caps at 8), one
+            alumnus and the lab head herself both with photos (neither shown)
           </SubHeading>
           <div className="mb-8 border border-rule" data-testid="gallery-home-a">
             <Home
@@ -588,8 +592,8 @@ export default function Gallery() {
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
               researchProjects={HOME_RESEARCH_PROJECTS_FIXTURE}
-              profiles={PEOPLE_PROFILES_FIXTURE}
-              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              profiles={HOME_PROFILES_FIXTURE}
+              roleGroups={HOME_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
               headingLevel="h2"
             />
@@ -599,13 +603,18 @@ export default function Gallery() {
               card is hidden. The PI counts as an ordinary member (this
               instance's count is instance (a)'s count plus exactly one,
               the PI herself) instead of being silently subtracted while
-              appearing nowhere on the page. No researchOrder projects here
-              -- the research cards fall back to `HOME_SITE_COPY_THEMES_FIXTURE`'s
-              themes instead, proving the fallback and its "- " strip
-              independently of instance (a)'s project cards. */}
+              appearing nowhere on the page -- shares (a)'s own profiles
+              pool so that difference is provably just her. `peopleStrip`
+              still excludes her portrait either way (Home.tsx's own
+              comment on `strip`), since it goes by `settings.labHead`'s id
+              alone, not whether the hero card is showing. No researchOrder
+              projects here -- the research cards fall back to
+              `HOME_SITE_COPY_THEMES_FIXTURE`'s themes instead, proving the
+              fallback and its "- " strip independently of instance (a)'s
+              project cards. */}
           <SubHeading>
-            (b) labHead set, showLabHeadOnHome false -- no lab-head card, PI included in the count; no
-            researchOrder projects, so research cards fall back to siteCopy themes
+            (b) labHead set, showLabHeadOnHome false -- no lab-head card, PI included in the count but still excluded
+            from the portrait strip; no researchOrder projects, so research cards fall back to siteCopy themes
           </SubHeading>
           <div className="mb-8 border border-rule" data-testid="gallery-home-b">
             <Home
@@ -618,8 +627,8 @@ export default function Gallery() {
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
               researchProjects={[]}
-              profiles={PEOPLE_PROFILES_FIXTURE}
-              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              profiles={HOME_PROFILES_FIXTURE}
+              roleGroups={HOME_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
               headingLevel="h2"
             />
@@ -633,8 +642,13 @@ export default function Gallery() {
               `PiPortrait64` own comment: `alt=""`, decorative, since the PI's
               name is visible text right beside it inside the same `Link`).
               Covered by this file's own whole-page axe checks (light and
-              dark, below) same as every other gallery section. */}
-          <SubHeading>(c) labHead set with a portrait -- PiPortrait64&apos;s image branch, decorative alt</SubHeading>
+              dark, below) same as every other gallery section. Also: 2
+              current members, only one with a photo -- the strip shows
+              exactly the members who have one, not padded to the count. */}
+          <SubHeading>
+            (c) labHead set with a portrait -- PiPortrait64&apos;s image branch, decorative alt; 2 current members,
+            only one with a photo
+          </SubHeading>
           <div className="mb-8 border border-rule" data-testid="gallery-home-c">
             <Home
               home={HOME_PAGE_FIXTURE}
@@ -646,8 +660,8 @@ export default function Gallery() {
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
               researchProjects={[]}
-              profiles={PEOPLE_PROFILES_FIXTURE}
-              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              profiles={HOME_PROFILES_C_FIXTURE}
+              roleGroups={HOME_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
               headingLevel="h2"
             />

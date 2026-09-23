@@ -1040,3 +1040,75 @@ export const HOME_SETTINGS_LONG_ROLE_FIXTURE: SettingsPayload = {
   labHead: HOME_LAB_HEAD_LONG_ROLE_FIXTURE,
   showLabHeadOnHome: true,
 }
+
+// -- People strip (Task 5) -------------------------------------------------
+
+const HOME_CURRENT_GROUP: RoleGroupPayload = { _id: 'fixture-home-role-current', title: 'Research Scientist' }
+const HOME_ALUMNI_GROUP: RoleGroupPayload = { _id: 'fixture-home-role-alumni', title: 'Lab Alumni' }
+
+export const HOME_ROLE_GROUPS_FIXTURE: RoleGroupPayload[] = [HOME_CURRENT_GROUP, HOME_ALUMNI_GROUP]
+
+// gallery-home-a / -b share this pool: 10 current members with photos (the
+// strip caps at 8, proving the cap), one alumnus with a photo (never shown
+// -- alumni are excluded regardless of having an image), and the lab
+// head's own profile entry, also with a photo (never shown either --
+// `peopleStrip` always excludes whichever id `settings.labHead` carries,
+// so this proves that exclusion is by id, not merely "no image"). (a) and
+// (b) differ only in whether their own `settings.labHead`/
+// `showLabHeadOnHome` shows the hero's own card -- this one shared pool
+// is what lets their member *counts* differ by exactly the PI herself
+// (`e2e/home.spec.ts`'s own cross-check).
+const HOME_CURRENT_MEMBERS: ProfilePayload[] = Array.from({ length: 10 }, (_, index) =>
+  profile({
+    _id: `fixture-home-member-${index + 1}`,
+    name: `Member ${index + 1} Lastname${index + 1}`,
+    role: 'Research Scientist',
+    image: PEOPLE_IMAGE,
+    roleGroup: HOME_CURRENT_GROUP,
+  })
+)
+
+const HOME_ALUMNUS_WITH_IMAGE: ProfilePayload = profile({
+  _id: 'fixture-home-alumnus',
+  name: 'Alumna Withimage',
+  role: 'Lab Alumni',
+  image: PEOPLE_IMAGE,
+  roleGroup: HOME_ALUMNI_GROUP,
+})
+
+// Same `_id` as `HOME_LAB_HEAD_FIXTURE` (both trace back to
+// `PEOPLE_LAB_HEAD_FIXTURE`) -- this is her own ordinary `profile`
+// document, the shape `peopleStrip`/`currentMemberCount` actually consume.
+const HOME_LAB_HEAD_PROFILE_WITH_IMAGE: ProfilePayload = profile({
+  _id: HOME_LAB_HEAD_FIXTURE._id,
+  name: HOME_LAB_HEAD_FIXTURE.name ?? '',
+  role: HOME_LAB_HEAD_FIXTURE.role,
+  image: PEOPLE_IMAGE,
+  hasPage: HOME_LAB_HEAD_FIXTURE.hasPage,
+  slug: HOME_LAB_HEAD_FIXTURE.slug,
+})
+
+export const HOME_PROFILES_FIXTURE: ProfilePayload[] = [
+  ...HOME_CURRENT_MEMBERS,
+  HOME_ALUMNUS_WITH_IMAGE,
+  HOME_LAB_HEAD_PROFILE_WITH_IMAGE,
+]
+
+// gallery-home-c: 2 current members, only one with a photo -- the strip
+// shows exactly the members who have one (1), not padded to match the
+// member count (2).
+export const HOME_PROFILES_C_FIXTURE: ProfilePayload[] = [
+  profile({
+    _id: 'fixture-home-c-member-1',
+    name: 'Devi Ratnasari',
+    role: 'Research Scientist',
+    image: PEOPLE_IMAGE,
+    roleGroup: HOME_CURRENT_GROUP,
+  }),
+  profile({
+    _id: 'fixture-home-c-member-2',
+    name: 'Tom Whitfield',
+    role: 'Research Scientist',
+    roleGroup: HOME_CURRENT_GROUP,
+  }),
+]

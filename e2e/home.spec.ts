@@ -1,6 +1,6 @@
 import { expect, type Locator, test } from '@playwright/test'
 import { HOME_SITE_COPY_THEMES_FIXTURE, MIXED_COVERS_RESEARCH_PROJECTS_FIXTURE } from 'components/redesign/fixtures'
-import { currentMemberCount, homeStatement, IA_TAGLINE, shouldShowLabHeadCard } from 'components/redesign/homeModel'
+import { homeStatement, IA_TAGLINE, shouldShowLabHeadCard } from 'components/redesign/homeModel'
 import { resolveBranding } from 'lib/branding'
 
 import { e2eClient } from './support/sanity'
@@ -89,34 +89,18 @@ function liveShowsLabHeadCard(settings: LiveSettings): boolean {
   })
 }
 
-type LiveProfile = { _id: string; roleGroupId: string | null }
-type LiveRoleGroup = { _id: string; title: string | null }
-
-async function fetchLiveMembers(): Promise<{ profiles: LiveProfile[]; roleGroups: LiveRoleGroup[] }> {
-  const [profiles, roleGroups] = await Promise.all([
-    e2eClient.fetch<LiveProfile[]>(
-      `*[_type == "profile"]{ _id, "roleGroupId": roleGroup->_id }`
-    ),
-    e2eClient.fetch<LiveRoleGroup[]>(`*[_type == "roleGroup"]{ _id, title }`),
-  ])
-  return { profiles, roleGroups }
-}
-
 // Fix round 2, point 2: `toContainText(String(n))` is a substring check --
 // "14" satisfies an expected "4", "23" satisfies an expected "3", and so
 // on, which a live member count changing over time could silently start
 // passing for the wrong reason. Reads the exact leading digit run out of
-// the "N — PEOPLE →" link's own text and compares it numerically instead,
-// the same approach the gallery test below (`countText`) already uses.
-async function readMemberCount(block: Locator): Promise<number> {
-  return block
-    .locator('a')
-    .first()
-    .evaluate((node) => {
-      const match = node.textContent?.match(/\d+/)
-      if (!match) throw new Error('no digit found in member-count link text')
-      return Number(match[0])
-    })
+// the "Meet the lab — N people →" link's own text and compares it
+// numerically instead.
+async function readMemberCount(link: Locator): Promise<number> {
+  return link.evaluate((node) => {
+    const match = node.textContent?.match(/\d+/)
+    if (!match) throw new Error('no digit found in meet-the-lab link text')
+    return Number(match[0])
+  })
 }
 
 test.describe('/', () => {
@@ -215,62 +199,83 @@ test.describe('/', () => {
     await expect(page.getByTestId('maestro-title')).toHaveText(maestro.title)
   })
 
-  test('the current-member count equals currentMemberCount computed from live profiles, roleGroups and labHead, excluding the PI only when the lab-head card itself is showing', async ({
-    page,
-  }) => {
-    const [{ profiles, roleGroups }, settings] = await Promise.all([
-      fetchLiveMembers(),
-      fetchLiveSettings(),
-    ])
-    // Mirrors Home.tsx's own gate exactly -- the PI is excluded from the
-    // count only when the hero's own lab-head card is the reason she
-    // isn't double-counted, not merely because `labHead` happens to be
-    // set.
-    const showLabHeadCard = liveShowsLabHeadCard(settings)
-    const expected = currentMemberCount(
-      profiles.map((p) => ({ _id: p._id, roleGroup: p.roleGroupId ? { _id: p.roleGroupId, title: null } : null })),
-      roleGroups,
-      showLabHeadCard ? settings.labHeadId : null
+  test('MAESTRO is a normal card with exactly one register link', async ({ page }) => {
+    const m = await e2eClient.fetch<{ site: string | null } | null>(
+      `*[_type=="project" && slug.current=="maestro"][0]{site}`
     )
-
     await page.goto('/')
-    if (!(settings.showPeople !== false && expected > 0)) {
-      await expect(page.getByTestId('home-member-count')).toHaveCount(0)
+    const card = page.getByTestId('home-maestro')
+    if (!m) {
+      await expect(card).toHaveCount(0)
       return
     }
-    const block = page.getByTestId('home-member-count')
-    await expect(block).toBeVisible()
-    expect(await readMemberCount(block)).toBe(expected)
+    await expect(card.getByTestId('home-maestro-register')).toHaveCount(m.site ? 1 : 0)
+    if (m.site) {
+      const bare = m.site.replace(/^https?:\/\//, '').replace(/\/$/, '')
+      await expect(card.locator(`a[href*="${bare}"]`)).toHaveCount(1)
+    }
   })
 
-  // Cross-checks Home's own rendered count against /people's own rendered
-  // "N current members" meta, rather than re-deriving the same rule a
-  // second time -- two independent implementations agreeing is a stronger
-  // signal than one re-derivation agreeing with itself. Only compared when
-  // the two pages' lab-head visibility flags agree; when they genuinely
-  // differ, the pages are allowed to show different numbers.
-  test("the current-member count equals /people's own rendered count, whenever the two pages' lab-head visibility agree and both blocks are visible", async ({
+  test('people strip: ≤ 8 current members with photos, never the lab head or alumni; meet-the-lab count matches /people', async ({
     page,
   }) => {
-    const settings = await fetchLiveSettings()
-    const homeShowsPi = Boolean(settings.labHeadId) && settings.showLabHeadOnHome !== false
-    const peopleShowsSpotlight = Boolean(settings.labHeadId) && settings.showLabHeadOnPeople !== false
-    test.skip(
-      homeShowsPi !== peopleShowsSpotlight,
-      'showLabHeadOnHome and showLabHeadOnPeople disagree in this dataset -- the two pages are allowed to differ'
+    const s = await e2eClient.fetch<{
+      showPeople: boolean | null
+      showLabHeadOnHome: boolean | null
+      showLabHeadOnPeople: boolean | null
+      labHead: { _id: string; name: string | null } | null
+    } | null>(
+      `*[_type=="settings"][0]{showPeople, showLabHeadOnHome, showLabHeadOnPeople, labHead->{_id, name}}`
     )
-
-    const peopleResponse = await page.goto('/people')
-    test.skip(peopleResponse?.status() !== 200, '/people 404s under current settings (showPeople is false)')
-    const peopleMeta = await page.getByTestId('page-title-meta').innerText()
-    const match = peopleMeta.match(/(\d+)\s+current members?/i)
-    test.skip(!match, `/people's meta "${peopleMeta}" has no "N CURRENT MEMBER(S)" segment`)
-    const peopleCount = Number(match![1])
-
     await page.goto('/')
-    const homeBlock = page.getByTestId('home-member-count')
-    test.skip((await homeBlock.count()) === 0, "Home's member-count block isn't rendered under current settings")
-    expect(await readMemberCount(homeBlock)).toBe(peopleCount)
+    const portraits = page.getByTestId('home-people-portrait')
+    expect(await portraits.count()).toBeLessThanOrEqual(8)
+    if (s?.labHead?.name) {
+      await expect(portraits.filter({ hasText: s.labHead.name.trim() })).toHaveCount(0)
+    }
+    const meet = page.getByTestId('home-meet-the-lab')
+    if ((await meet.count()) > 0) {
+      const n = await readMemberCount(meet)
+      expect(n).toBeGreaterThan(0)
+
+      // Cross-checks Home's own rendered count against /people's own
+      // rendered "N current members" meta, rather than re-deriving the
+      // same rule a second time -- two independent implementations
+      // agreeing is a stronger signal than one re-derivation agreeing
+      // with itself. Moved unchanged from the old home-member-count
+      // test. Only compared when the two pages' lab-head visibility
+      // flags agree; when they genuinely differ, the pages are allowed
+      // to show different numbers.
+      const homeShowsPi = Boolean(s?.labHead?._id) && s?.showLabHeadOnHome !== false
+      const peopleShowsSpotlight = Boolean(s?.labHead?._id) && s?.showLabHeadOnPeople !== false
+      test.skip(
+        homeShowsPi !== peopleShowsSpotlight,
+        'showLabHeadOnHome and showLabHeadOnPeople disagree in this dataset -- the two pages are allowed to differ'
+      )
+      const peopleResponse = await page.goto('/people')
+      test.skip(peopleResponse?.status() !== 200, '/people 404s under current settings (showPeople is false)')
+      const peopleMeta = await page.getByTestId('page-title-meta').innerText()
+      const match = peopleMeta.match(/(\d+)\s+current members?/i)
+      test.skip(!match, `/people's meta "${peopleMeta}" has no "N CURRENT MEMBER(S)" segment`)
+      expect(n).toBe(Number(match![1]))
+    }
+  })
+
+  test('the lab head is named exactly once on Home', async ({ page }) => {
+    const s = await e2eClient.fetch<{
+      showLabHeadOnHome: boolean | null
+      labHead: { name: string | null } | null
+    } | null>(`*[_type=="settings"][0]{showLabHeadOnHome, labHead->{name}}`)
+    const name = s?.labHead?.name?.trim()
+    test.skip(!name || s?.showLabHeadOnHome === false, 'no lab head shown on Home in this dataset')
+    await page.goto('/')
+    const count = await page.locator('main').evaluate((main, n) => {
+      const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT)
+      let c = 0
+      for (let t = walker.nextNode(); t; t = walker.nextNode()) if ((t.textContent ?? '').includes(n)) c++
+      return c
+    }, name!)
+    expect(count).toBe(1)
   })
 
   test('the lab-head card is present exactly when shouldShowLabHeadCard says so', async ({
@@ -507,7 +512,8 @@ test.describe('/preview/components gallery: home', () => {
     await expect(a.getByTestId('home-recent-work')).toBeVisible()
     await expect(a.getByTestId('home-resources')).toBeVisible()
     await expect(a.getByTestId('home-maestro')).toBeVisible()
-    await expect(a.getByTestId('home-member-count')).toBeVisible()
+    await expect(a.getByTestId('home-people')).toBeVisible()
+    await expect(a.getByTestId('home-meet-the-lab')).toBeVisible()
     await expect(a.getByTestId('home-support')).toBeVisible()
 
     const fits = await page.evaluate(
@@ -588,11 +594,32 @@ test.describe('/preview/components gallery: home', () => {
     const b = page.getByTestId('gallery-home-b')
 
     await expect(b.getByTestId('home-lab-head-card')).toHaveCount(0)
-    await expect(b.getByTestId('home-member-count')).toBeVisible()
+    await expect(b.getByTestId('home-meet-the-lab')).toBeVisible()
 
-    const countA = await readMemberCount(a.getByTestId('home-member-count'))
-    const countB = await readMemberCount(b.getByTestId('home-member-count'))
+    const countA = await readMemberCount(a.getByTestId('home-meet-the-lab'))
+    const countB = await readMemberCount(b.getByTestId('home-meet-the-lab'))
     expect(countB).toBe(countA + 1)
+  })
+
+  // (a): 10 current members with photos, one alumnus and the lab head
+  // herself both with photos too -- the strip caps at 8, and neither the
+  // alumnus nor the lab head (`Dr Ilse Van Der Berg`) is ever among them.
+  test('(a) has 8 portraits, none the lab head or the alumnus', async ({ page }) => {
+    await page.goto('/preview/components')
+    const a = page.getByTestId('gallery-home-a')
+    const portraits = a.getByTestId('home-people-portrait')
+    await expect(portraits).toHaveCount(8)
+    await expect(portraits.filter({ hasText: 'Dr Ilse Van Der Berg' })).toHaveCount(0)
+    await expect(portraits.filter({ hasText: 'Alumna Withimage' })).toHaveCount(0)
+  })
+
+  // (c): 2 current members, only one with a photo -- the strip shows
+  // exactly that one, and the meet-the-lab link still reports both.
+  test('(c) has 1 portrait and reads "Meet the lab — 2 people"', async ({ page }) => {
+    await page.goto('/preview/components')
+    const c = page.getByTestId('gallery-home-c')
+    await expect(c.getByTestId('home-people-portrait')).toHaveCount(1)
+    await expect(c.getByTestId('home-meet-the-lab')).toContainText('Meet the lab — 2 people')
   })
 
   // Production's siteCopy is empty today -- this is the only place the "no
