@@ -1,5 +1,9 @@
 import { expect, type Locator, test } from '@playwright/test'
-import { HOME_SITE_COPY_THEMES_FIXTURE, MIXED_COVERS_RESEARCH_PROJECTS_FIXTURE } from 'components/redesign/fixtures'
+import {
+  HOME_PROFILES_NO_PHOTOS_FIXTURE,
+  HOME_SITE_COPY_THEMES_FIXTURE,
+  MIXED_COVERS_RESEARCH_PROJECTS_FIXTURE,
+} from 'components/redesign/fixtures'
 import { homeStatement, IA_TAGLINE, peopleStrip, shouldShowLabHeadCard } from 'components/redesign/homeModel'
 import { resolveBranding } from 'lib/branding'
 
@@ -89,9 +93,9 @@ function liveShowsLabHeadCard(settings: LiveSettings): boolean {
   })
 }
 
-// Fix round 2, point 2: `toContainText(String(n))` is a substring check --
-// "14" satisfies an expected "4", "23" satisfies an expected "3", and so
-// on, which a live member count changing over time could silently start
+// `toContainText(String(n))` would be a substring check -- "14" would
+// satisfy an expected "4", "23" would satisfy an expected "3", and so on,
+// which a live member count changing over time could silently start
 // passing for the wrong reason. Reads the exact leading digit run out of
 // the "Meet the lab — N people →" link's own text and compares it
 // numerically instead.
@@ -113,10 +117,9 @@ test.describe('/', () => {
     const home = await fetchLiveHome()
     // `resolveBranding` (lib/branding.ts), not a re-implementation of its
     // own fallback chain -- the one function that owns "whitespace-only
-    // counts as unset, fall back to fallbackSiteName" (fix round 1, point
-    // 2). `home.title?.trim() || siteName` mirrors Home.tsx's own
-    // `IdentityBlock` (fix round 1, point 3: a whitespace-only `home.title`
-    // is also treated as unset).
+    // counts as unset, fall back to fallbackSiteName". `home.title?.trim()
+    // || siteName` mirrors Home.tsx's own `IdentityBlock` (a
+    // whitespace-only `home.title` is also treated as unset).
     const { siteName } = resolveBranding({ siteName: home.siteName })
     const expected = home.title?.trim() || siteName
 
@@ -238,7 +241,10 @@ test.describe('/', () => {
       } | null>(`*[_type=="settings"][0]{showPeople, showLabHeadOnHome, showLabHeadOnPeople, labHead->{_id, name}}`),
     ])
 
-    const expectedNames = peopleStrip(profiles, roleGroups, s?.labHead?._id ?? null, 6).map((p) => p.name)
+    // `showPeople: false` means no strip at all, regardless of who has a
+    // photo -- Home.tsx only calls `peopleStrip` when `showPeople` is true.
+    const expectedNames =
+      s?.showPeople === false ? [] : peopleStrip(profiles, roleGroups, s?.labHead?._id ?? null, 6).map((p) => p.name)
 
     await page.goto('/')
     const portraits = page.getByTestId('home-people-portrait')
@@ -256,7 +262,7 @@ test.describe('/', () => {
       // with itself. Only compared when the two pages' lab-head
       // visibility flags agree; when they genuinely differ, the pages are
       // allowed to show different numbers.
-      const homeShowsPi = Boolean(s?.labHead?._id) && s?.showLabHeadOnHome !== false
+      const homeShowsPi = shouldShowLabHeadCard({ labHead: s?.labHead ?? null, showLabHeadOnHome: s?.showLabHeadOnHome })
       const peopleShowsSpotlight = Boolean(s?.labHead?._id) && s?.showLabHeadOnPeople !== false
       test.skip(
         homeShowsPi !== peopleShowsSpotlight,
@@ -271,20 +277,35 @@ test.describe('/', () => {
     }
   })
 
-  test('the lab head is named exactly once on Home', async ({ page }) => {
+  // Counted outside `home-statement` -- that's CMS text (`siteCopy`/
+  // `home.overview`) and may legitimately mention the lab head by name
+  // (e.g. "Led by Damian Holsinger..."), which would otherwise break "any
+  // valid dataset" for a perfectly ordinary editorial sentence. The rest
+  // of `<main>` -- the hero card, the strip figcaptions, the paper rows --
+  // is the surface this PR actually controls.
+  test('the lab head is named exactly once on Home, outside the CMS statement', async ({ page }) => {
     const s = await e2eClient.fetch<{
       showLabHeadOnHome: boolean | null
-      labHead: { name: string | null } | null
-    } | null>(`*[_type=="settings"][0]{showLabHeadOnHome, labHead->{name}}`)
-    const name = s?.labHead?.name?.trim()
-    test.skip(!name || s?.showLabHeadOnHome === false, 'no lab head shown on Home in this dataset')
+      labHead: { _id: string; name: string | null } | null
+    } | null>(`*[_type=="settings"][0]{showLabHeadOnHome, labHead->{_id, name}}`)
+    const shown = shouldShowLabHeadCard({ labHead: s?.labHead ?? null, showLabHeadOnHome: s?.showLabHeadOnHome })
+    test.skip(!shown, 'no lab head shown on Home in this dataset')
+    const name = s!.labHead!.name!.trim()
+
     await page.goto('/')
-    const count = await page.locator('main').evaluate((main, n) => {
-      const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT)
+    const count = await page.evaluate((n) => {
+      const main = document.querySelector('main')
+      if (!main) return 0
+      const statement = document.querySelector('[data-testid="home-statement"]')
+      const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          return statement && statement.contains(node) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+        },
+      })
       let c = 0
       for (let t = walker.nextNode(); t; t = walker.nextNode()) if ((t.textContent ?? '').includes(n)) c++
       return c
-    }, name!)
+    }, name)
     expect(count).toBe(1)
   })
 
@@ -313,9 +334,7 @@ test.describe('/', () => {
     expect(text).toBe(expected)
   })
 
-  test('hero: lab-head card shows only the parts that are set, with the PI named exactly once in <main>', async ({
-    page,
-  }) => {
+  test('hero: lab-head card shows only the parts that are set', async ({ page }) => {
     const s = await e2eClient.fetch(`*[_type=="settings"][0]{showLabHeadOnHome, labHead->{name, role, email, image}}`)
     await page.goto('/')
     const card = page.getByTestId('home-lab-head-card')
@@ -331,9 +350,6 @@ test.describe('/', () => {
     const email = s.labHead.email?.trim()
     await expect(card.locator('a[href^="mailto:"]')).toHaveCount(email ? 1 : 0)
     await expect(card.locator('a[href="mailto:undefined"], a[href="mailto:null"]')).toHaveCount(0)
-
-    const mainText = await page.locator('main').innerText()
-    expect(mainText.split(name).length - 1).toBe(1)
   })
 
   test('research cards come from researchOrder projects, else siteCopy themes, else no block', async ({
@@ -643,6 +659,29 @@ test.describe('/preview/components gallery: home', () => {
     const c = page.getByTestId('gallery-home-c')
     await expect(c.getByTestId('home-people-portrait')).toHaveCount(1)
     await expect(c.getByTestId('home-meet-the-lab')).toContainText('Meet the lab — 2 people')
+  })
+
+  // (h): `showPeople: false`, but the underlying profiles do carry photos
+  // -- Home must show neither the strip nor the meet-the-lab line,
+  // regardless, only the Support link.
+  test('(h) showPeople false: no portraits, no meet-the-lab, only Support', async ({ page }) => {
+    await page.goto('/preview/components')
+    const h = page.getByTestId('gallery-home-no-people')
+    await expect(h.getByTestId('home-people-portrait')).toHaveCount(0)
+    await expect(h.getByTestId('home-meet-the-lab')).toHaveCount(0)
+    await expect(h.getByTestId('home-support')).toBeVisible()
+  })
+
+  // (i): current members exist (so "Meet the lab" still renders a real
+  // count) but none has a photo -- the portraits row is omitted, not an
+  // empty grid.
+  test('(i) current members with no photos: meet-the-lab renders, 0 portraits', async ({ page }) => {
+    await page.goto('/preview/components')
+    const i = page.getByTestId('gallery-home-no-photos')
+    await expect(i.getByTestId('home-people-portrait')).toHaveCount(0)
+    await expect(i.getByTestId('home-meet-the-lab')).toContainText(
+      `Meet the lab — ${HOME_PROFILES_NO_PHOTOS_FIXTURE.length} people`
+    )
   })
 
   // Production's siteCopy is empty today -- this is the only place the "no

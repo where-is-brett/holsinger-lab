@@ -97,19 +97,21 @@ function IdentityBlock({
   siteName,
   settings,
   siteCopy,
+  showLabHeadCard,
   headingLevel = 'h1',
 }: {
   home: HomePagePayload
   siteName: string
   settings: SettingsPayload
   siteCopy: SiteCopyPayload | null
+  showLabHeadCard: boolean
   headingLevel?: 'h1' | 'h2'
 }) {
-  // Fix round 1, point 3: a Studio string field can collect a stray space
-  // -- `.trim()` before the `||` fallback, same "whitespace-only counts as
-  // unset" rule `resolveBranding` (lib/branding.ts) already applies to
-  // `siteName` itself, so a whitespace-only `home.title` falls through to
-  // `siteName` instead of rendering a blank `<h1>`.
+  // A Studio string field can collect a stray space -- `.trim()` before the
+  // `||` fallback, same "whitespace-only counts as unset" rule
+  // `resolveBranding` (lib/branding.ts) already applies to `siteName`
+  // itself, so a whitespace-only `home.title` falls through to `siteName`
+  // instead of rendering a blank `<h1>`.
   const title = home.title?.trim() || siteName
   // `homeStatement` (homeModel.ts) owns the whole fallback chain --
   // `siteCopy.about.body` -> `siteCopy.hero.subheading` -> `home.overview`
@@ -117,7 +119,6 @@ function IdentityBlock({
   // constant itself, only the one function that already resolves it.
   const statement = homeStatement(siteCopy, home.overview)
   const labHead = settings.labHead
-  const showLabHeadCard = shouldShowLabHeadCard(settings)
   const Heading = headingLevel
 
   return (
@@ -182,7 +183,8 @@ const IDENTITY_GRID_SOLO = 'mt-[38px] grid grid-cols-1'
 // exactly under the name without needing a second, independent alignment
 // mechanism. Do not set the `Link` to `display: contents` to let the
 // portrait `row-span` across the card -- that drops the link from the
-// focus order in Chromium (caught by the hover/focus e2e below), so it
+// focus order in Chromium (caught by the hover/focus e2e in
+// e2e/home.spec.ts), so it
 // stays a real, focusable box instead. `labHead?.name` is the only field
 // this ever assumes is set (`showLabHeadCard` above already gates on it),
 // so role and email each render only when non-blank, and
@@ -247,6 +249,12 @@ function LabHeadCard({ labHead }: { labHead: NonNullable<SettingsPayload['labHea
   )
 }
 
+// Shared by every "exit" link on Home ("All N publications →", "Our
+// research →", "Meet the lab...", "Support our research →", "All
+// resources →", "Register for MAESTRO talks →") -- one class string, one
+// size (15px), rather than each block picking its own.
+const MORE_LINK = 'mt-5 inline-block text-[0.9375rem] font-medium text-link'
+
 // -- Block 2: Recent papers ------------------------------------------------
 
 // Composes `LABEL` (tokens.ts) instead of hand-writing its geometry,
@@ -283,7 +291,7 @@ function RecentWorkBlock({ publications, count }: { publications: Publication[];
       ))}
       {/* Sentence case, not uppercase mono -- links to another route are
           sentence case per the brief. */}
-      <Link href="/publications" className="mt-5 inline-block text-[14px] font-medium text-link">
+      <Link href="/publications" className={MORE_LINK}>
         All {count} publication{count === 1 ? '' : 's'} →
       </Link>
     </div>
@@ -299,10 +307,24 @@ function RecentWorkBlock({ publications, count }: { publications: Publication[];
 // the viewport.
 const RESEARCH_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-2'
 
+// A rule (and the padding it separates from the title above it) only
+// between rows, not above the first one -- an unconditional rule on every
+// card drew a second line just under the Section's own top rule, pushing
+// the first row's titles well below the "Research" label instead of
+// aligning with it (the lead paper, just above this block, already drops
+// its own top rule for the same reason). `md:grid-cols-2` is the only
+// column count this grid ever uses, so "first row" is index 0 below `md`
+// (one column) and indices 0-1 from `md` (two columns) -- arbitrary
+// variants targeting each shape directly, rather than a JS-computed index
+// per card, so this holds for any card count without the component
+// needing to know its own position in the list.
+const RESEARCH_CARD =
+  'min-w-0 max-md:[&:not(:first-child)]:border-t max-md:[&:not(:first-child)]:border-rule max-md:[&:not(:first-child)]:pt-5 md:[&:nth-child(n+3)]:border-t md:[&:nth-child(n+3)]:border-rule md:[&:nth-child(n+3)]:pt-5'
+
 function ResearchCardView({ card }: { card: ReturnType<typeof researchCards>[number] }) {
   const cover = card.cover
   return (
-    <article data-testid="home-research-card" className="min-w-0 border-t border-rule pt-5">
+    <article data-testid="home-research-card" className={RESEARCH_CARD}>
       {cover && (
         <div className="overflow-hidden">
           {/* `alt=""` (decorative), not `cover.alt` -- the title right
@@ -313,7 +335,7 @@ function ResearchCardView({ card }: { card: ReturnType<typeof researchCards>[num
             alt=""
             width={cover.width}
             height={cover.height}
-            sizes="(min-width: 768px) 50vw, 100vw"
+            sizes="(min-width: 768px) 40vw, 100vw"
             className="aspect-[16/10] w-full object-cover"
           />
         </div>
@@ -346,7 +368,7 @@ function ResearchBlock({ cards }: { cards: ReturnType<typeof researchCards> }) {
       {/* No show flag for Research (unlike Resources/Outreach/People) --
           /research always exists, even listing nothing, so this link is
           unconditional. */}
-      <Link href="/research" className="mt-5 inline-block text-[0.9375rem] font-medium text-link">
+      <Link href="/research" className={MORE_LINK}>
         Our research →
       </Link>
     </div>
@@ -379,17 +401,16 @@ function peoplePortraits(strip: ReturnType<typeof peopleStrip>): PeoplePortraitV
 const PORTRAIT_GRID = 'grid grid-cols-3 gap-x-3 gap-y-5 md:grid-cols-6 md:gap-x-5'
 
 function PeopleBlock({
-  strip,
+  portraits,
   memberCount,
   showMembersLine,
   supportPage,
 }: {
-  strip: ReturnType<typeof peopleStrip>
+  portraits: PeoplePortraitView[]
   memberCount: number
   showMembersLine: boolean
   supportPage: SupportPagePayload | null
 }) {
-  const portraits = peoplePortraits(strip)
   return (
     <div data-testid="home-people">
       {portraits.length > 0 && (
@@ -414,16 +435,12 @@ function PeopleBlock({
       )}
       <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3">
         {showMembersLine && (
-          <Link href="/people" className="text-[0.9375rem] font-medium text-link" data-testid="home-meet-the-lab">
+          <Link href="/people" className={MORE_LINK} data-testid="home-meet-the-lab">
             Meet the lab — {memberCount} {memberCount === 1 ? 'person' : 'people'} →
           </Link>
         )}
         {supportPage && (
-          <Link
-            href={`/${supportPage.slug}`}
-            className="text-[0.9375rem] font-medium text-link"
-            data-testid="home-support"
-          >
+          <Link href={`/${supportPage.slug}`} className={MORE_LINK} data-testid="home-support">
             Support our research →
           </Link>
         )}
@@ -434,16 +451,15 @@ function PeopleBlock({
 
 // -- Block 5: Resources ---------------------------------------------------
 
-// `buildResourceMeta` (KIND / SOURCE / DOI-or-URL) moved to
-// resourceModel.ts (PR C Task 3 fix round 1, IMPORTANT 2) -- it was a
-// verbatim duplicate of Resources.tsx's own copy, and the two would have
-// silently drifted. Both screens import the one shared function now.
+// `buildResourceMeta` (KIND / SOURCE / DOI-or-URL) lives in
+// resourceModel.ts -- Resources.tsx imports the same shared function,
+// rather than each screen keeping its own copy that could drift.
 
 function ResourcesBlock({ resource }: { resource: HomeResourcePayload }) {
   return (
     <div data-testid="home-resources">
       <ResourceBlock title={resource.title ?? ''} meta={buildResourceMeta(resource)} />
-      <Link href="/resources" className="mt-5 inline-block text-[14px] font-medium text-link">
+      <Link href="/resources" className={MORE_LINK}>
         All resources →
       </Link>
     </div>
@@ -467,11 +483,7 @@ function OutreachBlock({ maestro }: { maestro: MaestroProjectPayload }) {
       </h3>
       <PortableBody blocks={maestroOverview(maestro.overview, maestro.site)} variant="body" />
       {maestro.site && (
-        <a
-          href={maestro.site}
-          data-testid="home-maestro-register"
-          className="mt-5 inline-block text-[0.9375rem] font-medium text-link"
-        >
+        <a href={maestro.site} data-testid="home-maestro-register" className={MORE_LINK}>
           Register for MAESTRO talks →
         </a>
       )}
@@ -508,9 +520,9 @@ export function Home({
   supportPage: SupportPagePayload | null
   /** Forwarded to Identity's own heading -- see PageTitle.tsx's identical
    * doc comment and People.tsx/Research.tsx's own `headingLevel` prop.
-   * Only ever set by the /preview/components gallery, which (fix round 1)
-   * now renders two `Home` instances alongside its own headings; the real
-   * `/` route never passes this, so it always gets the correct `<h1>`. */
+   * Only ever set by the /preview/components gallery, which renders
+   * several `Home` instances alongside its own headings; the real `/`
+   * route never passes this, so it always gets the correct `<h1>`. */
   headingLevel?: 'h1' | 'h2'
 }) {
   const labHead = settings.labHead
@@ -536,15 +548,20 @@ export function Home({
   const showMembersLine = showPeople && memberCount > 0
   // The portrait strip excludes the lab head whenever one is set at all
   // (not gated on `showLabHeadCard`, unlike `memberCount` above): the hero
-  // is where she's named, and a second portrait of her among ordinary
-  // members would be a second naming even on a page where her own card is
-  // switched off. Capped at 6: one row from `md`, two rows of 3 below;
-  // more portraits outweigh the hero and the papers ledger.
-  const strip = peopleStrip(profiles, roleGroups, labHead?._id ?? null, 6)
-  // "People" renders whenever there's something to show: a strip/count, or
-  // a support link -- omitted only when both are empty (a `showPeople:
-  // false` page with zero members and no support page).
-  const showPeopleBlock = memberCount > 0 || Boolean(supportPage)
+  // is where the lab head is named, and a second portrait of them among
+  // ordinary members would be a second naming even on a page where their
+  // own card is switched off. Capped at 6: one row from `md`, two rows of
+  // 3 below; more portraits outweigh the hero and the papers ledger.
+  // Computed only when `showPeople` -- with People switched off, `/people`
+  // itself 404s (`app/people/page.tsx`), so Home must not still show
+  // everyone's face.
+  const strip = showPeople ? peopleStrip(profiles, roleGroups, labHead?._id ?? null, 6) : []
+  const portraits = peoplePortraits(strip)
+  // "People" renders whenever there's something to show: a strip, a
+  // member count, or a support link -- omitted only when all three are
+  // empty (a `showPeople: false` page with no support page shows nothing
+  // here at all, not a labelled section with an empty body).
+  const showPeopleBlock = showMembersLine || portraits.length > 0 || Boolean(supportPage)
 
   const showRecentWork = publications.length > 0 && settings.showPublications !== false
   // researchOrder projects first, siteCopy.about.themes only when there
@@ -553,8 +570,6 @@ export function Home({
   // /research itself always exists.
   const cards = researchCards(researchProjects, siteCopy?.about?.themes)
   const showResearch = cards.length > 0
-  const showResources = Boolean(resource)
-  const showOutreach = Boolean(maestro)
 
   // Each block carries its own React `key` (the identity block has no
   // visible `label` at all: it's the hero, not a labelled section).
@@ -573,6 +588,7 @@ export function Home({
           siteName={siteName}
           settings={settings}
           siteCopy={siteCopy}
+          showLabHeadCard={showLabHeadCard}
           headingLevel={headingLevel}
         />
       ),
@@ -600,14 +616,19 @@ export function Home({
       label: 'People',
       labelHeading: true,
       content: (
-        <PeopleBlock strip={strip} memberCount={memberCount} showMembersLine={showMembersLine} supportPage={supportPage} />
+        <PeopleBlock
+          portraits={portraits}
+          memberCount={memberCount}
+          showMembersLine={showMembersLine}
+          supportPage={supportPage}
+        />
       ),
     })
   }
-  if (showResources && resource) {
+  if (resource) {
     blocks.push({ key: 'resources', label: 'Resources', content: <ResourcesBlock resource={resource} /> })
   }
-  if (showOutreach && maestro) {
+  if (maestro) {
     blocks.push({
       key: 'outreach',
       label: 'Outreach',

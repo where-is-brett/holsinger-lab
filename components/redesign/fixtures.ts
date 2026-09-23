@@ -1116,3 +1116,28 @@ export const HOME_PROFILES_C_FIXTURE: ProfilePayload[] = [
     roleGroup: HOME_CURRENT_GROUP,
   }),
 ]
+
+// gallery-home-no-photos: current members exist (so "Meet the lab" still
+// renders, with a real count), but none of them has a photo -- the
+// portraits row is omitted rather than rendering an empty grid.
+export const HOME_PROFILES_NO_PHOTOS_FIXTURE: ProfilePayload[] = Array.from({ length: 3 }, (_, index) =>
+  profile({
+    _id: `fixture-home-no-photo-member-${index + 1}`,
+    name: `No Photo Member ${index + 1}`,
+    role: 'Research Scientist',
+    roleGroup: HOME_CURRENT_GROUP,
+  })
+)
+
+// gallery-home-no-people: `showPeople: false` -- Home must show no
+// portraits and no meet-the-lab line even when the underlying profiles do
+// carry photos (`HOME_PROFILES_FIXTURE`, reused below), only the Support
+// link.
+export const HOME_SETTINGS_NO_PEOPLE_FIXTURE: SettingsPayload = {
+  ...fallbackSettings,
+  showPeople: false,
+}
+
+// gallery-home-no-photos: no labHead set, so the hero's card is hidden and
+// every current member (including these) counts.
+export const HOME_SETTINGS_NO_LABHEAD_FIXTURE: SettingsPayload = fallbackSettings

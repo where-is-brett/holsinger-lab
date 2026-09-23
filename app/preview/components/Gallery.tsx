@@ -12,6 +12,7 @@ import {
   HOME_PAGE_NO_OVERVIEW_FIXTURE,
   HOME_PROFILES_C_FIXTURE,
   HOME_PROFILES_FIXTURE,
+  HOME_PROFILES_NO_PHOTOS_FIXTURE,
   HOME_PUBLICATION_COUNT_FIXTURE,
   HOME_PUBLICATIONS_FIXTURE,
   HOME_PUBLICATIONS_UNSLUGGED_FIXTURE,
@@ -22,6 +23,8 @@ import {
   HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE,
   HOME_SETTINGS_LONG_ROLE_FIXTURE,
   HOME_SETTINGS_NAME_ONLY_FIXTURE,
+  HOME_SETTINGS_NO_LABHEAD_FIXTURE,
+  HOME_SETTINGS_NO_PEOPLE_FIXTURE,
   HOME_SETTINGS_PORTRAIT_FIXTURE,
   HOME_SITE_COPY_FIXTURE,
   HOME_SITE_COPY_THEMES_FIXTURE,
@@ -754,6 +757,50 @@ export default function Gallery() {
               profiles={PEOPLE_PROFILES_FIXTURE}
               roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+
+          {/* `showPeople: false` -- Home must show no portraits and no
+              meet-the-lab line even though these profiles carry photos
+              (the same pool instance (a) uses), only the Support link. */}
+          <SubHeading>(h) showPeople is false -- no portraits, no meet-the-lab, only Support</SubHeading>
+          <div className="border border-rule" data-testid="gallery-home-no-people">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_NO_PEOPLE_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
+              profiles={HOME_PROFILES_FIXTURE}
+              roleGroups={HOME_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+
+          {/* Current members exist, so "Meet the lab" still renders with a
+              real count, but none of them has a photo -- the portraits row
+              is omitted rather than rendering an empty grid. */}
+          <SubHeading>(i) current members with no photos -- meet-the-lab renders, 0 portraits</SubHeading>
+          <div className="border border-rule" data-testid="gallery-home-no-photos">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_NO_LABHEAD_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
+              profiles={HOME_PROFILES_NO_PHOTOS_FIXTURE}
+              roleGroups={HOME_ROLE_GROUPS_FIXTURE}
+              supportPage={null}
               headingLevel="h2"
             />
           </div>

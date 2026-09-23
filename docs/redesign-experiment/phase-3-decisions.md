@@ -1000,7 +1000,7 @@ tracked files this round touches.
 
 ## Revision PR 2 — Home
 
-Written 2026-09-23. Branch `redesign/revision-home`, off `redesign/integration` at `cac3940`.
+Written 2026-09-23. Branch `redesign/revision-home`, off `redesign/integration` at `e82937e`.
 Companion to `docs/superpowers/specs/2026-09-23-redesign-revision-design.md`'s "PR 2 — Home"
 section, which this expands on and corrects to match what shipped. Five feature tasks plus this
 docs task, each reviewed and re-reviewed before the next started — see
@@ -1140,6 +1140,15 @@ Link text reads "Meet the lab — N people", where N matches `/people`'s own mem
 `showLabHeadOnPeople` flags disagree), plus "Support our research →" when the Support page
 exists. This is the old "The lab" block's member-count and Support link, moved here.
 
+**`settings.showPeople` gates the strip and the member-count line, not just the count.**
+Final review caught a regression: the shipped code computed the strip and rendered it whenever
+any current member had a photo, regardless of `showPeople` — with People switched off (`/people`
+and `/people/[slug]` themselves 404), Home would still show six named faces. The strip is now
+`[]` outright when `showPeople === false`, and the People `Section` itself renders only when
+`showMembersLine || portraits.length > 0 || supportPage` — with People off and no Support page,
+the block is omitted entirely; with People off and a Support page, only "Support our research →"
+shows.
+
 **Measured strip heights**, production dataset, `next start` build:
 
 | Viewport | Columns | Portrait width | Strip height |
@@ -1148,6 +1157,25 @@ exists. This is the old "The lab" block's member-count and Support link, moved h
 | 768px (`md`) | 6 | 91.5px | 202.7px |
 | 1023px | 6 | 134px | 255.8px |
 | 1440px | 6 | 171.5px | 285.8px |
+
+### One "→" link style
+
+Every exit link on Home — "All N publications →", "Our research →", "Meet the lab — N people →",
+"Support our research →", "All resources →", "Register for MAESTRO talks →" — now shares one
+class string (`MORE_LINK` in `Home.tsx`): 15px (`text-[0.9375rem]`), `font-medium text-link`.
+Final review caught two of the six rendering at 14px (`Recent papers` and `Resources`'s own
+links) while the other four were already 15px; settling on the larger size and hoisting the one
+shared constant closed the drift.
+
+### Research cards: no double rule above the first row
+
+Every card used to carry its own `border-t border-rule pt-5`, so the first row drew a second
+rule about 30px under the Section's own top rule and its titles sat well below the "Research"
+label — the same misalignment Recent papers' lead paper already avoids by dropping its own top
+rule. The rule and its padding now apply only from the second row onward, targeted with
+`nth-child` arbitrary variants scoped per breakpoint (`max-md:[&:not(:first-child)]` below `md`,
+where the grid is one column; `md:[&:nth-child(n+3)]` from `md`, where it's two) rather than a
+JS-computed row index, so it holds for any card count.
 
 ### MAESTRO as a normal card
 
@@ -1207,6 +1235,26 @@ own instance of finding 11 is still open, deferred to whichever PR next touches
 | `npx vitest run` | **42 files, 551 tests, all passed** |
 | `npm run build` | succeeded, all routes generated |
 | `npx playwright test` (full suite, `-c playwright.alt.config.ts`, port 3100) | **295 passed, 4 skipped, 0 failed** |
+
+`next-env.d.ts` restored via `git checkout origin/redesign/integration -- next-env.d.ts` after
+every build; `playwright.alt.config.ts` deleted before committing, never tracked.
+
+### Verification (final-review fix round, on top of `a729781`)
+
+The whole-branch final review (`.superpowers/sdd/2026-09-23-redesign-revision-2-home/
+final-review.md`) returned **READY WITH MINORS** — no Critical findings, one Important
+(`settings.showPeople` regression) and nine Minors. This fix round addressed all of them: the
+`showPeople` gate, the shared `MORE_LINK` style, the research-card top-rule fix, a zero-photos
+gallery instance, the merged "named once" e2e, the base-commit citation, stale comments, the
+redundant gates, and the research-cover `sizes` value.
+
+| Check | Result |
+|---|---|
+| `npm run type-check` | clean, no output |
+| `npm run lint` | **0 errors, 4 warnings** (unchanged baseline: 3 `no-img-element` in `Logo.tsx`, 1 import-sort in `e2e/brand-colour.spec.ts`) |
+| `npx vitest run` | **42 files, 551 tests, all passed** (no unit-level logic changed) |
+| `npm run build` | succeeded, all routes generated |
+| `npx playwright test` (full suite, `-c playwright.alt.config.ts`, port 3100) | **297 passed, 4 skipped, 0 failed** (+2 vs. the docs-task count, for the two new gallery instances' e2e) |
 
 `next-env.d.ts` restored via `git checkout origin/redesign/integration -- next-env.d.ts` after
 every build; `playwright.alt.config.ts` deleted before committing, never tracked.
