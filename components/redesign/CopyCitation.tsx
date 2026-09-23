@@ -43,8 +43,9 @@ function isMac(): boolean {
  */
 export function copyFallbackMessage({ coarsePointer, mac }: { coarsePointer: boolean; mac: boolean }): string {
   // A coarse (touch) pointer has no keyboard to press a key on -- the
-  // citation text is already selected, so point the reader at their
-  // platform's own copy action instead of an invented keystroke.
+  // citation text is already selected and shown below as its own block, so
+  // point the reader at their platform's own copy action instead of an
+  // invented keystroke.
   if (coarsePointer) return "Use your device's copy action"
   return `Press ${mac ? '⌘C' : 'Ctrl+C'} to copy`
 }
@@ -55,7 +56,9 @@ export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitatio
   // string always, so React never toggles it in and out of the DOM --
   // some assistive technology only reliably announces a change to an
   // already-present live region, not one that appears at the same time as
-  // its content.
+  // its content. The visible citation block below is a separate concern:
+  // it mounts/unmounts with `fallback` (see the JSX), since it must not
+  // exist on an ordinary row at all -- see that block's own comment.
   const [fallback, setFallback] = useState('')
   // Typed via the bare (unprefixed) setTimeout/clearTimeout, not
   // window.setTimeout: with @types/node in scope (as it is for the whole
@@ -64,11 +67,7 @@ export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitatio
   // though they're the same function at runtime in a browser -- mixing the
   // two would make the ref's assignment fail type-check.
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Off-screen but selectable -- selectNodeContents/Range work on a
-  // visually hidden node, so the fallback can select the full citation for
-  // a manual Cmd/Ctrl+C even though the button's own visible text is just
-  // its label ("Copy citation"), never the citation itself.
-  const hiddenTextRef = useRef<HTMLSpanElement>(null)
+  const citationBlockRef = useRef<HTMLParagraphElement>(null)
 
   // Clear any pending revert if the component unmounts mid-timeout.
   useEffect(() => {
@@ -77,15 +76,20 @@ export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitatio
     }
   }, [])
 
-  function selectHiddenCitationText() {
-    const node = hiddenTextRef.current
+  // Selects the visible citation block's text once it exists. This can't
+  // run inside `copy()` itself: the block is only in the DOM once
+  // `fallback` is set (see the JSX below), so there is nothing to select
+  // until after that state update has actually committed a render.
+  useEffect(() => {
+    if (!fallback) return
+    const node = citationBlockRef.current
     if (!node || typeof window === 'undefined') return
     const range = document.createRange()
     range.selectNodeContents(node)
     const selection = window.getSelection()
     selection?.removeAllRanges()
     selection?.addRange(range)
-  }
+  }, [fallback])
 
   const copy = async () => {
     if (timeoutRef.current !== null) clearTimeout(timeoutRef.current)
@@ -112,7 +116,6 @@ export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitatio
       }
     }
     setCopied(false)
-    selectHiddenCitationText()
     setFallback(copyFallbackMessage({ coarsePointer: isCoarsePointer(), mac: isMac() }))
   }
 
@@ -126,32 +129,53 @@ export function CopyCitation({ cite, compact = false, copiedLabel }: CopyCitatio
   const sizing = compact ? 'px-2 py-1' : 'px-3 py-2'
 
   return (
-    <span className="inline-flex items-baseline gap-2">
-      <button
-        type="button"
-        onClick={copy}
-        // Stable accessible name across the copied/rest swap, matching the
-        // convention in components/pages/publications/CopyButton.tsx -- a
-        // test or screen reader locating the control by name would otherwise
-        // lose it the instant a copy succeeds.
-        aria-label={restLabel}
-        className={`${SHAPE} ${border} ${color} ${sizing} ${PRESS}`}
-      >
-        {copied ? doneLabel : restLabel}
-      </button>
-      {/* The visible fallback message and its screen-reader announcement
-          share this one element -- text placed inside an aria-live="polite"
-          region is announced when it changes, so no separate visually
-          hidden live region is needed. MICRO_LABEL (13px, sentence case):
-          large enough to sit outside label-budget.spec.ts's <=12px shouted-
-          caps scan by size alone, and it already reads as a message, not a
-          data label. */}
-      <span role="status" aria-live="polite" className={MICRO_LABEL}>
-        {fallback}
+    <span className="inline-block align-top">
+      <span className="inline-flex items-baseline">
+        <button
+          type="button"
+          onClick={copy}
+          // Stable accessible name across the copied/rest swap, matching the
+          // convention in components/pages/publications/CopyButton.tsx -- a
+          // test or screen reader locating the control by name would otherwise
+          // lose it the instant a copy succeeds.
+          aria-label={restLabel}
+          className={`${SHAPE} ${border} ${color} ${sizing} ${PRESS}`}
+        >
+          {copied ? doneLabel : restLabel}
+        </button>
+        {/* The visible fallback message and its screen-reader announcement
+            share this one element -- text placed inside an aria-live="polite"
+            region is announced when it changes, so no separate visually
+            hidden live region is needed. MICRO_LABEL (13px, sentence case):
+            large enough to sit outside label-budget.spec.ts's <=12px shouted-
+            caps scan by size alone, and it already reads as a message, not a
+            data label. `ml-2` only when `fallback` is set (not a `gap-2` on
+            the row) -- this span stays mounted (empty) at rest, and an
+            unconditional gap would still reserve its 8px even with no text
+            in it (measured: wrapper 8px wider than the button alone). */}
+        <span role="status" aria-live="polite" className={fallback ? `ml-2 ${MICRO_LABEL}` : MICRO_LABEL}>
+          {fallback}
+        </span>
       </span>
-      <span ref={hiddenTextRef} data-testid="copy-citation-text" className="sr-only">
-        {cite}
-      </span>
+      {/* Only rendered once a copy attempt has actually failed -- an
+          ordinary row (the common case) never carries a second, hidden copy
+          of the citation for assistive technology to read on top of the
+          button's own "Copy citation" label. `break-all`, not just
+          `break-words`: `cite` can end in a long DOI/URL with no natural
+          break point, and this block must not overflow at 320px (matching
+          IDENTIFIER's own `break-all` in PublicationRow.tsx for the same
+          reason). `whitespace-normal` overrides a `whitespace-nowrap`
+          ancestor (PublicationRow.tsx's compact density row), since this
+          block must wrap regardless of what density row it renders inside. */}
+      {fallback && (
+        <p
+          ref={citationBlockRef}
+          data-testid="copy-citation-fallback-text"
+          className="mt-1 max-w-full font-mono text-[11px] leading-[1.4] break-all whitespace-normal text-text-muted"
+        >
+          {cite}
+        </p>
+      )}
     </span>
   )
 }

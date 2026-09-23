@@ -104,6 +104,17 @@ test.describe('/publications/[slug]', () => {
     await expect(copyButton).toHaveText(/Copied/)
 
     expect(await lastClipboardWrite(page)).toBe(citationText)
+
+    // Chromium also supports reading the clipboard back directly (WebKit
+    // does not -- no Permissions API entry for clipboard-read at all,
+    // which is why the spy above is this test's only proof on that
+    // engine). Where it's available, it's a stronger check than the spy
+    // alone: it confirms the OS clipboard itself holds the string, not
+    // just that `writeText` was called with it.
+    if (browserName !== 'webkit') {
+      const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
+      expect(clipboardText).toBe(citationText)
+    }
   })
 
   test('an unknown slug 404s', async ({ page }) => {

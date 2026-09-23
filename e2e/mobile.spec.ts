@@ -125,7 +125,10 @@ test.describe('copy citation, tap-driven', () => {
 })
 
 test.describe('copy citation, clipboard write fails', () => {
-  test('shows a visible fallback message and selects the citation text', async ({ page, browserName }) => {
+  test('shows a visible fallback message and citation block, selects the text, with no accessible duplicate', async ({
+    page,
+    browserName,
+  }) => {
     // No clipboard grant at all: Chromium (chromium, mobile-chrome) denies
     // `writeText` without an explicit grant, which is exactly the failure
     // path under test. WebKit succeeds without a grant (harness limit
@@ -138,7 +141,12 @@ test.describe('copy citation, clipboard write fails', () => {
 
     const firstRow = page.locator('[data-testid="pub-row"]').first()
     const copyButton = firstRow.getByRole('button', { name: 'Copy citation' })
-    const citeText = await firstRow.getByTestId('copy-citation-text').textContent()
+    const fallbackBlock = firstRow.getByTestId('copy-citation-fallback-text')
+
+    // Absent before any copy attempt: an ordinary row never carries a
+    // second copy of the citation for assistive technology to read on top
+    // of the row's own title/authors/journal content.
+    await expect(fallbackBlock).toHaveCount(0)
 
     const coarsePointer = await page.evaluate(() => matchMedia('(pointer: coarse)').matches)
     if (coarsePointer) {
@@ -151,7 +159,16 @@ test.describe('copy citation, clipboard write fails', () => {
     await expect(status).toBeVisible()
     await expect(status).toHaveText(coarsePointer ? "Use your device's copy action" : /Press (⌘C|Ctrl\+C) to copy/)
 
+    await expect(fallbackBlock).toBeVisible()
+    const citeText = (await fallbackBlock.textContent())!
+
     const selectedText = await page.evaluate(() => window.getSelection()?.toString() ?? '')
     expect(selectedText).toBe(citeText)
+
+    // No accessible duplicate: the citation string appears exactly once in
+    // the row's accessible text, not a second time from some other,
+    // hidden copy of it.
+    const occurrences = await firstRow.evaluate((el, text) => (el.textContent ?? '').split(text).length - 1, citeText)
+    expect(occurrences).toBe(1)
   })
 })

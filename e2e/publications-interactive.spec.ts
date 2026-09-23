@@ -166,6 +166,15 @@ test.describe('publications index', () => {
     await expect(copyButton).toHaveText(/Copied/)
 
     expect(await lastClipboardWrite(page)).toContain(title)
+
+    // Chromium also supports reading the clipboard back directly (WebKit
+    // does not -- see e2e/support/clipboard.ts's comment) -- a stronger
+    // check than the spy alone where it's available, since it confirms the
+    // OS clipboard itself holds the string.
+    if (browserName !== 'webkit') {
+      const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
+      expect(clipboardText).toContain(title)
+    }
   })
 
   test("every row is partitioned by link kind, and each kind's identifier matches its data", async ({
@@ -265,19 +274,6 @@ test.describe('publications index', () => {
           const found: { tag: string; text: string; overflowPx: number }[] = []
           for (const row of rows) {
             for (const el of row.querySelectorAll('*')) {
-              // Skip visually-hidden (`sr-only`-pattern) elements: CopyCitation
-              // keeps an off-screen, 1px, `white-space: nowrap` span holding
-              // the full citation text as a manual-copy selection target
-              // (components/redesign/CopyCitation.tsx) -- its `scrollWidth`
-              // is deliberately far larger than its `clientWidth` (the whole
-              // point is that it never wraps, so Range/selectNodeContents
-              // selects the exact citation string), and it is clipped out of
-              // the visible page regardless, so it can never contribute to
-              // this row's visible overflow. A rect this small only ever
-              // matches an intentionally hidden node -- real overflow bugs
-              // are on elements that actually render at a visible size.
-              const rect = el.getBoundingClientRect()
-              if (rect.width <= 1 && rect.height <= 1) continue
               const overflowPx = el.scrollWidth - el.clientWidth
               if (overflowPx > 1) {
                 found.push({ tag: el.tagName, text: (el.textContent ?? '').slice(0, 60), overflowPx })
