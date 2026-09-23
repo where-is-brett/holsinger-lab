@@ -149,6 +149,12 @@ const BUDGET_FIXTURES = [
     word: 'Neurodegenerative',
     selector: '[data-testid="research-project-title"]',
   },
+  {
+    testId: 'typography-budget-lead-paper',
+    level: 'heading (lead paper)',
+    word: 'Neurodegenerative',
+    selector: '[data-testid="home-lead-paper"] h3',
+  },
 ]
 
 interface RawSplitResult {

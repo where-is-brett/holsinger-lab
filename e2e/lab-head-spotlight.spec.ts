@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { shouldShowLabHeadCard } from 'components/redesign/homeModel'
 
 import { e2eClient } from './support/sanity'
 
@@ -127,12 +128,9 @@ test('the home page renders, and the lab-head card matches settings.labHead / sh
   page,
 }) => {
   // Derived from the live dataset -- mirrors
-  // components/redesign/homeModel.ts's `shouldShowLabHeadCard` -- rather
-  // than the "no lab head is set" assumption this test previously
-  // hardcoded. Task 3 retargets this to the rebuilt Home's new markup: the
-  // PI panel is no longer an "About {name}" heading/card (the old
-  // HomePage/FeatureRow), it's Identity block 1's `data-testid=
-  // "home-pi-panel"` (Home.tsx), holding the PI's linked name.
+  // components/redesign/homeModel.ts's `shouldShowLabHeadCard`. The
+  // lab-head card is Identity block 1's `data-testid="home-lab-head-card"`
+  // (Home.tsx), holding the PI's linked name.
   const settings = await e2eClient.fetch<{
     labHeadId: string | null
     labHeadName: string | null
@@ -144,15 +142,18 @@ test('the home page renders, and the lab-head card matches settings.labHead / sh
       showLabHeadOnHome
     }`
   )
-  const showCard = Boolean(settings?.labHeadId) && settings?.showLabHeadOnHome !== false
+  const showCard = shouldShowLabHeadCard({
+    labHead: settings?.labHeadId ? { _id: settings.labHeadId, name: settings.labHeadName } : null,
+    showLabHeadOnHome: settings?.showLabHeadOnHome,
+  })
 
   await page.goto('/')
 
   if (showCard) {
-    const panel = page.getByTestId('home-pi-panel')
-    await expect(panel).toBeVisible()
-    await expect(panel.getByRole('link', { name: settings!.labHeadName as string, exact: true })).toBeVisible()
+    const card = page.getByTestId('home-lab-head-card')
+    await expect(card).toBeVisible()
+    await expect(card.getByRole('link', { name: settings!.labHeadName as string, exact: true })).toBeVisible()
   } else {
-    await expect(page.getByTestId('home-pi-panel')).toHaveCount(0)
+    await expect(page.getByTestId('home-lab-head-card')).toHaveCount(0)
   }
 })

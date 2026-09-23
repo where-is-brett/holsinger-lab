@@ -2,6 +2,7 @@ import type { Image } from 'sanity'
 import type {
   HomePageQueryResult,
   HomeResourceQueryResult,
+  HomeSiteCopyQueryResult,
   MaestroProjectQueryResult,
   PagesBySlugQueryResult,
   ProfileBySlugQueryResult,
@@ -65,6 +66,7 @@ export type RoleGroupPayload = RoleGroupQueryResult[number]
 export type HomeResourcePayload = NonNullable<HomeResourceQueryResult>
 export type MaestroProjectPayload = NonNullable<MaestroProjectQueryResult>
 export type SupportPagePayload = NonNullable<SupportPageQueryResult>
+export type SiteCopyPayload = NonNullable<HomeSiteCopyQueryResult>
 
 // `SettingsPayload` now requires every key (nullable values are fine, but the keys themselves
 // must be present) — the seven call sites that used to fall back to a bare `?? {}` need a real

@@ -59,7 +59,10 @@ const TITLE_HOVER =
 // components.css's `.hl-identifier { text-transform: none !important; }`
 // guard, which exists so an ambient uppercasing context (e.g. a mono-caps
 // label line) can never mangle a case-sensitive identifier.
-const IDENTIFIER = 'text-link normal-case! break-all'
+// Exported so LeadPublication.tsx's own identifier link (same verbatim
+// guard, different container) can share this exact token instead of
+// re-spelling it.
+export const IDENTIFIER = 'text-link normal-case! break-all'
 
 // Title renders as a real control only when there's somewhere for it to go:
 // a `next/link` when `href` is set (real routes, Task 3/spec §4.1), else

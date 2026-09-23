@@ -1,5 +1,6 @@
 import { toPlainText } from '@portabletext/react'
 import { toPublication } from 'components/redesign/publicationModel'
+import { toResearchView } from 'components/redesign/researchModel'
 import { Home } from 'components/redesign/screens/Home'
 import Layout from 'components/shared/Layout'
 import { resolveBranding } from 'lib/branding'
@@ -9,9 +10,11 @@ import {
   homePageQuery,
   homeRecentPublicationsQuery,
   homeResourceQuery,
+  homeSiteCopyQuery,
   maestroProjectQuery,
   profileQuery,
   publicationCountQuery,
+  researchProjectsQuery,
   roleGroupQuery,
   settingsQuery,
   supportPageQuery,
@@ -25,8 +28,10 @@ import type {
   MaestroProjectPayload,
   ProfilePayload,
   PublicationPayload,
+  ResearchProjectPayload,
   RoleGroupPayload,
   SettingsPayload,
+  SiteCopyPayload,
   SupportPagePayload,
 } from 'types'
 import { fallbackSettings } from 'types'
@@ -45,27 +50,31 @@ const fallbackPage: HomePagePayload = {
 // `SanityQueries` lookup can't match and `data` resolves to `unknown`. Falling
 // back to explicit casts here, per this task's documented fallback.
 //
-// Task 3 brief: everything the rebuilt Home screen needs, fetched in one
+// Everything the rebuilt Home screen needs, fetched in one
 // `Promise.all` -- the settings/home-page pair `generateMetadata` already
-// depended on, plus the five new Home-only queries (recent publications,
+// depended on, plus the six new Home-only queries (recent publications,
 // the live publication count, the first resource, the `maestro` project,
-// and the `support-our-research` page) and the People data Home's own
-// member count and PI panel need (`currentMemberCount`,
+// the `support-our-research` page, and the shared `siteCopy` singleton
+// behind the hero statement) and the People data Home's own member count
+// and lab-head card need (`currentMemberCount`,
 // `shouldShowLabHeadCard`/`resolveLabHeadHref`, both from homeModel.ts).
 const getData = cache(async () => {
   const [
     { data: settingsData },
     { data: pageData },
+    { data: siteCopyData },
     { data: publicationsData },
     { data: publicationCountData },
     { data: resourceData },
     { data: maestroData },
+    { data: researchProjectsData },
     { data: supportPageData },
     { data: profilesData },
     { data: roleGroupsData },
   ] = await Promise.all([
     sanityFetch({ query: settingsQuery, stega: false }),
     sanityFetch({ query: homePageQuery }),
+    sanityFetch({ query: homeSiteCopyQuery, stega: false }),
     // `stega: false`, matching /publications and /resources: this data
     // feeds row titles, journal refs and identifier hrefs, none of which
     // should carry invisible Presentation-mode stega characters.
@@ -73,26 +82,31 @@ const getData = cache(async () => {
     sanityFetch({ query: publicationCountQuery, stega: false }),
     sanityFetch({ query: homeResourceQuery, stega: false }),
     sanityFetch({ query: maestroProjectQuery, stega: false }),
+    sanityFetch({ query: researchProjectsQuery, stega: false }),
     sanityFetch({ query: supportPageQuery, stega: false }),
     sanityFetch({ query: profileQuery, stega: false }),
     sanityFetch({ query: roleGroupQuery, stega: false }),
   ])
   const settings = (settingsData as SettingsPayload | null) ?? fallbackSettings
   const page = (pageData as HomePagePayload | null) ?? fallbackPage
+  const siteCopy = (siteCopyData as SiteCopyPayload | null) ?? null
   const publications = (publicationsData as PublicationPayload[] | null) ?? []
   const publicationCount = (publicationCountData as number | null) ?? 0
   const resource = (resourceData as HomeResourcePayload | null) ?? null
   const maestro = (maestroData as MaestroProjectPayload | null) ?? null
+  const researchProjects = (researchProjectsData as ResearchProjectPayload[] | null) ?? []
   const supportPage = (supportPageData as SupportPagePayload | null) ?? null
   const profiles = (profilesData as ProfilePayload[] | null) ?? []
   const roleGroups = (roleGroupsData as RoleGroupPayload[] | null) ?? []
   return {
     settings,
     page,
+    siteCopy,
     publications,
     publicationCount,
     resource,
     maestro,
+    researchProjects,
     supportPage,
     profiles,
     roleGroups,
@@ -119,10 +133,12 @@ export default async function Page() {
   const {
     settings,
     page,
+    siteCopy,
     publications,
     publicationCount,
     resource,
     maestro,
+    researchProjects,
     supportPage,
     profiles,
     roleGroups,
@@ -135,10 +151,12 @@ export default async function Page() {
         home={page}
         settings={settings}
         siteName={siteName}
+        siteCopy={siteCopy}
         publications={publications.map(toPublication)}
         publicationCount={publicationCount}
         resource={resource}
         maestro={maestro}
+        researchProjects={researchProjects.map(toResearchView)}
         profiles={profiles}
         roleGroups={roleGroups}
         supportPage={supportPage}

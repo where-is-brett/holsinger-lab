@@ -84,6 +84,13 @@ export async function POST(request: NextRequest) {
           success: true,
           message: `Revalidated "${type}" with slug "people"`,
         })
+      case 'siteCopy':
+        // Home's hero statement and research fallback read siteCopy.
+        revalidatePath(`/`)
+        return NextResponse.json({
+          success: true,
+          message: `Revalidated "${type}" with slug "home"`,
+        })
       case 'resource':
         // Task 3: `/resources` lists every resource, Home shows the first
         // one, and a linked publication's page renders that resource's own

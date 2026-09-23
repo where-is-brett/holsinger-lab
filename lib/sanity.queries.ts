@@ -241,6 +241,16 @@ export const supportPageQuery = groq`
   }
 `
 
+// Home's hero statement and its research-themes fallback (revision spec,
+// PR 2). The shared `siteCopy` singleton is empty in production today, so
+// every field is optional and the caller falls back.
+export const homeSiteCopyQuery = groq`
+  *[_type == "siteCopy"][0]{
+    hero{ subheading },
+    about{ body, themes[]{ title, summary } },
+  }
+`
+
 // Spec §2 / §6, Task 2 brief: the Research page lists projects that carry a
 // `researchOrder`, in that order. Production has zero such projects today
 // (a coming Wix import sets it on four); the screen's populated state is

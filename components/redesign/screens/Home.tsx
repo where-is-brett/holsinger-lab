@@ -10,15 +10,27 @@ import type {
   ProfilePayload,
   RoleGroupPayload,
   SettingsPayload,
+  SiteCopyPayload,
   SupportPagePayload,
 } from 'types'
 
-import { currentMemberCount, plainTagline, resolveLabHeadHref, shouldShowLabHeadCard } from '../homeModel'
+import {
+  currentMemberCount,
+  homeStatement,
+  maestroOverview,
+  peopleStrip,
+  researchCards,
+  resolveLabHeadHref,
+  shouldShowLabHeadCard,
+  splitLead,
+} from '../homeModel'
+import { LeadPublication } from '../LeadPublication'
 import { initialsOf } from '../peopleModel'
-import { PORTRAIT_IMAGE_CLASS } from '../PersonCard'
+import { PORTRAIT_IMAGE_CLASS, PortraitFrame } from '../PersonCard'
 import { PortableBody } from '../PortableBody'
 import type { Publication } from '../publicationModel'
 import { PublicationRow } from '../PublicationRow'
+import type { ResearchProjectView } from '../researchModel'
 import { ResourceBlock } from '../ResourceBlock'
 import { buildResourceMeta } from '../resourceModel'
 import { Section } from '../Section'
@@ -26,36 +38,87 @@ import { LABEL, MICRO_LABEL, PUBLICATION_GRID, STRIPE_BG } from '../tokens'
 
 // Composition follows
 // docs/redesign-experiment/design-system/ui_kits/site/Home.jsx (task brief
-// "Visual authority"), spec §2 (rulings 2 and 4) / §6: up to five `Section`
-// blocks (Identity plus four labelled ones), each omitted when there's
-// nothing to show. Home has zero editorial fields of its own (spec §6,
-// constraints.md forbids touching `home.showcaseProjects`/`siteCopy`) --
-// every block is derived from other document types or `settings`.
-
-const IA_TAGLINE = 'Advancing the Understanding and Treatment of Neurological Disorders through Molecular Research'
+// "Visual authority"), spec §2 (rulings 2 and 4) / §6: up to six `Section`
+// blocks (Identity plus five labelled ones), each omitted when there's
+// nothing to show. `home` itself has no editorial body copy
+// (`home.showcaseProjects` stays unused, per constraints.md) -- the hero
+// statement comes from the shared `siteCopy` singleton (via
+// `homeStatement`, `homeModel.ts`), falling back through `home.overview`
+// to the IA's fixed tagline when it's unset.
 
 // -- Block 1: Identity -------------------------------------------------
+
+// A dedicated 64px-square portrait, not PersonCard.tsx's `PortraitFrame`:
+// that component's footprint is a fixed `aspect-[4/5]` box at `w-full`
+// (People's 220px spotlight, the card grid's own fractional widths), and
+// getting a *square* 64px box out of it would mean overriding either
+// `aspect-[4/5]` or `w-full` from outside -- exactly the same-CSS-property
+// collision constraints.md forbids (two utilities, `aspect-[4/5]` from
+// PortraitFrame's own FOOTPRINT_IMAGE/FOOTPRINT_FALLBACK plus whatever
+// square-forcing utility this call site would need to append, both
+// targeting `aspect-ratio`/`width` at the same breakpoint). A small
+// dedicated component, mirroring PortraitFrame's own two branches (image /
+// initials-and-stripe fallback) at this one fixed size, avoids the
+// collision entirely. The image branch composes PersonCard.tsx's own
+// exported `PORTRAIT_IMAGE_CLASS` (a single `object-cover` declaration)
+// instead of a bare inline utility, so the lab head's hero portrait
+// matches every other portrait in this direction; `STRIPE_BG` (the
+// no-portrait fallback background) is the same shared token
+// PersonCard.tsx/ResourceBlock.tsx also use.
+function PiPortrait64({ name, img }: { name: string; img?: string }) {
+  if (img) {
+    // `alt=""` (decorative), not `alt={name}` -- axe's `image-redundant-alt`
+    // rule: this portrait sits inside the same `Link` as the lab head's
+    // name text (`LabHeadCard` below), so a non-empty alt would duplicate
+    // the visible name right beside it in the link's accessible name,
+    // announced twice to screen-reader users. Same call PersonCard.tsx's
+    // own `href` branch already makes for its linked variant. The People
+    // spotlight's portrait (People.tsx's `SpotlightBlock`) keeps
+    // `alt={name}` unchanged -- its image and name (an `h2`) are not
+    // inside a shared link there, so there's no duplication to fix.
+    return (
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden bg-surface-raised">
+        <Image src={img} alt="" fill sizes="64px" className={PORTRAIT_IMAGE_CLASS} />
+      </div>
+    )
+  }
+  return (
+    <div
+      className="box-border flex h-16 w-16 shrink-0 items-center justify-center border border-rule"
+      style={{ backgroundImage: STRIPE_BG }}
+    >
+      <span className="font-mono text-[16px] leading-none font-medium text-text-muted">{initialsOf(name)}</span>
+    </div>
+  )
+}
 
 function IdentityBlock({
   home,
   siteName,
   settings,
+  siteCopy,
+  showLabHeadCard,
   headingLevel = 'h1',
 }: {
   home: HomePagePayload
   siteName: string
   settings: SettingsPayload
+  siteCopy: SiteCopyPayload | null
+  showLabHeadCard: boolean
   headingLevel?: 'h1' | 'h2'
 }) {
-  // Fix round 1, point 3: a Studio string field can collect a stray space
-  // -- `.trim()` before the `||` fallback, same "whitespace-only counts as
-  // unset" rule `resolveBranding` (lib/branding.ts) already applies to
-  // `siteName` itself, so a whitespace-only `home.title` falls through to
-  // `siteName` instead of rendering a blank `<h1>`.
+  // A Studio string field can collect a stray space -- `.trim()` before the
+  // `||` fallback, same "whitespace-only counts as unset" rule
+  // `resolveBranding` (lib/branding.ts) already applies to `siteName`
+  // itself, so a whitespace-only `home.title` falls through to `siteName`
+  // instead of rendering a blank `<h1>`.
   const title = home.title?.trim() || siteName
-  const tagline = plainTagline(home.overview) ?? IA_TAGLINE
+  // `homeStatement` (homeModel.ts) owns the whole fallback chain --
+  // `siteCopy.about.body` -> `siteCopy.hero.subheading` -> `home.overview`
+  // -> the shared `IA_TAGLINE` -- so this block never needs the tagline
+  // constant itself, only the one function that already resolves it.
+  const statement = homeStatement(siteCopy, home.overview)
   const labHead = settings.labHead
-  const showPiPanel = shouldShowLabHeadCard(settings) && Boolean(labHead)
   const Heading = headingLevel
 
   return (
@@ -77,52 +140,122 @@ function IdentityBlock({
       >
         {title}
       </Heading>
-      {/* Two-column grid ([tagline | PI panel]) from `lg`, stacked below --
-          same `grid-cols-1` + explicit `lg:`-prefixed track pattern as
-          Research.tsx's NARRATIVE_GRID / PersonPage.tsx's PROFILE_GRID:
-          `grid-cols-1` zeroes the implicit stacked track's min-content
-          floor so a long unbroken token (the PI's email, an identifier)
-          can't blow the column out past the viewport. One unprefixed
-          `grid-template-columns` declaration plus one `lg:` declaration --
-          never two for the same property at the same breakpoint
-          (constraints.md). Two entire, separate class strings for the
-          "with panel" / "without panel" cases (WITH_PANEL / SOLO below),
-          same reasoning as Research.tsx's NARRATIVE_GRID/_SOLO split: with
-          no PI panel there is no second grid item, and an `lg:grid-cols-
-          [1fr_320px]` track with only one child would still reserve the
-          320px column as empty space instead of letting the tagline use
-          the full width. */}
-      <div className={showPiPanel ? IDENTITY_GRID : IDENTITY_GRID_SOLO}>
-        <p className="max-w-[560px] min-w-0 text-pretty break-words text-lead leading-[1.6] text-text-muted">
-          {tagline}
+      {/* Two-column grid ([statement | lab-head card]) from `xl`, stacked
+          below -- same `grid-cols-1` + explicit `xl:`-prefixed track
+          pattern as Research.tsx's NARRATIVE_GRID / PersonPage.tsx's
+          PROFILE_GRID: `grid-cols-1` zeroes the implicit stacked track's
+          min-content floor so a long unbroken token (the lab head's
+          email, an identifier) can't blow the column out past the
+          viewport. One unprefixed `grid-template-columns` declaration
+          plus one `xl:` declaration -- never two for the same property at
+          the same breakpoint (constraints.md). `xl`, not `lg`: at `lg`
+          the fixed 20rem card track leaves the statement narrower than
+          its own 375px phone width, so the split waits for the wider
+          breakpoint instead. Two entire, separate class strings for the
+          "with card" / "without card" cases (IDENTITY_GRID / _SOLO
+          below), same reasoning as Research.tsx's NARRATIVE_GRID/_SOLO
+          split: with no lab-head card there is no second grid item, and
+          an `xl:grid-cols-[minmax(0,1fr)_20rem]` track with only one
+          child would still reserve the 20rem column as empty space
+          instead of letting the statement use the full width. */}
+      <div className={showLabHeadCard ? IDENTITY_GRID : IDENTITY_GRID_SOLO}>
+        <p
+          data-testid="home-statement"
+          data-cms-verbatim
+          className="max-w-[40rem] text-pretty break-words text-lead text-text-muted"
+        >
+          {statement}
         </p>
-        {showPiPanel && labHead && (
-          <div className="min-w-0 border-l border-rule pl-6" data-testid="home-pi-panel">
-            <div className={MICRO_LABEL}>Principal investigator</div>
-            <Link href={resolveLabHeadHref(labHead)} className="mt-[9px] block text-[21px] font-semibold tracking-[-0.01em] break-words">
-              {labHead.name}
-            </Link>
-            {labHead.email && (
-              <a
-                href={`mailto:${labHead.email}`}
-                data-identifier
-                data-cms-verbatim
-                className="mt-[7px] inline-block font-mono text-[11.5px] leading-[1.4] break-all text-link"
-              >
-                {labHead.email}
-              </a>
-            )}
-          </div>
-        )}
+        {showLabHeadCard && labHead && <LabHeadCard labHead={labHead} />}
       </div>
     </div>
   )
 }
 
-const IDENTITY_GRID = 'mt-[38px] grid grid-cols-1 items-end gap-8 lg:grid-cols-[1fr_320px] lg:gap-x-14'
+const IDENTITY_GRID = 'mt-[38px] grid grid-cols-1 items-start gap-8 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-x-14'
 const IDENTITY_GRID_SOLO = 'mt-[38px] grid grid-cols-1'
 
-// -- Block 2: Recent work ------------------------------------------------
+// The lab-head card is itself the two-column grid (`grid-cols-[4rem_
+// minmax(0,1fr)]`), not just its photo-plus-name row: the outer card and
+// the `Link` share the identical column template (same 4rem/gap-x-5/
+// minmax(0,1fr) split, on the same full-width row), so the role and email
+// lines below -- placed at the outer grid's `col-start-2` -- line up
+// exactly under the name without needing a second, independent alignment
+// mechanism. Do not set the `Link` to `display: contents` to let the
+// portrait `row-span` across the card -- that drops the link from the
+// focus order in Chromium (caught by the hover/focus e2e in
+// e2e/home.spec.ts), so it
+// stays a real, focusable box instead. `labHead?.name` is the only field
+// this ever assumes is set (`showLabHeadCard` above already gates on it),
+// so role and email each render only when non-blank, and
+// `break-words`/`break-all` guard the two CMS-text lines against an
+// unbroken token blowing out the 20rem card column.
+function LabHeadCard({ labHead }: { labHead: NonNullable<SettingsPayload['labHead']> }) {
+  const role = labHead.role?.trim()
+  const email = labHead.email?.trim()
+  return (
+    <div
+      className="grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] items-start gap-x-5 gap-y-2 border-l border-rule pl-6"
+      data-testid="home-lab-head-card"
+    >
+      <Link
+        href={resolveLabHeadHref(labHead)}
+        // `justify-self-start max-w-full`: without it, this grid item
+        // (`col-span-2` on a `minmax(0,1fr)` track) stretches to the
+        // card's full width, so its hit area and focus ring extend well
+        // past the portrait+name it actually wraps -- `justify-self-start`
+        // shrinks it to its own content width instead, and `max-w-full`
+        // keeps that from overflowing the card if the content is ever
+        // wider than the column.
+        className="group col-span-2 grid max-w-full grid-cols-[4rem_minmax(0,1fr)] items-center justify-self-start gap-x-5"
+        data-testid="home-lab-head-link"
+      >
+        <PiPortrait64
+          name={labHead.name ?? ''}
+          img={
+            labHead.image
+              ? (urlForImage(labHead.image as SanityImage)?.width(128).height(128).fit('crop').url() ?? undefined)
+              : undefined
+          }
+        />
+        <span className="min-w-0 break-words text-[1.3125rem] font-semibold tracking-[-0.01em] transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease) group-hover:text-link group-focus-visible:text-link">
+          {labHead.name}
+        </span>
+      </Link>
+      {role && (
+        <div
+          className="col-start-2 min-w-0 break-words text-[0.9375rem] text-text-muted"
+          data-cms-verbatim
+          data-testid="home-lab-head-role"
+        >
+          {role}
+        </div>
+      )}
+      {email && (
+        <a
+          href={`mailto:${email}`}
+          data-identifier
+          data-cms-verbatim
+          // `justify-self-start max-w-full`: same reason as the name
+          // link's own comment above -- this grid item otherwise stretches
+          // to the full card width, so the link's hit area would extend
+          // well past the visible email text.
+          className="col-start-2 inline-block min-w-0 max-w-full justify-self-start break-all font-mono text-[0.8125rem] text-link"
+        >
+          {email}
+        </a>
+      )}
+    </div>
+  )
+}
+
+// Shared by every "exit" link on Home ("All N publications →", "Our
+// research →", "Meet the lab...", "Support our research →", "All
+// resources →", "Register for MAESTRO talks →") -- one class string, one
+// size (15px), rather than each block picking its own.
+const MORE_LINK = 'mt-5 inline-block text-[0.9375rem] font-medium text-link'
+
+// -- Block 2: Recent papers ------------------------------------------------
 
 // Composes `LABEL` (tokens.ts) instead of hand-writing its geometry,
 // matching PublicationsIndex.tsx's own `COLUMN_HEADS` (`${COLUMN_HEADS}
@@ -130,15 +263,15 @@ const IDENTITY_GRID_SOLO = 'mt-[38px] grid grid-cols-1'
 const COLUMN_HEAD = `hidden ${PUBLICATION_GRID} pb-3 ${LABEL}`
 
 function RecentWorkBlock({ publications, count }: { publications: Publication[]; count: number }) {
+  // The newest paper gets its own lead row (more visual weight); the next
+  // four render as ordinary ledger rows below it. `splitLead` handles the
+  // empty case (`lead: null`) too, though `RecentWorkBlock` is never
+  // rendered with an empty `publications` array -- `Home`'s own
+  // `showRecentWork` gate already requires `publications.length > 0`.
+  const { lead, rest } = splitLead(publications)
   return (
     <div data-testid="home-recent-work">
-      {/* "Latest five, by date" sits outside the ledger-head row -- it's a
-          sentence-case sort-order note about the block's content, not a
-          column head. Same `xl`-only visibility as the head row below
-          (meaningless once the row stacks below `xl`). */}
-      <div className="hidden justify-end pb-1 xl:flex">
-        <span className="text-[13px] leading-[1.4] text-text-faint">Latest five, by date</span>
-      </div>
+      {lead && <LeadPublication pub={lead} />}
       {/* `data-testid="ledger-head"`: the one place this block's uppercase
           mono is allowed -- e2e/label-budget.spec.ts excludes anything
           inside it from the micro-label budget. */}
@@ -148,7 +281,7 @@ function RecentWorkBlock({ publications, count }: { publications: Publication[];
         <span>Journal</span>
         <span>Link</span>
       </div>
-      {publications.map((pub) => (
+      {rest.map((pub) => (
         // `data-testid="pub-row"`: matches PublicationsIndex.tsx's own row
         // wrapper, so the ledger-cell overflow guard (`e2e/home.spec.ts`)
         // can target Home's rows the same way it targets `/publications`'s.
@@ -158,220 +291,203 @@ function RecentWorkBlock({ publications, count }: { publications: Publication[];
       ))}
       {/* Sentence case, not uppercase mono -- links to another route are
           sentence case per the brief. */}
-      <Link href="/publications" className="mt-5 inline-block text-[14px] font-medium text-link">
+      <Link href="/publications" className={MORE_LINK}>
         All {count} publication{count === 1 ? '' : 's'} →
       </Link>
     </div>
   )
 }
 
-// -- Block 3: Resources ---------------------------------------------------
+// -- Block 3: Research as cards -------------------------------------------
 
-// `buildResourceMeta` (KIND / SOURCE / DOI-or-URL) moved to
-// resourceModel.ts (PR C Task 3 fix round 1, IMPORTANT 2) -- it was a
-// verbatim duplicate of Resources.tsx's own copy, and the two would have
-// silently drifted. Both screens import the one shared function now.
+// `grid-cols-1` + explicit `md:`-prefixed track -- same reasoning as every
+// other CMS-text grid in this direction (constraints.md's grid-overflow
+// rule): below `md` there is only one implicit track, and a long unbroken
+// title or excerpt token could otherwise set its min-content width past
+// the viewport.
+const RESEARCH_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-2'
+
+// A rule (and the padding it separates from the title above it) only
+// between rows, not above the first one -- an unconditional rule on every
+// card drew a second line just under the Section's own top rule, pushing
+// the first row's titles well below the "Research" label instead of
+// aligning with it (the lead paper, just above this block, already drops
+// its own top rule for the same reason). `md:grid-cols-2` is the only
+// column count this grid ever uses, so "first row" is index 0 below `md`
+// (one column) and indices 0-1 from `md` (two columns) -- arbitrary
+// variants targeting each shape directly, rather than a JS-computed index
+// per card, so this holds for any card count without the component
+// needing to know its own position in the list.
+const RESEARCH_CARD =
+  'min-w-0 max-md:[&:not(:first-child)]:border-t max-md:[&:not(:first-child)]:border-rule max-md:[&:not(:first-child)]:pt-5 md:[&:nth-child(n+3)]:border-t md:[&:nth-child(n+3)]:border-rule md:[&:nth-child(n+3)]:pt-5'
+
+function ResearchCardView({ card }: { card: ReturnType<typeof researchCards>[number] }) {
+  const cover = card.cover
+  return (
+    <article data-testid="home-research-card" className={RESEARCH_CARD}>
+      {cover && (
+        <div className="overflow-hidden">
+          {/* `alt=""` (decorative), not `cover.alt` -- the title right
+              below already labels the card, so a non-empty alt would
+              announce it twice to screen-reader users. */}
+          <Image
+            src={cover.src}
+            alt=""
+            width={cover.width}
+            height={cover.height}
+            sizes="(min-width: 768px) 40vw, 100vw"
+            className="aspect-[16/10] w-full object-cover"
+          />
+        </div>
+      )}
+      {/* `break-words` (PageTitle.tsx's canonical note) -- CMS text, so also
+          `data-cms-verbatim`. A project card links to its /research#slug
+          anchor; a theme (no project backing it) is plain text. */}
+      <h3 className="mt-4 text-pretty break-words text-[1.25rem] font-semibold leading-[1.25]">
+        {card.href ? (
+          <Link href={card.href} data-cms-verbatim>
+            {card.title}
+          </Link>
+        ) : (
+          <span data-cms-verbatim>{card.title}</span>
+        )}
+      </h3>
+      {card.excerpt && <p className="mt-2 text-body text-text-muted">{card.excerpt}</p>}
+    </article>
+  )
+}
+
+function ResearchBlock({ cards }: { cards: ReturnType<typeof researchCards> }) {
+  return (
+    <div data-testid="home-research">
+      <div className={RESEARCH_GRID}>
+        {cards.map((card) => (
+          <ResearchCardView key={card.key} card={card} />
+        ))}
+      </div>
+      {/* No show flag for Research (unlike Resources/Outreach/People) --
+          /research always exists, even listing nothing, so this link is
+          unconditional. */}
+      <Link href="/research" className={MORE_LINK}>
+        Our research →
+      </Link>
+    </div>
+  )
+}
+
+// -- Block 4: People --------------------------------------------------------
+
+interface PeoplePortraitView {
+  id: string
+  name: string
+  img: string
+}
+
+// `peopleStrip` (homeModel.ts) already returns only current members (never
+// the lab head or alumni) who have both a name and an image -- this only
+// resolves each one's Sanity image reference to a URL, and drops an entry
+// if that somehow fails (defensive; every entry here is known to carry an
+// image).
+function peoplePortraits(strip: ReturnType<typeof peopleStrip>): PeoplePortraitView[] {
+  return strip.flatMap(({ id, name, image }) => {
+    const img = urlForImage(image as SanityImage)?.width(400).height(500).fit('crop').url()
+    return img ? [{ id, name, img }] : []
+  })
+}
+
+// Two rows of 3 below `md`, one row of 6 from `md` -- `md`, not `lg`: at
+// `lg` the 3-column strip stayed 600-816px tall through the whole tablet
+// range (640-1023px), still heavier than the block needs to be.
+const PORTRAIT_GRID = 'grid grid-cols-3 gap-x-3 gap-y-5 md:grid-cols-6 md:gap-x-5'
+
+function PeopleBlock({
+  portraits,
+  memberCount,
+  showMembersLine,
+  supportPage,
+}: {
+  portraits: PeoplePortraitView[]
+  memberCount: number
+  showMembersLine: boolean
+  supportPage: SupportPagePayload | null
+}) {
+  return (
+    <div data-testid="home-people">
+      {portraits.length > 0 && (
+        <div className={PORTRAIT_GRID}>
+          {portraits.map((person) => (
+            <figure key={person.id} data-testid="home-people-portrait" className="min-w-0">
+              {/* `ring-1 ring-rule` on this wrapper, not on `PortraitFrame`
+                  itself -- the portraits come from mixed sources (a baked-in
+                  white background, a pre-cropped circle on grey), and a thin
+                  rule unifies their edges without touching PortraitFrame's
+                  own footprint/aspect-ratio classes. `name=""` -- decorative
+                  alt; the figcaption below names them. */}
+              <div className="ring-1 ring-rule">
+                <PortraitFrame name="" img={person.img} sizes="(min-width: 768px) 12vw, 33vw" />
+              </div>
+              <figcaption className="mt-2 text-[0.8125rem] leading-[1.3] font-medium break-words">
+                {person.name}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      )}
+      <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3">
+        {showMembersLine && (
+          <Link href="/people" className={MORE_LINK} data-testid="home-meet-the-lab">
+            Meet the lab — {memberCount} {memberCount === 1 ? 'person' : 'people'} →
+          </Link>
+        )}
+        {supportPage && (
+          <Link href={`/${supportPage.slug}`} className={MORE_LINK} data-testid="home-support">
+            Support our research →
+          </Link>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// -- Block 5: Resources ---------------------------------------------------
+
+// `buildResourceMeta` (KIND / SOURCE / DOI-or-URL) lives in
+// resourceModel.ts -- Resources.tsx imports the same shared function,
+// rather than each screen keeping its own copy that could drift.
 
 function ResourcesBlock({ resource }: { resource: HomeResourcePayload }) {
   return (
     <div data-testid="home-resources">
       <ResourceBlock title={resource.title ?? ''} meta={buildResourceMeta(resource)} />
-      <Link href="/resources" className="mt-5 inline-block text-[14px] font-medium text-link">
+      <Link href="/resources" className={MORE_LINK}>
         All resources →
       </Link>
     </div>
   )
 }
 
-// -- Block 4: Outreach (MAESTRO), inverse ---------------------------------
-
-// The identifier prints "Register — <site without scheme>" verbatim --
-// scheme stripped for display only, same `deriveLink` URL-label convention
-// used everywhere else in this direction; the href keeps the full URL.
-function siteLabel(site: string): string {
-  return site.replace(/^https?:\/\//, '')
-}
+// -- Block 6: Outreach (MAESTRO) -------------------------------------------
 
 function OutreachBlock({ maestro }: { maestro: MaestroProjectPayload }) {
   return (
-    <div data-testid="home-maestro">
+    <article data-testid="home-maestro" className="max-w-[45rem]">
       {/* `break-words` (see PageTitle.tsx's canonical note) -- the MAESTRO
           project title is CMS text this repo doesn't control the shape
           of. */}
-      <div className="max-w-[720px] text-pretty break-words text-heading font-semibold" data-testid="maestro-title">
+      <h3
+        data-testid="maestro-title"
+        data-cms-verbatim
+        className="text-pretty break-words text-heading font-semibold"
+      >
         {maestro.title}
-      </div>
-      <PortableBody blocks={maestro.overview} variant="inverse" />
+      </h3>
+      <PortableBody blocks={maestroOverview(maestro.overview, maestro.site)} variant="body" />
       {maestro.site && (
-        // No `data-identifier`: unlike PublicationRow/ResourceBlock's
-        // identifiers, this anchor's rendered text is "Register — <label>",
-        // not the bare identifier -- e2e/redesign-components.spec.ts's
-        // generic `[data-identifier]` contract asserts the *whole* element
-        // text (scheme/`www.` stripped) is contained in `href`, which a
-        // "Register — " prefix would trip. Sentence case, not mono,
-        // matching "All resources →"'s own link style.
-        <a
-          href={maestro.site}
-          className="mt-5 inline-block break-all text-[14px] font-medium text-text-inverse underline underline-offset-4"
-        >
-          Register — {siteLabel(maestro.site)}
+        <a href={maestro.site} data-testid="home-maestro-register" className={MORE_LINK}>
+          Register for MAESTRO talks →
         </a>
       )}
-    </div>
-  )
-}
-
-// -- Block 5: The lab -------------------------------------------------------
-
-// [PI | members | support], one column below the breakpoint that
-// introduces the three-column track -- same `grid-cols-1` +
-// explicit-`lg:`-track pattern as every other CMS-text-holding grid in
-// this direction (IDENTITY_GRID above, Research.tsx's NARRATIVE_GRID,
-// People.tsx's SPOTLIGHT_GRID): without it, a long unbroken token (the PI
-// name, a role) sets the implicit stacked track's min-content width and
-// the grid overflows below `lg`.
-const LAB_GRID = 'grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-start lg:gap-x-12'
-
-// A dedicated 64px-square portrait, not PersonCard.tsx's `PortraitFrame`:
-// that component's footprint is a fixed `aspect-[4/5]` box at `w-full`
-// (People's 220px spotlight, the card grid's own fractional widths), and
-// getting a *square* 64px box out of it would mean overriding either
-// `aspect-[4/5]` or `w-full` from outside -- exactly the same-CSS-property
-// collision constraints.md forbids (two utilities, `aspect-[4/5]` from
-// PortraitFrame's own FOOTPRINT_IMAGE/FOOTPRINT_FALLBACK plus whatever
-// square-forcing utility this call site would need to append, both
-// targeting `aspect-ratio`/`width` at the same breakpoint). A small
-// dedicated component, mirroring PortraitFrame's own two branches
-// (image / initials-and-stripe fallback) at this one fixed size, avoids
-// the collision entirely -- same reasoning as Research.tsx's
-// NARRATIVE_GRID_SOLO and ResourceBlock.tsx's `twoColumn` ternary: a
-// second whole shape, not a bolted-on override.
-//
-// Fix round 1, point 4: the image branch composes PersonCard.tsx's own
-// exported `PORTRAIT_IMAGE_CLASS` instead of a bare inline `object-cover`,
-// so the PI's Home portrait matches every other portrait in this direction
-// (same single `object-cover` declaration, not a bolted-on treatment).
-// Brett's review (fix/research-description-fallback) removed the
-// grayscale/contrast-at-rest treatment this class used to carry, along
-// with its `group-hover:`/`group-focus-visible:` reveal -- portraits render
-// in full colour at rest everywhere now, this one included.
-// `PORTRAIT_IMAGE_CLASS` only ever targets `object-fit` -- never
-// `width`/`height`/`aspect-ratio` -- so it composes cleanly onto this
-// component's own `h-16 w-16` sizing with no property collision.
-// `STRIPE_BG` (the no-portrait fallback background) also now comes from
-// tokens.ts, the same hoist PersonCard.tsx/ResourceBlock.tsx's own
-// comments describe -- this was a third verbatim copy of the same string.
-
-function PiPortrait64({ name, img }: { name: string; img?: string }) {
-  if (img) {
-    // `alt=""` (decorative), not `alt={name}` -- axe's `image-redundant-alt`
-    // rule: this portrait sits right inside the same `Link` as the PI's
-    // name text (`TheLabBlock` above), so a non-empty alt would duplicate
-    // the visible name right beside it in the link's accessible name,
-    // announced twice to screen-reader users. Same call PersonCard.tsx's
-    // own `href` branch already makes for its linked variant (its own
-    // comment: "the portrait <img>'s alt={name} would otherwise duplicate
-    // the name text rendered right below it inside the same link"). The
-    // People spotlight's portrait (People.tsx's `SpotlightBlock`) keeps
-    // `alt={name}` unchanged -- its image and name (an `h2`) are not
-    // inside a shared link there, so there's no duplication to fix.
-    return (
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden bg-surface-raised">
-        <Image src={img} alt="" fill sizes="64px" className={PORTRAIT_IMAGE_CLASS} />
-      </div>
-    )
-  }
-  return (
-    <div
-      className="box-border flex h-16 w-16 shrink-0 items-center justify-center border border-rule"
-      style={{ backgroundImage: STRIPE_BG }}
-    >
-      <span className="font-mono text-[16px] leading-none font-medium text-text-muted">{initialsOf(name)}</span>
-    </div>
-  )
-}
-
-function TheLabBlock({
-  showPiPanel,
-  labHead,
-  memberCount,
-  showMembersLine,
-  supportPage,
-}: {
-  showPiPanel: boolean
-  labHead: SettingsPayload['labHead']
-  memberCount: number
-  showMembersLine: boolean
-  supportPage: SupportPagePayload | null
-}) {
-  return (
-    <div className={LAB_GRID}>
-      {/* Fix round 2, point 1: the whole portrait-plus-name row is the one
-          `Link` (`group`), not just the name text beside a plain portrait
-          `div` -- wrapping the portrait inside it (same shape as
-          PersonCard.tsx's own `href` branch) keeps hovering or
-          keyboard-focusing the one real interactive element consistent with
-          every other linked portrait in this direction. The portrait itself
-          no longer carries a colour reveal (Brett's review,
-          fix/research-description-fallback -- portraits render in full
-          colour at rest everywhere, no grayscale-to-colour transition left
-          to trigger), but the `group` is still load-bearing: the name
-          `span` below keeps its own `group-hover:text-link`/
-          `group-focus-visible:text-link` reveal, matching PersonCard.tsx's
-          own name `div` (the coordinator's fix round 2 caught this reveal
-          going dead when the portrait's half was removed without adding the
-          name's -- restored here). The "Principal investigator"
-          label moves above the row (still outside the `Link` -- only the
-          name is the identifier per the task brief, "the name (linked)")
-          rather than beside the portrait only, so this is additive to the
-          existing "min-w-0 column" shape below, not a redesign of it. */}
-      {showPiPanel && labHead && (
-        <div className="min-w-0">
-          <div className={`${MICRO_LABEL} mb-2.5`}>Principal investigator</div>
-          <Link
-            href={resolveLabHeadHref(labHead)}
-            className="group flex min-w-0 items-center gap-5"
-            data-testid="home-lab-head-link"
-          >
-            <PiPortrait64
-              name={labHead.name ?? ''}
-              img={
-                labHead.image
-                  ? (urlForImage(labHead.image as SanityImage)?.width(128).height(128).fit('crop').url() ?? undefined)
-                  : undefined
-              }
-            />
-            <span className="min-w-0 break-words text-[24px] font-semibold tracking-[-0.01em] transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease) group-hover:text-link group-focus-visible:text-link">
-              {labHead.name}
-            </span>
-          </Link>
-        </div>
-      )}
-      {/* Fix round 1, point 6 ruling: the members line renders only when
-          `memberCount > 0` (computed by the caller, passed as
-          `showMembersLine`) -- "0 — PEOPLE →" is not a useful link, and
-          `settings.showPeople !== false` alone (the old condition) doesn't
-          guarantee there's actually anyone to count. "The lab" block itself
-          still renders whenever any of its three parts has content -- see
-          `Home`'s own `showTheLab` calculation, which no longer treats
-          `showPeople` as sufficient on its own either. */}
-      {showMembersLine && (
-        <div className="min-w-0" data-testid="home-member-count">
-          <div className={`${MICRO_LABEL} mb-2.5`}>Current members</div>
-          <Link href="/people" className="text-[24px] font-semibold">
-            {memberCount} <span className="text-[13px] font-normal text-text-faint">— People →</span>
-          </Link>
-        </div>
-      )}
-      {supportPage && (
-        <div className="min-w-0" data-testid="home-support">
-          <div className={`${MICRO_LABEL} mb-3`}>Support</div>
-          <Link href={`/${supportPage.slug}`} className="text-[14px] font-medium text-link">
-            Support our research →
-          </Link>
-        </div>
-      )}
-    </div>
+    </article>
   )
 }
 
@@ -379,10 +495,12 @@ export function Home({
   home,
   settings,
   siteName,
+  siteCopy,
   publications,
   publicationCount,
   resource,
   maestro,
+  researchProjects,
   profiles,
   roleGroups,
   supportPage,
@@ -391,99 +509,115 @@ export function Home({
   home: HomePagePayload
   settings: SettingsPayload
   siteName: string
+  siteCopy: SiteCopyPayload | null
   publications: Publication[]
   publicationCount: number
   resource: HomeResourcePayload | null
   maestro: MaestroProjectPayload | null
+  researchProjects: ResearchProjectView[]
   profiles: ProfilePayload[]
   roleGroups: RoleGroupPayload[]
   supportPage: SupportPagePayload | null
   /** Forwarded to Identity's own heading -- see PageTitle.tsx's identical
    * doc comment and People.tsx/Research.tsx's own `headingLevel` prop.
-   * Only ever set by the /preview/components gallery, which (fix round 1)
-   * now renders two `Home` instances alongside its own headings; the real
-   * `/` route never passes this, so it always gets the correct `<h1>`. */
+   * Only ever set by the /preview/components gallery, which renders
+   * several `Home` instances alongside its own headings; the real `/`
+   * route never passes this, so it always gets the correct `<h1>`. */
   headingLevel?: 'h1' | 'h2'
 }) {
   const labHead = settings.labHead
-  const showPiPanel = shouldShowLabHeadCard(settings) && Boolean(labHead)
+  const showLabHeadCard = shouldShowLabHeadCard(settings)
   const showPeople = settings.showPeople !== false
-  // Fix round 1, IMPORTANT 1: excludes the lab head from the count only
-  // when Home's own PI panel actually renders (`showPiPanel`), not
-  // unconditionally whenever `labHead` is merely set. Before this fix,
-  // with `labHead` set and `showLabHeadOnHome === false`, Home hid the PI
-  // panel *and* still subtracted the PI from the count -- that person
-  // appeared nowhere on the page, yet still changed the number, an
-  // internal inconsistency between what this same render shows and what
-  // it counts. Gating the exclusion on `showPiPanel` (this page's own
-  // "is the PI visible here" boolean, mirroring how `People.tsx` gates
-  // `excludeLabHead` on its own `showSpotlight`) keeps Home internally
-  // consistent, and -- since `showPiPanel` and `People.tsx`'s
-  // `showSpotlight` are both "labHead set AND the page's own show flag"
-  // -- the two pages' counts agree whenever `showLabHeadOnHome` and
-  // `showLabHeadOnPeople` happen to carry the same value, which
-  // `e2e/home.spec.ts` now cross-checks directly against /people's own
-  // rendered meta rather than re-deriving the rule.
-  const memberCount = currentMemberCount(profiles, roleGroups, showPiPanel ? labHead?._id : null)
-  // Fix round 1, point 6: "0 — PEOPLE →" is never rendered -- the members
-  // line needs both the page-level flag and an actual positive count.
+  // Excludes the lab head from the count only when the hero's own
+  // lab-head card actually renders (`showLabHeadCard`), not unconditionally
+  // whenever `labHead` is merely set -- otherwise, with the card hidden
+  // (`showLabHeadOnHome: false`), that person would appear nowhere on the
+  // page yet still change the number, an internal inconsistency between
+  // what this same render shows and what it counts. Gating the exclusion
+  // on `showLabHeadCard` (this page's own "is the lab head visible here"
+  // boolean) mirrors how `People.tsx` gates `excludeLabHead` on its own
+  // `showSpotlight` -- the two pages' counts agree whenever
+  // `showLabHeadOnHome` and `showLabHeadOnPeople` carry the same value AND
+  // the lab head is named (`showSpotlight` alone doesn't require a name,
+  // unlike `showLabHeadCard`, so the two can still disagree with a set but
+  // nameless `labHead`), which `e2e/home.spec.ts` cross-checks directly
+  // against /people's own rendered meta rather than re-deriving the rule.
+  const memberCount = currentMemberCount(profiles, roleGroups, showLabHeadCard ? labHead?._id : null)
+  // "Meet the lab — 0 people →" is never rendered -- the link needs both
+  // the page-level flag and an actual positive count.
   const showMembersLine = showPeople && memberCount > 0
+  // The portrait strip excludes the lab head whenever one is set at all
+  // (not gated on `showLabHeadCard`, unlike `memberCount` above): the hero
+  // is where the lab head is named, and a second portrait of them among
+  // ordinary members would be a second naming even on a page where their
+  // own card is switched off. Capped at 6: one row from `md`, two rows of
+  // 3 below; more portraits outweigh the hero and the papers ledger.
+  // Computed only when `showPeople` -- with People switched off, `/people`
+  // itself 404s (`app/people/page.tsx`), so Home must not still show
+  // everyone's face.
+  const strip = showPeople ? peopleStrip(profiles, roleGroups, labHead?._id ?? null, 6) : []
+  const portraits = peoplePortraits(strip)
+  // "People" renders whenever there's something to show: a strip, a
+  // member count, or a support link -- omitted only when all three are
+  // empty (a `showPeople: false` page with no support page shows nothing
+  // here at all, not a labelled section with an empty body).
+  const showPeopleBlock = showMembersLine || portraits.length > 0 || Boolean(supportPage)
 
   const showRecentWork = publications.length > 0 && settings.showPublications !== false
-  const showResources = Boolean(resource)
-  const showOutreach = Boolean(maestro)
-  // "The lab" itself still renders whenever any one of its three parts
-  // has content -- no longer keyed off `showPeople` alone, since a
-  // `showPeople`-true page with zero current members (and no PI panel, no
-  // support page) would otherwise render an empty `Section` (a label with
-  // no content beneath it).
-  const showTheLab = showPiPanel || showMembersLine || Boolean(supportPage)
+  // researchOrder projects first, siteCopy.about.themes only when there
+  // are none (researchCards, homeModel.ts) -- there's no show flag: the
+  // block is omitted only when both sources are genuinely empty, since
+  // /research itself always exists.
+  const cards = researchCards(researchProjects, siteCopy?.about?.themes)
+  const showResearch = cards.length > 0
 
   // Each block carries its own React `key` (the identity block has no
   // visible `label` at all: it's the hero, not a labelled section).
-  // `labelHeading` is set per block: `true` for "Recent work"/"Outreach"/
-  // "The lab" (none of `RecentWorkBlock`/`OutreachBlock`/`TheLabBlock`
-  // render a heading of their own -- plain `<div>`s and mono labels), but
-  // `false` for "Resources", since `ResourceBlock`'s own title is a real
-  // `<h2>` and a second `<h2>` label here would be a redundant sibling
-  // heading.
-  const blocks: Array<{ key: string; label?: string; labelHeading?: boolean; inverse?: boolean; content: ReactNode }> = [
+  // `labelHeading` is set per block: `true` for "Recent papers"/"Research"/
+  // "People"/"Outreach" (none of those blocks render a heading of their
+  // own -- plain `<div>`s and, for Outreach, an `<h3>` one level below the
+  // `<h2>` label), but `false` for "Resources", since `ResourceBlock`'s own
+  // title is a real `<h2>` and a second `<h2>` label here would be a
+  // redundant sibling heading.
+  const blocks: Array<{ key: string; label?: string; labelHeading?: boolean; content: ReactNode }> = [
     {
       key: 'identity',
       content: (
-        <IdentityBlock home={home} siteName={siteName} settings={settings} headingLevel={headingLevel} />
+        <IdentityBlock
+          home={home}
+          siteName={siteName}
+          settings={settings}
+          siteCopy={siteCopy}
+          showLabHeadCard={showLabHeadCard}
+          headingLevel={headingLevel}
+        />
       ),
     },
   ]
   if (showRecentWork) {
     blocks.push({
       key: 'recent-work',
-      label: 'Recent work',
+      label: 'Recent papers',
       labelHeading: true,
       content: <RecentWorkBlock publications={publications} count={publicationCount} />,
     })
   }
-  if (showResources && resource) {
-    blocks.push({ key: 'resources', label: 'Resources', content: <ResourcesBlock resource={resource} /> })
-  }
-  if (showOutreach && maestro) {
+  if (showResearch) {
     blocks.push({
-      key: 'outreach',
-      label: 'Outreach',
+      key: 'research',
+      label: 'Research',
       labelHeading: true,
-      inverse: true,
-      content: <OutreachBlock maestro={maestro} />,
+      content: <ResearchBlock cards={cards} />,
     })
   }
-  if (showTheLab) {
+  if (showPeopleBlock) {
     blocks.push({
-      key: 'the-lab',
-      label: 'The lab',
+      key: 'people',
+      label: 'People',
       labelHeading: true,
       content: (
-        <TheLabBlock
-          showPiPanel={showPiPanel}
-          labHead={labHead}
+        <PeopleBlock
+          portraits={portraits}
           memberCount={memberCount}
           showMembersLine={showMembersLine}
           supportPage={supportPage}
@@ -491,17 +625,22 @@ export function Home({
       ),
     })
   }
+  if (resource) {
+    blocks.push({ key: 'resources', label: 'Resources', content: <ResourcesBlock resource={resource} /> })
+  }
+  if (maestro) {
+    blocks.push({
+      key: 'outreach',
+      label: 'Outreach',
+      labelHeading: true,
+      content: <OutreachBlock maestro={maestro} />,
+    })
+  }
 
   return (
     <div>
       {blocks.map((block, index) => (
-        <Section
-          key={block.key}
-          label={block.label}
-          labelHeading={block.labelHeading}
-          inverse={block.inverse}
-          borderTop={index !== 0}
-        >
+        <Section key={block.key} label={block.label} labelHeading={block.labelHeading} borderTop={index !== 0}>
           {block.content}
         </Section>
       ))}

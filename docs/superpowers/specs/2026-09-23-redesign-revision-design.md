@@ -179,6 +179,11 @@ The review counted about 25 tracked, uppercase, 10–11px labels on Home.
      (command centre, on Brett's behalf) and is recorded in `phase-3-decisions.md`.
    - `siteCopy` is populated in wix-preview but empty in production today, so the fallbacks
      keep production correct.
+   - **Deviation, as shipped:** the chain gained a fourth step. `home.overview` sits between
+     `hero.subheading` and the IA tagline (`about.body` → `hero.subheading` → `home.overview` →
+     IA tagline), so production — which has no `siteCopy` document at all — keeps showing its
+     existing, lab-written overview text instead of falling straight through to the generic IA
+     tagline. See `phase-3-decisions.md`'s "Revision PR 2 — Home" section.
 2. **Recent papers:** the newest as a **larger lead row** (title at heading size, authors,
    journal · year, link), then the next four in the existing `PublicationRow` home format. Then
    "All N publications →".
@@ -191,6 +196,9 @@ The review counted about 25 tracked, uppercase, 10–11px labels on Home.
 4. **People strip:** 6–8 colour portraits of current members who have photos (alumni and the
    lab head excluded), in `orderRank` order. Then "Meet the lab →" to `/people` and "Support
    our research →" when the Support page exists.
+   - **Deviation, as shipped:** capped at **6**, not 6–8 — a design ruling during
+     implementation after a rendered-height check showed 8 portraits ran to ~950px tall at
+     375px, outweighing the hero and the papers ledger above it. See `phase-3-decisions.md`.
 5. **Resource:** as now.
 6. **MAESTRO:** a **normal-weight card**, not an inverted band.
    - The CMS title at `--text-heading` size, verbatim.
@@ -272,12 +280,19 @@ The review counted about 25 tracked, uppercase, 10–11px labels on Home.
 
 ## Data issues found along the way (for the Wix track, not fixed here)
 
-- **Two Wix-imported publications in wix-preview have no `slug`**, including the newest, "Non-invasive
-  Bdnf mRNA therapy…" (2026-04-20). They have no paper page, and their row title does not link.
-  `slug` is `required()` in the schema, so the importer should set it.
-- **2026-09-23, command centre:** the Wix importer will set slugs going forward; this hasn't
-  landed in `wix-preview` yet (next data window). Until it does, **PR 2's Home must render a
-  lead or recent paper with no slug as an unlinked title, with no crash** — the same shape as
-  the still-unslugged live rows above, since PR 2's own dataset window may still predate the
-  importer fix. Cover it with a gallery fixture (an unslugged lead paper on `/preview/
-  components`) and a `homeModel` unit test, not a live-data-dependent e2e.
+- **Two Wix-imported publications in wix-preview had no `slug`**, including the (then) newest,
+  "Non-invasive Bdnf mRNA therapy…" (2026-04-20). They had no paper page, and their row title
+  didn't link. `slug` is `required()` in the schema, so the importer should set it.
+- **2026-09-23, command centre:** the Wix importer will set slugs going forward; this hadn't
+  landed in `wix-preview` at the time this note was written. **PR 2's Home must render a lead or
+  recent paper with no slug as an unlinked title, with no crash** — the same shape as any
+  still-unslugged live rows, since a future data window could still predate the importer fix on
+  a fresh dataset. Covered by a gallery fixture (an unslugged lead paper on `/preview/
+  components`, `gallery-home-unslugged`) and a `splitLead` unit test, not a live-data-dependent
+  e2e.
+- **Update, PR 2 (2026-09-23):** by the time PR 2's Task 3 shipped, the wix-preview lead
+  ("Non-invasive Bdnf mRNA therapy…") **now has a slug** and links to
+  `/publications/non-invasive-bdnf-mrna-therapy-…-2026`. The unslugged-title code path
+  (`splitLead`, `gallery-home-unslugged`) is still real and still required — some other
+  wix-preview publication may still lack a slug, and any future Wix import window can produce
+  one again — but it is no longer exercised by wix-preview's own newest paper.

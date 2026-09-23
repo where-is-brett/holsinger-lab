@@ -7,6 +7,7 @@ import type {
   ResourcePayload,
   RoleGroupPayload,
   SettingsPayload,
+  SiteCopyPayload,
   SupportPagePayload,
 } from 'types'
 import { fallbackSettings } from 'types'
@@ -634,6 +635,7 @@ function researchCoverView(width: number, height: number, alt: string): Research
 
 function researchProjectView(overrides: {
   id: string
+  slug?: string | null
   title: string
   body: ReturnType<typeof overviewParagraph>[]
   start: string | null
@@ -644,6 +646,11 @@ function researchProjectView(overrides: {
   const tags = overrides.tags
   return {
     id: overrides.id,
+    // Every existing fixture gets a slug derived from its id so
+    // `/research#<slug>` and `researchCards`' href both resolve for it --
+    // an explicit `slug: null` override still models the unslugged case
+    // (see `gallery-home-unslugged`).
+    slug: overrides.slug === undefined ? overrides.id : overrides.slug,
     title: overrides.title,
     label: tags[0] || 'Project',
     kicker: researchKicker({ start: overrides.start, category: overrides.category }),
@@ -800,6 +807,36 @@ export const TYPOGRAPHY_BUDGET_RESEARCH_PROJECT_FIXTURE: ResearchProjectView = r
   cover: null,
 })
 
+// gallery-home-a's research cards: the first three `RESEARCH_PROJECTS_FIXTURE`
+// views (fixture-research-1/2/3), each already carrying a real cover, so
+// the covered-card layout is exercised.
+export const HOME_RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = RESEARCH_PROJECTS_FIXTURE.slice(0, 3)
+
+// A mixed row -- a covered card next to a bare one -- proving
+// `researchCards`'s "covers show only when every card has one" rule: with
+// entry 4 (no cover) in the middle, all three cards here must render with
+// no cover at all, not just that one.
+export const MIXED_COVERS_RESEARCH_PROJECTS_FIXTURE: ResearchProjectView[] = [
+  RESEARCH_PROJECTS_FIXTURE[0],
+  RESEARCH_PROJECTS_FIXTURE[4],
+  RESEARCH_PROJECTS_FIXTURE[1],
+]
+
+// gallery-home-b's siteCopy: no researchOrder projects, so `researchCards`
+// (homeModel.ts) falls back to these themes. Each summary carries a leading
+// "- " marker -- the same shape a Studio editor pastes from a bullet list --
+// proving the card's excerpt strips it rather than printing it verbatim.
+export const HOME_SITE_COPY_THEMES_FIXTURE: SiteCopyPayload = {
+  hero: { subheading: 'Unused while researchOrder projects are empty and themes are set.' },
+  about: {
+    body: null,
+    themes: [
+      { title: 'Gut-brain axis', summary: '- How microbiome shifts influence cognition and pathology.' },
+      { title: 'Glial signalling', summary: '- Astrocyte and microglial responses in disease progression.' },
+    ],
+  },
+}
+
 // Task 3 (Home): production today has no resource, an unset labHead, and no
 // `support-our-research` page (spec §2) -- the states this fixture proves
 // are exactly the ones live data can't show (constraints.md), reusing the
@@ -886,6 +923,25 @@ export const HOME_PUBLICATIONS_FIXTURE: Publication[] = SAMPLE_PUBLICATIONS.map(
 }))
 export const HOME_PUBLICATION_COUNT_FIXTURE = 42
 
+// A lead paper with no slug (wix-preview until the importer's fix, and any
+// future import): `LeadPublication` must render its title unlinked, never
+// `href="null"`. Only element 0 (the lead) is unslugged -- the rest stay
+// linked, so this fixture also proves the rest of the block is unaffected.
+export const HOME_PUBLICATIONS_UNSLUGGED_FIXTURE: Publication[] = HOME_PUBLICATIONS_FIXTURE.map((pub, index) =>
+  index === 0 ? { ...pub, href: null } : pub
+)
+
+// Carries the "heading" level's budget word for the lead-paper title
+// specifically (`LeadPublication`'s `<h3>`), capitalised
+// ("Neurodegenerative", which Blink never hyphenates); its companion word
+// is short ("repair") rather than relying on hyphenation, since CI's Linux
+// Chromium ships no hyphenation dictionaries. Consumed only by the
+// full-width "typography budget" gallery section in Gallery.tsx.
+export const TYPOGRAPHY_BUDGET_LEAD_PUBLICATIONS_FIXTURE: Publication[] = [
+  { ...HOME_PUBLICATIONS_FIXTURE[0], id: 'typography-budget-lead', title: 'Neurodegenerative repair' },
+  ...HOME_PUBLICATIONS_FIXTURE.slice(1),
+]
+
 export const HOME_RESOURCE_FIXTURE: HomeResourcePayload = RESOURCES_FIXTURE[0]
 
 // The `maestro` project's title, printed verbatim including its own typo
@@ -914,17 +970,174 @@ export const HOME_SUPPORT_PAGE_FIXTURE: SupportPagePayload = {
   slug: 'support-our-research',
 }
 
-// Fix round 1, IMPORTANT 1: a second settings fixture, `labHead` set but
-// `showLabHeadOnHome: false` -- the exact shape of the bug this fix
-// addresses (Home hid the PI panel *and* still subtracted the PI from the
-// member count, an internal inconsistency within the same render). With
-// the PI panel genuinely hidden, `currentMemberCount` must now count the
-// PI as an ordinary member (`homeModel.ts`'s `currentMemberCount` is only
-// ever told to exclude the id Home decided *not* to show a panel for) --
-// `e2e/home.spec.ts`'s own gallery assertions prove the two `gallery-home*`
-// instances' counts differ by exactly one, the PI herself.
+// A second settings fixture, `labHead` set but `showLabHeadOnHome: false`
+// -- with the lab-head card genuinely hidden, `currentMemberCount` counts
+// the PI as an ordinary member (`homeModel.ts`'s `currentMemberCount` is
+// only ever told to exclude the id Home decided *not* to show a card for)
+// -- `e2e/home.spec.ts`'s own gallery assertions prove the two
+// `gallery-home*` instances' counts differ by exactly one, the PI herself.
 export const HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE: SettingsPayload = {
   ...fallbackSettings,
   labHead: HOME_LAB_HEAD_FIXTURE,
   showLabHeadOnHome: false,
 }
+
+// gallery-home-a: a populated `siteCopy` singleton, so the gallery proves
+// the hero statement's top-of-chain source (`siteCopy.about.body`)
+// independent of live data, where the singleton is empty today.
+export const HOME_SITE_COPY_FIXTURE: SiteCopyPayload = {
+  hero: { subheading: 'A fixture subheading, unused while about.body is set.' },
+  about: {
+    body: [
+      portableParagraph(
+        'site-copy-about-p1',
+        'The laboratory studies the molecular mechanisms that drive Alzheimer’s disease and related neurodegenerative disorders.'
+      ),
+      portableParagraph(
+        'site-copy-about-p2',
+        'Our work combines cell biology, biochemistry and animal models to find new therapeutic targets.'
+      ),
+    ],
+    themes: [],
+  },
+}
+
+// gallery-home-no-sitecopy: a lab head with a name only -- no photo
+// (PiPortrait64's initials fallback), no role line, no mailto. Paired with
+// `siteCopy={null}` and an empty `home.overview` on that instance, this is
+// the one place the whole hero fallback chain bottoms out at the shared
+// `IA_TAGLINE`, and the one place the lab-head card's role/email lines are
+// both provably absent rather than merely unset in a fixture that happens
+// not to be asserted against.
+export const HOME_LAB_HEAD_NAME_ONLY_FIXTURE: NonNullable<SettingsPayload['labHead']> = {
+  ...HOME_LAB_HEAD_FIXTURE,
+  role: null,
+  email: null,
+}
+
+export const HOME_SETTINGS_NAME_ONLY_FIXTURE: SettingsPayload = {
+  ...fallbackSettings,
+  labHead: HOME_LAB_HEAD_NAME_ONLY_FIXTURE,
+  showLabHeadOnHome: true,
+}
+
+export const HOME_PAGE_NO_OVERVIEW_FIXTURE: HomePagePayload = {
+  ...HOME_PAGE_FIXTURE,
+  _id: 'fixture-home-no-overview',
+  overview: [],
+}
+
+// gallery-home-long-role: an unbroken role long enough to overflow the
+// lab-head card's 20rem column at 320px if the role line has no
+// `break-words` of its own.
+export const HOME_LAB_HEAD_LONG_ROLE_FIXTURE: NonNullable<SettingsPayload['labHead']> = {
+  ...HOME_LAB_HEAD_FIXTURE,
+  role: 'ProfessorOfMolecularNeuroscienceAndDementiaResearch',
+}
+
+export const HOME_SETTINGS_LONG_ROLE_FIXTURE: SettingsPayload = {
+  ...fallbackSettings,
+  labHead: HOME_LAB_HEAD_LONG_ROLE_FIXTURE,
+  showLabHeadOnHome: true,
+}
+
+// -- People strip -----------------------------------------------------------
+
+const HOME_CURRENT_GROUP: RoleGroupPayload = { _id: 'fixture-home-role-current', title: 'Research Scientist' }
+const HOME_ALUMNI_GROUP: RoleGroupPayload = { _id: 'fixture-home-role-alumni', title: 'Lab Alumni' }
+
+export const HOME_ROLE_GROUPS_FIXTURE: RoleGroupPayload[] = [HOME_CURRENT_GROUP, HOME_ALUMNI_GROUP]
+
+// gallery-home-a / -b share this pool: 10 current members with photos (the
+// strip caps at 6, proving the cap), one alumnus with a photo (never shown
+// -- alumni are excluded regardless of having an image), and the lab
+// head's own profile entry, also with a photo (never shown either --
+// `peopleStrip` always excludes whichever id `settings.labHead` carries,
+// so this proves that exclusion is by id, not merely "no image"). (a) and
+// (b) differ only in whether their own `settings.labHead`/
+// `showLabHeadOnHome` shows the hero's own card -- this one shared pool
+// is what lets their member *counts* differ by exactly the PI herself
+// (`e2e/home.spec.ts`'s own cross-check).
+// Index 2 (within the strip's visible first 6) carries a long, unhyphenated
+// single-word name -- the tightest test of the 3-column grid's own
+// `break-words`, since CI's Linux Chromium ships no hyphenation
+// dictionaries and this token has no space to wrap on at all.
+const HOME_CURRENT_MEMBERS: ProfilePayload[] = Array.from({ length: 10 }, (_, index) =>
+  profile({
+    _id: `fixture-home-member-${index + 1}`,
+    name: index === 2 ? 'Konstantinopoulos' : `Member ${index + 1} Lastname${index + 1}`,
+    role: 'Research Scientist',
+    image: PEOPLE_IMAGE,
+    roleGroup: HOME_CURRENT_GROUP,
+  })
+)
+
+const HOME_ALUMNUS_WITH_IMAGE: ProfilePayload = profile({
+  _id: 'fixture-home-alumnus',
+  name: 'Alumna Withimage',
+  role: 'Lab Alumni',
+  image: PEOPLE_IMAGE,
+  roleGroup: HOME_ALUMNI_GROUP,
+})
+
+// Same `_id` as `HOME_LAB_HEAD_FIXTURE` (both trace back to
+// `PEOPLE_LAB_HEAD_FIXTURE`) -- this is her own ordinary `profile`
+// document, the shape `peopleStrip`/`currentMemberCount` actually consume.
+const HOME_LAB_HEAD_PROFILE_WITH_IMAGE: ProfilePayload = profile({
+  _id: HOME_LAB_HEAD_FIXTURE._id,
+  name: HOME_LAB_HEAD_FIXTURE.name ?? '',
+  role: HOME_LAB_HEAD_FIXTURE.role,
+  image: PEOPLE_IMAGE,
+  hasPage: HOME_LAB_HEAD_FIXTURE.hasPage,
+  slug: HOME_LAB_HEAD_FIXTURE.slug,
+})
+
+export const HOME_PROFILES_FIXTURE: ProfilePayload[] = [
+  ...HOME_CURRENT_MEMBERS,
+  HOME_ALUMNUS_WITH_IMAGE,
+  HOME_LAB_HEAD_PROFILE_WITH_IMAGE,
+]
+
+// gallery-home-c: 2 current members, only one with a photo -- the strip
+// shows exactly the members who have one (1), not padded to match the
+// member count (2).
+export const HOME_PROFILES_C_FIXTURE: ProfilePayload[] = [
+  profile({
+    _id: 'fixture-home-c-member-1',
+    name: 'Devi Ratnasari',
+    role: 'Research Scientist',
+    image: PEOPLE_IMAGE,
+    roleGroup: HOME_CURRENT_GROUP,
+  }),
+  profile({
+    _id: 'fixture-home-c-member-2',
+    name: 'Tom Whitfield',
+    role: 'Research Scientist',
+    roleGroup: HOME_CURRENT_GROUP,
+  }),
+]
+
+// gallery-home-no-photos: current members exist (so "Meet the lab" still
+// renders, with a real count), but none of them has a photo -- the
+// portraits row is omitted rather than rendering an empty grid.
+export const HOME_PROFILES_NO_PHOTOS_FIXTURE: ProfilePayload[] = Array.from({ length: 3 }, (_, index) =>
+  profile({
+    _id: `fixture-home-no-photo-member-${index + 1}`,
+    name: `No Photo Member ${index + 1}`,
+    role: 'Research Scientist',
+    roleGroup: HOME_CURRENT_GROUP,
+  })
+)
+
+// gallery-home-no-people: `showPeople: false` -- Home must show no
+// portraits and no meet-the-lab line even when the underlying profiles do
+// carry photos (`HOME_PROFILES_FIXTURE`, reused below), only the Support
+// link.
+export const HOME_SETTINGS_NO_PEOPLE_FIXTURE: SettingsPayload = {
+  ...fallbackSettings,
+  showPeople: false,
+}
+
+// gallery-home-no-photos: no labHead set, so the hero's card is hidden and
+// every current member (including these) counts.
+export const HOME_SETTINGS_NO_LABHEAD_FIXTURE: SettingsPayload = fallbackSettings

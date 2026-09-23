@@ -27,13 +27,43 @@ export interface Publication {
 
 const PI_SURNAME = 'Holsinger'
 
+// The PI's own name token ends at the next comma, semicolon, or " and "/
+// " & " conjunction -- so a co-author listed right after the PI with no
+// comma between them ("... Holsinger R.M.D. and Neely G.") is never swept
+// into the bold run too.
+const AUTHOR_TOKEN_BOUNDARY = /[,;]|\s+(?:and|&)\s+/
+
+// A segment is "initials only" when it's nothing but capital letters,
+// dots and hyphens (optionally space-separated), e.g. " R.M.D.", " RMD.",
+// " RMD", " Q-S.", " R. M. D." -- never a real name ("Damian", "Kiang
+// K.M.") mixed in, which always carries a lowercase letter or another
+// author's own surname-then-initials shape.
+const INITIALS_ONLY = /^\s*[A-Z](?:[A-Z.\-\s]*[A-Z.])?\s*$/
+
 export function splitAuthors(authors: string, piSurname: string = PI_SURNAME) {
   const at = authors.indexOf(piSurname)
   if (at === -1) return { pre: authors, pi: '', post: '' }
-  // The PI's name runs from the surname to the next comma or the end, so
+  // The PI's name runs from the surname to that boundary or the end, so
   // initials stay attached ("Holsinger R.M.D." not "Holsinger").
-  let end = at + piSurname.length
-  while (end < authors.length && authors[end] !== ',') end++
+  const rest = authors.slice(at + piSurname.length)
+  const boundary = rest.search(AUTHOR_TOKEN_BOUNDARY)
+  let end = at + piSurname.length + (boundary === -1 ? rest.length : boundary)
+
+  // "Surname, Initials" format ("Holsinger, R.M.D."): the comma found
+  // above is the name's own internal separator, not the next author's --
+  // when the segment right after it (up to the *next* real boundary) is
+  // initials only, fold that segment into the PI's own bolded token too,
+  // so the whole "Holsinger, R.M.D." reads as one name, not just the bare
+  // surname.
+  if (boundary !== -1 && rest[boundary] === ',') {
+    const afterComma = rest.slice(boundary + 1)
+    const nextBoundary = afterComma.search(AUTHOR_TOKEN_BOUNDARY)
+    const segment = nextBoundary === -1 ? afterComma : afterComma.slice(0, nextBoundary)
+    if (INITIALS_ONLY.test(segment)) {
+      end = at + piSurname.length + boundary + 1 + (nextBoundary === -1 ? afterComma.length : nextBoundary)
+    }
+  }
+
   return {
     pre: authors.slice(0, at),
     pi: authors.slice(at, end).trimEnd(),

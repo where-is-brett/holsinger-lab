@@ -141,6 +141,14 @@ describe('toResearchView', () => {
     expect(view.cover).toBeNull()
   })
 
+  it('carries slug through from the payload', () => {
+    expect(toResearchView(basePayload({ slug: 'alpha' })).slug).toBe('alpha')
+  })
+
+  it('slug is null when the payload has none', () => {
+    expect(toResearchView(basePayload({ slug: null })).slug).toBeNull()
+  })
+
   it('label falls back to "Project" and tagLine is "" when there are no tags', () => {
     const view = toResearchView(basePayload({ tags: [] }))
     expect(view.label).toBe('Project')

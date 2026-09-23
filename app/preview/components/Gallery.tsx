@@ -9,14 +9,28 @@ import {
   CMS_VERBATIM_PUB_PLOS_ONE,
   HOME_MAESTRO_FIXTURE,
   HOME_PAGE_FIXTURE,
+  HOME_PAGE_NO_OVERVIEW_FIXTURE,
+  HOME_PROFILES_C_FIXTURE,
+  HOME_PROFILES_FIXTURE,
+  HOME_PROFILES_NO_PHOTOS_FIXTURE,
   HOME_PUBLICATION_COUNT_FIXTURE,
   HOME_PUBLICATIONS_FIXTURE,
+  HOME_PUBLICATIONS_UNSLUGGED_FIXTURE,
+  HOME_RESEARCH_PROJECTS_FIXTURE,
   HOME_RESOURCE_FIXTURE,
+  HOME_ROLE_GROUPS_FIXTURE,
   HOME_SETTINGS_FIXTURE,
   HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE,
+  HOME_SETTINGS_LONG_ROLE_FIXTURE,
+  HOME_SETTINGS_NAME_ONLY_FIXTURE,
+  HOME_SETTINGS_NO_LABHEAD_FIXTURE,
+  HOME_SETTINGS_NO_PEOPLE_FIXTURE,
   HOME_SETTINGS_PORTRAIT_FIXTURE,
+  HOME_SITE_COPY_FIXTURE,
+  HOME_SITE_COPY_THEMES_FIXTURE,
   HOME_SUPPORT_PAGE_FIXTURE,
   LINKED_PUB,
+  MIXED_COVERS_RESEARCH_PROJECTS_FIXTURE,
   NO_LINK_PUB,
   PEOPLE_PROFILES_FIXTURE,
   PEOPLE_ROLE_GROUPS_FIXTURE,
@@ -28,6 +42,7 @@ import {
   SAMPLE_PEOPLE,
   SAMPLE_PUBLICATIONS,
   TYPOGRAPHY_BUDGET_HOME_FIXTURE,
+  TYPOGRAPHY_BUDGET_LEAD_PUBLICATIONS_FIXTURE,
   TYPOGRAPHY_BUDGET_PUBLICATION_FIXTURE,
   TYPOGRAPHY_BUDGET_RESEARCH_PROJECT_FIXTURE,
 } from 'components/redesign/fixtures'
@@ -552,8 +567,8 @@ export default function Gallery() {
         <Heading className="col-start-2 px-6">Home screen</Heading>
         {/* Production today has no resource, an unset labHead, and no
             `support-our-research` page (spec §2) -- this is the only place
-            Home's populated PI panel, Resources block, and Support link
-            actually render. The `maestro` project *does* exist live, but
+            Home's populated lab-head card, Resources block, and Support
+            link actually render. The `maestro` project *does* exist live, but
             the fixture's own copy proves the block independent of
             live-data drift.
 
@@ -564,41 +579,59 @@ export default function Gallery() {
             with itself, matching the treatment
             `gallery-typography-budget-inner` uses at 320/375px. */}
         <div className="col-span-full">
-          <SubHeading>(a) labHead set, showLabHeadOnHome true -- PI panel shows, PI excluded from the count</SubHeading>
+          <SubHeading>
+            (a) labHead set, showLabHeadOnHome true -- lab-head card shows, PI excluded from the count; three
+            researchOrder project cards, one linked cover; 10 current members with photos (strip caps at 6), one
+            alumnus and the lab head herself both with photos (neither shown)
+          </SubHeading>
           <div className="mb-8 border border-rule" data-testid="gallery-home-a">
             <Home
               home={HOME_PAGE_FIXTURE}
               settings={HOME_SETTINGS_FIXTURE}
               siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
               publications={HOME_PUBLICATIONS_FIXTURE}
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
-              profiles={PEOPLE_PROFILES_FIXTURE}
-              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              researchProjects={HOME_RESEARCH_PROJECTS_FIXTURE}
+              profiles={HOME_PROFILES_FIXTURE}
+              roleGroups={HOME_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
               headingLevel="h2"
             />
           </div>
 
-          {/* Fix round 1, IMPORTANT 1: the exact shape of the bug this fixes
-              -- labHead set, but showLabHeadOnHome false, so the PI panel is
-              hidden. The PI must now count as an ordinary member (this
-              instance's count is instance (a)'s count plus exactly one, the
-              PI herself) instead of being silently subtracted while
-              appearing nowhere on the page. */}
-          <SubHeading>(b) labHead set, showLabHeadOnHome false -- no PI panel, PI included in the count</SubHeading>
+          {/* labHead set, but showLabHeadOnHome false, so the lab-head
+              card is hidden. The PI counts as an ordinary member (this
+              instance's count is instance (a)'s count plus exactly one,
+              the PI herself) instead of being silently subtracted while
+              appearing nowhere on the page -- shares (a)'s own profiles
+              pool so that difference is provably just her. `peopleStrip`
+              still excludes her portrait either way (Home.tsx's own
+              comment on `strip`), since it goes by `settings.labHead`'s id
+              alone, not whether the hero card is showing. No researchOrder
+              projects here -- the research cards fall back to
+              `HOME_SITE_COPY_THEMES_FIXTURE`'s themes instead, proving the
+              fallback and its "- " strip independently of instance (a)'s
+              project cards. */}
+          <SubHeading>
+            (b) labHead set, showLabHeadOnHome false -- no lab-head card, PI included in the count but still excluded
+            from the portrait strip; no researchOrder projects, so research cards fall back to siteCopy themes
+          </SubHeading>
           <div className="mb-8 border border-rule" data-testid="gallery-home-b">
             <Home
               home={HOME_PAGE_FIXTURE}
               settings={HOME_SETTINGS_LABHEAD_HIDDEN_FIXTURE}
               siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_THEMES_FIXTURE}
               publications={HOME_PUBLICATIONS_FIXTURE}
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
-              profiles={PEOPLE_PROFILES_FIXTURE}
-              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              researchProjects={[]}
+              profiles={HOME_PROFILES_FIXTURE}
+              roleGroups={HOME_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
               headingLevel="h2"
             />
@@ -612,20 +645,162 @@ export default function Gallery() {
               `PiPortrait64` own comment: `alt=""`, decorative, since the PI's
               name is visible text right beside it inside the same `Link`).
               Covered by this file's own whole-page axe checks (light and
-              dark, below) same as every other gallery section. */}
-          <SubHeading>(c) labHead set with a portrait -- PiPortrait64&apos;s image branch, decorative alt</SubHeading>
-          <div className="border border-rule" data-testid="gallery-home-c">
+              dark, below) same as every other gallery section. Also: 2
+              current members, only one with a photo -- the strip shows
+              exactly the members who have one, not padded to the count. */}
+          <SubHeading>
+            (c) labHead set with a portrait -- PiPortrait64&apos;s image branch, decorative alt; 2 current members,
+            only one with a photo
+          </SubHeading>
+          <div className="mb-8 border border-rule" data-testid="gallery-home-c">
             <Home
               home={HOME_PAGE_FIXTURE}
               settings={HOME_SETTINGS_PORTRAIT_FIXTURE}
               siteName="Holsinger Lab"
+              siteCopy={null}
               publications={HOME_PUBLICATIONS_FIXTURE}
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
+              profiles={HOME_PROFILES_C_FIXTURE}
+              roleGroups={HOME_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+
+          {/* Production's `siteCopy` singleton is empty today, and
+              `home.overview` is unset here too -- this is the only place
+              the hero statement's whole fallback chain bottoms out at the
+              shared `IA_TAGLINE`. The lab head here has a name only (no
+              photo, no role, no email), so the card's initials fallback
+              renders and neither optional line appears. */}
+          <SubHeading>(d) no siteCopy, no home.overview, labHead name only -- statement falls back to the IA tagline</SubHeading>
+          <div className="mb-8 border border-rule" data-testid="gallery-home-no-sitecopy">
+            <Home
+              home={HOME_PAGE_NO_OVERVIEW_FIXTURE}
+              settings={HOME_SETTINGS_NAME_ONLY_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={null}
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
               profiles={PEOPLE_PROFILES_FIXTURE}
               roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+
+          {/* An unbroken role long enough to overflow a narrow viewport if
+              the role line has no `break-words` of its own. */}
+          <SubHeading>(e) labHead with a long unbroken role -- the role line must not overflow at 320px</SubHeading>
+          <div className="mb-8 border border-rule" data-testid="gallery-home-long-role">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_LONG_ROLE_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={null}
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
+              profiles={PEOPLE_PROFILES_FIXTURE}
+              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+
+          {/* A lead paper with no slug (wix-preview until the importer's
+              fix, and any future import): the lead title must render
+              unlinked, with no crash and no `href="null"`. */}
+          <SubHeading>(f) recent papers&apos; lead has no slug -- the lead title renders unlinked</SubHeading>
+          <div className="border border-rule" data-testid="gallery-home-unslugged">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
+              publications={HOME_PUBLICATIONS_UNSLUGGED_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
+              profiles={PEOPLE_PROFILES_FIXTURE}
+              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+
+          {/* A mixed row -- a covered card, a bare card, a covered card --
+              proving `researchCards`'s "covers show only when every card in
+              the set has one" rule: none of the three cards below renders a
+              cover. */}
+          <SubHeading>(g) research cards, one without a cover -- no card in the set shows a cover</SubHeading>
+          <div className="border border-rule" data-testid="gallery-home-mixed-covers">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={MIXED_COVERS_RESEARCH_PROJECTS_FIXTURE}
+              profiles={PEOPLE_PROFILES_FIXTURE}
+              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+
+          {/* `showPeople: false` -- Home must show no portraits and no
+              meet-the-lab line even though these profiles carry photos
+              (the same pool instance (a) uses), only the Support link. */}
+          <SubHeading>(h) showPeople is false -- no portraits, no meet-the-lab, only Support</SubHeading>
+          <div className="border border-rule" data-testid="gallery-home-no-people">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_NO_PEOPLE_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
+              profiles={HOME_PROFILES_FIXTURE}
+              roleGroups={HOME_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
+              headingLevel="h2"
+            />
+          </div>
+
+          {/* Current members exist, so "Meet the lab" still renders with a
+              real count, but none of them has a photo -- the portraits row
+              is omitted rather than rendering an empty grid. */}
+          <SubHeading>(i) current members with no photos -- meet-the-lab renders, 0 portraits</SubHeading>
+          <div className="border border-rule" data-testid="gallery-home-no-photos">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_NO_LABHEAD_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
+              publications={HOME_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
+              profiles={HOME_PROFILES_NO_PHOTOS_FIXTURE}
+              roleGroups={HOME_ROLE_GROUPS_FIXTURE}
+              supportPage={null}
               headingLevel="h2"
             />
           </div>
@@ -658,10 +833,12 @@ export default function Gallery() {
               home={TYPOGRAPHY_BUDGET_HOME_FIXTURE}
               settings={HOME_SETTINGS_FIXTURE}
               siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
               publications={HOME_PUBLICATIONS_FIXTURE}
               publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
               resource={HOME_RESOURCE_FIXTURE}
               maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
               profiles={PEOPLE_PROFILES_FIXTURE}
               roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
               supportPage={HOME_SUPPORT_PAGE_FIXTURE}
@@ -683,6 +860,23 @@ export default function Gallery() {
               projects={[TYPOGRAPHY_BUDGET_RESEARCH_PROJECT_FIXTURE]}
               email={null}
               showContactForm={false}
+              headingLevel="h2"
+            />
+          </div>
+          <div className="mt-8 border border-rule" data-testid="typography-budget-lead-paper">
+            <Home
+              home={HOME_PAGE_FIXTURE}
+              settings={HOME_SETTINGS_FIXTURE}
+              siteName="Holsinger Lab"
+              siteCopy={HOME_SITE_COPY_FIXTURE}
+              publications={TYPOGRAPHY_BUDGET_LEAD_PUBLICATIONS_FIXTURE}
+              publicationCount={HOME_PUBLICATION_COUNT_FIXTURE}
+              resource={HOME_RESOURCE_FIXTURE}
+              maestro={HOME_MAESTRO_FIXTURE}
+              researchProjects={[]}
+              profiles={PEOPLE_PROFILES_FIXTURE}
+              roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+              supportPage={HOME_SUPPORT_PAGE_FIXTURE}
               headingLevel="h2"
             />
           </div>
