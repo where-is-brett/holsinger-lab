@@ -1258,3 +1258,67 @@ redundant gates, and the research-cover `sizes` value.
 
 `next-env.d.ts` restored via `git checkout origin/redesign/integration -- next-env.d.ts` after
 every build; `playwright.alt.config.ts` deleted before committing, never tracked.
+
+## Revision PR 3 — Publications
+
+What changed, one line each:
+
+- The publications chip band (`FacetBand`/`FacetChip`) is replaced by three native `<select>`
+  filters (Year, Type, Topic), each carrying its own option counts, e.g. "2025 (4)".
+- Below `md`, the selects live in a "Filter (n)" bottom sheet (a Headless UI `Dialog`) instead of
+  a row; above `md`, they sit in one row at the top of the "Record" section.
+- The density toggle and `PublicationRow`'s compact branch are deleted, not deprecated.
+- `Button` gained a `variant="primary"` (ON-chip ink fill) and an `external` prop.
+- The paper page's "Canonical link" column is replaced by a primary "Read paper ↗" button; a DOI
+  now prints as plain mono data (`paper-doi`), never a second link.
+- "Cite and access" is renamed "Citation" and no longer renders its own sub-labels — the citation
+  box is the section's only content, with the `Section` label as its sole label.
+- `Section`'s unused `padBottom` override and `publicationModel.ts`'s unused `linkLabelShort`/
+  `shortenLabel` are deleted (no real caller for either).
+
+The eight rulings this plan took:
+
+1. **No separate "Filter" section.** The filters sit at the top of the "Record" section, closing
+   finding 6 by construction — no label floats above a band, and the section's own full-width top
+   rule replaces the band's column-only hairline.
+2. **Options carry counts** (e.g. "2025 (4)"); a group with no values for the current dataset is
+   not rendered at all.
+3. **Selects apply immediately.** The sheet's "Show N results" button only closes it — there is no
+   pending/apply state.
+4. **Selects are 16px** so iOS Safari doesn't zoom the page on focus.
+5. **Deleted, not deprecated:** `FacetBand`, `FacetChip`, `toggleFacet`, `PublicationRow`'s
+   `density` prop and compact branch, and `CopyCitation`'s `compact` prop.
+6. **Paper page:** the DOI prints as plain data, not a second link — the "Read paper" button is
+   the only link. A URL-fallback paper shows the button only, no data line. "Cite and access"
+   becomes "Citation" with no sub-labels.
+7. **Primary button** uses the ON-chip ink fill (`bg-surface-inverse`/`text-text-inverse`),
+   already contrast-guarded in `styles/tokens.test.ts`.
+8. **Filter state is not synced to the URL** (not in the spec).
+
+Findings closed:
+
+- **Finding 6** (the Filter label floating ~32px above its first row, and the band's hairline
+  spanning only the content column) is closed by construction: there is no separate "Filter"
+  section any more, so there is no floating label and no partial-width hairline to fix.
+- **Finding 11** (a Section label immediately followed by a same-style `MICRO_LABEL`, reading as
+  one level on mobile) is closed on the paper page: "Citation" no longer sits above a "Formatted
+  citation" sub-label, and the old "Canonical link — DOI" sub-label is gone along with the
+  canonical-link column itself. Home's instances closed in PR 2. **People's instance is still
+  open** -- the "Alumni" `Section` label sits directly above `AlumniBlock`'s own "Recent lab
+  alumni" label (`People.tsx`) -- and is deferred to PR 4, which owns that screen.
+
+### Verification (this PR)
+
+| Check | Result |
+|---|---|
+| `npm run type-check` | clean, no output |
+| `npm run lint` | **0 errors, 4 warnings** (unchanged baseline: 3 `no-img-element` in `Logo.tsx`, 1 import-sort in `e2e/brand-colour.spec.ts`) |
+| `npx vitest run` | **44 files, 557 tests, all passed** |
+| `npm run build` | succeeded, all 45 pages generated |
+| `npx playwright test -c playwright.alt.config.ts --project=chromium` (full suite) | **310 passed, 6 skipped, 0 failed** |
+| `npx playwright test -c playwright.alt.config.ts --project=mobile-safari` (`publication-page`, `redesign-components`, `label-budget`, `mobile`, `routes`) | **82 passed, 1 skipped, 0 failed** |
+| `npx playwright test -c playwright.alt.config.ts --project=mobile-chrome` (same specs) | **82 passed, 1 skipped, 0 failed** |
+
+`next-env.d.ts` restored via `git checkout origin/redesign/integration -- next-env.d.ts` after
+every build; `playwright.alt.config.ts` deleted before committing, never tracked. CI runs the true
+full suite on all three projects after push.

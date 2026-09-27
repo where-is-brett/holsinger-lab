@@ -6,7 +6,6 @@ import {
   formatFilteredPublicationsMeta,
   formatPublicationsMeta,
   formatRef,
-  shortenLabel,
   splitAuthors,
   toPublication,
 } from './publicationModel'
@@ -144,18 +143,6 @@ describe('deriveLink', () => {
   })
 })
 
-describe('shortenLabel', () => {
-  it('leaves a short label alone', () => {
-    expect(shortenLabel('10.3390/genes14101845', 32)).toBe('10.3390/genes14101845')
-  })
-
-  it('truncates with a trailing ellipsis for compact rows', () => {
-    const out = shortenLabel('10.1016/j.ygeno.2019.07.018.extra.long.suffix', 24)
-    expect(out.endsWith('…')).toBe(true)
-    expect(out.length).toBeLessThanOrEqual(24)
-  })
-})
-
 function payload(over: Partial<PublicationPayload> = {}): PublicationPayload {
   return {
     _id: 'p1',
@@ -215,7 +202,6 @@ describe('toPublication', () => {
     expect(pub.linkKind).toBe('URL')
     expect(pub.linkHref).toBe(url)
     expect(pub.linkLabel).toBe(url.replace('https://www.', ''))
-    expect(pub.linkLabelShort!.length).toBeLessThanOrEqual(26)
   })
 
   it('renders no link at all when neither exists', () => {

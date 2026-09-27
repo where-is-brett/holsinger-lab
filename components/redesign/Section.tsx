@@ -17,13 +17,6 @@ export interface SectionProps {
   id?: string
   borderTop?: boolean
   padTop?: string
-  /**
-   * Lets a caller with its own vertical rhythm (e.g. `FacetBand`, which
-   * has its own padding and border) suppress `Section`'s default (`"0px"`)
-   * so the two don't stack into an unwanted gap. Every other call site
-   * keeps the default.
-   */
-  padBottom?: string
   children: ReactNode
 }
 
@@ -59,7 +52,6 @@ export function Section({
   id,
   borderTop = true,
   padTop = 'var(--spacing-stack)',
-  padBottom = 'var(--spacing-stack-lg)',
   children,
 }: SectionProps) {
   // An inverse band is separated by its own background, so a top rule
@@ -77,7 +69,7 @@ export function Section({
     <section
       id={id}
       className={`${SECTION_GRID} ${SECTION_GUTTER_X} ${surface} ${rule} ${anchorOffset}`}
-      style={{ paddingTop: padTop, paddingBottom: padBottom }}
+      style={{ paddingTop: padTop, paddingBottom: 'var(--spacing-stack-lg)' }}
     >
       {label && (
         <LabelTag

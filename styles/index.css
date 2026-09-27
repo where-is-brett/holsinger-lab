@@ -230,8 +230,8 @@
      1.64:1 against --sem-surface -- below WCAG 1.4.11's 3:1 for a UI
      boundary, exactly as base is. That shortfall is inherited from the
      design system and recorded in phase-1-decisions.md as an open question;
-     it is a change of appearance across every Button, Tag and OFF-state
-     FacetChip, so it is not settled unilaterally here. */
+     it is a change of appearance across every Button and Tag, so it is not
+     settled unilaterally here. */
   --sem-rule-strong: #c7c4bf;
   /* oklch(0.340 0.010 84.6). */
   --sem-rule-inverse: #3a3832;
@@ -391,7 +391,7 @@ input {
   outline-offset: 3px;
 }
 
-/* Pressable-control transition primitive (Button, CopyCitation, FacetChip).
+/* Pressable-control transition primitive (Button, CopyCitation).
    Declares every animatable property in ONE `transition` shorthand rather
    than as separate Tailwind utility classes on the same element. Tailwind's
    per-property utilities (`transition-transform`, `transition-colors`, ...)
@@ -399,12 +399,8 @@ input {
    `-timing-function` triad, not just their own slice of it -- stacking two
    of them on one element means only the utility generated later in the
    build's CSS wins outright, and the other's transition is silently
-   dropped. Caught in Task 8a review: `FacetChip` paired `PRESS` (which
-   used to carry `transition-transform`) with its own `transition-colors`,
-   and only the transform half ever animated -- the ON/OFF colour swap
-   snapped instantly despite the code and comments claiming otherwise. This
-   class exists so `PRESS` (tokens.ts) can bundle every property any
-   consumer needs in one place, immune to generation-order.
+   dropped. This class exists so `PRESS` (tokens.ts) can bundle every
+   property any consumer needs in one place, immune to generation-order.
    Mirrors docs/redesign-experiment/design-system/components/components.css's
    `.hl-press`, with one addition: `scale` is listed alongside `transform`.
    The vendored source presses via `transform: scale(0.97)` (one legacy

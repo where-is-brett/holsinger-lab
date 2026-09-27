@@ -487,8 +487,7 @@ test.describe('/', () => {
   // The document-level `scrollWidth`-vs-`clientWidth` check above cannot
   // see a cell that overflows its own grid track without ever growing the
   // page past the viewport, so this checks each publication row's cells
-  // directly. Home only ever renders the comfortable-density `home`
-  // variant, so there's no need to exempt a truncating compact mode here.
+  // directly. Home only ever renders the `home` variant.
   test.describe('publication ledger cells never overflow their own track', () => {
     for (const width of [1024, 1280, 1440]) {
       test(`at ${width}px`, async ({ page }) => {

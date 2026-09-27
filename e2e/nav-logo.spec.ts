@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test'
 
-// Header geometry against the Publications page's FacetBand. The header
+// Header geometry against the Publications page's filter bar. The header
 // is exactly `--nav-height` tall, at every width, because it is one
 // sticky element (spec decision 4). Jump-links are gone (spec §7) -- there
 // is no year-anchor scroll-offset test to carry over.
 //
-// The FacetBand itself is not sticky -- it stays in normal flow at every
+// The filter bar itself is not sticky -- it stays in normal flow at every
 // viewport, so it scrolls away with the page.
 
 for (const viewport of [
@@ -40,12 +40,12 @@ for (const viewport of [
   })
 }
 
-// Located via `data-testid="facet-band"` (FacetBand.tsx).
-function facetBand(page: import('@playwright/test').Page) {
-  return page.getByTestId('facet-band')
+// Located via `data-testid="filter-bar"` (FilterBar.tsx).
+function filterBar(page: import('@playwright/test').Page) {
+  return page.getByTestId('filter-bar')
 }
 
-test.describe('the FacetBand is never sticky', () => {
+test.describe('the filter bar is never sticky', () => {
   for (const viewport of [
     // Wide+tall, wide+short, and narrow mobile -- static at every combination.
     { width: 1280, height: 1000 },
@@ -55,7 +55,7 @@ test.describe('the FacetBand is never sticky', () => {
     test(`at ${viewport.width}x${viewport.height}, position is static`, async ({ page }) => {
       await page.setViewportSize(viewport)
       await page.goto('/publications')
-      const position = await facetBand(page).evaluate((el) => getComputedStyle(el).position)
+      const position = await filterBar(page).evaluate((el) => getComputedStyle(el).position)
       expect(position).toBe('static')
     })
   }

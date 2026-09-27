@@ -17,7 +17,7 @@ const GALLERY_SECTIONS = [
   'page-title',
   'section',
   'publication-row',
-  'facet-band',
+  'filter-bar',
   'person-card',
   'people',
   'site-nav',
@@ -27,6 +27,7 @@ const GALLERY_SECTIONS = [
   'form-field',
   'resource-block',
   'publication-page',
+  'paper-no-link',
   'research',
   'research-no-link',
   'research-contact-link',
@@ -76,19 +77,6 @@ test.describe('redesign component gallery', () => {
     await button.click()
     await expect(page.getByText('✓ Copied')).toBeVisible()
     await expect(page.getByText('✓ Copied')).toBeHidden({ timeout: 4000 })
-  })
-
-  test('facet chips filter and clear, with live counts through countBy/applyFacets', async ({
-    page,
-  }) => {
-    const band = page.getByTestId('gallery-facet-band')
-    // Baseline: both SAMPLE_PUBLICATIONS pass with no facet selected.
-    await expect(band.getByTestId('facet-result-count')).toHaveText('2')
-    const chip = band.getByRole('button', { name: /^2025/ })
-    await chip.click()
-    await expect(band.getByTestId('facet-result-count')).toHaveText('1')
-    await chip.click()
-    await expect(band.getByTestId('facet-result-count')).toHaveText('2')
   })
 
   test('mobile tap targets clear 44px', async ({ page }) => {
@@ -504,20 +492,12 @@ test.describe('redesign component gallery', () => {
     await expect(link).toHaveAttribute('href', '/resources')
   })
 
-  test('publication page: citation box takes the full width when there is no canonical link', async ({
-    page,
-  }) => {
-    // PUBLICATION_PAGE_FIXTURE has neither a DOI nor a URL, so the Cite &
-    // access grid should collapse to a single column (fix round 1) and the
-    // citation box should span the same width as its containing block,
-    // rather than sitting in a 1fr track sized for two columns.
-    await page.setViewportSize({ width: 1280, height: 900 })
-    const section = page.getByTestId('gallery-publication-page')
-    const wrapperBox = await section.getByTestId('pub-cite-access').boundingBox()
-    const citationBox = await section.getByTestId('pub-citation-box').boundingBox()
-    expect(wrapperBox).not.toBeNull()
-    expect(citationBox).not.toBeNull()
-    expect(citationBox!.width).toBeGreaterThan(wrapperBox!.width * 0.95)
+  test('a paper with no canonical link renders no Read paper button and no DOI line', async ({ page }) => {
+    const s = page.getByTestId('gallery-paper-no-link')
+    await expect(s.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(s.getByRole('link', { name: /^Read paper/ })).toHaveCount(0)
+    await expect(s.getByTestId('paper-doi')).toHaveCount(0)
+    await expect(s.getByTestId('pub-citation-box')).toBeVisible()
   })
 
   // Fix round 1 tried a bounding-rect walk scoped to the new
@@ -546,13 +526,11 @@ test.describe('redesign component gallery', () => {
   //    `clientWidth`, while every per-element check inside the section
   //    reported zero offenders (see the fix-round-2 report).
   //
-  // The reliable check is therefore the whole-page one the controller asked
-  // for in round 1 to begin with -- it was blocked back then by a genuine,
-  // separate defect (`PageTitle`/`FacetBand`'s non-responsive gutters, and
-  // `PageTitle`'s `<h1>` missing its own flex-item `min-w-0`), which round 2
-  // has now fixed at the source (see `PageTitle.tsx`, `FacetBand.tsx`).
-  // `Tag`'s new `wrap` prop also replaced the tag row's `overflow-x-auto`
-  // entirely this round, so there is no longer any element on this page
+  // The reliable check is therefore the whole-page one: per-element checks
+  // inside a section can miss an ungrown, unpainted grid track that still
+  // widens the page (see `PageTitle.tsx`'s own `<h1>` `min-w-0` fix for the
+  // same class of defect). `Tag`'s `wrap` prop replaced the tag row's
+  // `overflow-x-auto` entirely, so there is no longer any element on this page
   // that's *meant* to have interior scroll/overflow either.
   test('no horizontal overflow at 375px', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 })
@@ -599,26 +577,138 @@ test.describe('redesign component gallery', () => {
       .toEqual([])
   })
 
-  // Fix round 4: the two checks above run at first paint, where every
-  // year/type/topic chip is OFF -- no ON facet chip with a count exists on
-  // the page yet, so FacetChip's ON-state colour (`text-text-inverse-muted`)
-  // was never actually exercised by an axe pass, only its OFF state
-  // (`text-text-faint`). Clicking one chip here gives both states at once:
-  // the clicked chip goes ON (with its own count), its siblings stay OFF
-  // (with theirs) -- and re-running axe against `gallery-facet-band` (the
-  // whole page's own check already covers `gallery-home`'s new portrait
-  // instance, (c), added alongside this fix) is the regression coverage
-  // for both fixes in this round, independent of live Sanity content (the
-  // gallery fixture never changes with the dataset).
-  test('an ON facet chip (with a count) and an OFF facet chip (with a count) have no detectable accessibility violations', async ({
-    page,
-  }) => {
-    const band = page.getByTestId('gallery-facet-band')
-    await band.getByRole('button', { name: /^2025/ }).click()
-    await expect(band.getByRole('button', { name: /^2025/ })).toHaveAttribute('aria-pressed', 'true')
+  test('filter bar: a Year select filters, and Clear restores', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    const bar = page.getByTestId('gallery-filter-bar')
+    const row = bar.getByTestId('filter-row')
+    const count = bar.getByTestId('filter-result-count')
+    const total = await count.textContent()
+    await row.getByLabel('Year').selectOption({ index: 1 })
+    await row.getByLabel('Type').selectOption({ index: 1 })
+    await expect(count).not.toHaveText(total!)
+    await bar.getByRole('button', { name: 'Clear' }).click()
+    await expect(count).toHaveText(total!)
+    await expect(row.getByLabel('Year')).toHaveValue('')
+    await expect(row.getByLabel('Type')).toHaveValue('')
+  })
 
-    const results = await new AxeBuilder({ page }).include('[data-testid="gallery-facet-band"]').analyze()
+  test('filter selects are at least 16px so iOS does not zoom on focus', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    const sizes = await page
+      .getByTestId('gallery-filter-bar')
+      .locator('select')
+      .evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent).map((e) => parseFloat(getComputedStyle(e).fontSize)))
+    expect(sizes.length).toBeGreaterThan(0)
+    for (const s of sizes) expect(s).toBeGreaterThanOrEqual(16)
+  })
+
+  test('the sheet\'s filter selects are also at least 16px', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.getByTestId('gallery-filter-bar').getByRole('button', { name: 'Filter', exact: true }).click()
+    const sheet = page.getByTestId('filter-sheet')
+    await expect(sheet).toBeVisible()
+    const sizes = await sheet
+      .locator('select')
+      .evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent).map((e) => parseFloat(getComputedStyle(e).fontSize)))
+    expect(sizes.length).toBeGreaterThan(0)
+    for (const s of sizes) expect(s).toBeGreaterThanOrEqual(16)
+  })
+
+  test('a filter group with no values is not rendered', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    const row = page.getByTestId('gallery-filter-bar-sparse').getByTestId('filter-row')
+    await expect(row.getByLabel('Year')).toBeVisible()
+    await expect(row.getByLabel('Type')).toHaveCount(0)
+  })
+
+  test('below md, Filter (n) opens a sheet, Show N results closes it', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    const bar = page.getByTestId('gallery-filter-bar')
+    await expect(bar.getByTestId('filter-row')).toBeHidden()
+    await bar.getByRole('button', { name: 'Filter', exact: true }).click()
+    const sheet = page.getByRole('dialog', { name: 'Filter publications' })
+    await expect(sheet).toBeVisible()
+    await sheet.getByLabel('Year').selectOption({ index: 1 })
+    await sheet.getByRole('button', { name: /^Show \d+ results?$/ }).click()
+    await expect(sheet).toBeHidden()
+    await expect(bar.getByRole('button', { name: 'Filter (1)' })).toBeVisible()
+  })
+
+  test('widening past md closes the filter sheet and unlocks scroll', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    const bar = page.getByTestId('gallery-filter-bar')
+    await bar.getByRole('button', { name: 'Filter', exact: true }).click()
+    await expect(page.getByRole('dialog', { name: 'Filter publications' })).toBeVisible()
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe('hidden')
+    await page.setViewportSize({ width: 1024, height: 812 })
+    await expect.poll(() => page.evaluate(() => matchMedia('(min-width: 48rem)').matches)).toBe(true)
+    await expect(page.getByRole('dialog', { name: 'Filter publications' })).toBeHidden()
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).overflow)).not.toBe('hidden')
+  })
+
+  test('the open filter sheet has no axe violations', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.getByTestId('gallery-filter-bar').getByRole('button', { name: 'Filter', exact: true }).click()
+    const sheet = page.getByTestId('filter-sheet')
+    await expect(sheet).toBeVisible()
+    const results = await new AxeBuilder({ page }).include('[data-testid="filter-sheet"]').analyze()
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
+  })
+
+  test('changing a select inside the open sheet updates its own in-sheet status text', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.getByTestId('gallery-filter-bar').getByRole('button', { name: 'Filter', exact: true }).click()
+    const sheet = page.getByTestId('filter-sheet')
+    await expect(sheet).toBeVisible()
+    const status = sheet.getByRole('status')
+    const before = await status.textContent()
+    await sheet.getByLabel('Year').selectOption({ index: 1 })
+    await expect(status).not.toHaveText(before!)
+  })
+
+  test('the sheet backdrop dims the page in dark mode instead of lightening it', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.emulateMedia({ colorScheme: 'dark' })
+    await page.reload()
+    await page.getByTestId('gallery-filter-bar').getByRole('button', { name: 'Filter', exact: true }).click()
+    await expect(page.getByRole('dialog', { name: 'Filter publications' })).toBeVisible()
+    const backdrop = page.getByTestId('filter-sheet-backdrop')
+    await expect(backdrop).toBeAttached()
+
+    // Composited via a 1x1 canvas, not a regex over the computed-style
+    // strings: `background-color` can come back as `oklab(...)`, which a
+    // channel regex mis-parses as 0-255 rgb (and drops the sign on any
+    // negative component), and reading the colour alone ignores the
+    // element's own `opacity` -- the canvas lets the browser resolve both
+    // for us, the same way it would actually paint the backdrop.
+    const blendedLuminance = await page.evaluate(() => {
+      const backdropEl = document.querySelector('[data-testid="filter-sheet-backdrop"]')
+      if (!backdropEl) throw new Error('sheet backdrop not found')
+      const surfaceColor = getComputedStyle(document.body).backgroundColor
+      const backdropStyle = getComputedStyle(backdropEl)
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const ctx = canvas.getContext('2d')!
+      ctx.fillStyle = surfaceColor
+      ctx.fillRect(0, 0, 1, 1)
+      ctx.globalAlpha = parseFloat(backdropStyle.opacity)
+      ctx.fillStyle = backdropStyle.backgroundColor
+      ctx.fillRect(0, 0, 1, 1)
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    })
+    const surfaceLuminance = await page.evaluate(() => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const ctx = canvas.getContext('2d')!
+      ctx.fillStyle = getComputedStyle(document.body).backgroundColor
+      ctx.fillRect(0, 0, 1, 1)
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    })
+    expect(blendedLuminance).toBeLessThan(surfaceLuminance)
   })
 })
 
@@ -642,22 +732,6 @@ test.describe('redesign component gallery -- dark colour scheme', () => {
 
   test('has no detectable accessibility violations (dark)', async ({ page }) => {
     const results = await new AxeBuilder({ page }).analyze()
-    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
-  })
-
-  // Dark-mode twin of the light-scheme test above -- the ON-chip colour
-  // regression this round fixes (`--sem-text-muted` composited under
-  // `opacity-55`) failed AA in both colour schemes against live data
-  // (`e2e/axe.spec.ts`'s `/`/`/publications` failures at both light and
-  // dark), so both are checked here too.
-  test('an ON facet chip (with a count) and an OFF facet chip (with a count) have no detectable accessibility violations', async ({
-    page,
-  }) => {
-    const band = page.getByTestId('gallery-facet-band')
-    await band.getByRole('button', { name: /^2025/ }).click()
-    await expect(band.getByRole('button', { name: /^2025/ })).toHaveAttribute('aria-pressed', 'true')
-
-    const results = await new AxeBuilder({ page }).include('[data-testid="gallery-facet-band"]').analyze()
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
   })
 })

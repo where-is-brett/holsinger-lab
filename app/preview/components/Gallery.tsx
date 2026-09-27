@@ -2,8 +2,9 @@
 
 import { Button } from 'components/redesign/Button'
 import { CopyCitation } from 'components/redesign/CopyCitation'
-import { FacetBand, type FacetChipSpec } from 'components/redesign/FacetBand'
-import { applyFacets, countBy, toggleFacet } from 'components/redesign/facets'
+import { applyFacets } from 'components/redesign/facets'
+import { FilterBar } from 'components/redesign/FilterBar'
+import { filterOptions, type Filters, NO_FILTERS } from 'components/redesign/filterModel'
 import {
   CMS_VERBATIM_PUB_FEBS_J,
   CMS_VERBATIM_PUB_PLOS_ONE,
@@ -66,6 +67,7 @@ import { Tag } from 'components/redesign/Tag'
 import { META, MICRO_LABEL } from 'components/redesign/tokens'
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
+import { TOPIC_TITLES } from 'schemas/lib/topics'
 
 // This route is the only place any of the Phase 1 primitives actually
 // render: the repo's Vitest config is node-only (see vitest config's
@@ -115,39 +117,23 @@ export default function Gallery() {
   // -- Publication row: onOpen wiring -------------------------------------
   const [openedPub, setOpenedPub] = useState<Publication | null>(null)
 
-  // -- Facet band: live counts computed through countBy/toggleFacet/applyFacets
-  const [year, setYear] = useState<string | null>(null)
-  const [type, setType] = useState<string | null>(null)
-  const [topic, setTopic] = useState<string | null>(null)
-  const [density, setDensity] = useState<'Comfortable' | 'Compact'>('Comfortable')
+  // -- Filter bar: FilterBar driven by local Filters state ------------------
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS)
+  const filterOptionsValue = useMemo(() => filterOptions(SAMPLE_PUBLICATIONS, TOPIC_TITLES), [])
+  const filterRows = useMemo(() => applyFacets(SAMPLE_PUBLICATIONS, filters), [filters])
 
-  const yearCounts = useMemo(() => countBy(SAMPLE_PUBLICATIONS, (p) => p.year), [])
-  const typeCounts = useMemo(() => countBy(SAMPLE_PUBLICATIONS, (p) => p.type), [])
-  const topicCounts = useMemo(() => countBy(SAMPLE_PUBLICATIONS, (p) => p.topics), [])
-
-  const filtered = useMemo(
-    () => applyFacets(SAMPLE_PUBLICATIONS, { year, type, topic }),
-    [year, type, topic],
+  // A sparse dataset with no `type` values (backfill not run) -- the Type
+  // select must not render, never render as "All"-only.
+  const SPARSE_PUBLICATIONS = useMemo(
+    () => SAMPLE_PUBLICATIONS.map((p) => ({ ...p, type: '' })),
+    [],
   )
-
-  const yearChips: FacetChipSpec[] = Object.entries(yearCounts).map(([label, count]) => ({
-    label,
-    count,
-    on: year === label,
-    onClick: () => setYear((cur) => toggleFacet(cur, label)),
-  }))
-  const typeChips: FacetChipSpec[] = Object.entries(typeCounts).map(([label, count]) => ({
-    label,
-    count,
-    on: type === label,
-    onClick: () => setType((cur) => toggleFacet(cur, label)),
-  }))
-  const topicChips: FacetChipSpec[] = Object.entries(topicCounts).map(([label, count]) => ({
-    label,
-    count,
-    on: topic === label,
-    onClick: () => setTopic((cur) => toggleFacet(cur, label)),
-  }))
+  const [sparseFilters, setSparseFilters] = useState<Filters>(NO_FILTERS)
+  const sparseFilterOptions = useMemo(() => filterOptions(SPARSE_PUBLICATIONS, TOPIC_TITLES), [SPARSE_PUBLICATIONS])
+  const sparseFilterRows = useMemo(
+    () => applyFacets(SPARSE_PUBLICATIONS, sparseFilters),
+    [SPARSE_PUBLICATIONS, sparseFilters],
+  )
 
   // -- Tag / Button: onClick wiring, evidenced with a visible counter ------
   const [tagClicks, setTagClicks] = useState(0)
@@ -199,7 +185,6 @@ export default function Gallery() {
         <Heading>Copy citation</Heading>
         <div className="flex flex-wrap items-center gap-6">
           <CopyCitation cite={SAMPLE_PUBLICATIONS[0].cite} />
-          <CopyCitation cite={SAMPLE_PUBLICATIONS[1].cite} compact />
         </div>
       </section>
 
@@ -221,17 +206,10 @@ export default function Gallery() {
       <section data-testid="gallery-publication-row" className="col-start-2 px-6">
         <Heading>Publication row</Heading>
 
-        <SubHeading>Comfortable density</SubHeading>
+        <SubHeading>Default</SubHeading>
         <div className="mb-8" data-testid="publication-row-comfortable">
           {SAMPLE_PUBLICATIONS.map((p) => (
-            <PublicationRow key={p.title} pub={p} density="comfortable" onOpen={setOpenedPub} />
-          ))}
-        </div>
-
-        <SubHeading>Compact density</SubHeading>
-        <div className="mb-8">
-          {SAMPLE_PUBLICATIONS.map((p) => (
-            <PublicationRow key={p.title} pub={p} density="compact" onOpen={setOpenedPub} />
+            <PublicationRow key={p.title} pub={p} onOpen={setOpenedPub} />
           ))}
         </div>
 
@@ -298,40 +276,30 @@ export default function Gallery() {
         <p className="text-[11px] text-text-muted">VIEW</p>
       </section>
 
-      <section data-testid="gallery-facet-band" className="col-start-2 px-6">
-        <Heading>Facet band</Heading>
-        <FacetBand
-          groups={[
-            { label: 'Year', chips: yearChips },
-            { label: 'Type', chips: typeChips },
-            { label: 'Topic', chips: topicChips },
-          ]}
-          density={{
-            options: ['Comfortable', 'Compact'],
-            value: density,
-            onChange: (d) => setDensity(d as 'Comfortable' | 'Compact'),
-          }}
-          note={`${filtered.length} of ${SAMPLE_PUBLICATIONS.length} publications`}
+      <section data-testid="gallery-filter-bar" className="col-start-2 px-6">
+        <Heading>Filter bar</Heading>
+        <FilterBar
+          options={filterOptionsValue}
+          value={filters}
+          onChange={setFilters}
+          resultCount={filterRows.length}
         />
-        <div className="mt-4">
-          <span className={META}>
-            Showing <span data-testid="facet-result-count">{filtered.length}</span> result
-            {filtered.length === 1 ? '' : 's'}
-          </span>
-          {/* Density control from FacetBand's onChange drives this row's live
-              PublicationRow density -- proof the wiring round-trips, not just
-              that the two static density sections above render. */}
-          <div className="mt-4">
-            {filtered.map((p) => (
-              <PublicationRow
-                key={p.title}
-                pub={p}
-                density={density === 'Compact' ? 'compact' : 'comfortable'}
-                onOpen={setOpenedPub}
-              />
-            ))}
-          </div>
-        </div>
+        <p className={`mt-4 ${META}`}>
+          <span data-testid="filter-result-count">{filterRows.length}</span> of{' '}
+          {SAMPLE_PUBLICATIONS.length} publications
+        </p>
+      </section>
+
+      {/* No `type` values on any paper (backfill not run) -- the Type select
+          must be absent, not an "All"-only select. */}
+      <section data-testid="gallery-filter-bar-sparse" className="col-start-2 px-6">
+        <Heading>Filter bar -- sparse (no type values)</Heading>
+        <FilterBar
+          options={sparseFilterOptions}
+          value={sparseFilters}
+          onChange={setSparseFilters}
+          resultCount={sparseFilterRows.length}
+        />
       </section>
 
       <section data-testid="gallery-person-card" className="col-start-2 px-6">
@@ -472,9 +440,9 @@ export default function Gallery() {
             `/publications/[slug]` route, proving (a) `ResourceBlock`'s
             Resource section with a fixture that has one -- the live
             dataset has zero `resource` documents today, so without this
-            the block would ship unrendered on real content -- and (b)
-            `Cite and access` falls back to a full-width citation column
-            when there is no canonical link (`PUBLICATION_PAGE_FIXTURE` has
+            the block would ship unrendered on real content -- and (b) the
+            Paper block renders no "Read paper" button and no DOI line when
+            there is no canonical link (`PUBLICATION_PAGE_FIXTURE` has
             neither a DOI nor a URL). `PublicationPage` renders its own
             `<h1>`; axe's default ruleset only requires at least one `<h1>`
             per page (`page-has-heading-one`) and only flags a heading level
@@ -483,6 +451,20 @@ export default function Gallery() {
             and no extra scoping/exclusion is needed. */}
         <div className="border border-rule">
           <PublicationPage pub={PUBLICATION_PAGE_FIXTURE} />
+        </div>
+      </section>
+
+      <section data-testid="gallery-paper-no-link" className="col-start-2 px-6">
+        <Heading>Publication page — no canonical link</Heading>
+        {/* NO_LINK_PUB has neither a DOI nor a URL: proves the Paper block
+            renders no "Read paper" button and no DOI line, while the
+            citation box still renders. A second `PublicationPage` here
+            means a second `<h1>` on this route -- fine per
+            `PUBLICATION_PAGE_FIXTURE`'s own comment above: axe's default
+            ruleset only requires at least one `<h1>` per page and never
+            flags a later heading returning to `h1`. */}
+        <div className="border border-rule">
+          <PublicationPage pub={NO_LINK_PUB} />
         </div>
       </section>
 

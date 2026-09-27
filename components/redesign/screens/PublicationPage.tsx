@@ -1,18 +1,12 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
+import { Button } from '../Button'
 import { CopyCitation } from '../CopyCitation'
 import type { Publication } from '../publicationModel'
 import { ResourceBlock } from '../ResourceBlock'
 import { Section } from '../Section'
 import { Tag } from '../Tag'
-import { MICRO_LABEL } from '../tokens'
-
-// The identifier -- DOI or URL -- must print verbatim: never uppercased,
-// never re-typed. Same guard as PublicationRow.tsx's IDENTIFIER constant
-// (components.css's `.hl-identifier { text-transform: none !important; }`),
-// reproduced here via Tailwind 4's trailing-bang form.
-const IDENTIFIER = 'text-link normal-case! break-all'
 
 // The ui_kit's "The DOI is the paper's permanent address. Where a paper has
 // none, the recorded publisher URL stands in." explanation is
@@ -72,6 +66,22 @@ function PaperBlock({ pub }: { pub: Publication }) {
           ))}
         </div>
       )}
+      {pub.linkHref !== '' && (
+        <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <Button variant="primary" href={pub.linkHref} external>
+            Read paper <span aria-hidden="true">↗</span>
+            <span className="sr-only"> (opens in a new tab)</span>
+          </Button>
+          {pub.linkKind === 'DOI' && (
+            <p data-testid="paper-doi" className="mb-0! font-mono text-[13px] leading-[1.5] text-text-muted">
+              DOI{' '}
+              <span data-identifier data-cms-verbatim className="normal-case! break-all text-text">
+                {pub.linkLabel}
+              </span>
+            </p>
+          )}
+        </div>
+      )}
     </>
   )
 }
@@ -93,6 +103,7 @@ function AbstractBlock({ pub }: { pub: Publication }) {
       {pub.abstract.map((paragraph, index) => (
         <p
           key={index}
+          data-testid="paper-abstract"
           className={`max-w-[840px] text-body text-pretty break-words ${index === 0 ? '' : 'mt-4'}`}
         >
           {paragraph}
@@ -102,57 +113,26 @@ function AbstractBlock({ pub }: { pub: Publication }) {
   )
 }
 
-function CiteAndAccessBlock({ pub }: { pub: Publication }) {
-  // Fix round 1: the two-track grid used to be unconditional, so with no
-  // canonical link (linkHref === '') the citation column -- the only child
-  // -- sat in the grid's first 1fr track instead of spanning the full
-  // width. The grid (and the citation column's stacked-spacing reset) now
-  // only apply when there's a link to show beside it; with none, this is a
-  // plain block and the citation column takes the full content width.
-  const hasLink = pub.linkHref !== ''
+function CitationBlock({ pub }: { pub: Publication }) {
   return (
-    <div
-      data-testid="pub-cite-access"
-      className={hasLink ? 'lg:grid lg:grid-cols-[1fr_1.2fr] lg:items-start lg:gap-x-(--spacing-gutter-lg)' : ''}
-    >
-      {hasLink && (
-        <div>
-          {/* Sentence-case Archivo, not uppercase mono -- this is a genuine
-              label, not a data column head, so the micro-label budget rule
-              applies. */}
-          <div className={MICRO_LABEL}>Canonical link — {pub.linkKind}</div>
-          <a
-            href={pub.linkHref}
-            data-identifier
-            data-cms-verbatim
-            className={`mt-[14px] inline-block font-mono text-[15px] leading-[1.5] font-medium ${IDENTIFIER}`}
-          >
-            {pub.linkHref}
-          </a>
-        </div>
-      )}
-      <div className={hasLink ? 'mt-8 lg:mt-0' : ''}>
-        <div className={MICRO_LABEL}>Formatted citation</div>
-        <div className="mt-[14px] border border-rule px-[22px] py-5" data-testid="pub-citation-box">
-          {/* Fix round 1: `pub.cite` (lib/citation.ts's `formatApaCitation`)
-              ends with a bare DOI/publisher URL -- a single unbreakable
-              ~40-50 character token with no spaces. At this box's narrow
-              mobile width that URL alone is wider than the column, so
-              (same mechanism as the `<h1>` above) `break-words` is needed
-              to let it wrap rather than force a page-wide horizontal
-              scroll. */}
-          <div
-            className="font-mono text-[12.5px] leading-[1.75] break-words normal-case!"
-            data-identifier
-            data-cms-verbatim
-            data-testid="pub-cite-text"
-          >
-            {pub.cite}
-          </div>
-          <div className="mt-4">
-            <CopyCitation cite={pub.cite} copiedLabel="✓ Copied — citation on clipboard" />
-          </div>
-        </div>
+    <div className="border border-rule px-[22px] py-5" data-testid="pub-citation-box">
+      {/* Fix round 1: `pub.cite` (lib/citation.ts's `formatApaCitation`)
+          ends with a bare DOI/publisher URL -- a single unbreakable
+          ~40-50 character token with no spaces. At this box's narrow
+          mobile width that URL alone is wider than the column, so
+          (same mechanism as the `<h1>` above) `break-words` is needed
+          to let it wrap rather than force a page-wide horizontal
+          scroll. */}
+      <div
+        className="font-mono text-[12.5px] leading-[1.75] break-words normal-case!"
+        data-identifier
+        data-cms-verbatim
+        data-testid="pub-cite-text"
+      >
+        {pub.cite}
+      </div>
+      <div className="mt-4">
+        <CopyCitation cite={pub.cite} copiedLabel="✓ Copied — citation on clipboard" />
       </div>
     </div>
   )
@@ -181,8 +161,8 @@ function ResourceSectionBlock({ pub }: { pub: Publication }) {
 export function PublicationPage({ pub }: { pub: Publication }) {
   // `Paper`'s `Section` label stays a `<p>` -- `PaperBlock` already renders
   // the page's real `<h1 data-testid="paper-title">`, so its label isn't
-  // the section's only heading. `Abstract` and `Cite and access` have no
-  // heading of their own (plain paragraphs / mono labels), so their labels
+  // the section's only heading. `Abstract` and `Citation` have no heading
+  // of their own (a plain paragraph / the citation box), so their labels
   // are `<h2>`s. `Resource` stays a `<p>`: `ResourceBlock`'s own title is a
   // real `<h2>`, so a second `<h2>` label here would be a redundant,
   // sibling heading.
@@ -192,7 +172,7 @@ export function PublicationPage({ pub }: { pub: Publication }) {
   if (pub.abstract.length > 0) {
     blocks.push({ label: 'Abstract', labelHeading: true, content: <AbstractBlock pub={pub} /> })
   }
-  blocks.push({ label: 'Cite and access', labelHeading: true, content: <CiteAndAccessBlock pub={pub} /> })
+  blocks.push({ label: 'Citation', labelHeading: true, content: <CitationBlock pub={pub} /> })
   if (pub.resources.length > 0) {
     blocks.push({ label: 'Resource', content: <ResourceSectionBlock pub={pub} /> })
   }
