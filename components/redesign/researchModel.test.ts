@@ -34,6 +34,15 @@ function basePayload(overrides: Partial<ResearchProjectPayload> = {}): ResearchP
   }
 }
 
+// A portable-text paragraph with real, visible text -- shared by every test
+// below that needs a body `hasBodyText` actually counts as present.
+const para = (key: string, text: string) => ({
+  _type: 'block' as const,
+  _key: key,
+  style: 'normal' as const,
+  children: [{ _type: 'span' as const, _key: `${key}-s`, text, marks: [] }],
+})
+
 describe('researchKicker', () => {
   it('joins "Since {year}" and category with " · " when both are set', () => {
     expect(
@@ -125,7 +134,7 @@ describe('toResearchView', () => {
     const view = toResearchView(
       basePayload({
         title: 'Glial activity as a marker of disease',
-        overview: [{ _type: 'block', _key: 'b1', children: [] }],
+        overview: [para('b1', 'Astrocytes and microglia both respond to injury.')],
         start: '2018-01-01T00:00:00.000Z',
         category: null,
         tags: ['Astrocytes', 'Microglia'],
@@ -136,7 +145,7 @@ describe('toResearchView', () => {
     expect(view.title).toBe('Glial activity as a marker of disease')
     expect(view.kicker).toBe('Since 2018')
     expect(view.tagLine).toBe('Astrocytes · Microglia')
-    expect(view.body).toEqual([{ _type: 'block', _key: 'b1', children: [] }])
+    expect(view.body).toEqual([para('b1', 'Astrocytes and microglia both respond to injury.')])
     expect(view.cover).toBeNull()
   })
 
@@ -227,10 +236,10 @@ describe('toResearchView', () => {
 // have both fields, with identical text. Without this fallback the imported
 // projects render title-only.
 describe('toResearchView body fallback (overview vs description)', () => {
-  const overviewBlock = { _type: 'block' as const, _key: 'ov1', children: [] }
-  const descriptionBlock = { _type: 'block' as const, _key: 'de1', children: [] }
+  const overviewBlock = para('ov1', 'Overview text.')
+  const descriptionBlock = para('de1', 'Description text.')
 
-  it('uses overview when it has at least one block, even if description is also set', () => {
+  it('uses overview when it has visible text, even if description is also set', () => {
     const view = toResearchView(
       basePayload({
         overview: [overviewBlock],
@@ -260,6 +269,16 @@ describe('toResearchView body fallback (overview vs description)', () => {
     expect(view.body).toEqual([descriptionBlock])
   })
 
+  it('falls back to description when overview has a block but no visible text (whitespace-only)', () => {
+    const view = toResearchView(
+      basePayload({
+        overview: [para('ov-blank', '   ')],
+        description: [descriptionBlock],
+      })
+    )
+    expect(view.body).toEqual([descriptionBlock])
+  })
+
   it('is null when both overview and description are missing or empty', () => {
     expect(toResearchView(basePayload({ overview: [], description: [] })).body).toBeNull()
     expect(toResearchView(basePayload({ overview: null, description: null })).body).toBeNull()
@@ -275,13 +294,6 @@ describe('toResearchView body fallback (overview vs description)', () => {
 })
 
 describe('hasBodyText / countProjectsWithBody', () => {
-  const para = (key: string, text: string) => ({
-    _type: 'block' as const,
-    _key: key,
-    style: 'normal' as const,
-    children: [{ _type: 'span' as const, _key: `${key}-s`, text, marks: [] }],
-  })
-
   it('is true for a body with visible text', () => {
     expect(hasBodyText([para('a', 'Astrocytes matter.')])).toBe(true)
   })

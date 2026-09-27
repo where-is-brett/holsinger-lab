@@ -416,7 +416,7 @@ describe('token-role misuse guard', () => {
 
   // The legitimate consumers of --sem-scrim (see rationale above) -- each
   // renders it as a bare backdrop fill with no text composited on it.
-  const SCRIM_ALLOWED_FILES = ['components/pages/contact/ErrorDialog.tsx', 'components/redesign/FilterBar.tsx']
+  const SCRIM_ALLOWED_FILES = ['components/redesign/ContactForm.tsx', 'components/redesign/FilterBar.tsx']
 
   function collectTsxFiles(dirUrl: URL): string[] {
     const files: string[] = []

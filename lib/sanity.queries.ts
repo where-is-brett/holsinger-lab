@@ -75,7 +75,7 @@ export const settingsQuery = groq`
     showContactForm,
     showLabHeadOnHome,
     showLabHeadOnPeople,
-    contact{ email },
+    contact{ email, phone, address },
     menuItems[]->{
       _type,
       "slug": slug.current,

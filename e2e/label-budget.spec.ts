@@ -147,7 +147,7 @@ const BUDGET = 6
 // to this check at 375px).
 const WIDTHS = [1440, 375]
 
-const ROUTES = ['/', '/publications', '/people', '/research', '/resources']
+const ROUTES = ['/', '/publications', '/people', '/research', '/resources', '/contact']
 
 test.describe('Uppercase micro-label budget', () => {
   for (const width of WIDTHS) {
@@ -172,7 +172,13 @@ test.describe('Uppercase micro-label budget', () => {
     // live dataset can't guarantee (a PI panel, the lab-head spotlight,
     // populated research projects) -- checked here so the budget holds
     // regardless of what's actually in the dataset (constraints.md).
-    const GALLERY_INSTANCES = ['gallery-home', 'gallery-people', 'gallery-person-page', 'gallery-research']
+    const GALLERY_INSTANCES = [
+      'gallery-home',
+      'gallery-people',
+      'gallery-person-page',
+      'gallery-research',
+      'gallery-contact',
+    ]
 
     for (const testId of GALLERY_INSTANCES) {
       test(`the gallery's ${testId} instance carries at most ${BUDGET} uppercase micro-labels at ${width}px`, async ({

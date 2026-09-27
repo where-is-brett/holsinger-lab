@@ -35,6 +35,8 @@ const GALLERY_SECTIONS = [
   'research-empty-bodies',
   'resources',
   'home',
+  'contact',
+  'contact-empty',
 ]
 
 test.describe('redesign component gallery', () => {
@@ -66,8 +68,16 @@ test.describe('redesign component gallery', () => {
       // identifier text, so the `href !== null` branch below is only ever
       // an `http(s)`, `mailto:` or `tel:` link.
       if (href !== null && !href.startsWith('/')) {
-        // the href must carry the full identifier even when the label is truncated.
-        expect(href).toContain(text.replace(/^https?:\/\//, '').replace(/^www\./, ''))
+        if (href.startsWith('tel:')) {
+          // A `tel:` href may keep the number's formatting (PersonPage) or
+          // reduce it to bare digits and a leading plus (Contact's
+          // `telHref`) -- both are valid dialable hrefs for the same
+          // visible number, so compare digits (and a leading plus) only.
+          expect(href.replace(/[^\d+]/g, '')).toContain(text.replace(/[^\d+]/g, ''))
+        } else {
+          // the href must carry the full identifier even when the label is truncated.
+          expect(href).toContain(text.replace(/^https?:\/\//, '').replace(/^www\./, ''))
+        }
       }
       expect(await el.evaluate((n) => getComputedStyle(n).textTransform)).not.toBe('uppercase')
     }
@@ -500,6 +510,28 @@ test.describe('redesign component gallery', () => {
 
   test('Research gallery: project sections carry no tag label', async ({ page }) => {
     await expect(page.getByTestId('gallery-research').getByTestId('section-label')).toHaveText(['Enquiries'])
+  })
+
+  test('Contact gallery: every detail row, the address on two lines, and the University link', async ({ page }) => {
+    const section = page.getByTestId('gallery-contact')
+    await expect(section.getByTestId('contact-email').getByRole('link')).toHaveAttribute(
+      'href',
+      'mailto:lab@example.org'
+    )
+    await expect(section.getByTestId('contact-phone').getByRole('link')).toHaveAttribute('href', 'tel:+61293510000')
+    const address = section.getByTestId('contact-address').locator('dd')
+    expect(await address.evaluate((el) => getComputedStyle(el).whiteSpace)).toBe('pre-line')
+    expect((await address.innerText()).split('\n')).toHaveLength(2)
+    await expect(section.getByRole('link', { name: 'The University of Sydney' })).toHaveAttribute(
+      'href',
+      'https://www.sydney.edu.au/'
+    )
+  })
+
+  test('Contact gallery (no details on file): only the University row renders', async ({ page }) => {
+    const details = page.getByTestId('gallery-contact-empty').getByTestId('contact-details')
+    await expect(details.locator('dt')).toHaveText(['University'])
+    await expect(details.locator('dd:empty')).toHaveCount(0)
   })
 
   test('People gallery: no page overflow at 320px', async ({ page }) => {

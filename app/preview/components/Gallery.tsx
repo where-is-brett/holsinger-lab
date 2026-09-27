@@ -8,6 +8,8 @@ import { filterOptions, type Filters, NO_FILTERS } from 'components/redesign/fil
 import {
   CMS_VERBATIM_PUB_FEBS_J,
   CMS_VERBATIM_PUB_PLOS_ONE,
+  CONTACT_DETAILS_EMPTY_FIXTURE,
+  CONTACT_DETAILS_FIXTURE,
   HOME_MAESTRO_FIXTURE,
   HOME_PAGE_FIXTURE,
   HOME_PAGE_NO_OVERVIEW_FIXTURE,
@@ -59,6 +61,7 @@ import { PersonCard } from 'components/redesign/PersonCard'
 import type { Publication } from 'components/redesign/publicationModel'
 import { PublicationRow } from 'components/redesign/PublicationRow'
 import { ResourceBlock } from 'components/redesign/ResourceBlock'
+import { Contact } from 'components/redesign/screens/Contact'
 import { Home } from 'components/redesign/screens/Home'
 import { People } from 'components/redesign/screens/People'
 import { PersonPage } from 'components/redesign/screens/PersonPage'
@@ -587,6 +590,20 @@ export default function Gallery() {
             renders. */}
         <div className="border border-rule">
           <Resources resources={RESOURCES_FIXTURE} />
+        </div>
+      </section>
+
+      <section data-testid="gallery-contact" className="col-start-2 px-6">
+        <Heading>Contact screen</Heading>
+        <div className="border border-rule">
+          <Contact details={CONTACT_DETAILS_FIXTURE} headingLevel="h2" formIdPrefix="gallery-contact-" />
+        </div>
+      </section>
+
+      <section data-testid="gallery-contact-empty" className="col-start-2 px-6">
+        <Heading>Contact screen -- no details on file</Heading>
+        <div className="border border-rule">
+          <Contact details={CONTACT_DETAILS_EMPTY_FIXTURE} headingLevel="h2" formIdPrefix="gallery-contact-empty-" />
         </div>
       </section>
 

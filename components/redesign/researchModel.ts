@@ -128,19 +128,20 @@ function coverView(p: ResearchProjectPayload): ResearchProjectCover | null {
 }
 
 /**
- * `overview` when it has at least one block, else `description`, else
- * `null`. Both fields come back from a `groq` fetch as `undefined`,
- * `null`, or `[]` when unset -- all three count as "no overview" here, not
- * just `null`/`undefined` (a Studio editor clearing a portable-text field
- * to empty leaves `[]`, not `null`). Exists because the two Wix-imported
- * projects (researchOrder 3/4) carry their copy in `description`, not
- * `overview` -- the field the original two projects (researchOrder 1/2)
- * both have, with identical text. Without this fallback the imported
- * projects render title-only.
+ * `overview` when it has visible text (`hasBodyText`), else `description`,
+ * else `null`. Both fields come back from a `groq` fetch as `undefined`,
+ * `null`, `[]`, or a lone empty/whitespace-only paragraph when unset -- all
+ * of these count as "no overview" here, not just `null`/`undefined`/`[]`
+ * (a Studio editor clearing a portable-text field can leave a blank
+ * paragraph behind rather than removing the block). Exists because the two
+ * Wix-imported projects (researchOrder 3/4) carry their copy in
+ * `description`, not `overview` -- the field the original two projects
+ * (researchOrder 1/2) both have, with identical text. Without this
+ * fallback the imported projects render title-only.
  */
 function resolveBody(p: ResearchProjectPayload): ResearchProjectView['body'] {
-  if (p.overview && p.overview.length > 0) return p.overview
-  if (p.description && p.description.length > 0) return p.description
+  if (hasBodyText(p.overview)) return p.overview
+  if (hasBodyText(p.description)) return p.description
   return null
 }
 

@@ -13,6 +13,7 @@ import type {
 } from 'types'
 import { fallbackSettings } from 'types'
 
+import type { ContactDetails } from './contactModel'
 import type { Publication } from './publicationModel'
 import { deriveLink, splitAuthors } from './publicationModel'
 import { researchKicker, type ResearchProjectView } from './researchModel'
@@ -722,7 +723,7 @@ function researchProjectView(overrides: {
   id: string
   slug?: string | null
   title: string
-  body: ReturnType<typeof overviewParagraph>[]
+  body: ReturnType<typeof overviewParagraph>[] | null
   start: string | null
   tags: string[]
   category: string | null
@@ -1241,7 +1242,7 @@ export const RESEARCH_EMPTY_BODIES_FIXTURE: ResearchProjectView[] = [
   researchProjectView({
     id: 'fixture-research-no-body',
     title: 'A project with no overview yet',
-    body: [],
+    body: null,
     start: null,
     tags: [],
     category: null,
@@ -1257,3 +1258,13 @@ export const RESEARCH_EMPTY_BODIES_FIXTURE: ResearchProjectView[] = [
     cover: null,
   }),
 ]
+
+// Every row set, with a two-line address.
+export const CONTACT_DETAILS_FIXTURE: ContactDetails = {
+  email: 'lab@example.org',
+  phone: '+61 2 9351 0000',
+  address: 'Laboratory of Molecular Neuroscience and Dementia\nThe University of Sydney NSW 2006',
+}
+
+// Production today: no settings.contact at all.
+export const CONTACT_DETAILS_EMPTY_FIXTURE: ContactDetails = { email: null, phone: null, address: null }

@@ -1,4 +1,6 @@
-import Contact from 'components/pages/contact/Contact'
+import { contactDetails } from 'components/redesign/contactModel'
+import { Contact } from 'components/redesign/screens/Contact'
+import Layout from 'components/shared/Layout'
 import { resolveBranding } from 'lib/branding'
 import { buildMetadata } from 'lib/metadata'
 import { sanityFetch } from 'lib/sanity.live'
@@ -53,5 +55,9 @@ export default async function ContactPage() {
     notFound()
   }
 
-  return <Contact settings={settings} />
+  return (
+    <Layout settings={settings} childrenStyles="px-0">
+      <Contact details={contactDetails(settings.contact)} />
+    </Layout>
+  )
 }

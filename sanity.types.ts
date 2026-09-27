@@ -1025,7 +1025,7 @@ export type PagePathsResult = Array<string | null>
 
 // Source: lib/sanity.queries.ts
 // Variable: settingsQuery
-// Query: *[_type == "settings"][0]{    siteName,    shortName,    footer,    showPublications,    showPeople,    showContactForm,    showLabHeadOnHome,    showLabHeadOnPeople,    contact{ email },    menuItems[]->{      _type,      "slug": slug.current,      title    },    ogImage,    brandColor{hex},    theme,    logo{      ...,      asset->{        ...,        metadata { dimensions { aspectRatio } }      }    },    logoDark{      ...,      asset->{        ...,        metadata { dimensions { aspectRatio } }      }    },    icon,    labHead->{      _id,      image,      name,      role,      roleDetail,      email,      phone,      bio,      "slug": slug.current,      hasPage,      fullBio,    },  }
+// Query: *[_type == "settings"][0]{    siteName,    shortName,    footer,    showPublications,    showPeople,    showContactForm,    showLabHeadOnHome,    showLabHeadOnPeople,    contact{ email, phone, address },    menuItems[]->{      _type,      "slug": slug.current,      title    },    ogImage,    brandColor{hex},    theme,    logo{      ...,      asset->{        ...,        metadata { dimensions { aspectRatio } }      }    },    logoDark{      ...,      asset->{        ...,        metadata { dimensions { aspectRatio } }      }    },    icon,    labHead->{      _id,      image,      name,      role,      roleDetail,      email,      phone,      bio,      "slug": slug.current,      hasPage,      fullBio,    },  }
 export type SettingsQueryResult = {
   siteName: string | null
   shortName: string | null
@@ -1054,6 +1054,8 @@ export type SettingsQueryResult = {
   showLabHeadOnPeople: boolean | null
   contact: {
     email: string | null
+    phone: string | null
+    address: string | null
   } | null
   menuItems: Array<
     | {
@@ -1699,7 +1701,7 @@ declare module '@sanity/client' {
     '\n  *[_type == "project" && slug.current == $slug][0] {\n    _id,\n    category,\n    coverImage,\n    description,\n    duration,\n    overview,\n    site,\n    "slug": slug.current,\n    status,\n    tags,\n    title,\n  }\n': ProjectBySlugQueryResult
     '\n  *[_type == "project" && slug.current != null].slug.current\n': ProjectPathsResult
     '\n  *[_type == "page" && slug.current != null].slug.current\n': PagePathsResult
-    '\n  *[_type == "settings"][0]{\n    siteName,\n    shortName,\n    footer,\n    showPublications,\n    showPeople,\n    showContactForm,\n    showLabHeadOnHome,\n    showLabHeadOnPeople,\n    contact{ email },\n    menuItems[]->{\n      _type,\n      "slug": slug.current,\n      title\n    },\n    ogImage,\n    brandColor{hex},\n    theme,\n    logo{\n      ...,\n      asset->{\n        ...,\n        metadata { dimensions { aspectRatio } }\n      }\n    },\n    logoDark{\n      ...,\n      asset->{\n        ...,\n        metadata { dimensions { aspectRatio } }\n      }\n    },\n    icon,\n    labHead->{\n      _id,\n      image,\n      name,\n      role,\n      roleDetail,\n      email,\n      phone,\n      bio,\n      "slug": slug.current,\n      hasPage,\n      fullBio,\n    },\n  }\n': SettingsQueryResult
+    '\n  *[_type == "settings"][0]{\n    siteName,\n    shortName,\n    footer,\n    showPublications,\n    showPeople,\n    showContactForm,\n    showLabHeadOnHome,\n    showLabHeadOnPeople,\n    contact{ email, phone, address },\n    menuItems[]->{\n      _type,\n      "slug": slug.current,\n      title\n    },\n    ogImage,\n    brandColor{hex},\n    theme,\n    logo{\n      ...,\n      asset->{\n        ...,\n        metadata { dimensions { aspectRatio } }\n      }\n    },\n    logoDark{\n      ...,\n      asset->{\n        ...,\n        metadata { dimensions { aspectRatio } }\n      }\n    },\n    icon,\n    labHead->{\n      _id,\n      image,\n      name,\n      role,\n      roleDetail,\n      email,\n      phone,\n      bio,\n      "slug": slug.current,\n      hasPage,\n      fullBio,\n    },\n  }\n': SettingsQueryResult
     '\n  *[_type == "publication"] | order(date desc) {\n    \n  _id,\n  title,\n  author,\n  journal,\n  volume,\n  issue,\n  pages,\n  abstract,\n  url,\n  doi,\n  date,\n  "slug": slug.current,\n  type,\n  topics,\n  featured,\n  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {\n    _id,\n    title,\n    kind,\n  },\n\n  }\n': PublicationsQueryResult
     '\n  *[_type == "publication" && slug.current == $slug][0]{\n    \n  _id,\n  title,\n  author,\n  journal,\n  volume,\n  issue,\n  pages,\n  abstract,\n  url,\n  doi,\n  date,\n  "slug": slug.current,\n  type,\n  topics,\n  featured,\n  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {\n    _id,\n    title,\n    kind,\n  },\n\n  }\n': PublicationBySlugQueryResult
     '\n  *[_type == "publication" && slug.current != null].slug.current\n': PublicationPathsResult
