@@ -24,8 +24,8 @@ whichever you choose. Neither link changes the live site.
 | Pages            | Home, Research, News, Publications, Team, Media, Contact | Home, Publications, Research, Resources, People, Contact    |
 | Publications     | Copy any citation, or download BibTeX or RIS             | Filters, a page for every paper, and a copy-citation button |
 | People           | One Team page                                            | One People page, plus an optional page for each person      |
-| Doesn't include  | A Resources page                                         | News or Media pages                                         |
-| Contact page     | Your address, email and phone                            | A contact form that emails you                              |
+| Home page banner | One picture                                              | Up to six rotating pictures you choose                      |
+| Contact page     | Your address, email and phone                            | Your address, email and phone, plus a form that emails you  |
 | Logo and colours | Fixed to match Wix                                       | You can change them                                         |
 
 Look through both, on your phone too, then reply to Brett with **classic** or **redesign**.
@@ -76,7 +76,7 @@ back and publish again. If it doesn't work, stop and tell Brett.
    expires after a day.
 2. **Hosting.** Brett sends you a link. Open it while signed in to Vercel and accept. The link
    lasts 24 hours. Then open the project, then **Settings**, then **Git**. It should name
-   `holsinger-lab` (the code). It almost always does; if not, click **Connect** and pick
+   `holsinger-lab` (the code). If not, click **Connect** and pick
    `holsinger-lab`.
 3. **Content.** Brett moves the Sanity project into your Sanity organisation. He may ask you
    to add him to it for a few minutes.
@@ -86,7 +86,7 @@ Done when the site shows in all three accounts and still loads.
 **Step 5. Replace the secret keys.** You, with Brett, 20 minutes.
 
 The site uses two private passwords to fetch content from Sanity. Brett's stop working when he
-leaves, so you make new ones, with Brett alongside. A mistake here only stops new edits
+leaves, so you make new ones. A mistake here only stops new edits
 appearing; the site stays up.
 
 1. In **sanity.io/manage**, open the project, then **API**, then **Tokens**. Click
@@ -158,6 +158,21 @@ link shows as a link. **Publish**.
 **Change the home-page text.** **Site copy**, then **About the laboratory**. Classic also
 uses **Home page banner** (picture and heading) and the Team and Contact page introductions.
 
+**Change the home-page pictures.** Redesign only. **Home**, then **Picture banner**.
+
+- **Layout**: **Side by side** puts the pictures beside the lab name; **Full width** runs them
+  across the page with the name on top.
+- **Rotate slides automatically**: a new picture every six seconds. Visitors can pause it.
+- **Slides**: up to six. Click **Add item** and choose **Picture** or **Project**. A picture needs
+  a **Description for screen readers** (one sentence on what it shows); **Caption** and **Link**
+  are optional. A project shows its cover image and title, and links to it. Drag to reorder.
+
+To crop a picture, click its crop button. Drag the frame to keep just the part you want, and
+move the circle over what must never be cut off on a phone. Photos and micrographs work best;
+posters and figures with white margins look poor. With no slides, the home page uses the
+**Home page banner** picture from **Site copy**, or just text. Changes show within seconds of
+**Publish**.
+
 **Add a resource.** Redesign only. **Resource**, then **+**. Fill in **Title**, **Kind**,
 **Summary**, **Source paper** and **How to obtain**. **Publish**.
 
@@ -177,22 +192,22 @@ list**; ignore it.
 - **Identity** tab: **Site name**, the lab's name in the header and browser tab.
 - **Branding** tab: **Icon** (the browser-tab picture) works in both. **Logo**, **Brand
   colour** and **Background tone** are redesign only. Any colour stays readable.
-- **Contact** tab: your address, email and phone. The redesign uses the email only.
+- **Contact** tab: your address, email and phone. Both designs show all three.
 
 ---
 
 ## 5. Saving and publishing
 
-Studio saves as you type, as a private draft you can come back to. **Nothing changes on the
-site until you click Publish.** After that, the site updates within about a minute. **Unpublish** (in the menu beside
-**Publish**) takes something off the site without deleting it.
+Studio saves as you type, as a private draft. **Nothing changes on the site until you click
+Publish.** After that, the site updates within seconds, or at most a minute. **Unpublish** (in
+the menu beside **Publish**) takes something off the site without deleting it.
 
 ---
 
 ## 6. Giving someone else access
 
 In **sanity.io/manage**, open the project, then **Members**, then **Invite**. Choose **Editor**
-for someone who edits content. That's all most people need.
+for someone who edits content.
 
 A developer also needs access to the code: on GitHub, open the repository, then **Settings**,
 then **Collaborators**.
@@ -216,14 +231,13 @@ When someone leaves the lab, remove them the same day.
 
 ## 8. Once a year, and if you need a developer
 
-**Ignore GitHub's update emails.** They suggest updates to the parts the site is built from,
-and accepting one yourself could break it. Instead, once a year, pay a developer for about half
-a day to update everything and check the automated tests still pass.
+**Ignore GitHub's update emails.** Accepting one yourself could break the site. Instead, once
+a year, pay a developer for about half a day to update everything and check the tests pass.
 
 **You need a developer only** to change the design or layout, or to fix something a rollback
 doesn't. Give them access to the code (Section 6); they'll find the notes they need there.
 The site uses Next.js and Sanity, which most web developers know. Ask for a fixed quote and a
 preview link before anything goes live. Tell them never to run `npm audit fix --force` here.
 
-**Optional, no action needed:** a web address of the lab's own (about $15 a year) would keep
-links working if the site ever moved away from `holsingerlab.vercel.app`.
+**Optional:** a web address of the lab's own (about $15 a year) would keep links working if
+the site ever moved away from `holsingerlab.vercel.app`.

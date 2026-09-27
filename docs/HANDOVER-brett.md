@@ -13,8 +13,8 @@ Names used below: Sanity project `j3f9z8os`; Vercel project `holsingerlab` in te
 - [ ] Merge this docs PR immediately before sending. The email links
       `blob/main/docs/HANDOVER.md`, and until this merges `main` still has v1.
 - [ ] Both preview URLs load and show current `wix-preview` content.
-- [ ] Redesign chosen? Wait for the in-flight revision PRs (PR 3 Publications, PR 4
-      People/Research/Contact) to land on `redesign/integration` before cutover.
+- [x] Redesign revision PRs landed on `redesign/integration`: #47/#49 fonts and Home, #51
+      mobile tests, #52 Home picture banner, #53 Publications, #54 People/Research/Contact.
 
 ## 1. Content: import the Wix content into production
 
@@ -51,10 +51,21 @@ Order: **import (step 1) → merge immediately → post-deploy smoke test.**
 - [ ] Post-deploy smoke test on holsingerlab.vercel.app: every nav route returns 200, `/studio`
       loads, and the imported content (team, news or resources, publications) shows.
 - [ ] Paste `docs/tutorial-copy.md` into the Studio `/tutorial` page (a `page` document).
+- [ ] Redesign only: seed production `home.hero` (Studio: Home → Picture banner) after the
+      import, before step 3 deletes `wix-preview`. Copy the slides from `wix-preview`. Image
+      assets are per dataset, so re-upload each picture and re-set its crop, description and
+      caption; re-pick project slides from production's projects. Your yes first (production
+      write). Until seeded, Home falls back to `siteCopy.hero.image`, then text only.
+- [ ] Research is empty on either design until the import: production projects have no
+      `researchOrder` before it. Check `/research` lists the four projects after step 1.
+- [ ] Keep the `project` documents. Phase 3 step 4 ("retire `project`", `phase-3-decisions.md`)
+      is now void: hero slides and the Research page both reference projects.
 - [ ] Trim `HANDOVER.md` to the chosen design: drop section 1 and the other design's
       "only" lines. Small follow-up PR.
 
 ## 3. Remove the preview plumbing
+
+Only after step 2 is live and, if the redesign won, `home.hero` is seeded in production.
 
 - [ ] Vercel → Settings → Environment Variables: delete both branch-scoped
       `NEXT_PUBLIC_SANITY_DATASET` entries (Preview, `redesign/wix` and `redesign/integration`).

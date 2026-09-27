@@ -63,6 +63,14 @@ Drag items in either list to reorder them.
 **Site copy**, then **About the laboratory**. Classic also uses **Home page banner** (picture
 and heading) and the Team and Contact page introductions.
 
+## Home-page pictures (redesign only)
+
+**Home**, then **Picture banner**. Choose a **Layout**, and whether to **Rotate slides
+automatically**. Under **Slides** (up to six), click **Add item** and choose **Picture** or
+**Project**. A picture needs a **Description for screen readers**; a project shows its cover
+image and title. Use the crop button to keep just the part you want. Photos and micrographs work
+best; posters and figures with white margins look poor.
+
 ## Settings
 
 - **Lab head** tab: who the lab head is.
