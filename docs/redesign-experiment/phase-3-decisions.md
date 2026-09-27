@@ -1322,3 +1322,294 @@ Findings closed:
 `next-env.d.ts` restored via `git checkout origin/redesign/integration -- next-env.d.ts` after
 every build; `playwright.alt.config.ts` deleted before committing, never tracked. CI runs the true
 full suite on all three projects after push.
+
+## Revision PR 4 — People, PI profile, Research, Contact
+
+All five tasks are done; this section is the complete record.
+
+The spec's PR 3 bullet ("bold only the PI's name token") is not implemented here — it shipped
+early, in PR 3 itself (`splitAuthors`'s token-bounded matcher). PR 4's Task 1 generalises that same
+matcher (`findAuthorToken`/`hasAuthor`) to any profile's surname, for the PI profile's own
+Publications(n) list; it does not duplicate PR 3's author-bolding work.
+
+### Rulings 1–15
+
+One line each, from the plan's "Rulings this plan takes" section:
+
+1. **Research sections carry no label** — a deviation from the spec's letter ("Section labels are
+   the project's title"). **Confirmed by the command centre** before Task 4 started: repeating the
+   title as a label prints it twice (finding 11's shape again), so the project's own `<h2>` stays
+   the section's one name and no label is passed.
+2. The author matcher is token-bounded and case-sensitive, with no lookbehind (older WebKit lacks
+   it, and the gallery runs this code client-side).
+3. A surname is the last word of a name after honorifics, parenthesised words and suffixes are
+   dropped; a lone honorific gives no surname and no surname means no publications. Two known
+   limits: a multi-word surname ("Van Der Berg") matches and bolds on its last word only, and a
+   short common surname (Ng, Wu, Kim) could over-match a co-author who isn't a lab member — bounded
+   in practice because only `hasPage` profiles are ever matched, which today is the PI alone.
+4. The profile page bolds the profile's own surname (`toPublicationFor(surname)`), not always the
+   PI's; `toPublication` keeps its one-argument form since two routes pass it straight to `.map`.
+5. The spotlight shows `bio` when set, else `fullBio`; the profile page keeps showing `fullBio`,
+   else `bio`. "The profile says more" means it has publications, or both texts are set and differ
+   after whitespace normalisation. Production has `bio` unset today, so the spotlight text is
+   unchanged there.
+6. People cards show the group title under the name; the role line is dropped when it equals the
+   group title (wix-preview repeats this on many cards); the ungrouped catch-all has no group
+   label; Members renders only when there is at least one card.
+7. Finding 11 closed for People by removing both stacked inner labels ("Head of laboratory ·
+   Principal investigator" under "Lab head", "Recent lab alumni" under "Alumni"); Members and
+   Alumni's own `Section` labels become the sections' `<h2>`s.
+8. Alumni are a name list (linked when `hasPage`), in `orderRank` order: 1 column, 3 from `md`, 4
+   from `lg`.
+9. The quiet initials tile applies to every `PortraitFrame` (People cards, spotlight, profile
+   page); `STRIPE_BG` stays for `ResourceBlock` and Home's 64px lab-head portrait, untouched here.
+10. **PI profile:** an email `Button` labelled "Send an email" (`mailto:`), with the address
+    printed beside it as plain mono data, not a second link; renders only when `email` is set. The
+    phone link is unchanged. Alongside it, a "Publications (n)" section lists every publication
+    `hasAuthor`-matched to the profile's own surname, rendered with `PublicationRow`, shown only
+    when `n > 0`.
+11. The Research meta counts only projects with non-blank plain-text body; a blank-body project
+    still renders its section; `resolveBody` itself is unchanged.
+12. Contact: one `Section`, no label (no stacked pair above "Email"); details left / form right
+    from `lg`, details first below `lg`; each detail row renders only when set; the address keeps
+    its line breaks; the University link is the constant `https://www.sydney.edu.au/`.
+13. The Contact form's behaviour is unchanged: same endpoint, payload, honeypot, success/error
+    strings, and submitting-until-dialog-closed behaviour. Only the markup is restyled.
+14. Legacy fonts stay — confirmed by Task 5's re-grep (see below).
+15. Revalidation: a `publication` webhook now also revalidates `/people` and every
+    `/people/[slug]`; a `profile` webhook now also revalidates every `/people/[slug]`.
+
+### The author matcher's known limits (Tasks 1–2)
+
+Five real, documented limits in `publicationModel.ts`'s token-bounded matcher (`findAuthorToken`)
+carried over here from Task 1's and Task 2's own reports since neither task's file map reached
+this doc:
+
+1. **Apostrophe exactness.** `findAuthorToken`'s *boundary* check (`NAME_CHAR`) already treats
+   both `'` and `’` as name characters, but the *target* string itself (`surnameOf`'s output,
+   matched via `escapeRegExp(target)`) is matched literally — a straight-apostrophe surname
+   ("O'Neil") never matches a curly-apostrophe author string ("O’Neil"), and vice versa. Neither
+   `surnameOf` nor the CMS normalizes which apostrophe form is stored.
+2. **Case sensitivity is by design** (plan ruling 2: "the matcher is token-bounded and
+   case-sensitive"), so an author string typed in a different case than the profile's `name`
+   field never matches. Intentional per the spec, not a bug, but a real limit worth recording.
+3. **The "R.M.D. J Smith" bold-run edge case.** `INITIALS` still consumes a run like "R.M.D. J" as
+   one initials group after a matched surname, so `"Holsinger R.M.D. J Smith"` bolds
+   `"Holsinger R.M.D. J"` — extending one token (a bare capital "J" with no dot) into what is
+   actually the next author's given initial. No live author string in production or the
+   wix-preview dataset triggers this (checked against Task 1's own `findAuthorToken` test list,
+   drawn from both datasets). Left as a documented known limit rather than risking a regex change
+   against a matcher that had already passed strict review.
+4. **A multi-word surname matches and bolds on its last word only** (“Van Der Berg” bolds
+   “Berg”). `surnameOf` takes the last word after honorific/parenthetical/suffix stripping,
+   and the matcher then matches only that word.
+5. **A short, common surname (Ng, Wu, Kim) could over-match a co-author who isn't a lab
+   member.** Bounded in practice because only `hasPage` profiles — and the spotlighted lab
+   head — are ever matched against author strings, which today means the PI alone.
+
+### Task 2: PI profile — Publications (n), the email button
+
+- **“Publications (n)”.** `PersonPage.tsx` fetches every publication and passes
+  `publicationsByPerson(publications, profile.name)` (Task 1's surname matcher) through to
+  render a new `data-testid="person-publications"` `<h2>` section with `PublicationRow`,
+  shown only when the count is greater than 0. `countPublicationsByPerson` and
+  `publicationsByPerson` share the same `surnameOf` + `hasAuthor` logic, so the heading's
+  count and the rendered list can't disagree.
+- **The email button.** A `Button` labelled “Send an email”, linking `mailto:` to the
+  profile's trimmed `email`, with the address printed beside it as plain
+  `data-identifier data-cms-verbatim` mono text — not a second link. Renders only when
+  `email` is set; the phone link is unchanged.
+- **Revalidation.** `app/api/revalidate/route.ts`'s `publication` case now also revalidates
+  `/people` and `/people/[slug]`, and its `profile` case now also revalidates
+  `/people/[slug]` — both screens depend on publications now.
+
+### Task 3: People — finding 11 closed, continuous grid, quiet initials tile
+
+- **Finding 11's last open instance is closed.** The "Alumni" `Section` label used to sit directly
+  above `AlumniBlock`'s own inner "Recent lab alumni" label (`People.tsx`) — two same-style labels
+  reading as one level, especially on mobile. `AlumniBlock` now renders no label of its own; the
+  `Section`'s "Alumni" label is the section's only heading (already `labelHeading` before this
+  task). The spotlight's inner "Head of laboratory · Principal investigator" label is dropped for
+  the same reason — the outer `Section` label "Lab head" already names the block, and the
+  spotlight's own `<h2>` (the lab head's name) is heading enough. Members gets a new `<h2>` in
+  place of its old per-role-group headings. Same pattern as PR 3's paper-page closure: no label
+  repeating, or sitting directly above, another label or a same-text heading.
+- **One continuous grid, not one grid per role group.** `flattenMembers` runs every role-group
+  section's profiles into one flat list, in `orderRank` order, each card carrying its own group
+  label (`PersonCard`'s new `group` prop, `data-testid="person-card-group"`) rather than a
+  `<h2>` heading row per group. Groups still render in order and cards from the same group stay
+  adjacent, but the grid no longer breaks into a new CSS grid per group — so a group with, say, 2
+  members no longer leaves a half-empty row before the next group starts.
+  `people-section`/`people-section-title` are gone; `people-members` is now the one grid.
+- **The quiet initials tile.** `PortraitFrame`'s no-image fallback dropped the diagonal `STRIPE_BG`
+  stripe and the 1px border — it's now a plain `bg-surface-raised` tile with Archivo initials in
+  `text-text-muted` (`data-testid="portrait-initials"`), named (`role="img"`, `aria-label`) when a
+  name is known, `aria-hidden` otherwise. `STRIPE_BG` itself stays in `tokens.ts` for its two
+  remaining consumers (`ResourceBlock.tsx`'s figure placeholder, `Home.tsx`'s `PiPortrait64`
+  fallback) — this task doesn't touch either.
+- **Alumni are a plain name list**, not cards: `<ul data-testid="people-alumni">`, 1 column on
+  phones, 3 from `md`, 4 from `lg`, linked when `hasPage`.
+- **The spotlight's profile link is conditional** (`profileSaysMore`): it shows only when the
+  profile page would say more than the spotlight already does — there are publications, or
+  `fullBio` differs from a set `bio` after whitespace normalisation. With `bio` unset the
+  spotlight already shows `fullBio` itself, so there's nothing more to link to. Link text is now
+  "Profile and publications →" (was "Full profile →").
+- **`initialsOf` and `surnameOf` now agree on suffixed names.** Folded in from the Tasks 1/2 review
+  minors: post-nominals written with dots ("Jane Smith M.D.") now strip to their undotted form
+  before the suffix-set lookup, so `surnameOf` no longer returns "M.D" instead of "Smith"; `'ph.d'`
+  is dropped from `NAME_SUFFIXES` as redundant once dots are stripped (`'phd'` alone now matches
+  both). Both functions now share one `realNameWords` helper (honorific, parenthetical and suffix
+  filtering all applied once), so `initialsOf('Jane Smith MD')` gives `'JS'` — agreeing with
+  `surnameOf`'s `'Smith'` — instead of the old `'JM'` (treating "MD" as the last name word).
+
+### Task 4: Research — no per-project label, meta counts only projects with text
+
+- **Project sections carry no label.** `ResearchProjectView` drops `label` (the first tag, or
+  "Project" with none) entirely; the project `Section` passes no `label` prop at all. Each
+  project's own `<h2 data-testid="research-project-title">` (in `Narrative`) already names its
+  section, so a label repeating that title — stacked directly above it below `lg`, beside it from
+  `lg` — would print the title twice, the same crowded-label shape already closed elsewhere in
+  this PR. Only "Enquiries" carries a `Section` label on `/research` now.
+- **The meta counts only projects with a non-blank resolved body.** `countProjectsWithBody`
+  (`researchModel.ts`) filters on a new `hasBodyText`, which runs a project's already-resolved
+  `body` (`resolveBody`'s output — `overview`, falling back to `description`, unchanged by this
+  task) through `@portabletext/react`'s `toPlainText` and checks the trimmed result is non-empty.
+  A project whose body is `null`, `[]`, or blocks with only whitespace spans (an editor cleared
+  the text but the block array survived) is not counted — but it still renders its own `Section`,
+  since the empty-state branch ("Research projects will be listed here soon.") now checks
+  `projects.length === 0`, not the body-derived count. The two numbers can legitimately differ:
+  a page can show three project sections and still say "1 active project".
+- **Known, accepted limit:** a `description`/`overview` holding only custom, non-text blocks
+  (`image`, `timeline` — both allowed by `schemas/documents/project.ts`) is never counted by
+  `countProjectsWithBody`, since `hasBodyText` only measures plain text via `toPlainText`. In
+  practice `PortableBody` (this codebase's portable-text renderer) never rendered `image`/`timeline`
+  blocks visibly either, so such a project shows no content and isn't counted — the two facts
+  agree, rather than one masking the other. Ruling 11 is explicitly “non-blank plain text”, so
+  this matches the ruling's letter; recorded here as an intentional, accepted limit rather than a
+  bug (Task 4 review, minor 2).
+  review, minor 2).
+
+### Task 5: Contact rebuilt on the redesign shell; legacy-font re-check
+
+- **Contact is rebuilt on the shell, the form's logic untouched.** A new `contactModel.ts`
+  (`contactDetails`, `telHref`, `UNIVERSITY_URL`/`UNIVERSITY_NAME`) and `screens/Contact.tsx`
+  replace `components/pages/contact/*` entirely. `ContactForm.tsx` posts the same
+  `{ name, email, message, _gotcha }` JSON to `/api/formspree`, keeps the same honeypot, the same
+  success/error strings, and the same "stays submitting until the error dialog is closed"
+  behaviour (ruling 13) — only the markup and Tailwind classes changed. `FormField` gained
+  additive `id`/`required`/`autoComplete` props; every existing caller (the gallery's
+  `form-field` demo) passes neither `id` nor `name`, or `name` only, so its ids are unchanged.
+- **One `Section`, no label** (ruling 12): the page title already names the page, and a label here
+  would stack directly above "Email" — the exact repeated-label shape finding 11 already closed
+  elsewhere in this PR. Details sit left of the form from `lg` (`[1fr | 1.6fr]`), details first,
+  above the form, below `lg`.
+  - **Finding 11, one more instance closed.** The old Contact page had no stacked-label defect
+    itself (it never had a `Section` label at all), but rebuilding it on the shell was the
+    opportunity to confirm the "no label" choice deliberately, rather than by omission — recorded
+    here so all of PR 4's finding-11 work (People, and now this deliberate non-instance on
+    Contact) is in one place.
+  - Each detail row (`contact-email`, `contact-phone`, `contact-address`) renders only when its
+    trimmed `settings.contact` field is set; "University" always renders, linking to the constant
+    `UNIVERSITY_URL` (`settings.contact` has no URL field, and schema changes are out of scope —
+    ruling 12/spec §1.1). The address keeps the editor's inner line breaks (`whitespace-pre-line`).
+- **The University of Sydney link is a hardcoded constant, confirmed correct at spec-write time**
+  (`https://www.sydney.edu.au/`), not sourced from any CMS field.
+- **Legacy fonts re-checked after the old Contact form's deletion (spec §1.1, Task 5 step 12).**
+  `ContactForm.tsx`'s old `font-ariana` intro paragraph is gone (the new one uses the same
+  Archivo/`text-body` as the rest of the shell), so Ariana lost one consumer — but it still has
+  four: `TimelineItem.tsx`, `Header.tsx`, `Page.tsx`, `ProjectPage.tsx` (plus `app/layout.tsx` and
+  `styles/index.css`, which load every face regardless of use). Antarctican Mono
+  (`TimelineSection.tsx`, `TimelineItem.tsx`, `CustomPortableText.tsx`, `Logo.tsx`,
+  `logo-contract.test.ts`) and PT Serif (`CustomPortableText.tsx`) were never touched by the old
+  Contact form and are unaffected. **Ruling 14 confirmed exactly as predicted: no font face is
+  removed.**
+- **A pre-existing `tel:` href inconsistency surfaced by this task's own `telHref`.**
+  `PersonPage.tsx`'s phone link (unchanged by this task, and predating PR 4 entirely) builds its `href` as
+  `` `tel:${person.phone}` `` verbatim, keeping the CMS value's spaces; `telHref` (this task)
+  strips everything but digits and a leading `+`. Both are valid dialable `tel:` URIs for the same
+  number, but they're spelled differently, and the gallery's generic "identifiers are never
+  rendered upper-cased" e2e check originally assumed a href always contains its label's exact
+  text. Fixed the check itself (`e2e/redesign-components.spec.ts`) to compare `tel:` hrefs by
+  digits-and-leading-plus rather than by verbatim substring, rather than rewriting `PersonPage.tsx`
+  (out of this task's scope) to match `telHref`'s stricter form. Recorded as a known, harmless
+  inconsistency — a future task could switch `PersonPage.tsx` to `telHref` for consistency, but
+  neither form is wrong.
+- **A structural Headless UI trap, caught and fixed before it shipped.** The brief's own
+  `ContactForm.tsx` code block gave the error `Dialog` a `relative` root with two `fixed inset-0`
+  children — the same zero-height-root trap `FilterBar.tsx`'s own comment already documents (a
+  `role="dialog"` element with no in-flow content collapses to a 0×0 box, which Playwright's
+  `toBeVisible()` — and some assistive tech — treats as not visible). Changed the root to
+  `fixed inset-0 z-50`, matching `FilterBar.tsx`'s established fix, before this was caught by the
+  e2e run rather than after.
+
+**Font re-check conclusion:** Ariana, Antarctican Mono and PT Serif all still have consumers beyond
+`app/layout.tsx`/`styles/index.css` after the old Contact form's deletion. No legacy font face is
+removed by PR 4.
+
+### Verification (Task 5, and the cumulative state of all five tasks)
+
+| Check | Result |
+|---|---|
+| `npm run type-check` | clean, no output |
+| `npm run lint` | **0 errors, 4 warnings** (unchanged baseline: 3 `no-img-element` in `Logo.tsx`, 1 import-sort in `e2e/brand-colour.spec.ts`) |
+| `npx vitest run` | **46 files, 657 tests, all passed** |
+| `npm run typegen` | ran clean; the only diff is `settingsQuery`'s `contact{ email, phone, address }` and `SettingsQueryResult.contact`'s two new fields — nothing beyond Tasks 3 and 5 |
+| `npm run build` | succeeded, `/contact` and every other route generated |
+| `npx playwright test -c playwright.alt.config.ts --project=chromium` (full suite) | **404 passed, 6 skipped, 0 failed** |
+| `npx playwright test -c playwright.alt.config.ts --project=mobile-safari` + `--project=mobile-chrome` (`contact`, `label-budget`, `redesign-components`, `theme`, `json-ld`, `mobile`, `axe`, `routes` — every spec covering `/contact` or touched by this task) | **302 passed, 2 skipped, 0 failed**, combined |
+| Final whole-branch review, full suite on all three Playwright projects (`chromium`/`mobile-safari`/`mobile-chrome`) | **1216 passed, 14 skipped, 0 failed** total (chromium 404/6, mobile-safari 406/4, mobile-chrome 406/4) |
+| `npm run css:proof` (`lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]`, `whitespace-pre-line`, `md:w-auto`, `text-[17px]`) | all four exit 0 |
+| wix-preview check: build + `next start -p 3100` against `NEXT_PUBLIC_SANITY_DATASET=wix-preview`, then `e2e/people.spec.ts`, `e2e/lab-head-spotlight.spec.ts`, `e2e/research.spec.ts`, `e2e/contact.spec.ts` on `chromium` | **40 passed, 2 skipped, 0 failed** |
+
+`next-env.d.ts` restored via `git checkout origin/redesign/integration -- next-env.d.ts` after every
+build; `playwright.alt.config.ts` (port 3106 this time — 3100–3105 were in use by concurrent work)
+deleted before committing, never tracked. CI runs the true full suite on all three projects after
+push.
+
+## PR 4 closing summary — all five tasks done
+
+Every open item raised across Tasks 1–4's own reports is now either fixed or recorded above as a
+known/accepted limit:
+
+- **Task 1's "full e2e not run for this task alone"** (its own report's uncertainty): superseded —
+  Tasks 2, 3, 4 and this task each ran the full three-project (or full-chromium-plus-targeted-
+  mobile) suite against the cumulative diff, which necessarily includes Task 1's changes. It has
+  been exercised end-to-end many times over since.
+- **Task 2's "matcher limits have nowhere to live yet"**: fixed — they're in "The author matcher's
+  known limits (Tasks 1–2)" above, added by Task 3.
+- **Task 3's "`initialsOf` behaviour change, believed safe"**: confirmed safe — every full e2e run
+  since (Tasks 3, 4, this task) exercises every People/PersonPage/spotlight initials-tile instance
+  on the live and gallery datasets, and none has ever failed on an initials mismatch.
+- **Task 4 review's four minors**: #1 fixed (`resolveBody` now checks `hasBodyText`, with a new
+  regression test for a whitespace-only overview falling through to `description`); #2 recorded
+  above as an accepted limit; #3 fixed (`RESEARCH_EMPTY_BODIES_FIXTURE`'s "no body" case is now
+  `body: null`); #4 is informational only (commit trailer wording), no action needed.
+- **Task 1 review's minors 1–2** (a narrow post-nominal suffix list; a parenthetical containing a
+  space leaking through as its own word): independently re-checked against the current
+  `peopleModel.ts` while writing this summary — both are already fixed in the code as it stands
+  (`NAME_SUFFIXES` already includes `md`/`dds`/`mbbs`/`mbchb`/`bsc`/`msc`/`frcs`, and `nameWords`
+  already strips a parenthesised aside, space and all, before splitting into words). Not this
+  task's own change; recorded here purely so this closing summary is accurate.
+- **Task 1 review's minor 3** (apostrophe-form and case-sensitivity limits): recorded in "The
+  author matcher's known limits (Tasks 1–2)" above.
+- **Task 3 review's minors 1–6**: minors 1–5 (the “task brief §”/“spec ruling N” history
+  comments in `People.tsx`, `tokens.ts` and `PersonCard.tsx`; the decisions-doc's own
+  Alumni/Members heading claim; the stale `Section.tsx` “role-group's” comment; the stale
+  `e2e/people.spec.ts` test name) were all fixed and folded into Task 3's own commit before this
+  doc's Task 3 entry above was written. Minor 6 covered two things: `role="list"` on the alumni
+  `<ul>` was added in that same fold-in; an optional geometry-coverage e2e test was not added,
+  left as low-risk polish for a future pass, not a gap in PR 4's own correctness.
+- **Task 2 review's minors** (six total): minors 1 and 4 (dotted post-nominals leaking through
+  as a surname; the missing “email isn't also a link” e2e assertion) were fixed in Task 3.
+  Minor 2 (the stale `surnameOf` docstring) and minor 3 (`initialsOf`/`surnameOf` disagreeing on
+  suffixed names) were also fixed in Task 3, via the shared `realNameWords` helper. Minor 5 (the
+  port-3100 process note) needed no code action. Minor 6 (moving the matcher limits into this
+  doc) is done above.
+
+**PR 4 is done.** People, the PI profile, Research and Contact are all rebuilt on the redesign
+shell; every screen's own unit and e2e coverage is green on all three Playwright projects (the
+full suite on `chromium`, and every route/spec this PR touched on `mobile-safari` and
+`mobile-chrome`); typegen, type-check, lint and the build are clean; and the legacy font
+faces were re-checked and correctly left in place. Before/after screenshots against the
+`wix-preview` dataset are in `.superpowers/screenshots/before-pr4/` and `after-pr4/` (git-ignored,
+local only).

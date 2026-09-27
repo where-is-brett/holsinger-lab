@@ -1,4 +1,5 @@
 import { toPlainText } from '@portabletext/react'
+import { publicationsByPerson } from 'components/redesign/publicationModel'
 import { PersonPage } from 'components/redesign/screens/PersonPage'
 import { JsonLd } from 'components/shared/JsonLd'
 import Layout from 'components/shared/Layout'
@@ -11,6 +12,7 @@ import {
   homePageTitleQuery,
   profileBySlugQuery,
   profilePaths,
+  publicationsQuery,
   settingsQuery,
 } from 'lib/sanity.queries'
 import { siteUrl } from 'lib/site'
@@ -20,7 +22,7 @@ import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import type { Image } from 'sanity'
 import type { ProfilePathsResult } from 'sanity.types'
-import type { ProfileBySlugPayload, SettingsPayload } from 'types'
+import type { ProfileBySlugPayload, PublicationPayload, SettingsPayload } from 'types'
 import { fallbackSettings } from 'types'
 
 export const revalidate = 60
@@ -30,7 +32,7 @@ export const revalidate = 60
 // `SanityQueries` lookup can't match and `data` resolves to `unknown`. Falling
 // back to explicit casts here, per this task's documented fallback.
 const getData = cache(async (slug: string) => {
-  const [{ data: settingsData }, { data: profileData }, { data: homePageTitle }] =
+  const [{ data: settingsData }, { data: profileData }, { data: homePageTitle }, { data: publicationsData }] =
     await Promise.all([
       sanityFetch({ query: settingsQuery, stega: false }),
       sanityFetch({
@@ -39,6 +41,7 @@ const getData = cache(async (slug: string) => {
         stega: false,
       }),
       sanityFetch({ query: homePageTitleQuery, stega: false }),
+      sanityFetch({ query: publicationsQuery, stega: false }),
     ])
   const settings = (settingsData as SettingsPayload | null) ?? fallbackSettings
   const profile = profileData as ProfileBySlugPayload | null
@@ -46,6 +49,7 @@ const getData = cache(async (slug: string) => {
     settings,
     profile,
     homePageTitle: (homePageTitle as string | null) ?? undefined,
+    publications: (publicationsData as PublicationPayload[] | null) ?? [],
   }
 })
 
@@ -83,7 +87,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PersonSlugPage({ params }: Props) {
   const { slug } = await params
-  const { settings, profile } = await getData(slug)
+  const { settings, profile, publications } = await getData(slug)
 
   if (!profile || settings.showPeople === false) {
     notFound()
@@ -99,7 +103,7 @@ export default async function PersonSlugPage({ params }: Props) {
   return (
     <Layout settings={settings} childrenStyles="px-0">
       {personJsonLd && <JsonLd data={personJsonLd} />}
-      <PersonPage person={profile} />
+      <PersonPage person={profile} publications={publicationsByPerson(publications, profile.name)} />
     </Layout>
   )
 }

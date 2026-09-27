@@ -11,7 +11,7 @@ vi.mock('lib/sanity.api', () => ({
 
 import type { ResearchProjectPayload } from 'types'
 
-import { enquiryEmail, researchKicker, toResearchView } from './researchModel'
+import { countProjectsWithBody, enquiryEmail, hasBodyText, researchKicker, toResearchView } from './researchModel'
 
 // A real Sanity asset _id is `image-<hash>-<width>x<height>-<format>` --
 // @sanity/image-url's crop-rect math parses the WxH straight out of this
@@ -33,6 +33,15 @@ function basePayload(overrides: Partial<ResearchProjectPayload> = {}): ResearchP
     ...overrides,
   }
 }
+
+// A portable-text paragraph with real, visible text -- shared by every test
+// below that needs a body `hasBodyText` actually counts as present.
+const para = (key: string, text: string) => ({
+  _type: 'block' as const,
+  _key: key,
+  style: 'normal' as const,
+  children: [{ _type: 'span' as const, _key: `${key}-s`, text, marks: [] }],
+})
 
 describe('researchKicker', () => {
   it('joins "Since {year}" and category with " · " when both are set', () => {
@@ -121,11 +130,11 @@ describe('enquiryEmail', () => {
 })
 
 describe('toResearchView', () => {
-  it('carries id/title/label/kicker/tagLine/body through, with cover null when there is no coverImage', () => {
+  it('carries id/title/kicker/tagLine/body through, with cover null when there is no coverImage', () => {
     const view = toResearchView(
       basePayload({
         title: 'Glial activity as a marker of disease',
-        overview: [{ _type: 'block', _key: 'b1', children: [] }],
+        overview: [para('b1', 'Astrocytes and microglia both respond to injury.')],
         start: '2018-01-01T00:00:00.000Z',
         category: null,
         tags: ['Astrocytes', 'Microglia'],
@@ -134,10 +143,9 @@ describe('toResearchView', () => {
     )
     expect(view.id).toBe('project-1')
     expect(view.title).toBe('Glial activity as a marker of disease')
-    expect(view.label).toBe('Astrocytes')
     expect(view.kicker).toBe('Since 2018')
     expect(view.tagLine).toBe('Astrocytes · Microglia')
-    expect(view.body).toEqual([{ _type: 'block', _key: 'b1', children: [] }])
+    expect(view.body).toEqual([para('b1', 'Astrocytes and microglia both respond to injury.')])
     expect(view.cover).toBeNull()
   })
 
@@ -149,9 +157,8 @@ describe('toResearchView', () => {
     expect(toResearchView(basePayload({ slug: null })).slug).toBeNull()
   })
 
-  it('label falls back to "Project" and tagLine is "" when there are no tags', () => {
+  it('tagLine is "" when there are no tags', () => {
     const view = toResearchView(basePayload({ tags: [] }))
-    expect(view.label).toBe('Project')
     expect(view.tagLine).toBe('')
   })
 
@@ -229,10 +236,10 @@ describe('toResearchView', () => {
 // have both fields, with identical text. Without this fallback the imported
 // projects render title-only.
 describe('toResearchView body fallback (overview vs description)', () => {
-  const overviewBlock = { _type: 'block' as const, _key: 'ov1', children: [] }
-  const descriptionBlock = { _type: 'block' as const, _key: 'de1', children: [] }
+  const overviewBlock = para('ov1', 'Overview text.')
+  const descriptionBlock = para('de1', 'Description text.')
 
-  it('uses overview when it has at least one block, even if description is also set', () => {
+  it('uses overview when it has visible text, even if description is also set', () => {
     const view = toResearchView(
       basePayload({
         overview: [overviewBlock],
@@ -262,6 +269,16 @@ describe('toResearchView body fallback (overview vs description)', () => {
     expect(view.body).toEqual([descriptionBlock])
   })
 
+  it('falls back to description when overview has a block but no visible text (whitespace-only)', () => {
+    const view = toResearchView(
+      basePayload({
+        overview: [para('ov-blank', '   ')],
+        description: [descriptionBlock],
+      })
+    )
+    expect(view.body).toEqual([descriptionBlock])
+  })
+
   it('is null when both overview and description are missing or empty', () => {
     expect(toResearchView(basePayload({ overview: [], description: [] })).body).toBeNull()
     expect(toResearchView(basePayload({ overview: null, description: null })).body).toBeNull()
@@ -273,5 +290,26 @@ describe('toResearchView body fallback (overview vs description)', () => {
   it('is null when description is also an empty array and overview is missing', () => {
     const view = toResearchView(basePayload({ overview: null, description: [] }))
     expect(view.body).toBeNull()
+  })
+})
+
+describe('hasBodyText / countProjectsWithBody', () => {
+  it('is true for a body with visible text', () => {
+    expect(hasBodyText([para('a', 'Astrocytes matter.')])).toBe(true)
+  })
+
+  it.each([
+    ['null', null],
+    ['an empty array', []],
+    ['a block with no spans', [{ _type: 'block' as const, _key: 'e', children: [] }]],
+    ['a whitespace-only span', [para('w', '   \n  ')]],
+  ])('is false for %s', (_label, body) => {
+    expect(hasBodyText(body as Parameters<typeof hasBodyText>[0])).toBe(false)
+  })
+
+  it('counts only projects whose body has text', () => {
+    expect(
+      countProjectsWithBody([{ body: [para('a', 'Text.')] }, { body: null }, { body: [para('w', '  ')] }])
+    ).toBe(1)
   })
 })

@@ -2,13 +2,17 @@ import { describe, expect, it } from 'vitest'
 
 import {
   excludeLabHead,
+  flattenMembers,
   formatPeopleMeta,
   groupByRoleGroup,
   initialsOf,
   isAlumniGroup,
   memberCount,
+  profileSaysMore,
+  roleLine,
   shouldShowLabHeadSpotlight,
   splitAlumni,
+  surnameOf,
 } from './peopleModel'
 
 const PHD = { _id: 'rg-phd', title: 'PhD Student' }
@@ -251,5 +255,117 @@ describe('formatPeopleMeta', () => {
 
   it('handles zero members and zero groups', () => {
     expect(formatPeopleMeta({ showSpotlight: false, n: 0, g: 0 })).toBe('0 current members · 0 groups')
+  })
+})
+
+describe('surnameOf', () => {
+  it.each([
+    ['Damian Holsinger', 'Holsinger'],
+    ['  Damian   Holsinger ', 'Holsinger'],
+    ['Dr Johnny Chan (DDS)', 'Chan'],
+    ['Dr. Rossana R Porto', 'Porto'],
+    ['Zeyi (Brett) Yang', 'Yang'],
+    ['Sreevadana (Sree) Venkitachalam', 'Venkitachalam'],
+    ['Deepikaa V. G. Sandanababu', 'Sandanababu'],
+    ['Martin Luther King Jr.', 'King'],
+    ['Smith, Jr.', 'Smith'],
+    ['Élodie Ñúñez', 'Ñúñez'],
+    ['Dr Chan', 'Chan'],
+    ['Plato', 'Plato'],
+    // A post-nominal suffix (not just a generational one) is dropped too.
+    ['Jane Smith MD', 'Smith'],
+    ['Jane Smith BSc', 'Smith'],
+    // A parenthesised aside containing a space doesn't leak its closing
+    // word through as a fake surname.
+    ['Jane Smith (née Brown)', 'Smith'],
+    // A post-nominal written with dots must still be recognised as a
+    // suffix (dots are stripped before the suffix lookup), not leak
+    // through as the surname.
+    ['Jane Smith M.D.', 'Smith'],
+    ['Jane Smith B.Sc.', 'Smith'],
+    ['Jane Smith Ph.D.', 'Smith'],
+  ])('%j -> %j', (name, surname) => {
+    expect(surnameOf(name)).toBe(surname)
+  })
+
+  it.each([[null], [undefined], [''], ['   '], ['Dr'], ['Prof.'], ['(DDS)']])('%j has no surname', (name) => {
+    expect(surnameOf(name)).toBeNull()
+  })
+
+  it.each(['Jane Smith MD', 'Jane Smith M.D.', 'Jane Smith BSc', 'Jane Smith B.Sc.'])(
+    'initialsOf and surnameOf agree on the real name words in %j',
+    (name) => {
+      expect(initialsOf(name)).toBe('JS')
+      expect(surnameOf(name)).toBe('Smith')
+    }
+  )
+})
+
+const block = (key: string, text: string) => ({
+  _type: 'block',
+  _key: key,
+  style: 'normal',
+  markDefs: [],
+  children: [{ _type: 'span', _key: `${key}-s`, text, marks: [] }],
+})
+
+describe('flattenMembers', () => {
+  it('runs every section into one list, in order, each card carrying its section title', () => {
+    const cards = flattenMembers([
+      { id: 'a', title: 'PhD Candidate', profiles: ['p1', 'p2'] },
+      { id: 'b', title: 'Honours Student', profiles: ['p3'] },
+      { id: 'other', title: null, profiles: ['p4'] },
+    ])
+    expect(cards).toEqual([
+      { profile: 'p1', group: 'PhD Candidate' },
+      { profile: 'p2', group: 'PhD Candidate' },
+      { profile: 'p3', group: 'Honours Student' },
+      { profile: 'p4', group: null },
+    ])
+  })
+
+  it('is empty for no sections', () => {
+    expect(flattenMembers([])).toEqual([])
+  })
+})
+
+describe('roleLine', () => {
+  it.each([
+    ['Research Scientist', 'Research Scientist', null],
+    ['research scientist ', 'Research Scientist', null],
+    ['Visiting Intern — Germany', 'International Interns', 'Visiting Intern — Germany'],
+    ['Lab Manager', null, 'Lab Manager'],
+    [null, 'PhD Candidate', null],
+    ['   ', null, null],
+  ])('role %j in group %j -> %j', (role, group, expected) => {
+    expect(roleLine(role, group)).toBe(expected)
+  })
+})
+
+describe('profileSaysMore', () => {
+  const full = [block('f1', 'Short bio.'), block('f2', 'And a second paragraph.')]
+
+  it('is true whenever there are publications', () => {
+    expect(profileSaysMore({ publicationCount: 2, bio: null, fullBio: null })).toBe(true)
+  })
+
+  it('is true when both texts are set and differ', () => {
+    expect(profileSaysMore({ publicationCount: 0, bio: 'Short bio.', fullBio: full })).toBe(true)
+  })
+
+  it('is false when bio is unset, because the spotlight then shows fullBio itself', () => {
+    expect(profileSaysMore({ publicationCount: 0, bio: null, fullBio: full })).toBe(false)
+    expect(profileSaysMore({ publicationCount: 0, bio: '   ', fullBio: full })).toBe(false)
+  })
+
+  it('is false when the two texts differ only in whitespace', () => {
+    expect(
+      profileSaysMore({ publicationCount: 0, bio: 'Short   bio.\n', fullBio: [block('f1', ' Short bio. ')] })
+    ).toBe(false)
+  })
+
+  it('is false when fullBio is unset or empty', () => {
+    expect(profileSaysMore({ publicationCount: 0, bio: 'Short bio.', fullBio: null })).toBe(false)
+    expect(profileSaysMore({ publicationCount: 0, bio: 'Short bio.', fullBio: [] })).toBe(false)
   })
 })

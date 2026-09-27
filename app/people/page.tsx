@@ -1,3 +1,4 @@
+import { countPublicationsByPerson } from 'components/redesign/publicationModel'
 import { People } from 'components/redesign/screens/People'
 import { JsonLd } from 'components/shared/JsonLd'
 import Layout from 'components/shared/Layout'
@@ -8,6 +9,7 @@ import { sanityFetch } from 'lib/sanity.live'
 import {
   homePageTitleQuery,
   profileQuery,
+  publicationAuthorsQuery,
   roleGroupQuery,
   settingsQuery,
 } from 'lib/sanity.queries'
@@ -33,11 +35,13 @@ const getData = cache(async () => {
     { data: settingsData },
     { data: profilesData },
     { data: roleGroupsData },
+    { data: authorsData },
   ] = await Promise.all([
     sanityFetch({ query: homePageTitleQuery, stega: false }),
     sanityFetch({ query: settingsQuery, stega: false }),
     sanityFetch({ query: profileQuery }),
     sanityFetch({ query: roleGroupQuery }),
+    sanityFetch({ query: publicationAuthorsQuery, stega: false }),
   ])
   const settings = (settingsData as SettingsPayload | null) ?? fallbackSettings
   const profiles = (profilesData as ProfilePayload[] | null) ?? []
@@ -47,6 +51,7 @@ const getData = cache(async () => {
     settings,
     profiles,
     roleGroups,
+    authors: (authorsData as (string | null)[] | null) ?? [],
   }
 })
 
@@ -66,7 +71,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PeoplePage() {
-  const { settings, profiles, roleGroups } = await getData()
+  const { settings, profiles, roleGroups, authors } = await getData()
 
   if (settings.showPeople === false) {
     notFound()
@@ -75,7 +80,12 @@ export default async function PeoplePage() {
   return (
     <Layout settings={settings} childrenStyles="px-0">
       <JsonLd data={buildPersonListJsonLd(profiles)} />
-      <People settings={settings} profiles={profiles} roleGroups={roleGroups} />
+      <People
+        settings={settings}
+        profiles={profiles}
+        roleGroups={roleGroups}
+        labHeadPublicationCount={countPublicationsByPerson(authors, settings.labHead?.name)}
+      />
     </Layout>
   )
 }

@@ -105,7 +105,7 @@ describe('POST /api/revalidate', () => {
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 
-  it('revalidates /publications, every /publications/[slug] page and the homepage for a publication webhook, ignoring slug (Task 3: Home renders the 5 most recent publications and the count)', async () => {
+  it('revalidates /publications, every /publications/[slug] page, the homepage and the people pages for a publication webhook, ignoring slug, because the people pages list and count publications', async () => {
     vi.mocked(parseBody).mockResolvedValue({
       isValidSignature: true,
       body: { type: 'publication', slug: undefined },
@@ -116,10 +116,12 @@ describe('POST /api/revalidate', () => {
     expect(revalidatePath).toHaveBeenCalledWith('/publications')
     expect(revalidatePath).toHaveBeenCalledWith('/publications/[slug]', 'page')
     expect(revalidatePath).toHaveBeenCalledWith('/')
-    expect(revalidatePath).toHaveBeenCalledTimes(3)
+    expect(revalidatePath).toHaveBeenCalledWith('/people')
+    expect(revalidatePath).toHaveBeenCalledWith('/people/[slug]', 'page')
+    expect(revalidatePath).toHaveBeenCalledTimes(5)
   })
 
-  it('revalidates /people and the homepage for a profile webhook, ignoring slug (Task 3: currentMemberCount, the PI panel)', async () => {
+  it('revalidates /people, the homepage and every /people/[slug] page for a profile webhook, ignoring slug (Task 3: currentMemberCount, the PI panel), including every profile page', async () => {
     vi.mocked(parseBody).mockResolvedValue({
       isValidSignature: true,
       body: { type: 'profile', slug: undefined },
@@ -128,8 +130,9 @@ describe('POST /api/revalidate', () => {
     await POST(request())
 
     expect(revalidatePath).toHaveBeenCalledWith('/people')
+    expect(revalidatePath).toHaveBeenCalledWith('/people/[slug]', 'page')
     expect(revalidatePath).toHaveBeenCalledWith('/')
-    expect(revalidatePath).toHaveBeenCalledTimes(2)
+    expect(revalidatePath).toHaveBeenCalledTimes(3)
   })
 
   it('revalidates /people and the homepage for a roleGroup webhook, ignoring slug', async () => {

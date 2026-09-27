@@ -75,7 +75,7 @@ export const settingsQuery = groq`
     showContactForm,
     showLabHeadOnHome,
     showLabHeadOnPeople,
-    contact{ email },
+    contact{ email, phone, address },
     menuItems[]->{
       _type,
       "slug": slug.current,
@@ -184,6 +184,12 @@ export const homeRecentPublicationsQuery = groq`
 // Home only ever needs the 5 most recent records, not the full list.
 export const publicationCountQuery = groq`
   count(*[_type == "publication"])
+`
+
+// Just the author strings, so /people can count the lab head's papers without
+// fetching every publication field.
+export const publicationAuthorsQuery = groq`
+  *[_type == "publication"].author
 `
 
 // The projection shared by every resource query, so the list and the

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
-import { isAlumniGroup } from 'components/redesign/peopleModel'
+import { isAlumniGroup, profileSaysMore } from 'components/redesign/peopleModel'
+import { countPublicationsByPerson } from 'components/redesign/publicationModel'
 
 import { e2eClient } from './support/sanity'
 
@@ -130,20 +131,88 @@ test.describe('/people', () => {
     expect(allRendered.length).toBe(profiles.length)
   })
 
-  test('member section headings appear in roleGroup orderRank order, alumni excluded', async ({
+  test('current members run in one grid, in roleGroup order, each card labelled with its group', async ({
     page,
   }) => {
     const { profiles, roleGroups, settings } = await fetchLiveData()
     const { gridProfiles } = deriveGridProfiles(profiles, settings)
     const { members } = computeSections(gridProfiles, roleGroups)
-    const expectedTitles = members.map((s) => s.title).filter((t): t is string => Boolean(t))
+    const expected = members.flatMap((s) => s.profiles.map((p) => ({ name: p.name ?? '', group: s.title ?? '' })))
+    test.skip(expected.length === 0, 'no current members in this dataset')
 
     await page.goto('/people')
-    const renderedTitles = await page.getByTestId('people-section-title').allTextContents()
-    expect(renderedTitles).toEqual(expectedTitles)
+    await expect(page.getByTestId('people-members')).toHaveCount(1)
+    const rendered = await page
+      .getByTestId('people-members')
+      .getByTestId('person-card')
+      .evaluateAll((els) =>
+        els.map((el) => ({
+          name: el.getAttribute('data-name') ?? '',
+          group: el.getAttribute('data-group') ?? '',
+          label: el.querySelector('[data-testid="person-card-group"]')?.textContent ?? '',
+        }))
+      )
+    expect(rendered.map(({ name, group }) => ({ name, group }))).toEqual(expected)
+    // The visible label is the group title itself, or absent for the ungrouped.
+    for (const card of rendered) {
+      expect(card.label).toBe(card.group)
+    }
+    // No per-group headings any more.
+    await expect(page.getByTestId('people-section-title')).toHaveCount(0)
   })
 
-  test('alumni names appear in the alumni paragraph, in the group order', async ({ page }) => {
+  test('no missing portrait renders a label or a stripe', async ({ page }) => {
+    await page.goto('/people')
+    await expect(page.getByText(/no portrait/i)).toHaveCount(0)
+    const styles = await page.getByTestId('portrait-initials').evaluateAll((els) =>
+      els.map((el) => {
+        const c = getComputedStyle(el)
+        return { bg: c.backgroundImage, border: c.borderTopWidth }
+      })
+    )
+    for (const s of styles) {
+      expect(s).toEqual({ bg: 'none', border: '0px' })
+    }
+  })
+
+  test('the spotlight links to the profile only when the profile says more', async ({ page }) => {
+    const [live, authors] = await Promise.all([
+      e2eClient.fetch<{
+        showLabHeadOnPeople: boolean | null
+        labHead: {
+          name: string | null
+          bio: string | null
+          fullBio: unknown
+          hasPage: boolean | null
+          slug: string | null
+        } | null
+      } | null>(
+        `*[_type == "settings"][0]{ showLabHeadOnPeople, labHead->{ name, bio, fullBio, hasPage, "slug": slug.current } }`
+      ),
+      e2eClient.fetch<(string | null)[]>(`*[_type == "publication"].author`),
+    ])
+    const labHead = live?.labHead ?? null
+    test.skip(!labHead || live?.showLabHeadOnPeople === false, 'no lab-head spotlight in this dataset')
+
+    const expectLink =
+      Boolean(labHead!.hasPage && labHead!.slug) &&
+      profileSaysMore({
+        publicationCount: countPublicationsByPerson(authors, labHead!.name),
+        bio: labHead!.bio,
+        fullBio: labHead!.fullBio,
+      })
+
+    const response = await page.goto('/people')
+    test.skip(response?.status() === 404, '/people is switched off in this dataset')
+    const link = page.getByTestId('people-spotlight').getByRole('link', { name: 'Profile and publications →' })
+    await expect(link).toHaveCount(expectLink ? 1 : 0)
+    if (expectLink) {
+      await expect(link).toHaveAttribute('href', `/people/${labHead!.slug}`)
+    }
+    await expect(page.getByText('Full profile →')).toHaveCount(0)
+  })
+
+  test('alumni names appear in the alumni list, in the group order', async ({ page }) => {
     const { profiles, roleGroups, settings } = await fetchLiveData()
     const { gridProfiles } = deriveGridProfiles(profiles, settings)
     const { alumni } = computeSections(gridProfiles, roleGroups)

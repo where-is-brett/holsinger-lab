@@ -303,13 +303,14 @@ describe('dark theme tokens', () => {
     //  - --sem-scrim can't move either: lightening it enough to clear even
     //    3:1 against a near-black text-inverse pushes it past the
     //    surface-raised panel's own darkness (verified: at the lightest
-    //    value that clears 4.5:1, ErrorDialog's rendered backdrop —
+    //    value that clears 4.5:1, a backdrop's rendered colour —
     //    scrim composited at its actual 60% opacity over the page —
     //    becomes *lighter* than the surface-raised panel sitting on top of
     //    it, i.e. worse than the boundary-invisibility bug being fixed
     //    elsewhere in this review, not better).
-    // The pairing is also no longer real: --sem-scrim's only consumer
-    // (ErrorDialog's DialogBackdrop) never renders text on it, and
+    // The pairing is also no longer real: none of --sem-scrim's consumers
+    // (FilterBar.tsx's and ContactForm.tsx's own backdrops) render text on
+    // it, and
     // PreviewBanner — the pairing's one actual instance, and the bug this
     // whole review exists to catch — now uses --sem-surface-inverse
     // instead (see below). A token-hex contrast assertion can't usefully
@@ -401,7 +402,7 @@ describe('token-role misuse guard', () => {
   // combining `bg-scrim` with a `text-*-inverse` class): --sem-scrim is a
   // backdrop-only role (pinned dark in both colour schemes — see the 'not
   // mirrored here' comment above) and its only legitimate consumer
-  // (ErrorDialog's DialogBackdrop) never renders text on it. That makes
+  // (FilterBar.tsx's and ContactForm.tsx's own backdrops) never render text on it. That makes
   // `bg-scrim` + inverse text a composition that's wrong regardless of what
   // the current palette's hex values happen to be, so — unlike every other
   // guard in this file — this checks source text, not resolved colours: no
@@ -416,7 +417,7 @@ describe('token-role misuse guard', () => {
 
   // The legitimate consumers of --sem-scrim (see rationale above) -- each
   // renders it as a bare backdrop fill with no text composited on it.
-  const SCRIM_ALLOWED_FILES = ['components/pages/contact/ErrorDialog.tsx', 'components/redesign/FilterBar.tsx']
+  const SCRIM_ALLOWED_FILES = ['components/redesign/ContactForm.tsx', 'components/redesign/FilterBar.tsx']
 
   function collectTsxFiles(dirUrl: URL): string[] {
     const files: string[] = []
@@ -461,8 +462,8 @@ describe('token-role misuse guard', () => {
     // bg-scrim as a bare fill (no text involved anywhere) on a
     // bg-scrim-coloured bar, so the icon and its background were the
     // literal same colour. The fix here is to encode the
-    // actual invariant directly — "--sem-scrim is a backdrop-only role; its
-    // only legitimate consumer is ErrorDialog's DialogBackdrop" — rather than
+    // actual invariant directly — "--sem-scrim is a backdrop-only role; none
+    // of its consumers render text on it" — rather than
     // continuing to guard one specific misuse shape of it.
     //
     // This also isn't scoped to a single quoted/template literal the way the

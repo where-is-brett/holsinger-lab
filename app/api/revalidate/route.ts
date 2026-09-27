@@ -60,12 +60,16 @@ export async function POST(request: NextRequest) {
         // the "All N publications ->" count -- a `publication` edit
         // revalidates `/` too, not just /publications and its own page.
         revalidatePath(`/`)
+        // the people pages count and list a person's papers
+        revalidatePath(`/people`)
+        revalidatePath('/people/[slug]', 'page')
         return NextResponse.json({
           success: true,
           message: `Revalidated "${type}" with slug "publications"`,
         })
       case 'profile':
         revalidatePath(`/people`)
+        revalidatePath('/people/[slug]', 'page')
         // Task 3 (Home): Home's member count and PI panel both depend on
         // `profile` documents (currentMemberCount, the lab head's own
         // profile) -- a `profile` edit revalidates `/` too.

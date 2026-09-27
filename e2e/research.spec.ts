@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
-import { enquiryEmail } from 'components/redesign/researchModel'
+import { countProjectsWithBody, enquiryEmail, toResearchView } from 'components/redesign/researchModel'
+import { researchProjectsQuery } from 'lib/sanity.queries'
+import type { ResearchProjectPayload } from 'types'
 
 import { e2eClient } from './support/sanity'
 
@@ -88,13 +90,18 @@ test.describe('/research', () => {
     }
   })
 
-  test("the meta's count matches what's rendered", async ({ page }) => {
-    const projects = await fetchLiveResearchProjects()
-    const n = projects.length
+  test('the meta counts only projects whose resolved body has text', async ({ page }) => {
+    const payloads = await e2eClient.fetch<ResearchProjectPayload[]>(researchProjectsQuery)
+    const n = countProjectsWithBody(payloads.map(toResearchView))
 
     await page.goto('/research')
     const meta = await page.getByTestId('page-title-meta').innerText()
     expect(meta).toBe(`${n} active project${n === 1 ? '' : 's'}`)
+  })
+
+  test('project sections carry no label; only Enquiries is labelled', async ({ page }) => {
+    await page.goto('/research')
+    await expect(page.getByTestId('section-label')).toHaveText(['Enquiries'])
   })
 
   // Fix round 1 ruling 3: compares the rendered `<img>` box's own aspect

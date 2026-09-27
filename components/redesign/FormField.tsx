@@ -13,6 +13,9 @@ export interface FormFieldProps {
   onChange?: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
   disabled?: boolean
   name?: string
+  id?: string
+  required?: boolean
+  autoComplete?: string
 }
 
 // Ported from
@@ -63,8 +66,12 @@ export function FormField({
   onChange,
   disabled = false,
   name,
+  id: idProp,
+  required,
+  autoComplete,
 }: FormFieldProps) {
-  const id = name || slugify(label)
+  const id = idProp ?? name ?? slugify(label)
+  const fieldName = name ?? id
   return (
     <div>
       <label htmlFor={id} className={LABEL_CLASS}>
@@ -73,23 +80,27 @@ export function FormField({
       {textarea ? (
         <textarea
           id={id}
-          name={id}
+          name={fieldName}
           rows={rows}
           placeholder={placeholder}
           value={value}
           onChange={onChange}
           disabled={disabled}
+          required={required}
+          autoComplete={autoComplete}
           className={INPUT_CLASS}
         />
       ) : (
         <input
           id={id}
-          name={id}
+          name={fieldName}
           type={type}
           placeholder={placeholder}
           value={value}
           onChange={onChange}
           disabled={disabled}
+          required={required}
+          autoComplete={autoComplete}
           className={INPUT_CLASS}
         />
       )}

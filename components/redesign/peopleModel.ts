@@ -1,3 +1,5 @@
+import { toPlainText } from '@portabletext/react'
+
 export interface RoleGroupSection<T> {
   id: string
   title: string | null
@@ -84,12 +86,89 @@ export function shouldShowLabHeadSpotlight(settings: {
 const HONORIFICS = new Set(['dr', 'dr.', 'prof', 'prof.', 'professor'])
 
 /**
+ * A name's words after NFC normalisation, minus a leading honorific (only
+ * when more words follow) and any word that doesn't start with a letter,
+ * such as a parenthesised qualifier "(DDS)". `\p{L}` rather than an ASCII
+ * check, so accented initials count as letters.
+ *
+ * Shared by `initialsOf` and `surnameOf` -- both need the same "what
+ * counts as a name word" filtering, so it's factored out rather than
+ * duplicated.
+ */
+function nameWords(name: string | null | undefined): string[] {
+  if (!name) {
+    return []
+  }
+  // Strip a parenthesised aside ("(née Brown)", "(DDS)") before splitting
+  // into words -- a space inside the parentheses would otherwise leak its
+  // closing word ("Brown)") through as its own word, since that word does
+  // start with a letter and would pass the filter below unfiltered.
+  let words = name
+    .normalize('NFC')
+    .replace(/\([^)]*\)/gu, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+  if (words.length > 1 && HONORIFICS.has(words[0].toLowerCase())) {
+    words = words.slice(1)
+  }
+  return words.filter((word) => /\p{L}/u.test(Array.from(word)[0] ?? ''))
+}
+
+// Generational and degree/post-nominal suffixes that follow a surname
+// rather than being one. Compared with dots stripped, so "Jr.", "Ph.D."
+// and "M.D." all match their undotted entries here ('jr', 'phd', 'md') --
+// there's no separate dotted entry for any of them, since stripping first
+// makes one redundant with the other. Common post-nominals (MD, DDS, MBBS,
+// BSc, MSc and similar) are included alongside the generational suffixes,
+// so e.g. "Jane Smith MD" and "Jane Smith B.Sc." both give the surname
+// "Smith". Kept to multi-letter, unambiguous post-nominals -- no
+// two-letter entries like "Ma" or "Ng", which are themselves real
+// surnames.
+const NAME_SUFFIXES = new Set([
+  'jr',
+  'sr',
+  'ii',
+  'iii',
+  'iv',
+  'phd',
+  'md',
+  'dds',
+  'mbbs',
+  'mbchb',
+  'bsc',
+  'msc',
+  'frcs',
+])
+
+/**
+ * `nameWords`, with trailing punctuation stripped from every word and any
+ * trailing suffix words (Jr, Sr, II-IV, PhD and the post-nominals in
+ * `NAME_SUFFIXES`) popped off the end. This is "what counts as a person's
+ * real name" for both `surnameOf` (the last word) and `initialsOf` (the
+ * first and last words) -- shared so the two can't disagree about a
+ * suffixed name the way they used to ("Jane Smith MD" surnamed "Smith" but
+ * initialised "JM", treating "MD" as the last name word).
+ */
+function realNameWords(name: string | null | undefined): string[] {
+  const words = nameWords(name)
+    .map((word) => word.replace(/[.,;:]+$/u, ''))
+    .filter(Boolean)
+  while (words.length > 1 && NAME_SUFFIXES.has(words[words.length - 1].toLowerCase().replace(/\./gu, ''))) {
+    words.pop()
+  }
+  return words
+}
+
+/**
  * First letter of the first word plus first letter of the last word,
- * uppercased. A single word gives one letter; empty/null/whitespace-only
- * input gives ''. Whitespace is trimmed and collapsed first, so a
- * hyphenated word ("Mary-Jane") counts as one word. `Array.from` splits on
- * code points rather than UTF-16 code units, so a non-BMP first character
- * (e.g. an emoji) stays whole rather than being sliced in half.
+ * uppercased, after `realNameWords`' filtering (honorific, parenthetical
+ * and suffix words dropped). A single word gives one letter;
+ * empty/null/whitespace-only input gives ''. Whitespace is trimmed and
+ * collapsed first, so a hyphenated word ("Mary-Jane") counts as one word.
+ * `Array.from` splits on code points rather than UTF-16 code units, so a
+ * non-BMP first character (e.g. an emoji) stays whole rather than being
+ * sliced in half.
  *
  * Final-review fix wave, three refinements:
  * - `.normalize('NFC')` first, so a decomposed name (a base letter plus a
@@ -106,23 +185,30 @@ const HONORIFICS = new Set(['dr', 'dr.', 'prof', 'prof.', 'professor'])
  *   first code point.
  */
 export function initialsOf(name: string | null | undefined): string {
-  if (!name) {
-    return ''
-  }
-  let words = name.normalize('NFC').trim().split(/\s+/).filter(Boolean)
-  if (words.length === 0) {
-    return ''
-  }
-  if (words.length > 1 && HONORIFICS.has(words[0].toLowerCase())) {
-    words = words.slice(1)
-  }
-  words = words.filter((word) => /\p{L}/u.test(Array.from(word)[0] ?? ''))
+  const words = realNameWords(name)
   if (words.length === 0) {
     return ''
   }
   const first = Array.from(words[0])[0] ?? ''
   const last = Array.from(words[words.length - 1])[0] ?? ''
   return (words.length === 1 ? first : first + last).toUpperCase()
+}
+
+/**
+ * The surname token used to find a person's papers: the last word of the
+ * name, after `realNameWords`' filtering -- a leading honorific,
+ * parenthesised asides, trailing punctuation and trailing suffixes (Jr,
+ * Sr, II-IV, PhD and the post-nominals in `NAME_SUFFIXES`, dotted or not)
+ * are all dropped first. A lone honorific ("Dr") is not a surname. `null`
+ * means "no surname", and callers must treat it as "matches nothing".
+ */
+export function surnameOf(name: string | null | undefined): string | null {
+  const words = realNameWords(name)
+  const last = words[words.length - 1]
+  if (!last || (words.length === 1 && HONORIFICS.has(last.toLowerCase()))) {
+    return null
+  }
+  return last
 }
 
 /**
@@ -178,4 +264,64 @@ export function formatPeopleMeta({
   const membersLabel = n === 1 ? 'current member' : 'current members'
   const groupsLabel = g === 1 ? 'group' : 'groups'
   return `${showSpotlight ? 'Lab head + ' : ''}${n} ${membersLabel} · ${g} ${groupsLabel}`
+}
+
+export interface MemberCard<T> {
+  profile: T
+  /** The role group's title, verbatim; `null` for the ungrouped catch-all. */
+  group: string | null
+}
+
+/**
+ * Current-member sections run into one list for a single continuous grid, in
+ * section order (role groups by `orderRank`, then the ungrouped catch-all),
+ * each card carrying its own group label.
+ */
+export function flattenMembers<T>(sections: RoleGroupSection<T>[]): MemberCard<T>[] {
+  return sections.flatMap((section) => section.profiles.map((profile) => ({ profile, group: section.title })))
+}
+
+/**
+ * The card's role line: `role` verbatim, or `null` when it is blank or just
+ * repeats the group label above it (compared trimmed and case-insensitively).
+ */
+export function roleLine(role: string | null | undefined, group: string | null): string | null {
+  const trimmed = role?.trim()
+  if (!trimmed) {
+    return null
+  }
+  if (group && trimmed.toLowerCase() === group.trim().toLowerCase()) {
+    return null
+  }
+  return role ?? null
+}
+
+function normalisedText(text: string): string {
+  return text.replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Whether the profile page says more than the People spotlight: it lists
+ * publications, or it shows a `fullBio` that differs from the short `bio` the
+ * spotlight shows. With `bio` blank the spotlight falls back to `fullBio`
+ * itself, so there is nothing more to see.
+ */
+export function profileSaysMore({
+  publicationCount,
+  bio,
+  fullBio,
+}: {
+  publicationCount: number
+  bio?: string | null
+  fullBio?: unknown
+}): boolean {
+  if (publicationCount > 0) {
+    return true
+  }
+  const shortText = normalisedText(bio ?? '')
+  const fullText =
+    Array.isArray(fullBio) && fullBio.length > 0
+      ? normalisedText(toPlainText(fullBio as Parameters<typeof toPlainText>[0]))
+      : ''
+  return shortText !== '' && fullText !== '' && fullText !== shortText
 }

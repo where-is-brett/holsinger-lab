@@ -3,6 +3,7 @@ import type {
   HomePagePayload,
   HomeResourcePayload,
   MaestroProjectPayload,
+  ProfileBySlugPayload,
   ProfilePayload,
   ResourcePayload,
   RoleGroupPayload,
@@ -12,6 +13,7 @@ import type {
 } from 'types'
 import { fallbackSettings } from 'types'
 
+import type { ContactDetails } from './contactModel'
 import type { Publication } from './publicationModel'
 import { deriveLink, splitAuthors } from './publicationModel'
 import { researchKicker, type ResearchProjectView } from './researchModel'
@@ -32,8 +34,9 @@ function make(
   url: string | null,
   type: string,
   topics: string[],
+  surname: string = 'Holsinger',
 ): Publication {
-  const a = splitAuthors(authors)
+  const a = splitAuthors(authors, surname)
   const link = deriveLink(doi, url)
   // Checked against the real dataset (19 publications, 9 without a DOI):
   // zero are missing both a DOI and a URL, so this throw should never fire
@@ -274,10 +277,13 @@ function portableParagraph(key: string, text: string) {
   }
 }
 
-// Task 2 brief gallery fixture, instance (a): "Lab head set, no portrait, no
-// email, a two-paragraph portable-text fullBio, hasPage: true." Proves the
-// initials fallback and the Full profile -> link render even without a
-// portrait or an email on file.
+// Gallery fixture, instance (a): "Lab head set, no portrait, no email, a
+// two-paragraph portable-text fullBio, hasPage: true." Proves the quiet
+// initials tile (no stripe, no border), and that with no short `bio` set
+// the spotlight falls back to showing `fullBio` itself -- which is also
+// why `profileSaysMore` reports "nothing more to see" for this fixture
+// whenever the publication count is 0 (gallery instance (c)), even though
+// `fullBio` is populated: the profile page would show the same text.
 export const PEOPLE_LAB_HEAD_FIXTURE: NonNullable<SettingsPayload['labHead']> = {
   _id: 'fixture-lab-head',
   image: null,
@@ -452,6 +458,89 @@ export const PEOPLE_SETTINGS_WITHOUT_LAB_HEAD: SettingsPayload = {
   ...fallbackSettings,
   labHead: null,
 }
+
+// A profile page with everything set: portrait, email, phone, a two-paragraph
+// bio and three papers -- one without a slug, so its title renders unlinked.
+export const PERSON_PAGE_FIXTURE: ProfileBySlugPayload = {
+  _id: 'fixture-person-page',
+  image: PEOPLE_IMAGE as unknown as ProfileBySlugPayload['image'],
+  name: 'Dr Priya Natarajan',
+  role: 'Research Scientist',
+  roleDetail: null,
+  email: 'priya.natarajan.laboratory@sydney.edu.au',
+  phone: '+61 2 9351 0000',
+  bio: null,
+  slug: 'priya-natarajan',
+  hasPage: true,
+  fullBio: [
+    portableParagraph(
+      'person-p1',
+      'Dr Natarajan studies how glial cells support neuronal circuits under chronic metabolic stress.'
+    ),
+    portableParagraph('person-p2', 'She joined the laboratory in 2021 after postdoctoral work in Melbourne.'),
+  ] as ProfileBySlugPayload['fullBio'],
+}
+
+// No portrait, no email, no phone, no papers: the page must render the bio
+// alone, with no Publications section and no email button.
+export const PERSON_PAGE_BARE_FIXTURE: ProfileBySlugPayload = {
+  _id: 'fixture-person-page-bare',
+  image: null,
+  name: 'Sam Okafor',
+  role: 'Lab Manager',
+  roleDetail: null,
+  email: null,
+  phone: null,
+  bio: 'Keeps the laboratory running.',
+  slug: 'sam-okafor',
+  hasPage: true,
+  fullBio: null,
+}
+
+export const PERSON_PAGE_PUBLICATIONS_FIXTURE: Publication[] = [
+  {
+    ...make(
+      '2025',
+      'Glial support of neuronal circuits under chronic metabolic stress',
+      'Natarajan P., Okafor S., Delacroix R. and Holsinger R.M.D.',
+      'Journal of Neurochemistry',
+      '172(3) · 410–425',
+      '10.1111/jnc.fixture-2025',
+      null,
+      'Article',
+      ['Metabolism, oxidative stress & neuroprotection'],
+      'Natarajan'
+    ),
+    href: '/publications/glial-support-fixture-2025',
+  },
+  {
+    ...make(
+      '2023',
+      'Ageing astrocytes and synaptic repair: a review',
+      'Ferreira, M., Natarajan, P.K., Holsinger, R.M.D.',
+      'Molecules',
+      '28(5) · 2306',
+      null,
+      'https://www.example.org/ageing-astrocytes-review',
+      'Review',
+      [],
+      'Natarajan'
+    ),
+    href: '/publications/ageing-astrocytes-fixture-2023',
+  },
+  make(
+    '2021',
+    'Blood-based markers of early cognitive decline',
+    'Okafor S. and Natarajan P.',
+    'Frontiers in Neuroscience',
+    '15 · 101',
+    '10.3389/fnins.fixture-2021',
+    null,
+    'Article',
+    [],
+    'Natarajan'
+  ),
+]
 
 // Task 1 (Resources): production carries zero `resource` documents today
 // (spec §2), so this is the only place the populated state renders at all.
@@ -634,7 +723,7 @@ function researchProjectView(overrides: {
   id: string
   slug?: string | null
   title: string
-  body: ReturnType<typeof overviewParagraph>[]
+  body: ReturnType<typeof overviewParagraph>[] | null
   start: string | null
   tags: string[]
   category: string | null
@@ -649,7 +738,6 @@ function researchProjectView(overrides: {
     // (see `gallery-home-unslugged`).
     slug: overrides.slug === undefined ? overrides.id : overrides.slug,
     title: overrides.title,
-    label: tags[0] || 'Project',
     kicker: researchKicker({ start: overrides.start, category: overrides.category }),
     tagLine: tags.join(' · '),
     body: overrides.body,
@@ -1138,3 +1226,45 @@ export const HOME_SETTINGS_NO_PEOPLE_FIXTURE: SettingsPayload = {
 // gallery-home-no-photos: no labHead set, so the hero's card is hidden and
 // every current member (including these) counts.
 export const HOME_SETTINGS_NO_LABHEAD_FIXTURE: SettingsPayload = fallbackSettings
+
+// Three projects, one with text, one with no body, one whose only paragraph is
+// whitespace: all three render, and the meta counts one.
+export const RESEARCH_EMPTY_BODIES_FIXTURE: ResearchProjectView[] = [
+  researchProjectView({
+    id: 'fixture-research-with-body',
+    title: 'Neurotrophic signalling in the ageing hippocampus',
+    body: [overviewParagraph('research-with-body-p1', 'Measuring how neurotrophic signalling changes with age.')],
+    start: '2022-01-01T00:00:00.000Z',
+    tags: ['Neurotrophins'],
+    category: null,
+    cover: null,
+  }),
+  researchProjectView({
+    id: 'fixture-research-no-body',
+    title: 'A project with no overview yet',
+    body: null,
+    start: null,
+    tags: [],
+    category: null,
+    cover: null,
+  }),
+  researchProjectView({
+    id: 'fixture-research-blank-body',
+    title: 'A project whose overview was cleared',
+    body: [overviewParagraph('research-blank-body-p1', '   ')],
+    start: null,
+    tags: [],
+    category: null,
+    cover: null,
+  }),
+]
+
+// Every row set, with a two-line address.
+export const CONTACT_DETAILS_FIXTURE: ContactDetails = {
+  email: 'lab@example.org',
+  phone: '+61 2 9351 0000',
+  address: 'Laboratory of Molecular Neuroscience and Dementia\nThe University of Sydney NSW 2006',
+}
+
+// Production today: no settings.contact at all.
+export const CONTACT_DETAILS_EMPTY_FIXTURE: ContactDetails = { email: null, phone: null, address: null }

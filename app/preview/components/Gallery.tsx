@@ -8,6 +8,8 @@ import { filterOptions, type Filters, NO_FILTERS } from 'components/redesign/fil
 import {
   CMS_VERBATIM_PUB_FEBS_J,
   CMS_VERBATIM_PUB_PLOS_ONE,
+  CONTACT_DETAILS_EMPTY_FIXTURE,
+  CONTACT_DETAILS_FIXTURE,
   HOME_MAESTRO_FIXTURE,
   HOME_PAGE_FIXTURE,
   HOME_PAGE_NO_OVERVIEW_FIXTURE,
@@ -37,7 +39,11 @@ import {
   PEOPLE_ROLE_GROUPS_FIXTURE,
   PEOPLE_SETTINGS_WITH_LAB_HEAD,
   PEOPLE_SETTINGS_WITHOUT_LAB_HEAD,
+  PERSON_PAGE_BARE_FIXTURE,
+  PERSON_PAGE_FIXTURE,
+  PERSON_PAGE_PUBLICATIONS_FIXTURE,
   PUBLICATION_PAGE_FIXTURE,
+  RESEARCH_EMPTY_BODIES_FIXTURE,
   RESEARCH_PROJECTS_FIXTURE,
   RESOURCES_FIXTURE,
   SAMPLE_PEOPLE,
@@ -55,8 +61,10 @@ import { PersonCard } from 'components/redesign/PersonCard'
 import type { Publication } from 'components/redesign/publicationModel'
 import { PublicationRow } from 'components/redesign/PublicationRow'
 import { ResourceBlock } from 'components/redesign/ResourceBlock'
+import { Contact } from 'components/redesign/screens/Contact'
 import { Home } from 'components/redesign/screens/Home'
 import { People } from 'components/redesign/screens/People'
+import { PersonPage } from 'components/redesign/screens/PersonPage'
 import { PublicationPage } from 'components/redesign/screens/PublicationPage'
 import { Research } from 'components/redesign/screens/Research'
 import { Resources } from 'components/redesign/screens/Resources'
@@ -322,24 +330,52 @@ export default function Gallery() {
       <section data-testid="gallery-people" className="col-start-2 px-6">
         <Heading>People screen</Heading>
 
-        <SubHeading>(a) Lab head set, no portrait, two-paragraph bio, hasPage</SubHeading>
+        <SubHeading>(a) Lab head set, no portrait, no short bio, hasPage, 3 publications</SubHeading>
         <div className="mb-8 border border-rule" data-testid="gallery-people-a">
           <People
             settings={PEOPLE_SETTINGS_WITH_LAB_HEAD}
             profiles={PEOPLE_PROFILES_FIXTURE}
             roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+            labHeadPublicationCount={3}
             headingLevel="h2"
           />
         </div>
 
         <SubHeading>(b) Lab head unset -- same people, no spotlight</SubHeading>
-        <div className="border border-rule" data-testid="gallery-people-b">
+        <div className="mb-8 border border-rule" data-testid="gallery-people-b">
           <People
             settings={PEOPLE_SETTINGS_WITHOUT_LAB_HEAD}
             profiles={PEOPLE_PROFILES_FIXTURE}
             roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
             headingLevel="h2"
           />
+        </div>
+
+        <SubHeading>(c) Lab head set, no short bio and no publications -- no profile link</SubHeading>
+        <div className="border border-rule" data-testid="gallery-people-c">
+          <People
+            settings={PEOPLE_SETTINGS_WITH_LAB_HEAD}
+            profiles={PEOPLE_PROFILES_FIXTURE}
+            roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+            labHeadPublicationCount={0}
+            headingLevel="h2"
+          />
+        </div>
+      </section>
+
+      <section data-testid="gallery-person-page" className="col-start-2 px-6">
+        <Heading>Person page</Heading>
+        <SubHeading>(a) Portrait, email, phone, three publications (one unslugged)</SubHeading>
+        <div className="mb-8 border border-rule" data-testid="gallery-person-page-a">
+          <PersonPage
+            person={PERSON_PAGE_FIXTURE}
+            publications={PERSON_PAGE_PUBLICATIONS_FIXTURE}
+            headingLevel="h2"
+          />
+        </div>
+        <SubHeading>(b) No portrait, no email, no publications</SubHeading>
+        <div className="border border-rule" data-testid="gallery-person-page-b">
+          <PersonPage person={PERSON_PAGE_BARE_FIXTURE} publications={[]} headingLevel="h2" />
         </div>
       </section>
 
@@ -533,6 +569,18 @@ export default function Gallery() {
         </div>
       </section>
 
+      <section data-testid="gallery-research-empty-bodies" className="col-start-2 px-6">
+        <Heading>Research screen -- missing and blank bodies are not counted</Heading>
+        <div className="border border-rule">
+          <Research
+            projects={RESEARCH_EMPTY_BODIES_FIXTURE}
+            email="lab@example.org"
+            showContactForm
+            headingLevel="h2"
+          />
+        </div>
+      </section>
+
       <section data-testid="gallery-resources" className="col-start-2 px-6">
         <Heading>Resources screen</Heading>
         {/* Task 1: production carries zero `resource` documents today (spec
@@ -542,6 +590,20 @@ export default function Gallery() {
             renders. */}
         <div className="border border-rule">
           <Resources resources={RESOURCES_FIXTURE} />
+        </div>
+      </section>
+
+      <section data-testid="gallery-contact" className="col-start-2 px-6">
+        <Heading>Contact screen</Heading>
+        <div className="border border-rule">
+          <Contact details={CONTACT_DETAILS_FIXTURE} headingLevel="h2" formIdPrefix="gallery-contact-" />
+        </div>
+      </section>
+
+      <section data-testid="gallery-contact-empty" className="col-start-2 px-6">
+        <Heading>Contact screen -- no details on file</Heading>
+        <div className="border border-rule">
+          <Contact details={CONTACT_DETAILS_EMPTY_FIXTURE} headingLevel="h2" formIdPrefix="gallery-contact-empty-" />
         </div>
       </section>
 

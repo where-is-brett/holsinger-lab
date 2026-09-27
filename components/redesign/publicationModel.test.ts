@@ -2,12 +2,17 @@ import type { PublicationPayload } from 'types'
 import { describe, expect, it } from 'vitest'
 
 import {
+  countPublicationsByPerson,
   deriveLink,
+  findAuthorToken,
   formatFilteredPublicationsMeta,
   formatPublicationsMeta,
   formatRef,
+  hasAuthor,
+  publicationsByPerson,
   splitAuthors,
   toPublication,
+  toPublicationFor,
 } from './publicationModel'
 
 describe('splitAuthors', () => {
@@ -113,6 +118,107 @@ describe('splitAuthors', () => {
     expect(r.pre).toBe('')
     expect(r.pi).toBe('Holsinger')
     expect(r.post).toBe(', Damian')
+  })
+
+  it('never extends past the initials when no comma follows', () => {
+    const r = splitAuthors('Holsinger RMD Smith J')
+    expect(r.pi).toBe('Holsinger RMD')
+    expect(r.post).toBe(' Smith J')
+  })
+
+  it('bolds another surname when asked', () => {
+    const r = splitAuthors('Wang Y., Ng J. and Holsinger R.M.D.', 'Ng')
+    expect(r).toEqual({ pre: 'Wang Y., ', pi: 'Ng J.', post: ' and Holsinger R.M.D.' })
+  })
+
+  it('does not match inside a longer name', () => {
+    expect(splitAuthors('Holsingerova A., Smith J.').pi).toBe('')
+  })
+})
+
+describe('findAuthorToken', () => {
+  it.each([
+    ['Holsinger R.M.D.', 'Holsinger R.M.D.'],
+    ['Holsinger RMD.', 'Holsinger RMD.'],
+    ['Holsinger RMD, Glaum J.', 'Holsinger RMD'],
+    ['Holsinger RMD, Kril JJ, Halliday GM.', 'Holsinger RMD'],
+    ['Holsinger R.M.D., Kiang K.M.', 'Holsinger R.M.D.'],
+    ['Holsinger R.M.D. and Neely G.', 'Holsinger R.M.D.'],
+    ['Holsinger, R.M.D.', 'Holsinger, R.M.D.'],
+    ['Holsinger, R.M.D. and Smith, J.', 'Holsinger, R.M.D.'],
+    ['Holsinger, RMD.', 'Holsinger, RMD.'],
+    ['Holsinger, RMD., Parmar, A.', 'Holsinger, RMD.'],
+    ['Holsinger R M D, Smith J.', 'Holsinger R M D'],
+    ['Holsinger R.M.D, Smith J.', 'Holsinger R.M.D'],
+    ['Holsinger, Q-S.; X, Y.', 'Holsinger, Q-S.'],
+    ['Holsinger, Damian', 'Holsinger'],
+  ])('%j bolds %j', (authors, run) => {
+    const token = findAuthorToken(authors, 'Holsinger')
+    expect(token).not.toBeNull()
+    expect(authors.slice(token!.start, token!.end)).toBe(run)
+  })
+
+  it('finds a later whole-word match after a rejected partial one', () => {
+    const authors = 'Holsingerova A. and Holsinger R.M.D.'
+    const token = findAuthorToken(authors, 'Holsinger')
+    expect(authors.slice(token!.start, token!.end)).toBe('Holsinger R.M.D.')
+  })
+
+  it('treats regex metacharacters in a surname literally', () => {
+    expect(findAuthorToken('AxB C.', 'A.B')).toBeNull()
+    expect(findAuthorToken('A.B C.', 'A.B')).not.toBeNull()
+  })
+})
+
+describe('hasAuthor', () => {
+  it('matches a whole-word surname', () => {
+    expect(hasAuthor('Wang Y., Ng J.', 'Ng')).toBe(true)
+  })
+
+  it.each([
+    ['Ngo H., Wang Y.', 'Ng'],
+    ['Holsinger-Smith A.', 'Holsinger'],
+    ['Smith-Holsinger A.', 'Holsinger'],
+    ["O'Holsinger A.", 'Holsinger'],
+    ['holsinger r.m.d.', 'Holsinger'],
+  ])('%j does not credit %j', (authors, surname) => {
+    expect(hasAuthor(authors, surname)).toBe(false)
+  })
+
+  it('never matches a blank surname', () => {
+    expect(hasAuthor('Holsinger R.', '   ')).toBe(false)
+    expect(hasAuthor('', '')).toBe(false)
+  })
+})
+
+describe('publicationsByPerson / countPublicationsByPerson', () => {
+  const a = payload({ _id: 'a', author: 'Wang Y., Ng J. and Holsinger R.M.D.' })
+  const b = payload({ _id: 'b', author: 'Ngo H. and Holsinger R.M.D.' })
+  const c = payload({ _id: 'c', author: null })
+
+  it('keeps only the papers carrying the surname token, bolding that surname', () => {
+    const rows = publicationsByPerson([a, b, c], 'Dr Johnny Ng')
+    expect(rows.map((r) => r.id)).toEqual(['a'])
+    expect(rows[0].authorsPI).toBe('Ng J.')
+  })
+
+  it('returns nothing for a name with no surname', () => {
+    expect(publicationsByPerson([a, b], 'Dr')).toEqual([])
+    expect(publicationsByPerson([a, b], null)).toEqual([])
+  })
+
+  it('counts author strings the same way', () => {
+    expect(countPublicationsByPerson([a.author, b.author, null], 'Damian Holsinger')).toBe(2)
+    expect(countPublicationsByPerson([a.author, b.author], 'Johnny Ng')).toBe(1)
+    expect(countPublicationsByPerson([a.author], '')).toBe(0)
+  })
+})
+
+describe('toPublicationFor', () => {
+  it('bolds the given surname; toPublication still bolds the PI', () => {
+    const p = payload({ author: 'Wang Y., Ng J. and Holsinger R.M.D.' })
+    expect(toPublicationFor('Ng')(p).authorsPI).toBe('Ng J.')
+    expect(toPublication(p).authorsPI).toBe('Holsinger R.M.D.')
   })
 })
 

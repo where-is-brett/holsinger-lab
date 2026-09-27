@@ -1,6 +1,8 @@
 import { formatApaCitation } from 'lib/citation'
 import type { PublicationPayload } from 'types'
 
+import { surnameOf } from './peopleModel'
+
 export interface Publication {
   id: string
   href: string | null
@@ -26,47 +28,55 @@ export interface Publication {
 
 const PI_SURNAME = 'Holsinger'
 
-// The PI's own name token ends at the next comma, semicolon, or " and "/
-// " & " conjunction -- so a co-author listed right after the PI with no
-// comma between them ("... Holsinger R.M.D. and Neely G.") is never swept
-// into the bold run too.
-const AUTHOR_TOKEN_BOUNDARY = /[,;]|\s+(?:and|&)\s+/
+// A character that would make a surname match part of a longer name: a letter,
+// a combining mark, an apostrophe or a hyphen.
+const NAME_CHAR = /[\p{L}\p{M}'’-]/u
+// One initial: a capital not followed by a lower-case letter (so "S" of "Smith"
+// is never taken as an initial), with an optional dot. Initials may be joined
+// by a space or a hyphen: "R.M.D.", "RMD", "R M D", "R.M.D", "Q-S.".
+const INITIAL = String.raw`\p{Lu}(?!\p{Ll})\.?`
+const INITIALS = String.raw`${INITIAL}(?:[\s-]?${INITIAL})*`
 
-// A segment is "initials only" when it's nothing but capital letters,
-// dots and hyphens (optionally space-separated), e.g. " R.M.D.", " RMD.",
-// " RMD", " Q-S.", " R. M. D." -- never a real name ("Damian", "Kiang
-// K.M.") mixed in, which always carries a lowercase letter or another
-// author's own surname-then-initials shape.
-const INITIALS_ONLY = /^\s*[A-Z](?:[A-Z.\-\s]*[A-Z.])?\s*$/
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
 
-export function splitAuthors(authors: string, piSurname: string = PI_SURNAME) {
-  const at = authors.indexOf(piSurname)
-  if (at === -1) return { pre: authors, pi: '', post: '' }
-  // The PI's name runs from the surname to that boundary or the end, so
-  // initials stay attached ("Holsinger R.M.D." not "Holsinger").
-  const rest = authors.slice(at + piSurname.length)
-  const boundary = rest.search(AUTHOR_TOKEN_BOUNDARY)
-  let end = at + piSurname.length + (boundary === -1 ? rest.length : boundary)
-
-  // "Surname, Initials" format ("Holsinger, R.M.D."): the comma found
-  // above is the name's own internal separator, not the next author's --
-  // when the segment right after it (up to the *next* real boundary) is
-  // initials only, fold that segment into the PI's own bolded token too,
-  // so the whole "Holsinger, R.M.D." reads as one name, not just the bare
-  // surname.
-  if (boundary !== -1 && rest[boundary] === ',') {
-    const afterComma = rest.slice(boundary + 1)
-    const nextBoundary = afterComma.search(AUTHOR_TOKEN_BOUNDARY)
-    const segment = nextBoundary === -1 ? afterComma : afterComma.slice(0, nextBoundary)
-    if (INITIALS_ONLY.test(segment)) {
-      end = at + piSurname.length + boundary + 1 + (nextBoundary === -1 ? afterComma.length : nextBoundary)
-    }
+/**
+ * Where `surname` appears in `authors` as a whole word, plus any initials that
+ * follow it (after an optional comma). Case-sensitive. The start boundary is
+ * checked by hand, not with a lookbehind, so the pattern also compiles on
+ * WebKit versions without lookbehind support.
+ */
+export function findAuthorToken(authors: string, surname: string): { start: number; end: number } | null {
+  const target = surname.trim()
+  if (!target) {
+    return null
   }
+  const pattern = new RegExp(
+    String.raw`${escapeRegExp(target)}(?![\p{L}\p{M}'’-])(?:(?:,\s*|\s+)${INITIALS})?`,
+    'gu'
+  )
+  for (let match = pattern.exec(authors); match !== null; match = pattern.exec(authors)) {
+    const before = Array.from(authors.slice(0, match.index)).pop()
+    if (before === undefined || !NAME_CHAR.test(before)) {
+      return { start: match.index, end: match.index + match[0].length }
+    }
+    pattern.lastIndex = match.index + 1
+  }
+  return null
+}
 
+export function hasAuthor(authors: string, surname: string): boolean {
+  return findAuthorToken(authors, surname) !== null
+}
+
+export function splitAuthors(authors: string, surname: string = PI_SURNAME) {
+  const token = findAuthorToken(authors, surname)
+  if (!token) return { pre: authors, pi: '', post: '' }
   return {
-    pre: authors.slice(0, at),
-    pi: authors.slice(at, end).trimEnd(),
-    post: authors.slice(end),
+    pre: authors.slice(0, token.start),
+    pi: authors.slice(token.start, token.end),
+    post: authors.slice(token.end),
   }
 }
 
@@ -90,10 +100,10 @@ export function formatRef(volume: number | null, issue: number | null, pages: st
 
 const DATE_LABEL = new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
 
-export function toPublication(p: PublicationPayload): Publication {
+function buildPublication(p: PublicationPayload, surname: string): Publication {
   const title = (p.title ?? '').trim()
   const authors = (p.author ?? '').trim()
-  const { pre, pi, post } = splitAuthors(authors)
+  const { pre, pi, post } = splitAuthors(authors, surname)
   const link = deriveLink(p.doi ?? null, p.url ?? null)
   return {
     id: p._id,
@@ -120,6 +130,30 @@ export function toPublication(p: PublicationPayload): Publication {
       .map((r) => ({ id: r._id, title: (r.title ?? '').trim(), kind: r.kind ?? null }))
       .filter((r) => r.title !== ''),
   }
+}
+
+export function toPublication(p: PublicationPayload): Publication {
+  return buildPublication(p, PI_SURNAME)
+}
+
+/** A `toPublication` that bolds `surname` instead of the PI's -- for a person's own profile page. */
+export function toPublicationFor(surname: string): (p: PublicationPayload) => Publication {
+  return (p) => buildPublication(p, surname)
+}
+
+/** The papers whose author string carries this person's surname token, in the given order, bolding that surname. */
+export function publicationsByPerson(pubs: PublicationPayload[], name: string | null | undefined): Publication[] {
+  const surname = surnameOf(name)
+  if (!surname) return []
+  const toRow = toPublicationFor(surname)
+  return pubs.filter((p) => hasAuthor(p.author ?? '', surname)).map(toRow)
+}
+
+/** How many author strings carry this person's surname token -- `publicationsByPerson`'s count, from authors alone. */
+export function countPublicationsByPerson(authors: (string | null)[], name: string | null | undefined): number {
+  const surname = surnameOf(name)
+  if (!surname) return 0
+  return authors.filter((a) => hasAuthor(a ?? '', surname)).length
 }
 
 /**

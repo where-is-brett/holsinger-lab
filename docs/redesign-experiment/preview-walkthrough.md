@@ -23,6 +23,7 @@ Measured against the live dataset on 2026-09-23:
 | MAESTRO talks project | present |
 | Support page | present |
 | Site name (Settings) | **not set**, so the header shows the built-in "Holsinger Lab" |
+| Contact details (Settings → Contact details) | **not set** (confirmed against production as of this PR) |
 
 ## Screen by screen
 
@@ -65,7 +66,14 @@ a page per paper with its abstract, link and citation.
 report, and asks for confirmation before writing.
 
 ### People
-**Shows now:** all six groups with photos, roles, and the alumni as a name list.
+**Shows now:** one continuous grid of every current member (no separate grid per
+group, so a small group never leaves a half-empty row) — each card carries a
+small group label taken from its `roleGroup` document's own title, in
+`orderRank` order. A member with no photo gets a quiet initials tile instead of
+a placeholder graphic. Alumni are a plain name list, linked when they have a
+page. A person's own page (when `hasPage` is set) lists "Publications (n)" —
+every paper whose author list carries their surname as a whole word — and an
+email button when `email` is set on their profile.
 
 **Empty:** the lab-head spotlight at the top.
 
@@ -75,7 +83,11 @@ initials until one is uploaded.
 
 ### Research
 **Shows now:** only a line saying projects will be listed here, plus the
-enquiries band.
+enquiries band. Once a project is listed, its own title is the section's only
+heading — there is no separate label above it, so nothing repeats. The page's
+meta line ("N active projects") counts only projects whose overview (or,
+failing that, description) actually has text; a project whose body is empty or
+whitespace-only still gets its own section, it's just not counted.
 
 **To fill:** set "Position on the Research page" (1, 2, 3…) on each project to
 list. Each one then shows its since-year, tags, overview and cover image.
@@ -85,7 +97,20 @@ list. Each one then shows its since-year, tags, overview and cover image.
 
 **To fill:** add the resource (below).
 
-### Contact and the other pages
+### Contact
+**Shows now:** the details on file in Settings → Contact details — email,
+phone and address — each rendered only when its field is set, beside the
+existing enquiry form (same Formspree submission and behaviour, restyled to
+match), plus a fixed link to The University of Sydney. Details sit to the left
+of the form from `lg`, above it below `lg`.
+
+**Empty:** today `Settings → Contact details` has nothing set, so the page
+shows only the form and the University link.
+
+**To fill:** add an email, phone and/or address under Settings → Contact
+details. Any field left blank simply doesn't render its row.
+
+### The other pages
 Unchanged by the redesign, restyled to match.
 
 ## The content steps, in the order that helps most

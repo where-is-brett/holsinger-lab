@@ -1,3 +1,4 @@
+import { toPlainText } from '@portabletext/react'
 import { urlForImage } from 'lib/sanity.image'
 import type { Image as SanityImage } from 'sanity'
 import type { ResearchProjectPayload } from 'types'
@@ -51,8 +52,6 @@ export interface ResearchProjectView {
   title: string
   /** The project's slug, or `null` when unset (e.g. an unslugged import) -- see `researchCards` (homeModel.ts) for how callers link to it. */
   slug: string | null
-  /** The section label: the first tag, or "Project" when there are none. */
-  label: string
   /** `researchKicker`'s own output ("Since {year}", category, both, or ""). */
   kicker: string
   /** Tags joined with " · ", rendered in link colour. "" when there are none. */
@@ -129,19 +128,20 @@ function coverView(p: ResearchProjectPayload): ResearchProjectCover | null {
 }
 
 /**
- * `overview` when it has at least one block, else `description`, else
- * `null`. Both fields come back from a `groq` fetch as `undefined`,
- * `null`, or `[]` when unset -- all three count as "no overview" here, not
- * just `null`/`undefined` (a Studio editor clearing a portable-text field
- * to empty leaves `[]`, not `null`). Exists because the two Wix-imported
- * projects (researchOrder 3/4) carry their copy in `description`, not
- * `overview` -- the field the original two projects (researchOrder 1/2)
- * both have, with identical text. Without this fallback the imported
- * projects render title-only.
+ * `overview` when it has visible text (`hasBodyText`), else `description`,
+ * else `null`. Both fields come back from a `groq` fetch as `undefined`,
+ * `null`, `[]`, or a lone empty/whitespace-only paragraph when unset -- all
+ * of these count as "no overview" here, not just `null`/`undefined`/`[]`
+ * (a Studio editor clearing a portable-text field can leave a blank
+ * paragraph behind rather than removing the block). Exists because the two
+ * Wix-imported projects (researchOrder 3/4) carry their copy in
+ * `description`, not `overview` -- the field the original two projects
+ * (researchOrder 1/2) both have, with identical text. Without this
+ * fallback the imported projects render title-only.
  */
 function resolveBody(p: ResearchProjectPayload): ResearchProjectView['body'] {
-  if (p.overview && p.overview.length > 0) return p.overview
-  if (p.description && p.description.length > 0) return p.description
+  if (hasBodyText(p.overview)) return p.overview
+  if (hasBodyText(p.description)) return p.description
   return null
 }
 
@@ -152,10 +152,24 @@ export function toResearchView(p: ResearchProjectPayload): ResearchProjectView {
     id: p._id,
     title: p.title ?? '',
     slug: p.slug ?? null,
-    label: tags[0] || 'Project',
     kicker: researchKicker({ start: p.start, category: p.category }),
     tagLine: tags.join(' · '),
     body: resolveBody(p),
     cover: coverView(p),
   }
+}
+
+/**
+ * Whether a resolved body has any visible text. A block array can be present
+ * yet blank (an editor cleared the text, leaving empty or whitespace-only
+ * spans), and such a project isn't counted as active.
+ */
+export function hasBodyText(body: ResearchProjectView['body']): boolean {
+  if (!body || body.length === 0) return false
+  return toPlainText(body as Parameters<typeof toPlainText>[0]).trim() !== ''
+}
+
+/** The Research meta's count: projects whose resolved body has text. */
+export function countProjectsWithBody(projects: Pick<ResearchProjectView, 'body'>[]): number {
+  return projects.filter((project) => hasBodyText(project.body)).length
 }
