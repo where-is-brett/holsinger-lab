@@ -264,6 +264,18 @@ The review counted about 25 tracked, uppercase, 10–11px labels on Home.
     unchanged.
   - Stacked below `lg`.
 
+**Shipped, revised from the above** (see the revision plan's "Rulings this plan takes" and
+`phase-3-decisions.md`'s "Revision PR 4" section for the full reasoning):
+
+- **Research carries no per-project label** (plan ruling 1), not "the project's title" as
+  literally written above. Each project's own `<h2>` already names its section; a label repeating
+  that title would print it twice (side by side from `lg`, stacked directly above it below `lg`).
+  Confirmed with the command centre before Task 4 implemented it.
+- **The People spotlight shows the short `bio` when one is set, else `fullBio`** (plan ruling 5) —
+  not implied above, which only describes when the spotlight's link appears, not which text it
+  shows. The profile page keeps the opposite preference (`fullBio`, else `bio`), so the two never
+  show identical text when both fields are set.
+
 ---
 
 ## Rulings this spec takes (the review left these open)
