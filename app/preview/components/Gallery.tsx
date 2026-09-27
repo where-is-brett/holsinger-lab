@@ -37,6 +37,9 @@ import {
   PEOPLE_ROLE_GROUPS_FIXTURE,
   PEOPLE_SETTINGS_WITH_LAB_HEAD,
   PEOPLE_SETTINGS_WITHOUT_LAB_HEAD,
+  PERSON_PAGE_BARE_FIXTURE,
+  PERSON_PAGE_FIXTURE,
+  PERSON_PAGE_PUBLICATIONS_FIXTURE,
   PUBLICATION_PAGE_FIXTURE,
   RESEARCH_PROJECTS_FIXTURE,
   RESOURCES_FIXTURE,
@@ -57,6 +60,7 @@ import { PublicationRow } from 'components/redesign/PublicationRow'
 import { ResourceBlock } from 'components/redesign/ResourceBlock'
 import { Home } from 'components/redesign/screens/Home'
 import { People } from 'components/redesign/screens/People'
+import { PersonPage } from 'components/redesign/screens/PersonPage'
 import { PublicationPage } from 'components/redesign/screens/PublicationPage'
 import { Research } from 'components/redesign/screens/Research'
 import { Resources } from 'components/redesign/screens/Resources'
@@ -340,6 +344,22 @@ export default function Gallery() {
             roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
             headingLevel="h2"
           />
+        </div>
+      </section>
+
+      <section data-testid="gallery-person-page" className="col-start-2 px-6">
+        <Heading>Person page</Heading>
+        <SubHeading>(a) Portrait, email, phone, three publications (one unslugged)</SubHeading>
+        <div className="mb-8 border border-rule" data-testid="gallery-person-page-a">
+          <PersonPage
+            person={PERSON_PAGE_FIXTURE}
+            publications={PERSON_PAGE_PUBLICATIONS_FIXTURE}
+            headingLevel="h2"
+          />
+        </div>
+        <SubHeading>(b) No portrait, no email, no publications</SubHeading>
+        <div className="border border-rule" data-testid="gallery-person-page-b">
+          <PersonPage person={PERSON_PAGE_BARE_FIXTURE} publications={[]} headingLevel="h2" />
         </div>
       </section>
 

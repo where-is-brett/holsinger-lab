@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { shouldShowLabHeadCard } from 'components/redesign/homeModel'
+import { countPublicationsByPerson } from 'components/redesign/publicationModel'
 
 import { e2eClient } from './support/sanity'
 
@@ -155,5 +156,41 @@ test('the home page renders, and the lab-head card matches settings.labHead / sh
     await expect(card.getByRole('link', { name: settings!.labHeadName as string, exact: true })).toBeVisible()
   } else {
     await expect(page.getByTestId('home-lab-head-card')).toHaveCount(0)
+  }
+})
+
+test('each profile page lists the papers carrying its surname token, and an email button only when email is set', async ({
+  page,
+}) => {
+  const [profiles, authors] = await Promise.all([
+    e2eClient.fetch<{ slug: string; name: string | null; email: string | null }[]>(
+      `*[_type == "profile" && hasPage == true && defined(slug.current)]{ "slug": slug.current, name, email }`
+    ),
+    e2eClient.fetch<(string | null)[]>(`*[_type == "publication"].author`),
+  ])
+  test.skip(profiles.length === 0, 'no profile with hasPage=true exists in live data yet')
+
+  for (const profile of profiles) {
+    const expected = countPublicationsByPerson(authors, profile.name)
+    const response = await page.goto(`/people/${profile.slug}`)
+    expect(response?.status()).toBe(200)
+
+    const list = page.getByTestId('person-publications')
+    if (expected === 0) {
+      await expect(list).toHaveCount(0)
+    } else {
+      await expect(
+        page.getByRole('heading', { level: 2, name: `Publications (${expected})`, exact: true })
+      ).toBeVisible()
+      await expect(list.getByTestId('pub-title')).toHaveCount(expected)
+    }
+
+    const email = profile.email?.trim()
+    const button = page.getByRole('link', { name: 'Send an email', exact: true })
+    if (email) {
+      await expect(button).toHaveAttribute('href', `mailto:${email}`)
+    } else {
+      await expect(button).toHaveCount(0)
+    }
   }
 })

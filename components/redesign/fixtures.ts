@@ -3,6 +3,7 @@ import type {
   HomePagePayload,
   HomeResourcePayload,
   MaestroProjectPayload,
+  ProfileBySlugPayload,
   ProfilePayload,
   ResourcePayload,
   RoleGroupPayload,
@@ -32,8 +33,9 @@ function make(
   url: string | null,
   type: string,
   topics: string[],
+  surname: string = 'Holsinger',
 ): Publication {
-  const a = splitAuthors(authors)
+  const a = splitAuthors(authors, surname)
   const link = deriveLink(doi, url)
   // Checked against the real dataset (19 publications, 9 without a DOI):
   // zero are missing both a DOI and a URL, so this throw should never fire
@@ -452,6 +454,89 @@ export const PEOPLE_SETTINGS_WITHOUT_LAB_HEAD: SettingsPayload = {
   ...fallbackSettings,
   labHead: null,
 }
+
+// A profile page with everything set: portrait, email, phone, a two-paragraph
+// bio and three papers -- one without a slug, so its title renders unlinked.
+export const PERSON_PAGE_FIXTURE: ProfileBySlugPayload = {
+  _id: 'fixture-person-page',
+  image: PEOPLE_IMAGE as unknown as ProfileBySlugPayload['image'],
+  name: 'Dr Priya Natarajan',
+  role: 'Research Scientist',
+  roleDetail: null,
+  email: 'priya.natarajan.laboratory@sydney.edu.au',
+  phone: '+61 2 9351 0000',
+  bio: null,
+  slug: 'priya-natarajan',
+  hasPage: true,
+  fullBio: [
+    portableParagraph(
+      'person-p1',
+      'Dr Natarajan studies how glial cells support neuronal circuits under chronic metabolic stress.'
+    ),
+    portableParagraph('person-p2', 'She joined the laboratory in 2021 after postdoctoral work in Melbourne.'),
+  ] as ProfileBySlugPayload['fullBio'],
+}
+
+// No portrait, no email, no phone, no papers: the page must render the bio
+// alone, with no Publications section and no email button.
+export const PERSON_PAGE_BARE_FIXTURE: ProfileBySlugPayload = {
+  _id: 'fixture-person-page-bare',
+  image: null,
+  name: 'Sam Okafor',
+  role: 'Lab Manager',
+  roleDetail: null,
+  email: null,
+  phone: null,
+  bio: 'Keeps the laboratory running.',
+  slug: 'sam-okafor',
+  hasPage: true,
+  fullBio: null,
+}
+
+export const PERSON_PAGE_PUBLICATIONS_FIXTURE: Publication[] = [
+  {
+    ...make(
+      '2025',
+      'Glial support of neuronal circuits under chronic metabolic stress',
+      'Natarajan P., Okafor S., Delacroix R. and Holsinger R.M.D.',
+      'Journal of Neurochemistry',
+      '172(3) · 410–425',
+      '10.1111/jnc.fixture-2025',
+      null,
+      'Article',
+      ['Metabolism, oxidative stress & neuroprotection'],
+      'Natarajan'
+    ),
+    href: '/publications/glial-support-fixture-2025',
+  },
+  {
+    ...make(
+      '2023',
+      'Ageing astrocytes and synaptic repair: a review',
+      'Ferreira, M., Natarajan, P.K., Holsinger, R.M.D.',
+      'Molecules',
+      '28(5) · 2306',
+      null,
+      'https://www.example.org/ageing-astrocytes-review',
+      'Review',
+      [],
+      'Natarajan'
+    ),
+    href: '/publications/ageing-astrocytes-fixture-2023',
+  },
+  make(
+    '2021',
+    'Blood-based markers of early cognitive decline',
+    'Okafor S. and Natarajan P.',
+    'Frontiers in Neuroscience',
+    '15 · 101',
+    '10.3389/fnins.fixture-2021',
+    null,
+    'Article',
+    [],
+    'Natarajan'
+  ),
+]
 
 // Task 1 (Resources): production carries zero `resource` documents today
 // (spec §2), so this is the only place the populated state renders at all.

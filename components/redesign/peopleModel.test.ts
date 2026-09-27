@@ -269,6 +269,12 @@ describe('surnameOf', () => {
     ['Élodie Ñúñez', 'Ñúñez'],
     ['Dr Chan', 'Chan'],
     ['Plato', 'Plato'],
+    // A post-nominal suffix (not just a generational one) is dropped too.
+    ['Jane Smith MD', 'Smith'],
+    ['Jane Smith BSc', 'Smith'],
+    // A parenthesised aside containing a space doesn't leak its closing
+    // word through as a fake surname.
+    ['Jane Smith (née Brown)', 'Smith'],
   ])('%j -> %j', (name, surname) => {
     expect(surnameOf(name)).toBe(surname)
   })

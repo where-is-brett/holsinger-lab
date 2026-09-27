@@ -97,7 +97,16 @@ function nameWords(name: string | null | undefined): string[] {
   if (!name) {
     return []
   }
-  let words = name.normalize('NFC').trim().split(/\s+/).filter(Boolean)
+  // Strip a parenthesised aside ("(née Brown)", "(DDS)") before splitting
+  // into words -- a space inside the parentheses would otherwise leak its
+  // closing word ("Brown)") through as its own word, since that word does
+  // start with a letter and would pass the filter below unfiltered.
+  let words = name
+    .normalize('NFC')
+    .replace(/\([^)]*\)/gu, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
   if (words.length > 1 && HONORIFICS.has(words[0].toLowerCase())) {
     words = words.slice(1)
   }
@@ -136,10 +145,29 @@ export function initialsOf(name: string | null | undefined): string {
   return (words.length === 1 ? first : first + last).toUpperCase()
 }
 
-// Generational and degree suffixes that follow a surname rather than being
-// one. Compared after trailing punctuation is stripped, so "Jr." and
-// "Ph.D." match.
-const NAME_SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'phd', 'ph.d'])
+// Generational and degree/post-nominal suffixes that follow a surname
+// rather than being one. Compared after trailing punctuation is stripped,
+// so "Jr." and "Ph.D." match. Common post-nominals (MD, DDS, MBBS, BSc,
+// MSc and similar) are included alongside the generational suffixes, so
+// e.g. "Jane Smith MD" and "Jane Smith BSc" both give the surname "Smith".
+// Kept to multi-letter, unambiguous post-nominals -- no two-letter entries
+// like "Ma" or "Ng", which are themselves real surnames.
+const NAME_SUFFIXES = new Set([
+  'jr',
+  'sr',
+  'ii',
+  'iii',
+  'iv',
+  'phd',
+  'ph.d',
+  'md',
+  'dds',
+  'mbbs',
+  'mbchb',
+  'bsc',
+  'msc',
+  'frcs',
+])
 
 /**
  * The surname token used to find a person's papers: the last word of the

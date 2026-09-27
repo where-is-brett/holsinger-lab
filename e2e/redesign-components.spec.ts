@@ -20,6 +20,7 @@ const GALLERY_SECTIONS = [
   'filter-bar',
   'person-card',
   'people',
+  'person-page',
   'site-nav',
   'site-nav-long',
   'mobile-header',
@@ -414,6 +415,28 @@ test.describe('redesign component gallery', () => {
     await expect(
       instance.locator('[data-testid="person-card"][data-name="Dr Ilse Van Der Berg"]')
     ).toHaveCount(1)
+  })
+
+  test('Person page gallery (a): Publications (3), the person bolded, an email button beside the address', async ({
+    page,
+  }) => {
+    const a = page.getByTestId('gallery-person-page-a')
+    await expect(a.getByRole('heading', { level: 2, name: 'Publications (3)', exact: true })).toBeVisible()
+    const list = a.getByTestId('person-publications')
+    await expect(list.getByTestId('pub-title')).toHaveCount(3)
+    await expect(list.locator('[data-testid="pub-authors"] strong').first()).toHaveText('Natarajan P.')
+    await expect(a.getByRole('link', { name: 'Send an email', exact: true })).toHaveAttribute(
+      'href',
+      'mailto:priya.natarajan.laboratory@sydney.edu.au'
+    )
+    await expect(a.getByText('priya.natarajan.laboratory@sydney.edu.au', { exact: true })).toBeVisible()
+  })
+
+  test('Person page gallery (b): no publications and no email means no section and no button', async ({ page }) => {
+    const b = page.getByTestId('gallery-person-page-b')
+    await expect(b.getByTestId('person-publications')).toHaveCount(0)
+    await expect(b.getByRole('heading', { name: /^Publications/ })).toHaveCount(0)
+    await expect(b.getByRole('link', { name: 'Send an email' })).toHaveCount(0)
   })
 
   test('People gallery: no page overflow at 320px', async ({ page }) => {
