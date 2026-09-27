@@ -145,34 +145,6 @@ export type Resource = {
   }>
 }
 
-export type Publication = {
-  _id: string
-  _type: 'publication'
-  _createdAt: string
-  _updatedAt: string
-  _rev: string
-  author?: string
-  title?: string
-  slug?: Slug
-  volume?: number
-  issue?: number
-  pages?: string
-  journal?: string
-  doi?: string
-  url?: string
-  abstract?: string
-  date?: string
-  type?: 'Article' | 'Review' | 'Case report'
-  topics?: Array<string>
-  featured?: boolean
-}
-
-export type Slug = {
-  _type: 'slug'
-  current?: string
-  source?: string
-}
-
 export type Timeline = {
   _type: 'timeline'
   hidden?: boolean
@@ -203,152 +175,10 @@ export type Milestone = {
   duration?: Duration
 }
 
-export type Project = {
-  _id: string
-  _type: 'project'
-  _createdAt: string
-  _updatedAt: string
-  _rev: string
-  title?: string
-  slug?: Slug
-  overview?: Array<{
-    children?: Array<{
-      marks?: Array<string>
-      text?: string
-      _type: 'span'
-      _key: string
-    }>
-    style?: 'normal'
-    listItem?: never
-    markDefs?: null
-    level?: number
-    _type: 'block'
-    _key: string
-  }>
-  coverImage?: {
-    asset?: SanityImageAssetReference
-    media?: unknown
-    hotspot?: SanityImageHotspot
-    crop?: SanityImageCrop
-    _type: 'image'
-  }
-  duration?: Duration
-  category?: string
-  status?: 'active' | 'completed' | 'seeking-students'
-  site?: string
-  tags?: Array<string>
-  description?: Array<
-    | {
-        children?: Array<{
-          marks?: Array<string>
-          text?: string
-          _type: 'span'
-          _key: string
-        }>
-        style?: 'normal'
-        listItem?: 'bullet' | 'number'
-        markDefs?: Array<{
-          href?: string
-          _type: 'link'
-          _key: string
-        }>
-        level?: number
-        _type: 'block'
-        _key: string
-      }
-    | ({
-        _key: string
-      } & Timeline)
-    | {
-        asset?: SanityImageAssetReference
-        media?: unknown
-        hotspot?: SanityImageHotspot
-        crop?: SanityImageCrop
-        caption?: string
-        alt?: string
-        _type: 'image'
-        _key: string
-      }
-  >
-  researchOrder?: number
-}
-
 export type Duration = {
   _type: 'duration'
   start?: string
   end?: string
-}
-
-export type PageReference = {
-  _ref: string
-  _type: 'reference'
-  _weak?: boolean
-  [internalGroqTypeReferenceTo]?: 'page'
-}
-
-export type Page = {
-  _id: string
-  _type: 'page'
-  _createdAt: string
-  _updatedAt: string
-  _rev: string
-  title?: string
-  slug?: Slug
-  overview?: Array<{
-    children?: Array<{
-      marks?: Array<string>
-      text?: string
-      _type: 'span'
-      _key: string
-    }>
-    style?: 'normal'
-    listItem?: never
-    markDefs?: null
-    level?: number
-    _type: 'block'
-    _key: string
-  }>
-  body?: Array<
-    | {
-        children?: Array<{
-          marks?: Array<string>
-          text?: string
-          _type: 'span'
-          _key: string
-        }>
-        style?:
-          'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'blockquote'
-        listItem?: 'bullet' | 'number'
-        markDefs?: Array<
-          | {
-              href?: string
-              _type: 'link'
-              _key: string
-            }
-          | {
-              reference?: PageReference
-              _type: 'internalLink'
-              _key: string
-            }
-        >
-        level?: number
-        _type: 'block'
-        _key: string
-      }
-    | ({
-        _key: string
-      } & Timeline)
-    | {
-        asset?: SanityImageAssetReference
-        media?: unknown
-        hotspot?: SanityImageHotspot
-        crop?: SanityImageCrop
-        caption?: string
-        alt?: string
-        _type: 'image'
-        _key: string
-      }
-  >
 }
 
 export type SiteCopy = {
@@ -414,6 +244,13 @@ export type HomeReference = {
   _type: 'reference'
   _weak?: boolean
   [internalGroqTypeReferenceTo]?: 'home'
+}
+
+export type PageReference = {
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'page'
 }
 
 export type ProjectReference = {
@@ -543,6 +380,12 @@ export type Profile = {
   hasPage?: boolean
 }
 
+export type Slug = {
+  _type: 'slug'
+  current?: string
+  source?: string
+}
+
 export type RoleGroup = {
   _id: string
   _type: 'roleGroup'
@@ -587,11 +430,194 @@ export type Home = {
     _type: 'block'
     _key: string
   }>
+  hero?: {
+    layout?: 'split' | 'fullBleed'
+    autoplay?: boolean
+    slides?: Array<
+      | {
+          image?: {
+            asset?: SanityImageAssetReference
+            media?: unknown
+            hotspot?: SanityImageHotspot
+            crop?: SanityImageCrop
+            _type: 'image'
+          }
+          alt?: string
+          caption?: string
+          link?: {
+            internal?: ProjectReference | PublicationReference | PageReference
+            external?: string
+          }
+          _type: 'heroImageSlide'
+          _key: string
+        }
+      | ({
+          _key: string
+        } & ProjectReference)
+    >
+  }
   showcaseProjects?: Array<
     {
       _key: string
     } & ProjectReference
   >
+}
+
+export type Page = {
+  _id: string
+  _type: 'page'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  title?: string
+  slug?: Slug
+  overview?: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: null
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+  body?: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?:
+          'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'blockquote'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<
+          | {
+              href?: string
+              _type: 'link'
+              _key: string
+            }
+          | {
+              reference?: PageReference
+              _type: 'internalLink'
+              _key: string
+            }
+        >
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | ({
+        _key: string
+      } & Timeline)
+    | {
+        asset?: SanityImageAssetReference
+        media?: unknown
+        hotspot?: SanityImageHotspot
+        crop?: SanityImageCrop
+        caption?: string
+        alt?: string
+        _type: 'image'
+        _key: string
+      }
+  >
+}
+
+export type Publication = {
+  _id: string
+  _type: 'publication'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  author?: string
+  title?: string
+  slug?: Slug
+  volume?: number
+  issue?: number
+  pages?: string
+  journal?: string
+  doi?: string
+  url?: string
+  abstract?: string
+  date?: string
+  type?: 'Article' | 'Review' | 'Case report'
+  topics?: Array<string>
+  featured?: boolean
+}
+
+export type Project = {
+  _id: string
+  _type: 'project'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  title?: string
+  slug?: Slug
+  overview?: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: null
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+  coverImage?: {
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    _type: 'image'
+  }
+  duration?: Duration
+  category?: string
+  status?: 'active' | 'completed' | 'seeking-students'
+  site?: string
+  tags?: Array<string>
+  description?: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'normal'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | ({
+        _key: string
+      } & Timeline)
+    | {
+        asset?: SanityImageAssetReference
+        media?: unknown
+        hotspot?: SanityImageHotspot
+        crop?: SanityImageCrop
+        caption?: string
+        alt?: string
+        _type: 'image'
+        _key: string
+      }
+  >
+  researchOrder?: number
 }
 
 export type RgbaColor = {
@@ -750,24 +776,24 @@ export type AllSanitySchemaTypes =
   | NewsItem
   | PublicationReference
   | Resource
-  | Publication
-  | Slug
   | Timeline
   | Milestone
-  | Project
   | Duration
-  | PageReference
-  | Page
   | SiteCopy
   | ProfileReference
   | HomeReference
+  | PageReference
   | ProjectReference
   | Settings
   | RoleGroupReference
   | Profile
+  | Slug
   | RoleGroup
   | Color
   | Home
+  | Page
+  | Publication
+  | Project
   | RgbaColor
   | HsvaColor
   | HslaColor
@@ -1385,6 +1411,67 @@ export type HomeSiteCopyQueryResult = {
 } | null
 
 // Source: lib/sanity.queries.ts
+// Variable: homeHeroQuery
+// Query: {    "hero": *[_type == "home"][0].hero{      layout,      autoplay,      slides[]{        _key,        _type,        _type == "heroImageSlide" => {          image{ asset, crop, hotspot },          alt,          caption,          link{ external, "internal": internal->{ _type, "slug": slug.current } },        },        _type == "reference" => {          "project": @->{            _id,            title,            "slug": slug.current,            coverImage{ asset, crop, hotspot, alt },          },        },      },    },    "fallbackImage": *[_type == "siteCopy"][0].hero.image{ asset, crop, hotspot, alt },  }
+export type HomeHeroQueryResult = {
+  hero: {
+    layout: 'fullBleed' | 'split' | null
+    autoplay: boolean | null
+    slides: Array<
+      | {
+          _key: string
+          _type: 'heroImageSlide'
+          image: {
+            asset: SanityImageAssetReference | null
+            crop: SanityImageCrop | null
+            hotspot: SanityImageHotspot | null
+          } | null
+          alt: string | null
+          caption: string | null
+          link: {
+            external: string | null
+            internal:
+              | {
+                  _type: 'page'
+                  slug: string | null
+                }
+              | {
+                  _type: 'project'
+                  slug: string | null
+                }
+              | {
+                  _type: 'publication'
+                  slug: string | null
+                }
+              | null
+          } | null
+        }
+      | {
+          _key: string
+          _type: 'reference'
+          project: {
+            _id: string
+            title: string | null
+            slug: string | null
+            coverImage: {
+              asset: SanityImageAssetReference | null
+              crop: SanityImageCrop | null
+              hotspot: SanityImageHotspot | null
+              alt: null
+            } | null
+          }
+        }
+    > | null
+  } | null
+  fallbackImage: {
+    asset: SanityImageAssetReference | null
+    crop: SanityImageCrop | null
+    hotspot: SanityImageHotspot | null
+    alt: string | null
+  } | null
+}
+
+// Source: lib/sanity.queries.ts
 // Variable: researchProjectsQuery
 // Query: *[_type == "project" && defined(researchOrder)] | order(researchOrder asc) {    _id,    title,    "slug": slug.current,    overview,    description,    coverImage{      ...,      asset->{        _id,        metadata{ dimensions{ width, height, aspectRatio } }      }    },    "start": duration.start,    tags,    category,  }
 export type ResearchProjectsQueryResult = Array<{
@@ -1618,6 +1705,7 @@ declare module '@sanity/client' {
     '\n  *[_type == "project" && slug.current == "maestro"][0]{\n    _id,\n    title,\n    overview,\n    site,\n  }\n': MaestroProjectQueryResult
     '\n  *[_type == "page" && slug.current == "support-our-research"][0]{\n    title,\n    "slug": slug.current,\n  }\n': SupportPageQueryResult
     '\n  *[_type == "siteCopy"][0]{\n    hero{ subheading },\n    about{ body, themes[]{ title, summary } },\n  }\n': HomeSiteCopyQueryResult
+    '\n  {\n    "hero": *[_type == "home"][0].hero{\n      layout,\n      autoplay,\n      slides[]{\n        _key,\n        _type,\n        _type == "heroImageSlide" => {\n          image{ asset, crop, hotspot },\n          alt,\n          caption,\n          link{ external, "internal": internal->{ _type, "slug": slug.current } },\n        },\n        _type == "reference" => {\n          "project": @->{\n            _id,\n            title,\n            "slug": slug.current,\n            coverImage{ asset, crop, hotspot, alt },\n          },\n        },\n      },\n    },\n    "fallbackImage": *[_type == "siteCopy"][0].hero.image{ asset, crop, hotspot, alt },\n  }\n': HomeHeroQueryResult
     '\n  *[_type == "project" && defined(researchOrder)] | order(researchOrder asc) {\n    _id,\n    title,\n    "slug": slug.current,\n    overview,\n    description,\n    coverImage{\n      ...,\n      asset->{\n        _id,\n        metadata{ dimensions{ width, height, aspectRatio } }\n      }\n    },\n    "start": duration.start,\n    tags,\n    category,\n  }\n': ResearchProjectsQueryResult
     '\n  *[_type == "resource"] | order(title asc) {\n    \n  _id,\n  title,\n  kind,\n  summary,\n  howToObtain,\n  publication->{\n    _id,\n    title,\n    date,\n    doi,\n    url,\n    journal,\n    volume,\n    issue,\n    pages,\n    "slug": slug.current,\n  },\n\n  }\n': ResourcesQueryResult
     '\n  *[_type == "roleGroup"] | order(orderRank) {\n    _id,\n    title,\n  }\n': RoleGroupQueryResult
