@@ -96,10 +96,13 @@ function PauseIcon({ paused }: { paused: boolean }) {
 
 function Caption({ slide, inverse, active }: { slide: HeroSlideView; inverse: boolean; active: boolean }) {
   if (!slide.caption) return null
-  const tone = inverse ? 'text-[#f5f7f9] border-white/40' : 'text-text border-rule-strong'
+  const tone = inverse ? 'text-[#f5f7f9] decoration-white/40' : 'text-text decoration-rule-strong'
   // Every slide's caption sits in the same grid cell (see `Captions`); only
   // the showing one is visible, focusable and in the accessibility tree.
-  const className = `min-w-0 justify-self-start border-b pb-px text-[0.8125rem] leading-[1.4] font-medium break-words [grid-area:1/1] ${tone} ${
+  // A text underline rather than a bottom border, so a caption that wraps
+  // is underlined line by line, and `self-start` so a short caption isn't
+  // stretched to the tallest one's height.
+  const className = `min-w-0 self-start justify-self-start text-[0.8125rem] leading-[1.4] font-medium break-words underline decoration-1 underline-offset-[5px] [grid-area:1/1] ${tone} ${
     active ? '' : 'invisible'
   }`
   const shared = { 'data-testid': active ? 'home-hero-caption' : undefined, 'data-cms-verbatim': true, 'aria-hidden': active ? undefined : true }
@@ -111,8 +114,8 @@ function Caption({ slide, inverse, active }: { slide: HeroSlideView; inverse: bo
     )
   }
   const text = `${slide.caption} →`
-  const linkClass = `${className} transition-[border-color] duration-(--sem-motion-fast) ease-(--sem-ease) ${
-    inverse ? 'hover:border-white' : 'hover:border-text'
+  const linkClass = `${className} transition-[text-decoration-color] duration-(--sem-motion-fast) ease-(--sem-ease) ${
+    inverse ? 'hover:decoration-white' : 'hover:decoration-text'
   }`
   return slide.href.startsWith('/') ? (
     <Link {...shared} href={slide.href} className={linkClass}>
@@ -145,6 +148,14 @@ export function HeroCarousel({ hero, overlay }: { hero: HomeHeroView; overlay?: 
   const fullBleed = layout === 'fullBleed'
 
   const [index, setIndex] = useState(0)
+  // Every slide that has been showing. Its picture stays mounted from then
+  // on (at most six), so a slide still fading out is never unmounted
+  // mid-crossfade by a second quick click or swipe.
+  const [shown, setShown] = useState<ReadonlySet<number>>(() => new Set([0]))
+  const moveTo = useCallback((next: number) => {
+    setIndex(next)
+    setShown((prev) => (prev.has(next) ? prev : new Set(prev).add(next)))
+  }, [])
   const [userPaused, setUserPaused] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
@@ -159,22 +170,21 @@ export function HeroCarousel({ hero, overlay }: { hero: HomeHeroView; overlay?: 
   const rotates = hero.autoplay && multiple && !reducedMotion
   const running = rotates && !userPaused && !hovered && !focused && !hidden && onScreen
 
-  // Only the current slide and its two neighbours get an <img>: the server
-  // HTML carries the first picture alone, and the neighbours load after
-  // hydration, ready for the crossfade either way. Slides only ever move
-  // one step, so the slide fading out is always still a neighbour.
+  // The server HTML carries the first picture alone. After hydration the
+  // current slide's two neighbours load too, ready for the crossfade, and
+  // any slide already shown stays mounted.
   const mounted = (i: number) =>
-    i === index || (hydrated && (i === (index + 1) % count || i === (index - 1 + count) % count))
+    shown.has(i) || (hydrated && (i === (index + 1) % count || i === (index - 1 + count) % count))
 
   // A fresh timer per slide, so a manual move always gets a full interval.
   useEffect(() => {
     if (!running) return
     const timer = window.setTimeout(() => {
       setAnnouncement('')
-      setIndex((i) => (i + 1) % count)
+      moveTo((index + 1) % count)
     }, HERO_INTERVAL_MS)
     return () => window.clearTimeout(timer)
-  }, [running, index, count])
+  }, [running, index, count, moveTo])
 
   useEffect(() => {
     const frame = frameRef.current
@@ -188,10 +198,10 @@ export function HeroCarousel({ hero, overlay }: { hero: HomeHeroView; overlay?: 
     (step: 1 | -1) => {
       const next = (index + step + count) % count
       const caption = slides[next].caption
-      setIndex(next)
+      moveTo(next)
       setAnnouncement(`Slide ${next + 1} of ${count}${caption ? `: ${caption}` : ''}`)
     },
-    [index, count, slides]
+    [index, count, slides, moveTo]
   )
 
   const onPointerDown = (e: PointerEvent) => {

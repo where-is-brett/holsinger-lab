@@ -258,6 +258,16 @@ test.describe('carousel semantics and controls', () => {
   })
 })
 
+test('two quick clicks never unmount the picture still fading out', async ({ page }) => {
+  await gotoHydrated(page, 'split')
+  const next = page.getByTestId('home-hero-next')
+  await next.click()
+  await next.click()
+  await expect(activeSlide(page)).toHaveAttribute('aria-label', '3 of 4')
+  // Slide 1 is two steps behind now, but it was showing moments ago.
+  await expect(page.getByTestId('home-hero-slide').nth(0).locator('img')).toHaveCount(1)
+})
+
 test.describe('autoplay', () => {
   test.beforeEach(async ({ page }) => {
     await page.clock.install()
