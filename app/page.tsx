@@ -1,4 +1,5 @@
 import { toPlainText } from '@portabletext/react'
+import { resolveHomeHero } from 'components/redesign/heroModel'
 import { toPublication } from 'components/redesign/publicationModel'
 import { toResearchView } from 'components/redesign/researchModel'
 import { Home } from 'components/redesign/screens/Home'
@@ -7,6 +8,7 @@ import { resolveBranding } from 'lib/branding'
 import { buildMetadata } from 'lib/metadata'
 import { sanityFetch } from 'lib/sanity.live'
 import {
+  homeHeroQuery,
   homePageQuery,
   homeRecentPublicationsQuery,
   homeResourceQuery,
@@ -22,6 +24,7 @@ import {
 import type { Metadata } from 'next'
 import { cache } from 'react'
 import type { Image } from 'sanity'
+import type { HomeHeroQueryResult } from 'sanity.types'
 import type {
   HomePagePayload,
   HomeResourcePayload,
@@ -54,8 +57,8 @@ const fallbackPage: HomePagePayload = {
 // `Promise.all` -- the settings/home-page pair `generateMetadata` already
 // depended on, plus the six new Home-only queries (recent publications,
 // the live publication count, the first resource, the `maestro` project,
-// the `support-our-research` page, and the shared `siteCopy` singleton
-// behind the hero statement) and the People data Home's own member count
+// the `support-our-research` page, the shared `siteCopy` singleton
+// behind the hero statement, and the picture banner) and the People data Home's own member count
 // and lab-head card need (`currentMemberCount`,
 // `shouldShowLabHeadCard`/`resolveLabHeadHref`, both from homeModel.ts).
 const getData = cache(async () => {
@@ -71,6 +74,7 @@ const getData = cache(async () => {
     { data: supportPageData },
     { data: profilesData },
     { data: roleGroupsData },
+    { data: heroData },
   ] = await Promise.all([
     sanityFetch({ query: settingsQuery, stega: false }),
     sanityFetch({ query: homePageQuery }),
@@ -86,6 +90,9 @@ const getData = cache(async () => {
     sanityFetch({ query: supportPageQuery, stega: false }),
     sanityFetch({ query: profileQuery, stega: false }),
     sanityFetch({ query: roleGroupQuery, stega: false }),
+    // `stega: false`: this feeds image alt text, captions and link hrefs,
+    // none of which should carry invisible Presentation-mode characters.
+    sanityFetch({ query: homeHeroQuery, stega: false }),
   ])
   const settings = (settingsData as SettingsPayload | null) ?? fallbackSettings
   const page = (pageData as HomePagePayload | null) ?? fallbackPage
@@ -98,6 +105,8 @@ const getData = cache(async () => {
   const supportPage = (supportPageData as SupportPagePayload | null) ?? null
   const profiles = (profilesData as ProfilePayload[] | null) ?? []
   const roleGroups = (roleGroupsData as RoleGroupPayload[] | null) ?? []
+  // `home.hero` -> `siteCopy.hero.image` -> `null` (the text-only Home).
+  const hero = resolveHomeHero(heroData as HomeHeroQueryResult | null)
   return {
     settings,
     page,
@@ -110,6 +119,7 @@ const getData = cache(async () => {
     supportPage,
     profiles,
     roleGroups,
+    hero,
   }
 })
 
@@ -142,6 +152,7 @@ export default async function Page() {
     supportPage,
     profiles,
     roleGroups,
+    hero,
   } = await getData()
   const { siteName } = resolveBranding(settings)
 
@@ -160,6 +171,7 @@ export default async function Page() {
         profiles={profiles}
         roleGroups={roleGroups}
         supportPage={supportPage}
+        hero={hero}
       />
     </Layout>
   )

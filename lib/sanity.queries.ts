@@ -251,6 +251,41 @@ export const homeSiteCopyQuery = groq`
   }
 `
 
+// Home's picture banner (`home.hero`, schemas/objects/homeHero.ts) plus
+// its first fallback, the classic layout's `siteCopy.hero.image` -- one
+// fetch, resolved by `resolveHomeHero` (components/redesign/heroModel.ts).
+// Images keep their plain `asset` reference (not `asset->`) so
+// `urlForImage` applies each slide's own crop; a project slide is
+// dereferenced into `project` rather than spread over the slide, so the
+// two slide kinds keep distinct shapes.
+export const homeHeroQuery = groq`
+  {
+    "hero": *[_type == "home"][0].hero{
+      layout,
+      autoplay,
+      slides[]{
+        _key,
+        _type,
+        _type == "heroImageSlide" => {
+          image{ asset, crop, hotspot },
+          alt,
+          caption,
+          link{ external, "internal": internal->{ _type, "slug": slug.current } },
+        },
+        _type == "reference" => {
+          "project": @->{
+            _id,
+            title,
+            "slug": slug.current,
+            coverImage{ asset, crop, hotspot, alt },
+          },
+        },
+      },
+    },
+    "fallbackImage": *[_type == "siteCopy"][0].hero.image{ asset, crop, hotspot, alt },
+  }
+`
+
 // Spec §2 / §6, Task 2 brief: the Research page lists projects that carry a
 // `researchOrder`, in that order. Production has zero such projects today
 // (a coming Wix import sets it on four); the screen's populated state is

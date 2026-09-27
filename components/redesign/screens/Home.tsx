@@ -14,6 +14,8 @@ import type {
   SupportPagePayload,
 } from 'types'
 
+import { HeroCarousel } from '../HeroCarousel'
+import type { HomeHeroView } from '../heroModel'
 import {
   currentMemberCount,
   homeStatement,
@@ -34,7 +36,7 @@ import type { ResearchProjectView } from '../researchModel'
 import { ResourceBlock } from '../ResourceBlock'
 import { buildResourceMeta } from '../resourceModel'
 import { Section } from '../Section'
-import { LABEL, MICRO_LABEL, PUBLICATION_GRID, STRIPE_BG } from '../tokens'
+import { LABEL, MICRO_LABEL, PUBLICATION_GRID, SECTION_GUTTER_X, STRIPE_BG } from '../tokens'
 
 // Composition follows
 // docs/redesign-experiment/design-system/ui_kits/site/Home.jsx (task brief
@@ -92,54 +94,77 @@ function PiPortrait64({ name, img }: { name: string; img?: string }) {
   )
 }
 
+// The identity pieces, shared by the text-only block below and both
+// picture-banner layouts (`HeroBlock`), so all three render the same
+// eyebrow, heading, statement and lab-head card.
+
+// `inverse`: white-on-picture, for the full-bleed banner's overlay. Its own
+// colour string rather than MICRO_LABEL plus an override -- two colour
+// utilities on one element would collide (constraints.md).
+function Eyebrow({ inverse = false }: { inverse?: boolean }) {
+  return (
+    // Sentence-case Archivo, not uppercase mono -- a kicker is exactly the
+    // label shape the micro-label budget rule targets.
+    <div className="flex items-center gap-4">
+      <span className={`h-px w-9 ${inverse ? 'bg-[#c9ced4]' : 'bg-text'}`} />
+      <span className={inverse ? 'font-sans text-[0.8125rem] leading-[1.4] font-medium text-[#c9ced4]' : MICRO_LABEL}>
+        The University of Sydney
+      </span>
+    </div>
+  )
+}
+
+// `break-words`: see PageTitle.tsx's canonical note. `text-balance` (spec
+// §1.2, "keep text-wrap: balance on display headings") replaces
+// `text-pretty` here -- this is the one display-role heading, and the
+// display floor is sized so its longest word ("Neuroscience") fits at
+// 320px. `className` carries each call site's spacing and width, and lets
+// the split banner step the display size down at `lg`, where the heading
+// shares the row with the pictures.
+function IdentityHeading({
+  title,
+  level,
+  className,
+}: {
+  title: string
+  level: 'h1' | 'h2'
+  className: string
+}) {
+  const Heading = level
+  return (
+    <Heading data-testid="home-identity-title" className={`text-balance break-words text-display font-semibold ${className}`}>
+      {title}
+    </Heading>
+  )
+}
+
+function Statement({ statement }: { statement: string }) {
+  return (
+    <p
+      data-testid="home-statement"
+      data-cms-verbatim
+      className="max-w-[40rem] text-pretty break-words text-lead text-text-muted"
+    >
+      {statement}
+    </p>
+  )
+}
+
 function IdentityBlock({
-  home,
-  siteName,
-  settings,
-  siteCopy,
-  showLabHeadCard,
+  title,
+  statement,
+  labHead,
   headingLevel = 'h1',
 }: {
-  home: HomePagePayload
-  siteName: string
-  settings: SettingsPayload
-  siteCopy: SiteCopyPayload | null
-  showLabHeadCard: boolean
+  title: string
+  statement: string
+  labHead: NonNullable<SettingsPayload['labHead']> | null
   headingLevel?: 'h1' | 'h2'
 }) {
-  // A Studio string field can collect a stray space -- `.trim()` before the
-  // `||` fallback, same "whitespace-only counts as unset" rule
-  // `resolveBranding` (lib/branding.ts) already applies to `siteName`
-  // itself, so a whitespace-only `home.title` falls through to `siteName`
-  // instead of rendering a blank `<h1>`.
-  const title = home.title?.trim() || siteName
-  // `homeStatement` (homeModel.ts) owns the whole fallback chain --
-  // `siteCopy.about.body` -> `siteCopy.hero.subheading` -> `home.overview`
-  // -> the shared `IA_TAGLINE` -- so this block never needs the tagline
-  // constant itself, only the one function that already resolves it.
-  const statement = homeStatement(siteCopy, home.overview)
-  const labHead = settings.labHead
-  const Heading = headingLevel
-
   return (
     <div>
-      {/* Sentence-case Archivo, not uppercase mono -- a kicker is exactly
-          the label shape the micro-label budget rule targets. */}
-      <div className="flex items-center gap-4">
-        <span className="h-px w-9 bg-text" />
-        <span className={MICRO_LABEL}>The University of Sydney</span>
-      </div>
-      {/* `break-words`: see PageTitle.tsx's canonical note. `text-balance`
-          (spec §1.2, "keep text-wrap: balance on display headings")
-          replaces `text-pretty` here -- this is the one display-role
-          heading, and the display floor is sized so its longest word
-          ("Neuroscience") fits at 320px. */}
-      <Heading
-        data-testid="home-identity-title"
-        className="mt-[30px] max-w-[1180px] text-balance break-words text-display font-semibold"
-      >
-        {title}
-      </Heading>
+      <Eyebrow />
+      <IdentityHeading title={title} level={headingLevel} className="mt-[30px] max-w-[1180px]" />
       {/* Two-column grid ([statement | lab-head card]) from `xl`, stacked
           below -- same `grid-cols-1` + explicit `xl:`-prefixed track
           pattern as Research.tsx's NARRATIVE_GRID / PersonPage.tsx's
@@ -158,17 +183,90 @@ function IdentityBlock({
           an `xl:grid-cols-[minmax(0,1fr)_20rem]` track with only one
           child would still reserve the 20rem column as empty space
           instead of letting the statement use the full width. */}
-      <div className={showLabHeadCard ? IDENTITY_GRID : IDENTITY_GRID_SOLO}>
-        <p
-          data-testid="home-statement"
-          data-cms-verbatim
-          className="max-w-[40rem] text-pretty break-words text-lead text-text-muted"
-        >
-          {statement}
-        </p>
-        {showLabHeadCard && labHead && <LabHeadCard labHead={labHead} />}
+      <div className={labHead ? IDENTITY_GRID : IDENTITY_GRID_SOLO}>
+        <Statement statement={statement} />
+        {labHead && <LabHeadCard labHead={labHead} />}
       </div>
     </div>
+  )
+}
+
+// -- Block 1, with pictures: the Home picture banner -------------------
+
+// The two approved layouts (hero-designs mockup, designs 1 and 2). Both
+// span the full content width -- the label column included, unlike the
+// labelled `Section`s below -- and both sit outside `Section`: the split
+// layout needs its own two-column grid, and the full-bleed band has no
+// gutter at all. Only the pictures themselves are a client island
+// (HeroCarousel.tsx); everything else here is server-rendered.
+//
+// Split, from `lg`: [heading / statement + card | pictures] at 7fr/5fr,
+// with the text rows centred against the 520px picture box by the two
+// `1fr` spacer rows. Below `lg`: one column, heading -> pictures ->
+// statement, which is also the DOM (and reading) order.
+const SPLIT_GRID =
+  'grid grid-cols-1 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:grid-rows-[1fr_auto_auto_1fr] lg:gap-x-14'
+// Full-bleed: [statement | card] under the band from `lg`, stacked below.
+const BELOW_BAND_GRID = 'grid grid-cols-1 items-center gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-x-14'
+
+function HeroBlock({
+  hero,
+  title,
+  statement,
+  labHead,
+  headingLevel = 'h1',
+}: {
+  hero: HomeHeroView
+  title: string
+  statement: string
+  labHead: NonNullable<SettingsPayload['labHead']> | null
+  headingLevel?: 'h1' | 'h2'
+}) {
+  if (hero.layout === 'fullBleed') {
+    return (
+      <section data-testid="home-hero" data-layout="fullBleed">
+        <HeroCarousel
+          hero={hero}
+          overlay={
+            <>
+              <Eyebrow inverse />
+              <IdentityHeading title={title} level={headingLevel} className="mt-[22px] max-w-[16ch]" />
+            </>
+          }
+        />
+        <div className={`${SECTION_GUTTER_X} pt-9 pb-(--spacing-stack-lg)`}>
+          <div className={labHead ? BELOW_BAND_GRID : 'grid grid-cols-1'}>
+            <Statement statement={statement} />
+            {labHead && <LabHeadCard labHead={labHead} />}
+          </div>
+        </div>
+      </section>
+    )
+  }
+  return (
+    <section
+      data-testid="home-hero"
+      data-layout="split"
+      className={`${SECTION_GUTTER_X} pt-(--spacing-stack) pb-(--spacing-stack-lg)`}
+    >
+      <div className={SPLIT_GRID}>
+        <div className="min-w-0 lg:col-start-1 lg:row-start-2">
+          <Eyebrow />
+          <IdentityHeading title={title} level={headingLevel} className="mt-[30px] lg:text-[3.5rem]" />
+        </div>
+        <div className="mt-7 min-w-0 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:mt-0 lg:self-center">
+          <HeroCarousel hero={hero} />
+        </div>
+        <div className="mt-7 min-w-0 lg:col-start-1 lg:row-start-3 lg:mt-9">
+          <Statement statement={statement} />
+          {labHead && (
+            <div className="mt-8">
+              <LabHeadCard labHead={labHead} />
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -504,6 +602,7 @@ export function Home({
   profiles,
   roleGroups,
   supportPage,
+  hero = null,
   headingLevel,
 }: {
   home: HomePagePayload
@@ -518,6 +617,10 @@ export function Home({
   profiles: ProfilePayload[]
   roleGroups: RoleGroupPayload[]
   supportPage: SupportPagePayload | null
+  /** The picture banner (`resolveHomeHero`, heroModel.ts), or `null` for
+   * the text-only identity block -- the default, so the gallery's own
+   * `Home` fixtures keep rendering the text-only Home unchanged. */
+  hero?: HomeHeroView | null
   /** Forwarded to Identity's own heading -- see PageTitle.tsx's identical
    * doc comment and People.tsx/Research.tsx's own `headingLevel` prop.
    * Only ever set by the /preview/components gallery, which renders
@@ -563,6 +666,18 @@ export function Home({
   // here at all, not a labelled section with an empty body).
   const showPeopleBlock = showMembersLine || portraits.length > 0 || Boolean(supportPage)
 
+  // A Studio string field can collect a stray space -- `.trim()` before the
+  // `||` fallback, same "whitespace-only counts as unset" rule
+  // `resolveBranding` (lib/branding.ts) already applies to `siteName`
+  // itself, so a whitespace-only `home.title` falls through to `siteName`
+  // instead of rendering a blank `<h1>`.
+  const title = home.title?.trim() || siteName
+  // `homeStatement` (homeModel.ts) owns the whole fallback chain --
+  // `siteCopy.about.body` -> `siteCopy.hero.subheading` -> `home.overview`
+  // -> the shared `IA_TAGLINE`.
+  const statement = homeStatement(siteCopy, home.overview)
+  const identityLabHead = showLabHeadCard && labHead ? labHead : null
+
   const showRecentWork = publications.length > 0 && settings.showPublications !== false
   // researchOrder projects first, siteCopy.about.themes only when there
   // are none (researchCards, homeModel.ts) -- there's no show flag: the
@@ -579,21 +694,24 @@ export function Home({
   // `<h2>` label), but `false` for "Resources", since `ResourceBlock`'s own
   // title is a real `<h2>` and a second `<h2>` label here would be a
   // redundant sibling heading.
-  const blocks: Array<{ key: string; label?: string; labelHeading?: boolean; content: ReactNode }> = [
-    {
+  //
+  // With a picture banner, the identity block is the banner itself, which
+  // renders outside `Section` (see `HeroBlock`), so it isn't in this list
+  // and every labelled section below it keeps its top rule.
+  const blocks: Array<{ key: string; label?: string; labelHeading?: boolean; content: ReactNode }> = []
+  if (!hero) {
+    blocks.push({
       key: 'identity',
       content: (
         <IdentityBlock
-          home={home}
-          siteName={siteName}
-          settings={settings}
-          siteCopy={siteCopy}
-          showLabHeadCard={showLabHeadCard}
+          title={title}
+          statement={statement}
+          labHead={identityLabHead}
           headingLevel={headingLevel}
         />
       ),
-    },
-  ]
+    })
+  }
   if (showRecentWork) {
     blocks.push({
       key: 'recent-work',
@@ -639,8 +757,22 @@ export function Home({
 
   return (
     <div>
+      {hero && (
+        <HeroBlock
+          hero={hero}
+          title={title}
+          statement={statement}
+          labHead={identityLabHead}
+          headingLevel={headingLevel}
+        />
+      )}
       {blocks.map((block, index) => (
-        <Section key={block.key} label={block.label} labelHeading={block.labelHeading} borderTop={index !== 0}>
+        <Section
+          key={block.key}
+          label={block.label}
+          labelHeading={block.labelHeading}
+          borderTop={Boolean(hero) || index !== 0}
+        >
           {block.content}
         </Section>
       ))}
