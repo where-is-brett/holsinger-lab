@@ -9,6 +9,7 @@ import {
   memberCount,
   shouldShowLabHeadSpotlight,
   splitAlumni,
+  surnameOf,
 } from './peopleModel'
 
 const PHD = { _id: 'rg-phd', title: 'PhD Student' }
@@ -251,5 +252,28 @@ describe('formatPeopleMeta', () => {
 
   it('handles zero members and zero groups', () => {
     expect(formatPeopleMeta({ showSpotlight: false, n: 0, g: 0 })).toBe('0 current members · 0 groups')
+  })
+})
+
+describe('surnameOf', () => {
+  it.each([
+    ['Damian Holsinger', 'Holsinger'],
+    ['  Damian   Holsinger ', 'Holsinger'],
+    ['Dr Johnny Chan (DDS)', 'Chan'],
+    ['Dr. Rossana R Porto', 'Porto'],
+    ['Zeyi (Brett) Yang', 'Yang'],
+    ['Sreevadana (Sree) Venkitachalam', 'Venkitachalam'],
+    ['Deepikaa V. G. Sandanababu', 'Sandanababu'],
+    ['Martin Luther King Jr.', 'King'],
+    ['Smith, Jr.', 'Smith'],
+    ['Élodie Ñúñez', 'Ñúñez'],
+    ['Dr Chan', 'Chan'],
+    ['Plato', 'Plato'],
+  ])('%j -> %j', (name, surname) => {
+    expect(surnameOf(name)).toBe(surname)
+  })
+
+  it.each([[null], [undefined], [''], ['   '], ['Dr'], ['Prof.'], ['(DDS)']])('%j has no surname', (name) => {
+    expect(surnameOf(name)).toBeNull()
   })
 })

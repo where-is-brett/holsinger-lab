@@ -84,6 +84,27 @@ export function shouldShowLabHeadSpotlight(settings: {
 const HONORIFICS = new Set(['dr', 'dr.', 'prof', 'prof.', 'professor'])
 
 /**
+ * A name's words after NFC normalisation, minus a leading honorific (only
+ * when more words follow) and any word that doesn't start with a letter,
+ * such as a parenthesised qualifier "(DDS)". `\p{L}` rather than an ASCII
+ * check, so accented initials count as letters.
+ *
+ * Shared by `initialsOf` and `surnameOf` -- both need the same "what
+ * counts as a name word" filtering, so it's factored out rather than
+ * duplicated.
+ */
+function nameWords(name: string | null | undefined): string[] {
+  if (!name) {
+    return []
+  }
+  let words = name.normalize('NFC').trim().split(/\s+/).filter(Boolean)
+  if (words.length > 1 && HONORIFICS.has(words[0].toLowerCase())) {
+    words = words.slice(1)
+  }
+  return words.filter((word) => /\p{L}/u.test(Array.from(word)[0] ?? ''))
+}
+
+/**
  * First letter of the first word plus first letter of the last word,
  * uppercased. A single word gives one letter; empty/null/whitespace-only
  * input gives ''. Whitespace is trimmed and collapsed first, so a
@@ -106,23 +127,39 @@ const HONORIFICS = new Set(['dr', 'dr.', 'prof', 'prof.', 'professor'])
  *   first code point.
  */
 export function initialsOf(name: string | null | undefined): string {
-  if (!name) {
-    return ''
-  }
-  let words = name.normalize('NFC').trim().split(/\s+/).filter(Boolean)
-  if (words.length === 0) {
-    return ''
-  }
-  if (words.length > 1 && HONORIFICS.has(words[0].toLowerCase())) {
-    words = words.slice(1)
-  }
-  words = words.filter((word) => /\p{L}/u.test(Array.from(word)[0] ?? ''))
+  const words = nameWords(name)
   if (words.length === 0) {
     return ''
   }
   const first = Array.from(words[0])[0] ?? ''
   const last = Array.from(words[words.length - 1])[0] ?? ''
   return (words.length === 1 ? first : first + last).toUpperCase()
+}
+
+// Generational and degree suffixes that follow a surname rather than being
+// one. Compared after trailing punctuation is stripped, so "Jr." and
+// "Ph.D." match.
+const NAME_SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'phd', 'ph.d'])
+
+/**
+ * The surname token used to find a person's papers: the last word of the
+ * name, after `nameWords`' filtering, trailing punctuation, and trailing
+ * suffixes (Jr, Sr, II-IV, PhD). A lone honorific ("Dr") is not a surname.
+ * `null` means "no surname", and callers must treat it as "matches
+ * nothing".
+ */
+export function surnameOf(name: string | null | undefined): string | null {
+  const words = nameWords(name)
+    .map((word) => word.replace(/[.,;:]+$/u, ''))
+    .filter(Boolean)
+  while (words.length > 1 && NAME_SUFFIXES.has(words[words.length - 1].toLowerCase())) {
+    words.pop()
+  }
+  const last = words[words.length - 1]
+  if (!last || (words.length === 1 && HONORIFICS.has(last.toLowerCase()))) {
+    return null
+  }
+  return last
 }
 
 /**
