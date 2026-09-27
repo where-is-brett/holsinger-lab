@@ -7,7 +7,7 @@ export interface SectionProps {
   /**
    * Render the label as an `<h2>` instead of a `<p>`. Default `false`
    * (`<p>`): most call sites already have their own in-content heading (a
-   * project's, a paper's `<h1>`, a role-group's), so a second `<h2>` here
+   * project's, a paper's `<h1>`), so a second `<h2>` here
    * would be redundant. Set `true` only where the section's content has no
    * heading of its own at all -- see phase-3-decisions.md for the
    * per-screen breakdown.

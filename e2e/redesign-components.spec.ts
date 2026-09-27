@@ -331,7 +331,7 @@ test.describe('redesign component gallery', () => {
     await expect(link.locator('img')).toHaveAttribute('alt', '')
   })
 
-  test('People gallery (a): spotlight shows the initials frame, name, both bio paragraphs, no email, and a Full profile link', async ({
+  test('People gallery (a): spotlight shows the quiet initials tile, name, both bio paragraphs, no email, and a Profile and publications link', async ({
     page,
   }) => {
     const instance = page.getByTestId('gallery-people-a')
@@ -351,7 +351,14 @@ test.describe('redesign component gallery', () => {
     await expect(spotlight.getByText(/trained across three continents/)).toBeVisible()
     // No email on file for this fixture.
     await expect(spotlight.locator('a[href^="mailto:"]')).toHaveCount(0)
-    await expect(instance.getByRole('link', { name: 'Full profile →' })).toBeVisible()
+    await expect(instance.getByRole('link', { name: 'Profile and publications →' })).toHaveAttribute(
+      'href',
+      '/people/ilse-van-der-berg'
+    )
+    // The stacked "Head of laboratory · Principal investigator" inner label
+    // is gone (finding 11 closure) -- the spotlight's only label now is the
+    // Section's own "Lab head".
+    await expect(spotlight.getByText('Head of laboratory', { exact: false })).toHaveCount(0)
     // The lab head is excluded from the Members grid once the spotlight
     // renders (excludeLabHead) -- her name must not also appear as a card.
     await expect(
@@ -359,14 +366,12 @@ test.describe('redesign component gallery', () => {
     ).toHaveCount(0)
   })
 
-  test('People gallery (a): the alumni paragraph lists all 22 names, comma-separated', async ({
-    page,
-  }) => {
+  test('People gallery (a): the alumni list has all 22 names, in order', async ({ page }) => {
     const instance = page.getByTestId('gallery-people-a')
-    // Read each entry's own `data-name` rather than the paragraph's
-    // `innerText().split(', ')` -- a name can itself contain ", " (see
-    // AlumniBlock's own comment), so parsing the rendered text back apart
-    // is not a safe inverse of how it was joined.
+    // Read each entry's own `data-name` rather than the list's rendered
+    // text -- a name can itself contain punctuation (see AlumniBlock's own
+    // comment), so parsing rendered text back apart is not a safe inverse
+    // of how it's displayed.
     const names = await instance
       .getByTestId('people-alumni')
       .getByTestId('alumni-name')
@@ -384,22 +389,64 @@ test.describe('redesign component gallery', () => {
     await expect(instance.getByText('Visiting Intern — Vietnam')).toBeVisible()
   })
 
-  // Carried assertion (Task 3 brief): the number of `people-section-title`
-  // headings actually rendered must equal `g`, the group count baked into
-  // PageTitle's own meta string ("Lab head + N current members · G groups")
-  // -- People.tsx's `g` is derived by counting titled member sections
-  // (peopleModel.ts's `groupByRoleGroup`/`splitAlumni`), and this is the
-  // one place that number is checked against what the DOM actually shows,
-  // rather than trusting the two never drift apart.
-  test('People gallery (a): the number of section-title headings equals the meta\'s group count', async ({
+  test("People gallery (a): the distinct group labels on the cards equal the meta's group count", async ({
     page,
   }) => {
     const instance = page.getByTestId('gallery-people-a')
     const meta = await instance.getByTestId('page-title-meta').innerText()
-    const match = meta.match(/(\d+)\s+groups?/i)
-    expect(match, `meta "${meta}" has no "N GROUP(S)" segment`).not.toBeNull()
-    const expectedGroups = Number(match![1])
-    await expect(instance.getByTestId('people-section-title')).toHaveCount(expectedGroups)
+    const expectedGroups = Number(meta.match(/(\d+)\s+groups?/i)![1])
+    const labels = await instance.getByTestId('person-card-group').allTextContents()
+    expect(new Set(labels).size).toBe(expectedGroups)
+    await expect(instance.getByTestId('people-section-title')).toHaveCount(0)
+  })
+
+  test('People gallery (a): a role equal to its group title is not repeated; a different role is', async ({
+    page,
+  }) => {
+    const instance = page.getByTestId('gallery-people-a')
+    const priya = instance.locator('[data-testid="person-card"][data-name="Dr Priya Natarajan"]')
+    await expect(priya.getByText('Research Scientist', { exact: true })).toHaveCount(1)
+    const intern = instance.locator('[data-testid="person-card"][data-name="Intern 1 Surname1"]')
+    await expect(intern.getByTestId('person-card-group')).toHaveText('International Interns')
+    await expect(intern.getByText('Visiting Intern — Germany')).toBeVisible()
+    const ungrouped = instance.locator('[data-testid="person-card"][data-name="Sam Okafor"]')
+    await expect(ungrouped.getByTestId('person-card-group')).toHaveCount(0)
+    await expect(ungrouped.getByText('Lab Manager')).toBeVisible()
+  })
+
+  test('People gallery (a): alumni are 1 column on phones, 3 from md, 4 from lg', async ({ page }) => {
+    for (const [width, columns] of [
+      [375, 1],
+      [800, 3],
+      [1280, 4],
+    ] as const) {
+      await page.setViewportSize({ width, height: 900 })
+      const list = page.getByTestId('gallery-people-a').getByTestId('people-alumni')
+      const count = await list.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length)
+      expect(count, `${width}px`).toBe(columns)
+    }
+  })
+
+  test('People gallery (c): no publications and no short bio means no profile link', async ({ page }) => {
+    const instance = page.getByTestId('gallery-people-c')
+    await expect(instance.getByTestId('people-spotlight')).toBeVisible()
+    await expect(instance.getByRole('link', { name: 'Profile and publications →' })).toHaveCount(0)
+  })
+
+  test('PersonCard: a missing portrait is a quiet initials tile -- no stripe, no border, Archivo initials', async ({
+    page,
+  }) => {
+    const section = page.getByTestId('gallery-person-card')
+    const tile = section.getByTestId('portrait-initials').first()
+    const s = await tile.evaluate((el) => {
+      const c = getComputedStyle(el)
+      const initials = el.querySelector('span')!
+      return { bg: c.backgroundImage, border: c.borderTopWidth, font: getComputedStyle(initials).fontFamily }
+    })
+    expect(s.bg).toBe('none')
+    expect(s.border).toBe('0px')
+    expect(s.font).toMatch(/Archivo/i)
+    await expect(section.getByText(/portrait on file/i)).toHaveCount(0)
   })
 
   test('People gallery (b): no spotlight when labHead is unset, and the PI-equivalent profile reappears as an ordinary card', async ({
@@ -430,6 +477,11 @@ test.describe('redesign component gallery', () => {
       'mailto:priya.natarajan.laboratory@sydney.edu.au'
     )
     await expect(a.getByText('priya.natarajan.laboratory@sydney.edu.au', { exact: true })).toBeVisible()
+    // The printed address is data beside the button, not a second link to
+    // the same mailto: destination.
+    await expect(
+      a.getByRole('link', { name: 'priya.natarajan.laboratory@sydney.edu.au' })
+    ).toHaveCount(0)
   })
 
   test('Person page gallery (b): no publications and no email means no section and no button', async ({ page }) => {

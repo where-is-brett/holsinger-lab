@@ -326,22 +326,34 @@ export default function Gallery() {
       <section data-testid="gallery-people" className="col-start-2 px-6">
         <Heading>People screen</Heading>
 
-        <SubHeading>(a) Lab head set, no portrait, two-paragraph bio, hasPage</SubHeading>
+        <SubHeading>(a) Lab head set, no portrait, no short bio, hasPage, 3 publications</SubHeading>
         <div className="mb-8 border border-rule" data-testid="gallery-people-a">
           <People
             settings={PEOPLE_SETTINGS_WITH_LAB_HEAD}
+            profiles={PEOPLE_PROFILES_FIXTURE}
+            roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+            labHeadPublicationCount={3}
+            headingLevel="h2"
+          />
+        </div>
+
+        <SubHeading>(b) Lab head unset -- same people, no spotlight</SubHeading>
+        <div className="mb-8 border border-rule" data-testid="gallery-people-b">
+          <People
+            settings={PEOPLE_SETTINGS_WITHOUT_LAB_HEAD}
             profiles={PEOPLE_PROFILES_FIXTURE}
             roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
             headingLevel="h2"
           />
         </div>
 
-        <SubHeading>(b) Lab head unset -- same people, no spotlight</SubHeading>
-        <div className="border border-rule" data-testid="gallery-people-b">
+        <SubHeading>(c) Lab head set, no short bio and no publications -- no profile link</SubHeading>
+        <div className="border border-rule" data-testid="gallery-people-c">
           <People
-            settings={PEOPLE_SETTINGS_WITHOUT_LAB_HEAD}
+            settings={PEOPLE_SETTINGS_WITH_LAB_HEAD}
             profiles={PEOPLE_PROFILES_FIXTURE}
             roleGroups={PEOPLE_ROLE_GROUPS_FIXTURE}
+            labHeadPublicationCount={0}
             headingLevel="h2"
           />
         </div>

@@ -1307,6 +1307,11 @@ export type HomeRecentPublicationsQueryResult = Array<{
 export type PublicationCountQueryResult = number
 
 // Source: lib/sanity.queries.ts
+// Variable: publicationAuthorsQuery
+// Query: *[_type == "publication"].author
+export type PublicationAuthorsQueryResult = Array<string | null>
+
+// Source: lib/sanity.queries.ts
 // Variable: homeResourceQuery
 // Query: *[_type == "resource"] | order(title asc) [0] {      _id,  title,  kind,  summary,  howToObtain,  publication->{    _id,    title,    date,    doi,    url,    journal,    volume,    issue,    pages,    "slug": slug.current,  },  }
 export type HomeResourceQueryResult = {
@@ -1701,6 +1706,7 @@ declare module '@sanity/client' {
     '\n  *[_type == "publication" && featured == true] | order(date desc) {\n    \n  _id,\n  title,\n  author,\n  journal,\n  volume,\n  issue,\n  pages,\n  abstract,\n  url,\n  doi,\n  date,\n  "slug": slug.current,\n  type,\n  topics,\n  featured,\n  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {\n    _id,\n    title,\n    kind,\n  },\n\n  }\n': FeaturedPublicationsQueryResult
     '\n  *[_type == "publication"] | order(date desc)[0...5] {\n    \n  _id,\n  title,\n  author,\n  journal,\n  volume,\n  issue,\n  pages,\n  abstract,\n  url,\n  doi,\n  date,\n  "slug": slug.current,\n  type,\n  topics,\n  featured,\n  "resources": *[_type == "resource" && references(^._id)] | order(title asc) {\n    _id,\n    title,\n    kind,\n  },\n\n  }\n': HomeRecentPublicationsQueryResult
     '\n  count(*[_type == "publication"])\n': PublicationCountQueryResult
+    '\n  *[_type == "publication"].author\n': PublicationAuthorsQueryResult
     '\n  *[_type == "resource"] | order(title asc) [0] {\n    \n  _id,\n  title,\n  kind,\n  summary,\n  howToObtain,\n  publication->{\n    _id,\n    title,\n    date,\n    doi,\n    url,\n    journal,\n    volume,\n    issue,\n    pages,\n    "slug": slug.current,\n  },\n\n  }\n': HomeResourceQueryResult
     '\n  *[_type == "project" && slug.current == "maestro"][0]{\n    _id,\n    title,\n    overview,\n    site,\n  }\n': MaestroProjectQueryResult
     '\n  *[_type == "page" && slug.current == "support-our-research"][0]{\n    title,\n    "slug": slug.current,\n  }\n': SupportPageQueryResult

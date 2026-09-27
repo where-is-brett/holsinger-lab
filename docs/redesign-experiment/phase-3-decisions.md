@@ -1322,3 +1322,69 @@ Findings closed:
 `next-env.d.ts` restored via `git checkout origin/redesign/integration -- next-env.d.ts` after
 every build; `playwright.alt.config.ts` deleted before committing, never tracked. CI runs the true
 full suite on all three projects after push.
+
+## Revision PR 4 — People, PI profile, Research, Contact
+
+This section is filled in task by task; Task 5 extends it for Research and Contact. Not a
+PR-complete summary yet.
+
+### The author matcher's known limits (Tasks 1–2)
+
+Three real, documented limits in `publicationModel.ts`'s token-bounded matcher (`findAuthorToken`),
+carried over here from Task 1's and Task 2's own reports since neither task's file map reached
+this doc:
+
+1. **Apostrophe exactness.** `findAuthorToken`'s *boundary* check (`NAME_CHAR`) already treats
+   both `'` and `’` as name characters, but the *target* string itself (`surnameOf`'s output,
+   matched via `escapeRegExp(target)`) is matched literally — a straight-apostrophe surname
+   ("O'Neil") never matches a curly-apostrophe author string ("O’Neil"), and vice versa. Neither
+   `surnameOf` nor the CMS normalizes which apostrophe form is stored.
+2. **Case sensitivity is by design** (plan ruling 2: "the matcher is token-bounded and
+   case-sensitive"), so an author string typed in a different case than the profile's `name`
+   field never matches. Intentional per the spec, not a bug, but a real limit worth recording.
+3. **The "R.M.D. J Smith" bold-run edge case.** `INITIALS` still consumes a run like "R.M.D. J" as
+   one initials group after a matched surname, so `"Holsinger R.M.D. J Smith"` bolds
+   `"Holsinger R.M.D. J"` — extending one token (a bare capital "J" with no dot) into what is
+   actually the next author's given initial. No live author string in production or the
+   wix-preview dataset triggers this (checked against Task 1's own `findAuthorToken` test list,
+   drawn from both datasets). Left as a documented known limit rather than risking a regex change
+   against a matcher that had already passed strict review.
+
+### Task 3: People — finding 11 closed, continuous grid, quiet initials tile
+
+- **Finding 11's last open instance is closed.** The "Alumni" `Section` label used to sit directly
+  above `AlumniBlock`'s own inner "Recent lab alumni" label (`People.tsx`) — two same-style labels
+  reading as one level, especially on mobile. `AlumniBlock` now renders no label of its own; the
+  `Section`'s "Alumni" label is the section's only heading (already `labelHeading` before this
+  task). The spotlight's inner "Head of laboratory · Principal investigator" label is dropped for
+  the same reason — the outer `Section` label "Lab head" already names the block, and the
+  spotlight's own `<h2>` (the lab head's name) is heading enough. Members gets a new `<h2>` in
+  place of its old per-role-group headings. Same pattern as PR 3's paper-page closure: no label
+  repeating, or sitting directly above, another label or a same-text heading.
+- **One continuous grid, not one grid per role group.** `flattenMembers` runs every role-group
+  section's profiles into one flat list, in `orderRank` order, each card carrying its own group
+  label (`PersonCard`'s new `group` prop, `data-testid="person-card-group"`) rather than a
+  `<h2>` heading row per group. Groups still render in order and cards from the same group stay
+  adjacent, but the grid no longer breaks into a new CSS grid per group — so a group with, say, 2
+  members no longer leaves a half-empty row before the next group starts.
+  `people-section`/`people-section-title` are gone; `people-members` is now the one grid.
+- **The quiet initials tile.** `PortraitFrame`'s no-image fallback dropped the diagonal `STRIPE_BG`
+  stripe and the 1px border — it's now a plain `bg-surface-raised` tile with Archivo initials in
+  `text-text-muted` (`data-testid="portrait-initials"`), named (`role="img"`, `aria-label`) when a
+  name is known, `aria-hidden` otherwise. `STRIPE_BG` itself stays in `tokens.ts` for its two
+  remaining consumers (`ResourceBlock.tsx`'s figure placeholder, `Home.tsx`'s `PiPortrait64`
+  fallback) — this task doesn't touch either.
+- **Alumni are a plain name list**, not cards: `<ul data-testid="people-alumni">`, 1 column on
+  phones, 3 from `md`, 4 from `lg`, linked when `hasPage`.
+- **The spotlight's profile link is conditional** (`profileSaysMore`): it shows only when the
+  profile page would say more than the spotlight already does — there are publications, or
+  `fullBio` differs from a set `bio` after whitespace normalisation. With `bio` unset the
+  spotlight already shows `fullBio` itself, so there's nothing more to link to. Link text is now
+  "Profile and publications →" (was "Full profile →").
+- **`initialsOf` and `surnameOf` now agree on suffixed names.** Folded in from the Tasks 1/2 review
+  minors: post-nominals written with dots ("Jane Smith M.D.") now strip to their undotted form
+  before the suffix-set lookup, so `surnameOf` no longer returns "M.D" instead of "Smith"; `'ph.d'`
+  is dropped from `NAME_SUFFIXES` as redundant once dots are stripped (`'phd'` alone now matches
+  both). Both functions now share one `realNameWords` helper (honorific, parenthetical and suffix
+  filtering all applied once), so `initialsOf('Jane Smith MD')` gives `'JS'` — agreeing with
+  `surnameOf`'s `'Smith'` — instead of the old `'JM'` (treating "MD" as the last name word).

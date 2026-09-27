@@ -186,6 +186,12 @@ export const publicationCountQuery = groq`
   count(*[_type == "publication"])
 `
 
+// Just the author strings, so /people can count the lab head's papers without
+// fetching every publication field.
+export const publicationAuthorsQuery = groq`
+  *[_type == "publication"].author
+`
+
 // The projection shared by every resource query, so the list and the
 // home-page highlight cannot drift apart -- same pattern as
 // `publicationFields` above.

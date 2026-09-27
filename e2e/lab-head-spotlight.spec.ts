@@ -34,7 +34,7 @@ test('/people renders, and the spotlight matches settings.labHead / showLabHeadO
       page.getByRole('heading', { level: 2, name: settings!.labHeadName as string, exact: true })
     ).toBeVisible()
   } else {
-    await expect(page.getByText('Full profile →')).toHaveCount(0)
+    await expect(page.getByText('Profile and publications →')).toHaveCount(0)
   }
 })
 

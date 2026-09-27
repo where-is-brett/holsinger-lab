@@ -106,16 +106,15 @@ export const PRESS = 'hl-press active:scale-[0.97]'
 export const HIT_AREA =
   "relative before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']"
 /**
- * The system's one "no portrait on file" background: a faint diagonal
- * stripe, `color-mix`ed against `--sem-text` so it works unchanged in both
- * themes. A static generated background is legitimate as an inline style
- * (Tailwind arbitrary values are fragile with nested parens and commas) --
- * was defined identically in PersonCard.tsx's `PortraitFrame` fallback,
- * ResourceBlock.tsx's figure placeholder, and Home.tsx's `PiPortrait64`
- * fallback (PR C Task 3 fix round 1); hoisted here as the one place that
- * knows the value, per this file's own header comment. Consumers apply it
- * via `style={{ backgroundImage: STRIPE_BG }}`, not a class -- see any of
- * the three call sites above.
+ * The "no portrait on file" background for the two consumers that still use
+ * it: ResourceBlock.tsx's figure placeholder and Home.tsx's `PiPortrait64`
+ * fallback. A faint diagonal stripe, `color-mix`ed against `--sem-text` so
+ * it works unchanged in both themes. A static generated background is
+ * legitimate as an inline style (Tailwind arbitrary values are fragile with
+ * nested parens and commas). PersonCard.tsx's `PortraitFrame` fallback no
+ * longer uses it -- that tile is now a plain quiet surface with no stripe.
+ * Consumers apply it via `style={{ backgroundImage:
+ * STRIPE_BG }}`, not a class -- see either call site above.
  */
 export const STRIPE_BG =
   'repeating-linear-gradient(45deg, transparent 0 12px, color-mix(in oklab, var(--sem-text) 4.5%, transparent) 12px 13px)'

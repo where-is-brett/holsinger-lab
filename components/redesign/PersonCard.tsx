@@ -1,11 +1,12 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { STRIPE_BG } from './tokens'
-
 export interface PersonCardProps {
   name: string
-  role: string
+  /** The role group's CMS title, verbatim; `null`/unset for the ungrouped catch-all. */
+  group?: string | null
+  /** The person's role text, verbatim -- omitted from the card when unset (see `roleLine`). */
+  role?: string | null
   /** Optional second mono line under `role`, verbatim, shown only when non-empty (spec §5, ruling 3). */
   detail?: string | null
   img?: string
@@ -25,22 +26,12 @@ export interface PersonCardProps {
 // required by next/image's `fill` mode; `aspect-[4/5]` (not a fixed height)
 // keeps the box's height derived from its own width at every viewport,
 // matching Profile.tsx's `aspect-[1/1]` precedent elsewhere in this repo.
-// The two variants are separate, fully-formed strings rather than one base
-// plus an appended override -- see tokens.ts's PRESS comment for why that
-// matters whenever two utilities could touch the same property (here:
-// `box-border`, only needed once the fallback's 1px border is in play, so
-// giving the image variant the same class would be silently inert, not
-// wrong -- but keeping them apart avoids the pattern entirely).
 const FOOTPRINT_IMAGE = 'relative aspect-[4/5] w-full overflow-hidden bg-surface-raised'
-const FOOTPRINT_FALLBACK =
-  'relative aspect-[4/5] w-full box-border border border-rule flex flex-col items-center justify-center gap-2.5'
-
-// `STRIPE_BG` (task brief decision #2: a static generated background is
-// legitimate as an inline style -- Tailwind arbitrary values are fragile
-// with nested parens and commas, and this repeating-gradient has both) now
-// lives in tokens.ts (PR C Task 3 fix round 1) -- ResourceBlock.tsx and
-// Home.tsx's `PiPortrait64` fallback use the identical value, and it was a
-// verbatim triplicate before this hoist.
+// A quiet tile: raised surface, no stripe, no border -- just the initials
+// in muted Archivo. `STRIPE_BG` stays in tokens.ts for
+// ResourceBlock.tsx's figure placeholder and Home.tsx's `PiPortrait64`
+// fallback, which this direction doesn't touch.
+const FOOTPRINT_FALLBACK = 'relative aspect-[4/5] w-full flex items-center justify-center bg-surface-raised'
 
 // Brett's review (fix/research-description-fallback): portraits must never
 // render in black-and-white -- not even briefly, at rest, before a
@@ -90,17 +81,24 @@ export function PortraitFrame({
       <Image src={img} alt={name} fill sizes={sizes} className={PORTRAIT_IMAGE_CLASS} />
     </div>
   ) : (
-    // No system-explaining copy here -- the initials plus the quiet
-    // striped background are enough for a profile with no image.
-    <div className={`${FOOTPRINT_FALLBACK} ${className ?? ''}`} style={{ backgroundImage: STRIPE_BG }}>
-      <span className="font-mono text-[26px] leading-none font-medium text-text-muted">
+    // A quiet tile: raised surface, initials in muted Archivo, nothing else.
+    // Named for the person when a name is given (the image branch's `alt`);
+    // hidden from assistive tech when the name is already read nearby.
+    <div
+      data-testid="portrait-initials"
+      className={`${FOOTPRINT_FALLBACK} ${className ?? ''}`}
+      role={name ? 'img' : undefined}
+      aria-label={name || undefined}
+      aria-hidden={name ? undefined : true}
+    >
+      <span aria-hidden="true" className="font-sans text-[1.75rem] leading-none font-medium text-text-muted">
         {initials}
       </span>
     </div>
   )
 }
 
-export function PersonCard({ name, role, detail, img, initials, href }: PersonCardProps) {
+export function PersonCard({ name, group, role, detail, img, initials, href }: PersonCardProps) {
   // Matches CARD_GRID's own breakpoints (components/redesign/screens/People.tsx):
   // grid-cols-2 below md (each card ~50vw of the viewport), md:grid-cols-3
   // (~30vw, not the naive 33vw -- the grid sits inside the page's own side
@@ -136,16 +134,30 @@ export function PersonCard({ name, role, detail, img, initials, href }: PersonCa
       <div className="mt-2.5 text-[15px] leading-none font-semibold tracking-[-0.005em] break-words transition-[color] duration-(--sem-motion-fast) ease-(--sem-ease) group-hover:text-link group-focus-visible:text-link">
         {name}
       </div>
+      {/* The group label: the role group's CMS title, verbatim. */}
+      {group && (
+        <div
+          data-testid="person-card-group"
+          data-cms-verbatim
+          className="mt-1 font-sans text-[12px] leading-[1.4] font-medium break-words text-text-muted"
+        >
+          {group}
+        </div>
+      )}
       {/* `role` and `detail` are free text from the CMS -- printed verbatim,
           including any misspelling in the source data. Never corrected
           here. `data-cms-verbatim` marks that for e2e/label-budget.spec.ts's
           source-caps check, so it never depends on whether a given lab's
           own role text ("MD (UNSW)") happens to read as shouted caps --
           the budget is about labels this repo writes, not the shape of a
-          real dataset. */}
-      <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] break-words text-text-faint" data-cms-verbatim>
-        {role}
-      </div>
+          real dataset. Omitted (not just blank) when there's nothing to
+          show -- see `roleLine`, which drops a role that just repeats the
+          group label above it. */}
+      {role && (
+        <div className="mt-[3px] font-mono text-[10.5px] leading-[1.5] break-words text-text-faint" data-cms-verbatim>
+          {role}
+        </div>
+      )}
       {detail && (
         <div
           className="mt-[3px] font-mono text-[10.5px] leading-[1.5] break-words text-text-faint"

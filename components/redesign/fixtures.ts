@@ -276,10 +276,13 @@ function portableParagraph(key: string, text: string) {
   }
 }
 
-// Task 2 brief gallery fixture, instance (a): "Lab head set, no portrait, no
-// email, a two-paragraph portable-text fullBio, hasPage: true." Proves the
-// initials fallback and the Full profile -> link render even without a
-// portrait or an email on file.
+// Gallery fixture, instance (a): "Lab head set, no portrait, no email, a
+// two-paragraph portable-text fullBio, hasPage: true." Proves the quiet
+// initials tile (no stripe, no border), and that with no short `bio` set
+// the spotlight falls back to showing `fullBio` itself -- which is also
+// why `profileSaysMore` reports "nothing more to see" for this fixture
+// whenever the publication count is 0 (gallery instance (c)), even though
+// `fullBio` is populated: the profile page would show the same text.
 export const PEOPLE_LAB_HEAD_FIXTURE: NonNullable<SettingsPayload['labHead']> = {
   _id: 'fixture-lab-head',
   image: null,
