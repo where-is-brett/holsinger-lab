@@ -32,6 +32,7 @@ const GALLERY_SECTIONS = [
   'research',
   'research-no-link',
   'research-contact-link',
+  'research-empty-bodies',
   'resources',
   'home',
 ]
@@ -489,6 +490,16 @@ test.describe('redesign component gallery', () => {
     await expect(b.getByTestId('person-publications')).toHaveCount(0)
     await expect(b.getByRole('heading', { name: /^Publications/ })).toHaveCount(0)
     await expect(b.getByRole('link', { name: 'Send an email' })).toHaveCount(0)
+  })
+
+  test('Research gallery: a project with a missing or blank body renders but is not counted', async ({ page }) => {
+    const section = page.getByTestId('gallery-research-empty-bodies')
+    await expect(section.getByTestId('page-title-meta')).toHaveText('1 active project')
+    await expect(section.getByTestId('research-project-title')).toHaveCount(3)
+  })
+
+  test('Research gallery: project sections carry no tag label', async ({ page }) => {
+    await expect(page.getByTestId('gallery-research').getByTestId('section-label')).toHaveText(['Enquiries'])
   })
 
   test('People gallery: no page overflow at 320px', async ({ page }) => {

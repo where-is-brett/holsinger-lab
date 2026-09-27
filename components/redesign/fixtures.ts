@@ -737,7 +737,6 @@ function researchProjectView(overrides: {
     // (see `gallery-home-unslugged`).
     slug: overrides.slug === undefined ? overrides.id : overrides.slug,
     title: overrides.title,
-    label: tags[0] || 'Project',
     kicker: researchKicker({ start: overrides.start, category: overrides.category }),
     tagLine: tags.join(' · '),
     body: overrides.body,
@@ -1226,3 +1225,35 @@ export const HOME_SETTINGS_NO_PEOPLE_FIXTURE: SettingsPayload = {
 // gallery-home-no-photos: no labHead set, so the hero's card is hidden and
 // every current member (including these) counts.
 export const HOME_SETTINGS_NO_LABHEAD_FIXTURE: SettingsPayload = fallbackSettings
+
+// Three projects, one with text, one with no body, one whose only paragraph is
+// whitespace: all three render, and the meta counts one.
+export const RESEARCH_EMPTY_BODIES_FIXTURE: ResearchProjectView[] = [
+  researchProjectView({
+    id: 'fixture-research-with-body',
+    title: 'Neurotrophic signalling in the ageing hippocampus',
+    body: [overviewParagraph('research-with-body-p1', 'Measuring how neurotrophic signalling changes with age.')],
+    start: '2022-01-01T00:00:00.000Z',
+    tags: ['Neurotrophins'],
+    category: null,
+    cover: null,
+  }),
+  researchProjectView({
+    id: 'fixture-research-no-body',
+    title: 'A project with no overview yet',
+    body: [],
+    start: null,
+    tags: [],
+    category: null,
+    cover: null,
+  }),
+  researchProjectView({
+    id: 'fixture-research-blank-body',
+    title: 'A project whose overview was cleared',
+    body: [overviewParagraph('research-blank-body-p1', '   ')],
+    start: null,
+    tags: [],
+    category: null,
+    cover: null,
+  }),
+]

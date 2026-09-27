@@ -11,7 +11,7 @@ vi.mock('lib/sanity.api', () => ({
 
 import type { ResearchProjectPayload } from 'types'
 
-import { enquiryEmail, researchKicker, toResearchView } from './researchModel'
+import { countProjectsWithBody, enquiryEmail, hasBodyText, researchKicker, toResearchView } from './researchModel'
 
 // A real Sanity asset _id is `image-<hash>-<width>x<height>-<format>` --
 // @sanity/image-url's crop-rect math parses the WxH straight out of this
@@ -121,7 +121,7 @@ describe('enquiryEmail', () => {
 })
 
 describe('toResearchView', () => {
-  it('carries id/title/label/kicker/tagLine/body through, with cover null when there is no coverImage', () => {
+  it('carries id/title/kicker/tagLine/body through, with cover null when there is no coverImage', () => {
     const view = toResearchView(
       basePayload({
         title: 'Glial activity as a marker of disease',
@@ -134,7 +134,6 @@ describe('toResearchView', () => {
     )
     expect(view.id).toBe('project-1')
     expect(view.title).toBe('Glial activity as a marker of disease')
-    expect(view.label).toBe('Astrocytes')
     expect(view.kicker).toBe('Since 2018')
     expect(view.tagLine).toBe('Astrocytes · Microglia')
     expect(view.body).toEqual([{ _type: 'block', _key: 'b1', children: [] }])
@@ -149,9 +148,8 @@ describe('toResearchView', () => {
     expect(toResearchView(basePayload({ slug: null })).slug).toBeNull()
   })
 
-  it('label falls back to "Project" and tagLine is "" when there are no tags', () => {
+  it('tagLine is "" when there are no tags', () => {
     const view = toResearchView(basePayload({ tags: [] }))
-    expect(view.label).toBe('Project')
     expect(view.tagLine).toBe('')
   })
 
@@ -273,5 +271,33 @@ describe('toResearchView body fallback (overview vs description)', () => {
   it('is null when description is also an empty array and overview is missing', () => {
     const view = toResearchView(basePayload({ overview: null, description: [] }))
     expect(view.body).toBeNull()
+  })
+})
+
+describe('hasBodyText / countProjectsWithBody', () => {
+  const para = (key: string, text: string) => ({
+    _type: 'block' as const,
+    _key: key,
+    style: 'normal' as const,
+    children: [{ _type: 'span' as const, _key: `${key}-s`, text, marks: [] }],
+  })
+
+  it('is true for a body with visible text', () => {
+    expect(hasBodyText([para('a', 'Astrocytes matter.')])).toBe(true)
+  })
+
+  it.each([
+    ['null', null],
+    ['an empty array', []],
+    ['a block with no spans', [{ _type: 'block' as const, _key: 'e', children: [] }]],
+    ['a whitespace-only span', [para('w', '   \n  ')]],
+  ])('is false for %s', (_label, body) => {
+    expect(hasBodyText(body as Parameters<typeof hasBodyText>[0])).toBe(false)
+  })
+
+  it('counts only projects whose body has text', () => {
+    expect(
+      countProjectsWithBody([{ body: [para('a', 'Text.')] }, { body: null }, { body: [para('w', '  ')] }])
+    ).toBe(1)
   })
 })

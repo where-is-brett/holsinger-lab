@@ -1388,3 +1388,21 @@ this doc:
   both). Both functions now share one `realNameWords` helper (honorific, parenthetical and suffix
   filtering all applied once), so `initialsOf('Jane Smith MD')` gives `'JS'` — agreeing with
   `surnameOf`'s `'Smith'` — instead of the old `'JM'` (treating "MD" as the last name word).
+
+### Task 4: Research — no per-project label, meta counts only projects with text
+
+- **Project sections carry no label.** `ResearchProjectView` drops `label` (the first tag, or
+  "Project" with none) entirely; the project `Section` passes no `label` prop at all. Each
+  project's own `<h2 data-testid="research-project-title">` (in `Narrative`) already names its
+  section, so a label repeating that title — stacked directly above it below `lg`, beside it from
+  `lg` — would print the title twice, the same crowded-label shape already closed elsewhere in
+  this PR. Only "Enquiries" carries a `Section` label on `/research` now.
+- **The meta counts only projects with a non-blank resolved body.** `countProjectsWithBody`
+  (`researchModel.ts`) filters on a new `hasBodyText`, which runs a project's already-resolved
+  `body` (`resolveBody`'s output — `overview`, falling back to `description`, unchanged by this
+  task) through `@portabletext/react`'s `toPlainText` and checks the trimmed result is non-empty.
+  A project whose body is `null`, `[]`, or blocks with only whitespace spans (an editor cleared
+  the text but the block array survived) is not counted — but it still renders its own `Section`,
+  since the empty-state branch ("Research projects will be listed here soon.") now checks
+  `projects.length === 0`, not the body-derived count. The two numbers can legitimately differ:
+  a page can show three project sections and still say "1 active project".

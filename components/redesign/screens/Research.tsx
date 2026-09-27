@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 import { PageTitle } from '../PageTitle'
 import { PortableBody } from '../PortableBody'
-import type { ResearchProjectView } from '../researchModel'
+import { countProjectsWithBody, type ResearchProjectView } from '../researchModel'
 import { Section } from '../Section'
 import { MICRO_LABEL } from '../tokens'
 
@@ -165,7 +165,11 @@ export function Research({
    * `<h1>`. */
   headingLevel?: 'h1' | 'h2'
 }) {
-  const n = projects.length
+  // The meta counts only projects with something to read (a blank body still
+  // gets a section, just not a place in this count); the empty-state branch
+  // below checks `projects.length` instead, so a project with a blank body
+  // still renders its section rather than falling into "listed here soon".
+  const n = countProjectsWithBody(projects)
 
   return (
     <div>
@@ -174,24 +178,17 @@ export function Research({
         meta={`${n} active project${n === 1 ? '' : 's'}`}
         headingLevel={headingLevel}
       />
-      {n === 0 ? (
+      {projects.length === 0 ? (
         <Section>
           <p className="text-[14px] leading-[1.5] text-text-muted">
             Research projects will be listed here soon.
           </p>
         </Section>
       ) : (
-        // `labelHeading` is `false` here -- each project's own `Narrative`
-        // already renders a real
-        // `<h2 data-testid="research-project-title">` (the project title),
-        // so a second `<h2>` for the label would be a redundant heading.
+        // No label: the project's own `<h2>` (in `Narrative`) is the section's
+        // name, and a label repeating it would print the title twice.
         projects.map((project, index) => (
-          <Section
-            key={project.id}
-            id={project.slug ?? undefined}
-            label={project.label}
-            borderTop={index !== 0}
-          >
+          <Section key={project.id} id={project.slug ?? undefined} borderTop={index !== 0}>
             <Narrative project={project} />
           </Section>
         ))

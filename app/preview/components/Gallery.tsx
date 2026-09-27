@@ -41,6 +41,7 @@ import {
   PERSON_PAGE_FIXTURE,
   PERSON_PAGE_PUBLICATIONS_FIXTURE,
   PUBLICATION_PAGE_FIXTURE,
+  RESEARCH_EMPTY_BODIES_FIXTURE,
   RESEARCH_PROJECTS_FIXTURE,
   RESOURCES_FIXTURE,
   SAMPLE_PEOPLE,
@@ -562,6 +563,18 @@ export default function Gallery() {
         <Heading>Research screen -- no email, showContactForm true (&quot;get in touch&quot;)</Heading>
         <div className="border border-rule">
           <Research projects={[]} email={null} showContactForm headingLevel="h2" />
+        </div>
+      </section>
+
+      <section data-testid="gallery-research-empty-bodies" className="col-start-2 px-6">
+        <Heading>Research screen -- missing and blank bodies are not counted</Heading>
+        <div className="border border-rule">
+          <Research
+            projects={RESEARCH_EMPTY_BODIES_FIXTURE}
+            email="lab@example.org"
+            showContactForm
+            headingLevel="h2"
+          />
         </div>
       </section>
 

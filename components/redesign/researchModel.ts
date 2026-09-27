@@ -1,3 +1,4 @@
+import { toPlainText } from '@portabletext/react'
 import { urlForImage } from 'lib/sanity.image'
 import type { Image as SanityImage } from 'sanity'
 import type { ResearchProjectPayload } from 'types'
@@ -51,8 +52,6 @@ export interface ResearchProjectView {
   title: string
   /** The project's slug, or `null` when unset (e.g. an unslugged import) -- see `researchCards` (homeModel.ts) for how callers link to it. */
   slug: string | null
-  /** The section label: the first tag, or "Project" when there are none. */
-  label: string
   /** `researchKicker`'s own output ("Since {year}", category, both, or ""). */
   kicker: string
   /** Tags joined with " · ", rendered in link colour. "" when there are none. */
@@ -152,10 +151,24 @@ export function toResearchView(p: ResearchProjectPayload): ResearchProjectView {
     id: p._id,
     title: p.title ?? '',
     slug: p.slug ?? null,
-    label: tags[0] || 'Project',
     kicker: researchKicker({ start: p.start, category: p.category }),
     tagLine: tags.join(' · '),
     body: resolveBody(p),
     cover: coverView(p),
   }
+}
+
+/**
+ * Whether a resolved body has any visible text. A block array can be present
+ * yet blank (an editor cleared the text, leaving empty or whitespace-only
+ * spans), and such a project isn't counted as active.
+ */
+export function hasBodyText(body: ResearchProjectView['body']): boolean {
+  if (!body || body.length === 0) return false
+  return toPlainText(body as Parameters<typeof toPlainText>[0]).trim() !== ''
+}
+
+/** The Research meta's count: projects whose resolved body has text. */
+export function countProjectsWithBody(projects: Pick<ResearchProjectView, 'body'>[]): number {
+  return projects.filter((project) => hasBodyText(project.body)).length
 }
