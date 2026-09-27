@@ -68,6 +68,8 @@ docs/          Handover, branding guide, and the full design record
 ## Documentation
 
 - [`docs/HANDOVER.md`](docs/HANDOVER.md) — ownership, accounts, editing. Non-technical.
+- [`docs/HANDOVER-brett.md`](docs/HANDOVER-brett.md) — cutover and account-transfer checklist
+  for the outgoing developer.
 - [`docs/branding.md`](docs/branding.md) — how branding resolves, and the invariants behind
   it. **Read this before touching logo, colour or metadata code.**
 - [`docs/tutorial-copy.md`](docs/tutorial-copy.md) — editor-facing copy, pasted into the
