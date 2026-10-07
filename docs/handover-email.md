@@ -32,12 +32,12 @@ publications. I also corrected a couple of citation details against the journals
 
 A few quick questions when you reply:
 
-1. Are Jiyoo Choi and Fritz Graham current lab members, or alumni?
-2. The portrait I have of you is a small crop. Do you have a larger, better one?
-3. Is MAESTRO still running and taking registrations? The redesign's home page invites people
+1. The portrait I have of you is a small crop. Do you have a larger, better one?
+2. Is MAESTRO still running and taking registrations? The redesign's home page invites people
    to register.
-4. Optional: some team photos are cropped in circles or sit on white backgrounds. If you have
-   plain rectangular photos for anyone, send them and I'll swap them in.
+3. Optional: a few older team photos are still cropped in circles or sit on white backgrounds.
+   If you have plain rectangular versions, upload them in Studio as you did for the new members,
+   or send them to me.
 
 Thanks,
 Brett
