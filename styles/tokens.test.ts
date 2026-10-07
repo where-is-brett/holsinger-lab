@@ -20,6 +20,16 @@ type Scheme = 'light' | 'dark'
 
 const DARK_MEDIA = '@media (prefers-color-scheme: dark)'
 
+// The footer's theme switch (ThemeToggle.tsx) puts `data-scheme` on <html>.
+// Every rule inside DARK_MEDIA carries GUARD so it stands down when the
+// visitor picks Light, and has a top-level twin with GUARD swapped for
+// FORCED that applies when they pick Dark. Both sit inside `:where()`, so
+// neither changes a selector's specificity.
+const GUARD = ":not([data-scheme='light'])"
+const FORCED = "[data-scheme='dark']"
+/** A guarded `:root…` selector, read as the plain selector it scopes. */
+const unguard = (selector: string) => selector.replace(`:where(${GUARD})`, '')
+
 interface CssBlock {
   /** The selector/at-rule text immediately preceding this block's `{`, trimmed. */
   selector: string
@@ -97,7 +107,7 @@ function blocksFor(css: string, selector: string, scheme: Scheme): Record<string
     .filter((b) =>
       scheme === 'light'
         ? b.depth === 0 && b.selector === selector
-        : b.depth === 1 && b.selector === selector && b.parent === DARK_MEDIA
+        : b.depth === 1 && unguard(b.selector) === selector && b.parent === DARK_MEDIA
     )
     .map((b) => parseSemTokens(b.body))
     .filter((tokens) => Object.keys(tokens).length > 0)
@@ -549,4 +559,43 @@ describe('preset structure', () => {
       )
     })
   }
+})
+
+describe('theme switch overrides', () => {
+  // Comments stripped first: the block parser folds a comment sitting above a
+  // selector into that selector (see the warm preset's note in index.css).
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+  const blocks = parseCssBlocks(css)
+  const darkRules = blocks.filter((b) => b.depth === 1 && b.parent === DARK_MEDIA)
+  const normalise = (body: string) => body.replace(/\s+/g, '')
+
+  it('finds every dark rule: base, warm, picture frames, both logos and both switch icons', () => {
+    expect(darkRules).toHaveLength(7)
+  })
+
+  it('every dark rule stands down when the visitor picks Light', () => {
+    for (const rule of darkRules) {
+      for (const selector of rule.selector.split(',')) {
+        expect(selector, `"${selector.trim()}" needs ${GUARD} inside :where()`).toMatch(
+          /:where\([^)]*:not\(\[data-scheme='light'\]\)\)/
+        )
+      }
+    }
+  })
+
+  it('every dark rule has an identical twin that applies when the visitor picks Dark', () => {
+    for (const rule of darkRules) {
+      const twinSelector = rule.selector.replaceAll(GUARD, FORCED)
+      const twins = blocks.filter((b) => b.depth === 0 && b.selector === twinSelector)
+      expect(twins, `no top-level "${twinSelector}" twin for "${rule.selector}"`).toHaveLength(1)
+      expect(normalise(twins[0].body), `"${twinSelector}" has drifted from its dark rule`).toBe(
+        normalise(rule.body)
+      )
+    }
+  })
+
+  it('the parser reads a guarded :root as :root', () => {
+    expect(unguard(`:root:where(${GUARD})`)).toBe(':root')
+    expect(unguard(`:root[data-theme='warm']:where(${GUARD})`)).toBe(":root[data-theme='warm']")
+  })
 })

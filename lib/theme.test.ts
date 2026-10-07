@@ -152,7 +152,8 @@ describe('PRESET_SURFACES matches styles/index.css', () => {
       scheme === 'light'
         ? new RegExp(`(?<!dark[^}]*)${escaped}\\s*\\{([^}]*)\\}`)
         : new RegExp(
-            `prefers-color-scheme:\\s*dark\\)\\s*\\{\\s*${escaped}\\s*\\{([^}]*)\\}`
+            // The dark rule carries the theme switch's guard (index.css).
+            `prefers-color-scheme:\\s*dark\\)\\s*\\{\\s*${escaped}(?::where\\(:not\\(\\[data-scheme='light'\\]\\)\\))?\\s*\\{([^}]*)\\}`
           )
     const body = css.match(blockPattern)?.[1]
     if (!body) throw new Error(`no ${scheme} block for ${selector}`)
@@ -189,6 +190,17 @@ describe('buildBrandStyle', () => {
     expect(css).toContain('prefers-color-scheme: dark')
     expect(css).toContain('--sem-link:')
     expect(css).toContain('--sem-accent:')
+  })
+
+  it('follows the footer theme switch: the dark rule stands down for Light, and a twin applies it for Dark', () => {
+    const css = buildBrandStyle('#ff7a00', 'default')!
+    const { light, dark } = deriveTheme('#ff7a00', 'default')!
+    const darkTokens = `{--sem-link:${dark.link};--sem-accent:${dark.accent}}`
+    expect(css).toBe(
+      `:root:root:root{--sem-link:${light.link};--sem-accent:${light.accent}}` +
+        `@media (prefers-color-scheme: dark){:root:root:root:where(:not([data-scheme='light']))${darkTokens}}` +
+        `:root:root:root:where([data-scheme='dark'])${darkTokens}`
+    )
   })
 
   it('emits only the two chromatic tokens, never a neutral', () => {
