@@ -215,7 +215,7 @@ test.describe('redesign component gallery', () => {
   test('SiteFooter renders one span per line', async ({ page }) => {
     const footer = page.getByTestId('gallery-site-footer').locator('footer')
     await expect(footer).toHaveCount(1)
-    await expect(footer.locator('span')).toHaveText(['Designed by Brett Yang', 'Copyright 2026 © Holsinger Lab'])
+    await expect(footer.getByTestId('footer-line')).toHaveText(['Designed by Brett Yang', 'Copyright 2026 © Holsinger Lab'])
   })
 
   test('PersonCard renders both the portrait and no-portrait fallback state', async ({

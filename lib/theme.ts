@@ -155,11 +155,17 @@ export function buildBrandStyle(
   const derived = deriveTheme(brandHex, theme)
   if (!derived) return null
 
+  // The dark rule follows the footer theme switch the way every dark rule in
+  // styles/index.css does: it stands down when <html data-scheme="light">,
+  // and a twin applies it for data-scheme="dark". `:where()` adds no
+  // specificity, so both stay at (0,3,0).
+  const dark = `{--sem-link:${derived.dark.link};--sem-accent:${derived.dark.accent}}`
   return [
     `:root:root:root{--sem-link:${derived.light.link};--sem-accent:${derived.light.accent}}`,
     `@media (prefers-color-scheme: dark){`,
-    `:root:root:root{--sem-link:${derived.dark.link};--sem-accent:${derived.dark.accent}}`,
+    `:root:root:root:where(:not([data-scheme='light']))${dark}`,
     `}`,
+    `:root:root:root:where([data-scheme='dark'])${dark}`,
   ].join('')
 }
 

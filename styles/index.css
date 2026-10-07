@@ -151,7 +151,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:where(:not([data-scheme='light'])) {
     /* oklch(0.17 0.01 260) */
     --sem-surface: #0d1014;
     /* oklch(0.23 0.012 260) */
@@ -186,6 +186,31 @@
     /* oklch(0.88 0.005 250) */
     --sem-rule-inverse: #d5d8db;
   }
+}
+
+:root:where([data-scheme='dark']) {
+  /* Twin of the dark block above, for when the footer's theme switch
+     (ThemeToggle.tsx) picks Dark on a light-mode device. That block carries
+     :where(:not([data-scheme='light'])) so it stands down when the switch
+     picks Light. Both :where()s add no specificity, so the cascade is as it
+     was. Every dark rule in this file is paired this way, and
+     styles/tokens.test.ts fails if a twin drifts from its original. */
+  --sem-surface: #0d1014;
+  --sem-surface-raised: #1a1d23;
+  --sem-surface-inverse: #e5e8eb;
+  --sem-scrim: #05070b;
+  --sem-text: #e5e8eb;
+  --sem-text-muted: #9ea5ae;
+  --sem-text-inverse: #16181d;
+  --sem-link: #628eed;
+  --sem-accent: #628eed;
+  --sem-field: #6d7279;
+  --sem-rule: #2a2e34;
+  --sem-text-faint: #80878f;
+  --sem-text-inverse-muted: #484e55;
+  --sem-link-inverse: #1a48bc;
+  --sem-rule-strong: #494d54;
+  --sem-rule-inverse: #d5d8db;
 }
 
 :root[data-theme='warm'] {
@@ -238,7 +263,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root[data-theme='warm'] {
+  :root[data-theme='warm']:where(:not([data-scheme='light'])) {
     /* Must redeclare every token the light block above declares: this
        selector is (0,2,0) and the base dark override is only (0,1,0), so
        anything left out here would keep its LIGHT value in dark mode.
@@ -264,6 +289,22 @@
     /* oklch(0.881 0.005 72.3). */
     --sem-rule-inverse: #dad7d4;
   }
+}
+
+:root[data-theme='warm']:where([data-scheme='dark']) {
+  --sem-surface: #12100d;
+  --sem-surface-raised: #24201b;
+  --sem-surface-inverse: #f4f1ea;
+  --sem-scrim: #12100d;
+  --sem-text: #f4f1ea;
+  --sem-text-muted: #bdb5a8;
+  --sem-text-inverse: #12100d;
+  --sem-field: #837a6f;
+  --sem-rule: #2c2721;
+  --sem-text-faint: #8e8880;
+  --sem-text-inverse-muted: #514d45;
+  --sem-rule-strong: #514c45;
+  --sem-rule-inverse: #dad7d4;
 }
 
 /* Stopgap for source images with baked-in white backgrounds.
@@ -292,9 +333,13 @@
    show through and match the page in both themes with no filter at all.
    The asset list is in the PR description. */
 @media (prefers-color-scheme: dark) {
-  .media-frame {
+  :where(:root:not([data-scheme='light'])) .media-frame {
     filter: brightness(0.78) contrast(1.04);
   }
+}
+
+:where(:root[data-scheme='dark']) .media-frame {
+  filter: brightness(0.78) contrast(1.04);
 }
 
 /* Dark-scheme logo switching. Emitted by Logo.tsx only when a dark variant is
@@ -312,13 +357,56 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .logo-light {
+  :where(:root:not([data-scheme='light'])) .logo-light {
     display: none;
   }
 
-  .logo-dark {
+  :where(:root:not([data-scheme='light'])) .logo-dark {
     display: block;
   }
+}
+
+:where(:root[data-scheme='dark']) .logo-light {
+  display: none;
+}
+
+:where(:root[data-scheme='dark']) .logo-dark {
+  display: block;
+}
+
+/* The footer theme switch (ThemeToggle.tsx) shows a moon while the page is
+   light and a sun while it is dark, by CSS alone, so it is right before
+   hydration. The hidden one is display: none, so only the visible one's
+   label reaches the accessibility tree -- the same pattern as the logos. */
+.scheme-when-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :where(:root:not([data-scheme='light'])) .scheme-when-light {
+    display: none;
+  }
+
+  :where(:root:not([data-scheme='light'])) .scheme-when-dark {
+    display: block;
+  }
+}
+
+:where(:root[data-scheme='dark']) .scheme-when-light {
+  display: none;
+}
+
+:where(:root[data-scheme='dark']) .scheme-when-dark {
+  display: block;
+}
+
+/* Form controls and scrollbars follow the switch too. */
+:root[data-scheme='light'] {
+  color-scheme: light;
+}
+
+:root[data-scheme='dark'] {
+  color-scheme: dark;
 }
 
 @layer base {

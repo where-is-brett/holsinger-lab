@@ -1,6 +1,7 @@
 import 'styles/index.css'
 
 import { PreviewBanner } from 'components/preview/PreviewBanner'
+import { SCHEME_INIT_SCRIPT } from 'components/redesign/colorScheme'
 import { JsonLd } from 'components/shared/JsonLd'
 import { resolveBranding } from 'lib/branding'
 import { resolveIconUrl } from 'lib/icons'
@@ -170,8 +171,19 @@ export default async function RootLayout({
     <html
       lang="en"
       data-theme={dataTheme}
+      // The <head> script below adds `data-scheme` before hydration when the
+      // visitor picked a theme earlier in this visit (footer switch).
+      suppressHydrationWarning
       className={`${archivo.variable} ${mono.variable} ${antarcticanMono.variable} ${serif.variable} ${arianaPro.variable}`}
     >
+      <head>
+        <script
+          // A fixed string from colorScheme.ts; colorScheme.test.ts asserts it
+          // contains no angle brackets. Restores this visit's theme choice
+          // before the first paint.
+          dangerouslySetInnerHTML={{ __html: SCHEME_INIT_SCRIPT }}
+        />
+      </head>
       {brandStyle ? (
         <style
           // The value is built entirely from hex strings this codebase

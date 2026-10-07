@@ -23,8 +23,11 @@ describe('dark-mode media dimming', () => {
     )
 
     // And it must not also be defined at the top level, which would apply
-    // the dim in light mode too.
-    const topLevel = css.replace(/@media[^{]*\{(?:[^{}]|\{[^{}]*\})*\}/g, '')
+    // the dim in light mode too. The one exception is its theme-switch twin,
+    // scoped to `<html data-scheme="dark">` (dark mode picked in the footer).
+    const topLevel = css
+      .replace(/@media[^{]*\{(?:[^{}]|\{[^{}]*\})*\}/g, '')
+      .replace(/:where\(:root\[data-scheme='dark'\]\) \.media-frame\s*\{[^}]*\}/g, '')
     expect(
       topLevel,
       '.media-frame must not be defined outside dark mode'
