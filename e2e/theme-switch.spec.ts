@@ -17,6 +17,10 @@ async function bodyBrightness(page: Page): Promise<number> {
   return (Number(m[1]) + Number(m[2]) + Number(m[3])) / 3
 }
 
+/** Native UI (select popups, inputs, autofill, scrollbars) follows this. */
+const rootColorScheme = (page: Page) =>
+  page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)
+
 const switchButton = (page: Page) =>
   page
     .locator('footer')
@@ -39,6 +43,7 @@ test.describe('on a light-mode device', () => {
       'Switch to light theme'
     )
     await expect(page.locator('html')).toHaveAttribute('data-scheme', 'dark')
+    expect(await rootColorScheme(page)).toBe('dark')
   })
 
   test('the choice holds across a reload and a page change, with no light flash', async ({
@@ -130,6 +135,7 @@ test.describe('on a dark-mode device', () => {
     await expect(switchButton(page)).toHaveAccessibleName(
       'Switch to dark theme'
     )
+    expect(await rootColorScheme(page)).toBe('light')
   })
 
   test('picked light has no accessibility violations', async ({ page }) => {
