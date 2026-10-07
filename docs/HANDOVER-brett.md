@@ -32,6 +32,9 @@ Run it from a `redesign/wix` checkout whichever design wins. The import needs a 
       committing. No rendered "after" of old `main` is needed: the chosen design goes live
       minutes later, and it was already reviewed on `wix-preview`, which is the same data by
       construction.[^g2]
+- [ ] Damian edited production on 2026-10-02 and 10-05/06 (6 new profiles, alumni moves,
+      role-group titles incl. a 'PhD Srudents' typo, PI name/email/phone, two project overviews).
+      The Wix import dry run must show no ops that overwrite these.
 - [ ] Before committing, have the step 2 merge PR open with CI green, so the merge can follow
       the import immediately. Until it lands, old `main` renders production, and its `/people`
       shows about 22 new, mostly photo-less alumni and intern profiles.
